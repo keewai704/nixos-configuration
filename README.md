@@ -59,6 +59,19 @@ the tab visible in noVNC (and vice versa).
 `CAMOFOX_URL` is declared through Home Manager for interactive shells and user
 services.
 
+### Yep Anywhere
+
+Yep Anywhere v0.7.0 is packaged from a fixed npm release and starts
+automatically as `yepanywhere.service`. It runs as `keewai`, so it discovers
+the existing authenticated Codex CLI and compatible session history without a
+second sign-in. Its state is stored in `~/.yep-anywhere`.
+
+The application backend and its dedicated nginx frontend remain loopback-only
+on ports 3400 and 8001. Because the client uses root-relative API and WebSocket
+URLs, it cannot share the port-443 virtual host under a subpath. Tailscale Serve
+therefore publishes the nginx frontend on the tailnet-only URL
+<https://orange.tail1e65cd.ts.net:8446/>.
+
 ## Validate
 
 ```console

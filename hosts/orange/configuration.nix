@@ -6,6 +6,7 @@
     ./camofox.nix
     ./media-services.nix
     ./minecraft-server.nix
+    ./yepanywhere.nix
   ];
 
   boot = {
