@@ -51,6 +51,46 @@ Tailscale Serve at <https://orange.tail1e65cd.ts.net/hermes/>. The proxy strips
 the `/hermes/` prefix and supplies Hermes' supported `X-Forwarded-Prefix`
 header for SPA routes, assets, API calls, and WebSockets.
 
+Hermes One uses a second, tailnet-only endpoint at
+<https://orange.tail1e65cd.ts.net:8443>. Use that origin (without `/hermes`) as
+its Remote URL. nginx sends `/api/*` to the dashboard on port 9119 and sends
+`/health` plus `/v1/*` to the authenticated API server on port 8642. The
+separate HTTPS port is necessary because Hermes One anchors discovery and
+WebSocket paths at the URL origin, while the main origin's `/api/*` belongs to
+Immich.
+
+Retrieve the shared remote-client secret on `orange` without storing it in
+shell history, then paste the output into Hermes One's Settings → Connection:
+
+```console
+sed -n 's/^API_SERVER_KEY=//p' ~/.hermes/secrets.env
+```
+
+Hermex is a different client: it connects to the official `hermes-webui`
+backend rather than the Hermes dashboard/API endpoint above. The backend runs
+as the rootless `podman-hermex.service`, shares the existing Hermes config and
+sessions, and is published only through Tailscale Serve at
+<https://orange.tail1e65cd.ts.net:8444>. In Hermex, use:
+
+- Server URL: `https://orange.tail1e65cd.ts.net:8444`
+- Password: the output of the same `sed` command above
+
+Nix derives `HERMES_WEBUI_PASSWORD` from `API_SERVER_KEY` at service start in a
+private `/run` file; the value is not copied into this repository or the Nix
+store. The WebUI itself remains bound to `127.0.0.1:8787`, and nginx preserves
+streaming and WebSocket connections at the HTTPS endpoint. Check it with:
+
+```console
+systemctl status podman-hermex.service
+journalctl --unit podman-hermex.service
+curl http://127.0.0.1:8787/health
+curl https://orange.tail1e65cd.ts.net:8444/health
+```
+
+The first start pulls the pinned WebUI image and prepares its Python
+environment; later restarts reuse the versioned state under
+`~/.local/share/hermex`.
+
 The current model, browser, computer-use, web-search, reset, progress, and CLI
 toolset settings are declared in `flake.nix`. Home Manager marks the install as
 managed, so persistent configuration changes must be made in Nix rather than
@@ -58,10 +98,14 @@ with `hermes setup`, `hermes config set`, or the dashboard settings panes.
 
 The existing OpenAI Codex OAuth credentials remain in the private runtime file
 `~/.hermes/auth.json`, where Hermes can refresh them without copying a token
-into the world-readable Nix store. The generated `~/.hermes/.env` contains
-only the non-secret Camofox URL. Future API keys or messaging tokens should be
-provided with `services.hermes-agent.environmentFiles` from agenix or sops-nix,
-never through `settings` or `environment`.
+into the world-readable Nix store. Other secrets are provisioned in the 0600
+runtime file `~/.hermes/secrets.env`, which Nix references through
+`services.hermes-agent.environmentFiles`; secret values never enter the Nix
+store or this repository. The gateway and dashboard systemd units also read
+that file directly, so a rotation takes effect on their next restart.
+`API_SERVER_KEY` and
+`HERMES_DASHBOARD_SESSION_TOKEN` use the same generated value so Hermes One
+can authenticate both transports with its single API Key field.
 
 The dashboard has no direct LAN or tailnet listener. Its loopback session token
 is protected by Tailscale Serve and nginx, so tailnet ACLs are the access
@@ -142,11 +186,14 @@ Immich machine learning is disabled at both the NixOS service and application
 levels. Scheduled/pre-generated video transcoding is disabled; real-time HLS
 transcoding is enabled with Intel QSV on `/dev/dri/renderD128`.
 
-Nginx listens only on `127.0.0.1:8000`, and Tailscale Serve publishes it as:
+All nginx listeners remain loopback-only (`127.0.0.1:8000`–`8002`), and
+Tailscale Serve publishes them as:
 
 - Immich: <https://orange.tail1e65cd.ts.net/>
 - Vaultwarden: <https://orange.tail1e65cd.ts.net/vault/>
 - Hermes dashboard: <https://orange.tail1e65cd.ts.net/hermes/>
+- Hermes One remote endpoint: <https://orange.tail1e65cd.ts.net:8443>
+- Hermex (`hermes-webui`): <https://orange.tail1e65cd.ts.net:8444>
 
 Vaultwarden registration is disabled because the imported database already
 contains a user. No application port is opened on the LAN or public firewall.

@@ -1,4 +1,5 @@
 {
+  hermesAgentSource,
   lib,
   pkgs,
   ...
@@ -13,8 +14,23 @@ let
   vaultwardenBackupRoot = "${storageRoot}/server/backups/vaultwarden-nixos";
   tailnetHostname = "orange.tail1e65cd.ts.net";
   nginxPort = 8000;
+  hermesOneNginxPort = 8001;
+  hermexNginxPort = 8002;
   hermesDashboardPort = 9119;
+  hermesApiPort = 8642;
+  hermexWebUiPort = 8787;
   hermesDashboardOrigin = "http://127.0.0.1:${toString hermesDashboardPort}";
+  hermesApiOrigin = "http://127.0.0.1:${toString hermesApiPort}";
+  hermexWebUiOrigin = "http://127.0.0.1:${toString hermexWebUiPort}";
+  hermesHome = "/home/keewai/.hermes";
+  hermesSecretsFile = "${hermesHome}/secrets.env";
+  hermexEnvironmentFile = "/run/hermex/webui.env";
+  hermexWebUiVersion = "0.52.260";
+  hermesAgentSourceId = builtins.substring 0 12 (builtins.baseNameOf (toString hermesAgentSource));
+  hermexStateRoot = "/home/keewai/.local/share/hermex";
+  hermexAppDir = "${hermexStateRoot}/app-${hermexWebUiVersion}-${hermesAgentSourceId}";
+  hermexCacheRoot = "/home/keewai/.cache/hermex";
+  hermexUvCacheDir = "${hermexCacheRoot}/uv";
   postgresqlPackage = pkgs.postgresql_17;
   nginxProxyHeaders = ''
     proxy_set_header Host $host;
@@ -24,6 +40,70 @@ let
     proxy_set_header X-Forwarded-Host $host;
     proxy_set_header X-Forwarded-Server $hostname;
   '';
+  hermesOneProxyHeaders = upstreamPort: ''
+    proxy_set_header Host 127.0.0.1:${toString upstreamPort};
+    proxy_set_header X-Real-IP $tailscale_client_ip;
+    proxy_set_header X-Forwarded-For $tailscale_client_ip;
+    proxy_set_header X-Forwarded-Proto https;
+    proxy_set_header X-Forwarded-Host 127.0.0.1:${toString upstreamPort};
+    proxy_set_header X-Forwarded-Server $hostname;
+  '';
+  hermexProxyHeaders = ''
+    proxy_set_header Host ${tailnetHostname}:8444;
+    proxy_set_header X-Real-IP $tailscale_client_ip;
+    proxy_set_header X-Forwarded-For $tailscale_client_ip;
+    proxy_set_header X-Forwarded-Proto https;
+    proxy_set_header X-Forwarded-Host ${tailnetHostname}:8444;
+    proxy_set_header X-Forwarded-Port 8444;
+    proxy_set_header X-Forwarded-Server $hostname;
+  '';
+
+  # Hermex authenticates against Hermes WebUI, not the Hermes Agent dashboard
+  # or its OpenAI-compatible API. Derive the WebUI password at service start so
+  # the secret remains outside both the repository and the Nix store.
+  prepareHermexEnvironment = pkgs.writeShellApplication {
+    name = "prepare-hermex-environment";
+    runtimeInputs = [
+      pkgs.coreutils
+      pkgs.gnused
+    ];
+    text = ''
+      secrets_file=${lib.escapeShellArg hermesSecretsFile}
+      runtime_file=${lib.escapeShellArg hermexEnvironmentFile}
+
+      if [ ! -r "$secrets_file" ]; then
+        echo "Hermex cannot read $secrets_file" >&2
+        exit 1
+      fi
+
+      password="$(sed -n 's/^API_SERVER_KEY=//p' "$secrets_file")"
+      if [ -z "$password" ]; then
+        echo "API_SERVER_KEY is missing from $secrets_file" >&2
+        exit 1
+      fi
+
+      # Podman's env-file format cannot safely represent whitespace or line
+      # breaks. The generated Hermes key is URL-safe, so reject an accidental
+      # manual replacement rather than silently changing the password.
+      case "$password" in
+        *[!A-Za-z0-9._~-]*)
+          echo "API_SERVER_KEY contains characters unsafe for an env file" >&2
+          exit 1
+          ;;
+      esac
+
+      umask 077
+      trap 'rm -f "$runtime_file.tmp"' EXIT
+      sed \
+        -e '/^HERMES_WEBUI_PASSWORD=/d' \
+        -e '/^HERMES_WEBUI_GATEWAY_API_KEY=/d' \
+        "$secrets_file" > "$runtime_file.tmp"
+      printf '\nHERMES_WEBUI_PASSWORD=%s\n' "$password" >> "$runtime_file.tmp"
+      printf 'HERMES_WEBUI_GATEWAY_API_KEY=%s\n' "$password" >> "$runtime_file.tmp"
+      mv "$runtime_file.tmp" "$runtime_file"
+      trap - EXIT
+    '';
+  };
 
   importImmichDatabase = pkgs.writeShellApplication {
     name = "import-existing-immich-database";
@@ -140,6 +220,22 @@ in
     ];
   };
 
+  # Publish the HDD on the trusted LAN and tailnet only. NetBIOS discovery is
+  # useful on the LAN; tailnet clients connect directly over modern SMB/445.
+  networking.firewall.interfaces = {
+    enp2s0 = {
+      allowedTCPPorts = [
+        139
+        445
+      ];
+      allowedUDPPorts = [
+        137
+        138
+      ];
+    };
+    tailscale0.allowedTCPPorts = [ 445 ];
+  };
+
   users = {
     groups.immich-media.gid = 1000;
     users = {
@@ -160,6 +256,33 @@ in
   };
 
   services = {
+    samba = {
+      enable = true;
+      openFirewall = false;
+      winbindd.enable = false;
+      settings = {
+        global = {
+          "map to guest" = "Bad User";
+          "server role" = "standalone server";
+        };
+
+        storage = {
+          path = storageRoot;
+          comment = "Orange HDD storage";
+          browseable = "yes";
+          "guest ok" = "yes";
+          "guest only" = "yes";
+          "read only" = "no";
+          "force user" = "keewai";
+          "force group" = "immich-media";
+          "create mask" = "0664";
+          "directory mask" = "0775";
+          "veto files" = "/server/lost+found/";
+          "delete veto files" = "no";
+        };
+      };
+    };
+
     immich = {
       enable = true;
       host = "127.0.0.1";
@@ -275,6 +398,8 @@ in
 
               proxy_request_buffering off;
               proxy_buffering off;
+              access_log off;
+              error_log stderr crit;
               proxy_read_timeout 86400s;
               proxy_send_timeout 86400s;
               proxy_set_header Host 127.0.0.1:${toString hermesDashboardPort};
@@ -312,12 +437,198 @@ in
           };
         };
       };
+
+      # Hermes One currently anchors dashboard discovery and WebSocket URLs
+      # at the URL origin, so a /hermes path prefix cannot provide its full
+      # remote transport. Give it a dedicated HTTPS endpoint (published by
+      # Tailscale Serve on :8443) where /api belongs to the dashboard and /v1
+      # plus /health belong to the OpenAI-compatible API server. Keeping this
+      # on a separate local nginx port avoids taking Immich's root /api paths.
+      virtualHosts.hermes-one = {
+        serverName = tailnetHostname;
+        listen = [
+          {
+            addr = "127.0.0.1";
+            port = hermesOneNginxPort;
+          }
+        ];
+        extraConfig = ''
+          client_body_buffer_size 1024k;
+          send_timeout 600s;
+          # Hermes WebSockets carry the session token in the query string.
+          # Disable this dedicated endpoint's access log so it is never
+          # persisted as part of nginx's standard $request field.
+          access_log off;
+          error_log stderr crit;
+        '';
+        locations = {
+          "^~ /api/" = {
+            proxyPass = hermesDashboardOrigin;
+            proxyWebsockets = true;
+            recommendedProxySettings = false;
+            extraConfig = ''
+              proxy_request_buffering off;
+              proxy_buffering off;
+              proxy_read_timeout 86400s;
+              proxy_send_timeout 86400s;
+              ${hermesOneProxyHeaders hermesDashboardPort}
+              proxy_set_header Origin "";
+            '';
+          };
+
+          "^~ /v1/" = {
+            proxyPass = hermesApiOrigin;
+            recommendedProxySettings = false;
+            extraConfig = ''
+              proxy_request_buffering off;
+              proxy_buffering off;
+              proxy_read_timeout 86400s;
+              proxy_send_timeout 86400s;
+              ${hermesOneProxyHeaders hermesApiPort}
+            '';
+          };
+
+          "= /health" = {
+            proxyPass = "${hermesApiOrigin}/health";
+            recommendedProxySettings = false;
+            extraConfig = ''
+              ${hermesOneProxyHeaders hermesApiPort}
+            '';
+          };
+
+          "/" = {
+            proxyPass = hermesDashboardOrigin;
+            proxyWebsockets = true;
+            recommendedProxySettings = false;
+            extraConfig = ''
+              proxy_request_buffering off;
+              proxy_buffering off;
+              proxy_read_timeout 86400s;
+              proxy_send_timeout 86400s;
+              ${hermesOneProxyHeaders hermesDashboardPort}
+              proxy_set_header Origin "";
+            '';
+          };
+        };
+      };
+
+      # Hermex is a native client for nesquena/hermes-webui, not for the
+      # Hermes dashboard used by Hermes One. Publish the WebUI at its own URL
+      # origin because Hermex probes /health and uses root-relative API paths.
+      virtualHosts.hermex = {
+        serverName = tailnetHostname;
+        listen = [
+          {
+            addr = "127.0.0.1";
+            port = hermexNginxPort;
+          }
+        ];
+        extraConfig = ''
+          client_max_body_size 20m;
+          client_body_buffer_size 1024k;
+          send_timeout 86400s;
+          access_log off;
+        '';
+        locations."/" = {
+          proxyPass = hermexWebUiOrigin;
+          proxyWebsockets = true;
+          recommendedProxySettings = false;
+          extraConfig = ''
+            proxy_request_buffering off;
+            proxy_buffering off;
+            proxy_read_timeout 86400s;
+            proxy_send_timeout 86400s;
+            ${hermexProxyHeaders}
+          '';
+        };
+      };
     };
+  };
+
+  virtualisation.oci-containers.containers.hermex = {
+    # Hermes WebUI v0.52.260, linux/amd64. Pin the platform manifest so a
+    # mutable registry tag cannot change the code on a later rebuild.
+    image = "ghcr.io/nesquena/hermes-webui@sha256:9d768cf801d538e0a959cef6afa7dad8688b462c9bc499c6a8c0f5c531fd94b8";
+    pull = "missing";
+
+    podman = {
+      user = "keewai";
+      sdnotify = "healthy";
+    };
+
+    # Host networking lets the WebUI query the existing loopback-only Hermes
+    # gateway. The WebUI itself also binds only to loopback, so nginx remains
+    # the sole remote entry point.
+    networks = [ "host" ];
+
+    # Start directly as the image's unprivileged account. keep-id below maps
+    # that identity to keewai on the host, including both writable bind mounts.
+    user = "1024:1024";
+
+    volumes = [
+      # The NixOS OCI unit removes its container on stop. Persist the seeded
+      # application and Python environment so an ordinary reboot stays fast
+      # and does not need PyPI. The versioned path is replaced automatically
+      # whenever either the WebUI or locked Hermes Agent source changes.
+      "${hermexAppDir}:/app"
+      "${hermexUvCacheDir}:/uv_cache"
+      # WebUI imports Hermes in-process for full chat/session support. Supply
+      # the exact source locked by this flake, read-only, as its installer
+      # expects; it stages a writable copy below /app on first start.
+      "${hermesAgentSource}:/opt/hermes:ro"
+      # Share the declarative Hermes configuration, OAuth state, and sessions.
+      "${hermesHome}:/home/hermeswebui/.hermes"
+      # Preserve host paths recorded in existing sessions and expose the same
+      # workspace used by the native Hermes service.
+      "/home/keewai:/home/keewai"
+    ];
+
+    environmentFiles = [ hermexEnvironmentFile ];
+    environment = {
+      # keep-id maps keewai's host 1000:100 identity onto the image's existing
+      # hermeswebui 1024:1024 account without changing host ownership.
+      WANTED_UID = "1024";
+      WANTED_GID = "1024";
+      HOME = "/home/hermeswebui";
+      HERMES_HOME = "/home/hermeswebui/.hermes";
+      HERMES_WEBUI_HOST = "127.0.0.1";
+      HERMES_WEBUI_PORT = "8787";
+      HERMES_WEBUI_STATE_DIR = "/home/hermeswebui/.hermes/webui";
+      HERMES_WEBUI_DEFAULT_WORKSPACE = "/home/keewai";
+      HERMES_API_URL = "http://127.0.0.1:8642";
+      CAMOFOX_URL = "http://127.0.0.1:9377";
+
+      # Existing Home Manager-managed credentials must not be chmod'ed by the
+      # container. TLS terminates at the trusted nginx/Tailscale proxy.
+      HERMES_SKIP_CHMOD = "1";
+      HERMES_WEBUI_SECURE = "1";
+      HERMES_WEBUI_ALLOWED_ORIGINS = "https://orange.tail1e65cd.ts.net:8444";
+      HERMES_WEBUI_TRUST_FORWARDED_HOST = "1";
+      HERMES_WEBUI_TRUST_FORWARDED_FOR = "1";
+      HERMES_WEBUI_TRUST_FORWARDED_PROTO = "1";
+    };
+
+    extraOptions = [
+      "--userns=keep-id:uid=1024,gid=1024"
+      "--health-cmd=curl --fail --silent http://127.0.0.1:8787/health"
+      "--health-interval=10s"
+      "--health-start-period=600s"
+      "--health-timeout=5s"
+      "--health-retries=18"
+    ];
   };
 
   systemd = {
     tmpfiles = {
-      rules = [ "d /var/lib/vaultwarden 0700 vaultwarden vaultwarden -" ];
+      rules = [
+        "d /var/lib/vaultwarden 0700 vaultwarden vaultwarden -"
+        "z ${storageRoot} 0775 keewai immich-media -"
+        "d ${hermesHome}/webui 0700 keewai users -"
+        "d ${hermexStateRoot} 0700 keewai users -"
+        "d ${hermexAppDir} 0700 keewai users -"
+        "d ${hermexCacheRoot} 0700 keewai users -"
+        "d ${hermexUvCacheDir} 0700 keewai users -"
+      ];
 
       # Override Immich's default 0700 mount-root rule. Existing files below
       # this directory already use gid 1000 and remain otherwise untouched.
@@ -329,6 +640,18 @@ in
     };
 
     services = {
+      podman-hermex = {
+        description = "Hermes WebUI backend for the Hermex iPhone client";
+        serviceConfig.ExecStartPre = lib.mkAfter [
+          (lib.getExe prepareHermexEnvironment)
+        ];
+      };
+
+      samba-smbd = {
+        requires = [ storageMountUnit ];
+        after = [ storageMountUnit ];
+      };
+
       media-storage-prepare = {
         description = "Prepare mounted HDD directories for media services";
         requires = [ storageMountUnit ];
@@ -456,7 +779,11 @@ in
           RemainAfterExit = true;
           Restart = "on-failure";
           RestartSec = "5s";
-          ExecStart = "${pkgs.tailscale}/bin/tailscale serve --bg --yes http://127.0.0.1:${toString nginxPort}";
+          ExecStart = [
+            "${pkgs.tailscale}/bin/tailscale serve --bg --yes --https=443 http://127.0.0.1:${toString nginxPort}"
+            "${pkgs.tailscale}/bin/tailscale serve --bg --yes --https=8443 http://127.0.0.1:${toString hermesOneNginxPort}"
+            "${pkgs.tailscale}/bin/tailscale serve --bg --yes --https=8444 http://127.0.0.1:${toString hermexNginxPort}"
+          ];
         };
       };
     };
