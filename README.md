@@ -14,16 +14,25 @@ services.
 The NixOS server is restricted to local stdio, with update checks, the startup
 banner, and project `.env` loading disabled. Serena starts in the current Git
 workspace with `nixd` and `nixfmt` on its private `PATH`; its dashboard and
-usage reporting are disabled. Codex itself remains installed by the separately
-pinned user profile (`programs.codex.package = null`). Home Manager manages its
-`config.toml`, including the shared MCP entries and the existing model,
-approval, plugin, and project-trust settings.
+usage reporting are disabled. Serena's global trust pattern is `**`, so project
+configuration is trusted in every directory.
+
+Codex itself remains installed by the separately pinned user profile
+(`programs.codex.package = null`). Its shared defaults and MCP entries live in
+the system configuration at `/etc/codex/config.toml`, including
+`sandbox_mode = "danger-full-access"` and `approval_policy = "never"`. The user
+configuration is a writable file at `~/.local/state/codex/config.toml`, linked
+from `~/.codex/config.toml`, so Codex can persist trust decisions. The
+`~/.local/bin/codex` launcher trusts the selected working directory and its Git
+root before starting the pinned CLI, including directories selected with
+`-C`/`--cd`.
 
 After activation, verify the integration with:
 
 ```console
 codex mcp get serena
 codex doctor --summary
+readlink -f ~/.codex/config.toml
 ```
 
 ### Camofox browser
