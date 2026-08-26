@@ -575,7 +575,6 @@ in
         "d /var/lib/vaultwarden 0700 vaultwarden vaultwarden -"
         "d /run/hermes-webui 0700 keewai users -"
         "z ${storageRoot} 0775 keewai immich-media -"
-        "d ${hermesHome}/webui 0700 keewai users -"
       ];
 
       # Override Immich's default 0700 mount-root rule. Existing files below

@@ -88,8 +88,10 @@ curl https://orange.tail1e65cd.ts.net:8444/health
 ```
 
 The package is built from the pinned `exp-v0.52.260` source during the NixOS
-rebuild. Application code and its launcher are immutable Nix store paths; only
-WebUI state remains writable under `~/.hermes/webui`.
+rebuild. The WebUI application code and launcher are immutable Nix store paths,
+while runtime state remains writable under `~/.hermes/webui`. Because the
+service runs as `keewai`, it can also access the user's shared Hermes state and
+workspace files as configured above.
 
 The current model, browser, computer-use, web-search, reset, progress, and CLI
 toolset settings are declared in `flake.nix`. Home Manager marks the install as

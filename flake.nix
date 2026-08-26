@@ -38,10 +38,13 @@
       hermes-webui,
       ...
     }:
+    let
+      system = "x86_64-linux";
+    in
     {
       nixosConfigurations.orange = nixpkgs.lib.nixosSystem {
-        system = "x86_64-linux";
-        specialArgs.hermesAgentPackage = hermes-agent.packages.x86_64-linux.default;
+        inherit system;
+        specialArgs.hermesAgentPackage = hermes-agent.packages.${system}.default;
         modules = [
           hermes-webui.nixosModules.default
           ./hosts/orange/configuration.nix
