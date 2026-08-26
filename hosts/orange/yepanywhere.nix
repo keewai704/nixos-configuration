@@ -8,8 +8,6 @@ let
   yepAnywhere = pkgs.callPackage ../../pkgs/yepanywhere/package.nix { };
   tailnetHostname = "orange.tail1e65cd.ts.net";
   applicationPort = 3400;
-  nginxPort = 8001;
-  tailnetHttpsPort = 8446;
 in
 {
   environment.systemPackages = [ yepAnywhere ];
@@ -62,28 +60,16 @@ in
           UMask = "0077";
         };
       };
-
-      tailscale-serve-nginx.serviceConfig.ExecStart = [
-        "${pkgs.tailscale}/bin/tailscale serve --bg --yes --https=${toString tailnetHttpsPort} http://127.0.0.1:${toString nginxPort}"
-      ];
     };
   };
 
-  services.nginx.virtualHosts.yepanywhere = {
-    serverName = tailnetHostname;
-    default = true;
-    listen = [
-      {
-        addr = "127.0.0.1";
-        port = nginxPort;
-      }
-    ];
+  services.nginx.virtualHosts.${tailnetHostname}.locations = {
+    "= /yep".return = "308 https://${tailnetHostname}/yep/";
 
-    # Yep Anywhere emits root-relative /api and WebSocket URLs and has no
-    # external base-path setting. A dedicated tailnet HTTPS port avoids
-    # colliding with Immich while retaining the required nginx proxy hop.
-    locations."/" = {
-      proxyPass = "http://127.0.0.1:${toString applicationPort}";
+    "^~ /yep/" = {
+      # The packaged client is built with /yep/ as its Vite base. The trailing
+      # slash strips that prefix before requests reach Yep's root-mounted app.
+      proxyPass = "http://127.0.0.1:${toString applicationPort}/";
       proxyWebsockets = true;
       recommendedProxySettings = false;
       extraConfig = ''
@@ -96,7 +82,8 @@ in
         proxy_set_header X-Forwarded-For $tailscale_client_ip;
         proxy_set_header X-Forwarded-Proto https;
         proxy_set_header X-Forwarded-Host $host;
-        proxy_set_header X-Forwarded-Port ${toString tailnetHttpsPort};
+        proxy_set_header X-Forwarded-Port 443;
+        proxy_set_header X-Forwarded-Prefix /yep;
         proxy_set_header X-Forwarded-Server $hostname;
       '';
     };

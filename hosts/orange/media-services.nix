@@ -480,10 +480,10 @@ in
           RemainAfterExit = true;
           Restart = "on-failure";
           RestartSec = "5s";
-          ExecStart = [
-            "${pkgs.tailscale}/bin/tailscale serve --bg --yes --https=443 http://127.0.0.1:${toString nginxPort}"
-            "${pkgs.tailscale}/bin/tailscale serve --bg --yes --https=8445 http://127.0.0.1:6080"
-          ];
+          # Remove persisted imperative mappings first, so old non-443
+          # listeners cannot survive a configuration change.
+          ExecStartPre = "${pkgs.tailscale}/bin/tailscale serve reset";
+          ExecStart = "${pkgs.tailscale}/bin/tailscale serve --bg --yes --https=443 http://127.0.0.1:${toString nginxPort}";
         };
       };
     };

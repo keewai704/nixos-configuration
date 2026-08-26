@@ -26,27 +26,32 @@ as the boot default.
 ## Publishing web services on `orange`
 
 For every HTTP, HTTPS, or WebSocket service that should be reachable by a user,
-use this topology whenever the application supports it:
+use this topology:
 
 `tailnet client -> Tailscale Serve HTTPS -> loopback nginx -> loopback application`
 
-1. Bind the application backend to `127.0.0.1` or a Unix socket. Do not bind it
+1. Port 443 is the only permitted user-facing web ingress. Do not expose HTTP,
+   HTTPS, WebSocket, TLS-terminated TCP, or an application backend on any other
+   external port. Loopback-only ports are permitted solely as internal proxy
+   hops.
+2. Bind the application backend to `127.0.0.1` or a Unix socket. Do not bind it
    to the LAN or all interfaces.
-2. Add the service to the existing nginx virtual host for
+3. Add the service to the existing nginx virtual host for
    `orange.tail1e65cd.ts.net`, normally under a dedicated path, and reuse the
    existing Tailscale Serve mapping from HTTPS port 443 to nginx at
    `127.0.0.1:8000`.
-3. Do not point Tailscale Serve directly at an application backend or open the
-   backend port in the global firewall or on `tailscale0` unless nginx genuinely
-   cannot proxy the application's protocol or URL behavior.
-4. Configure the application's external/base URL for its canonical tailnet
+4. Do not point Tailscale Serve directly at an application backend or open the
+   backend port in the global firewall or on `tailscale0`.
+5. Configure the application's external/base URL for its canonical tailnet
    HTTPS URL when supported. Preserve the forwarded host, scheme, and client IP;
    enable nginx WebSocket proxying when required.
-5. If the preferred topology is not viable, use the least-exposed alternative
-   and document the technical reason for the exception in the configuration.
-6. Verify the canonical tailnet URL, redirects, static assets, and WebSockets as
-   applicable. Also verify with `ss` that the backend is loopback-only and check
-   `tailscale serve status` before considering the service healthy.
+6. If an application does not support a subpath, patch it, rebuild its client,
+   or add a safe adapter. Never work around the limitation with another
+   externally reachable port. If no safe port-443 solution is viable, stop and
+   report the service as blocked instead of publishing it.
+7. Verify the canonical tailnet URL, redirects, static assets, and WebSockets as
+   applicable. Also verify with `ss` that the backend is loopback-only and that
+   `tailscale serve status` contains exactly one web listener: HTTPS port 443.
 
 Declarative web-service changes remain subject to the test, live health-check,
 and switch workflow above.

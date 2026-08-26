@@ -66,11 +66,11 @@ automatically as `yepanywhere.service`. It runs as `keewai`, so it discovers
 the existing authenticated Codex CLI and compatible session history without a
 second sign-in. Its state is stored in `~/.yep-anywhere`.
 
-The application backend and its dedicated nginx frontend remain loopback-only
-on ports 3400 and 8001. Because the client uses root-relative API and WebSocket
-URLs, it cannot share the port-443 virtual host under a subpath. Tailscale Serve
-therefore publishes the nginx frontend on the tailnet-only URL
-<https://orange.tail1e65cd.ts.net:8446/>.
+The application backend remains loopback-only on port 3400. Its client is
+rebuilt with subpath-aware API, WebSocket, asset, router, and service-worker
+URLs, then proxied through the shared loopback nginx frontend. The only
+user-facing web ingress is Tailscale Serve HTTPS on port 443, at
+<https://orange.tail1e65cd.ts.net/yep/>.
 
 ## Validate
 

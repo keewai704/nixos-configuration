@@ -1,0 +1,96 @@
+diff --git a/packages/client/src/api/fileClient.ts b/packages/client/src/api/fileClient.ts
+index 24110e2..bfd9b67 100644
+--- a/packages/client/src/api/fileClient.ts
++++ b/packages/client/src/api/fileClient.ts
+@@ -1,0 +2 @@ import type { FileContentResponse } from "@yep-anywhere/shared";
++import { API_BASE } from "./plainFetch";
+@@ -26 +27 @@ export const fileApi = {
+-    return `/api/projects/${projectId}/files/raw?${params.toString()}`;
++    return `${API_BASE}/projects/${projectId}/files/raw?${params.toString()}`;
+diff --git a/packages/client/src/api/plainFetch.ts b/packages/client/src/api/plainFetch.ts
+index 07dc069..b75a30a 100644
+--- a/packages/client/src/api/plainFetch.ts
++++ b/packages/client/src/api/plainFetch.ts
+@@ -3 +3,2 @@ import { authEvents } from "../lib/authEvents";
+-export const API_BASE = "/api";
++const APP_BASE = import.meta.env.BASE_URL.replace(/\/+$/, "");
++export const API_BASE = `${APP_BASE}/api`;
+diff --git a/packages/client/src/api/upload.ts b/packages/client/src/api/upload.ts
+index 2515775..5f26057 100644
+--- a/packages/client/src/api/upload.ts
++++ b/packages/client/src/api/upload.ts
+@@ -8,0 +9 @@ import type {
++import { API_BASE } from "./plainFetch";
+@@ -397 +398 @@ export function buildUploadUrl(
+-  return `${protocol}//${host}/api/projects/${projectId}/sessions/${sessionId}/upload/ws`;
++  return `${protocol}//${host}${API_BASE}/projects/${projectId}/sessions/${sessionId}/upload/ws`;
+@@ -409 +410 @@ export function buildStagedUploadUrl(baseUrl?: string): string {
+-  return `${protocol}//${host}/api/attachments/staging/drafts/upload/ws`;
++  return `${protocol}//${host}${API_BASE}/attachments/staging/drafts/upload/ws`;
+diff --git a/packages/client/src/components/AttachmentChip.tsx b/packages/client/src/components/AttachmentChip.tsx
+index 0285400..1f2bcb2 100644
+--- a/packages/client/src/components/AttachmentChip.tsx
++++ b/packages/client/src/components/AttachmentChip.tsx
+@@ -3,0 +4 @@ import { createPortal } from "react-dom";
++import { API_BASE } from "../api/plainFetch";
+@@ -81 +82 @@ function getUploadUrl(filePath: string | undefined): string | null {
+-    return `/api/projects/${projectId}/sessions/${sessionId}/upload/${encodeURIComponent(filename)}`;
++    return `${API_BASE}/projects/${projectId}/sessions/${sessionId}/upload/${encodeURIComponent(filename)}`;
+@@ -85 +86 @@ function getUploadUrl(filePath: string | undefined): string | null {
+-  return `/api/projects/${projectSegment}/sessions/${sessionId}/upload/${encodeURIComponent(filename)}`;
++  return `${API_BASE}/projects/${projectSegment}/sessions/${sessionId}/upload/${encodeURIComponent(filename)}`;
+diff --git a/packages/client/src/components/ErrorBoundary.tsx b/packages/client/src/components/ErrorBoundary.tsx
+index 5288fc3..49fecaa 100644
+--- a/packages/client/src/components/ErrorBoundary.tsx
++++ b/packages/client/src/components/ErrorBoundary.tsx
+@@ -1,0 +2 @@ import { Component, type ErrorInfo, type ReactNode } from "react";
++import { API_BASE } from "../api/plainFetch";
+@@ -49 +50 @@ export class ErrorBoundary extends Component<Props, State> {
+-      const res = await fetch("/api/version");
++      const res = await fetch(`${API_BASE}/version`);
+diff --git a/packages/client/src/lib/connection/WebSocketConnection.ts b/packages/client/src/lib/connection/WebSocketConnection.ts
+index 1dfa220..ca2fe4e 100644
+--- a/packages/client/src/lib/connection/WebSocketConnection.ts
++++ b/packages/client/src/lib/connection/WebSocketConnection.ts
+@@ -15 +15 @@ import {
+-import { getDesktopAuthToken } from "../../api/plainFetch";
++import { API_BASE, getDesktopAuthToken } from "../../api/plainFetch";
+@@ -111 +111 @@ export class WebSocketConnection implements Connection {
+-    const base = `${protocol}//${window.location.host}/api/ws`;
++    const base = `${protocol}//${window.location.host}${API_BASE}/ws`;
+diff --git a/packages/client/src/lib/sourceTransportPaths.ts b/packages/client/src/lib/sourceTransportPaths.ts
+index 578009a..55940b1 100644
+--- a/packages/client/src/lib/sourceTransportPaths.ts
++++ b/packages/client/src/lib/sourceTransportPaths.ts
+@@ -0,0 +1,2 @@
++const BROWSER_API_BASE = `${import.meta.env.BASE_URL.replace(/\/+$/, "")}/api`;
++
+@@ -1,0 +4,6 @@ export function toSourceTransportApiPath(path: string): string {
++  if (path === BROWSER_API_BASE) {
++    return "/";
++  }
++  if (path.startsWith(`${BROWSER_API_BASE}/`)) {
++    return path.slice(BROWSER_API_BASE.length);
++  }
+diff --git a/packages/client/src/lib/speechProviders/YaServerProvider.ts b/packages/client/src/lib/speechProviders/YaServerProvider.ts
+index 2f9d8e7..52730f9 100644
+--- a/packages/client/src/lib/speechProviders/YaServerProvider.ts
++++ b/packages/client/src/lib/speechProviders/YaServerProvider.ts
+@@ -1,0 +2 @@ import { fetchJSON } from "../../api/client";
++import { API_BASE } from "../../api/plainFetch";
+@@ -202,2 +203,4 @@ function speechWsUrl(basePath: string): string {
+-  const normalizedBase = basePath.replace(/\/$/, "");
+-  const url = new URL(`${normalizedBase}/api/speech/ws`, window.location.href);
++  const apiBase = basePath
++    ? `${basePath.replace(/\/$/, "")}/api`
++    : API_BASE;
++  const url = new URL(`${apiBase}/speech/ws`, window.location.href);
+diff --git a/packages/client/src/pages/SessionPage.tsx b/packages/client/src/pages/SessionPage.tsx
+index 537efd1..b6bc2f4 100644
+--- a/packages/client/src/pages/SessionPage.tsx
++++ b/packages/client/src/pages/SessionPage.tsx
+@@ -1165 +1165,3 @@ function SessionPageContent({
+-      `${window.location.origin}${basePath}/projects/${projectId}/sessions/${targetSessionId}`,
++      `${window.location.origin}${toBrowserAppHref(
++        `${basePath}/projects/${projectId}/sessions/${targetSessionId}`,
++      )}`,
