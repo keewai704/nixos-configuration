@@ -21,6 +21,11 @@
     };
 
     hermes-agent.url = "github:NousResearch/hermes-agent/v2026.8.19";
+
+    hermes-webui = {
+      url = "github:nesquena/hermes-webui/exp-v0.52.260";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
   };
 
   outputs =
@@ -30,13 +35,15 @@
       mcp-servers-nix,
       agent-skills-nix,
       hermes-agent,
+      hermes-webui,
       ...
     }:
     {
       nixosConfigurations.orange = nixpkgs.lib.nixosSystem {
         system = "x86_64-linux";
-        specialArgs.hermesAgentSource = hermes-agent.outPath;
+        specialArgs.hermesAgentPackage = hermes-agent.packages.x86_64-linux.default;
         modules = [
+          hermes-webui.nixosModules.default
           ./hosts/orange/configuration.nix
           home-manager.nixosModules.home-manager
           {

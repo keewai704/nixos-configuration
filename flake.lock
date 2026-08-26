@@ -92,6 +92,27 @@
         "type": "github"
       }
     },
+    "hermes-webui": {
+      "inputs": {
+        "nixpkgs": [
+          "nixpkgs"
+        ]
+      },
+      "locked": {
+        "lastModified": 1787308413,
+        "narHash": "sha256-73Tkqe3qNR+OPiKAZG6lQvstKtP8GXUKnw4Ipj1BZwA=",
+        "owner": "nesquena",
+        "repo": "hermes-webui",
+        "rev": "cfcc39194a4cfbb6c78fe8114695a70737e17bbf",
+        "type": "github"
+      },
+      "original": {
+        "owner": "nesquena",
+        "ref": "exp-v0.52.260",
+        "repo": "hermes-webui",
+        "type": "github"
+      }
+    },
     "home-manager": {
       "inputs": {
         "nixpkgs": [
@@ -261,6 +282,7 @@
       "inputs": {
         "agent-skills-nix": "agent-skills-nix",
         "hermes-agent": "hermes-agent",
+        "hermes-webui": "hermes-webui",
         "home-manager": "home-manager_2",
         "mcp-servers-nix": "mcp-servers-nix",
         "nixpkgs": "nixpkgs_2"

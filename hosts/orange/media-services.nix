@@ -1,5 +1,5 @@
 {
-  hermesAgentSource,
+  hermesAgentPackage,
   lib,
   pkgs,
   ...
@@ -24,13 +24,7 @@ let
   hermexWebUiOrigin = "http://127.0.0.1:${toString hermexWebUiPort}";
   hermesHome = "/home/keewai/.hermes";
   hermesSecretsFile = "${hermesHome}/secrets.env";
-  hermexEnvironmentFile = "/run/hermex/webui.env";
-  hermexWebUiVersion = "0.52.260";
-  hermesAgentSourceId = builtins.substring 0 12 (builtins.baseNameOf (toString hermesAgentSource));
-  hermexStateRoot = "/home/keewai/.local/share/hermex";
-  hermexAppDir = "${hermexStateRoot}/app-${hermexWebUiVersion}-${hermesAgentSourceId}";
-  hermexCacheRoot = "/home/keewai/.cache/hermex";
-  hermexUvCacheDir = "${hermexCacheRoot}/uv";
+  hermesWebUiEnvironmentFile = "/run/hermes-webui/webui.env";
   postgresqlPackage = pkgs.postgresql_17;
   nginxProxyHeaders = ''
     proxy_set_header Host $host;
@@ -61,15 +55,15 @@ let
   # Hermex authenticates against Hermes WebUI, not the Hermes Agent dashboard
   # or its OpenAI-compatible API. Derive the WebUI password at service start so
   # the secret remains outside both the repository and the Nix store.
-  prepareHermexEnvironment = pkgs.writeShellApplication {
-    name = "prepare-hermex-environment";
+  prepareHermesWebUiEnvironment = pkgs.writeShellApplication {
+    name = "prepare-hermes-webui-environment";
     runtimeInputs = [
       pkgs.coreutils
       pkgs.gnused
     ];
     text = ''
       secrets_file=${lib.escapeShellArg hermesSecretsFile}
-      runtime_file=${lib.escapeShellArg hermexEnvironmentFile}
+      runtime_file=${lib.escapeShellArg hermesWebUiEnvironmentFile}
 
       if [ ! -r "$secrets_file" ]; then
         echo "Hermex cannot read $secrets_file" >&2
@@ -82,9 +76,9 @@ let
         exit 1
       fi
 
-      # Podman's env-file format cannot safely represent whitespace or line
-      # breaks. The generated Hermes key is URL-safe, so reject an accidental
-      # manual replacement rather than silently changing the password.
+      # Keep the generated EnvironmentFile deliberately simple. The generated
+      # Hermes key is URL-safe, so reject an accidental manual replacement
+      # rather than relying on systemd quoting rules for a secret value.
       case "$password" in
         *[!A-Za-z0-9._~-]*)
           echo "API_SERVER_KEY contains characters unsafe for an env file" >&2
@@ -545,61 +539,27 @@ in
     };
   };
 
-  virtualisation.oci-containers.containers.hermex = {
-    # Hermes WebUI v0.52.260, linux/amd64. Pin the platform manifest so a
-    # mutable registry tag cannot change the code on a later rebuild.
-    image = "ghcr.io/nesquena/hermes-webui@sha256:9d768cf801d538e0a959cef6afa7dad8688b462c9bc499c6a8c0f5c531fd94b8";
-    pull = "missing";
-
-    podman = {
-      user = "keewai";
-      sdnotify = "healthy";
-    };
-
-    # Host networking lets the WebUI query the existing loopback-only Hermes
-    # gateway. The WebUI itself also binds only to loopback, so nginx remains
-    # the sole remote entry point.
-    networks = [ "host" ];
-
-    # Start directly as the image's unprivileged account. keep-id below maps
-    # that identity to keewai on the host, including both writable bind mounts.
-    user = "1024:1024";
-
-    volumes = [
-      # The NixOS OCI unit removes its container on stop. Persist the seeded
-      # application and Python environment so an ordinary reboot stays fast
-      # and does not need PyPI. The versioned path is replaced automatically
-      # whenever either the WebUI or locked Hermes Agent source changes.
-      "${hermexAppDir}:/app"
-      "${hermexUvCacheDir}:/uv_cache"
-      # WebUI imports Hermes in-process for full chat/session support. Supply
-      # the exact source locked by this flake, read-only, as its installer
-      # expects; it stages a writable copy below /app on first start.
-      "${hermesAgentSource}:/opt/hermes:ro"
-      # Share the declarative Hermes configuration, OAuth state, and sessions.
-      "${hermesHome}:/home/hermeswebui/.hermes"
-      # Preserve host paths recorded in existing sessions and expose the same
-      # workspace used by the native Hermes service.
-      "/home/keewai:/home/keewai"
-    ];
-
-    environmentFiles = [ hermexEnvironmentFile ];
-    environment = {
-      # keep-id maps keewai's host 1000:100 identity onto the image's existing
-      # hermeswebui 1024:1024 account without changing host ownership.
-      WANTED_UID = "1024";
-      WANTED_GID = "1024";
-      HOME = "/home/hermeswebui";
-      HERMES_HOME = "/home/hermeswebui/.hermes";
-      HERMES_WEBUI_HOST = "127.0.0.1";
-      HERMES_WEBUI_PORT = "8787";
-      HERMES_WEBUI_STATE_DIR = "/home/hermeswebui/.hermes/webui";
+  # Run Hermes WebUI directly from its pinned Nix package. It uses the same
+  # host user and Hermes state as the official Home Manager service, so no
+  # container path translation or writable application/venv staging is needed.
+  services.hermes-webui = {
+    enable = true;
+    user = "keewai";
+    group = "users";
+    host = "127.0.0.1";
+    port = hermexWebUiPort;
+    stateDir = "${hermesHome}/webui";
+    hermesHome = hermesHome;
+    agent.package = hermesAgentPackage;
+    environmentFiles = [ hermesWebUiEnvironmentFile ];
+    extraEnvironment = {
+      HOME = "/home/keewai";
       HERMES_WEBUI_DEFAULT_WORKSPACE = "/home/keewai";
       HERMES_API_URL = "http://127.0.0.1:8642";
       CAMOFOX_URL = "http://127.0.0.1:9377";
 
       # Existing Home Manager-managed credentials must not be chmod'ed by the
-      # container. TLS terminates at the trusted nginx/Tailscale proxy.
+      # WebUI. TLS terminates at the trusted nginx/Tailscale proxy.
       HERMES_SKIP_CHMOD = "1";
       HERMES_WEBUI_SECURE = "1";
       HERMES_WEBUI_ALLOWED_ORIGINS = "https://orange.tail1e65cd.ts.net:8444";
@@ -607,27 +567,15 @@ in
       HERMES_WEBUI_TRUST_FORWARDED_FOR = "1";
       HERMES_WEBUI_TRUST_FORWARDED_PROTO = "1";
     };
-
-    extraOptions = [
-      "--userns=keep-id:uid=1024,gid=1024"
-      "--health-cmd=curl --fail --silent http://127.0.0.1:8787/health"
-      "--health-interval=10s"
-      "--health-start-period=600s"
-      "--health-timeout=5s"
-      "--health-retries=18"
-    ];
   };
 
   systemd = {
     tmpfiles = {
       rules = [
         "d /var/lib/vaultwarden 0700 vaultwarden vaultwarden -"
+        "d /run/hermes-webui 0700 keewai users -"
         "z ${storageRoot} 0775 keewai immich-media -"
         "d ${hermesHome}/webui 0700 keewai users -"
-        "d ${hermexStateRoot} 0700 keewai users -"
-        "d ${hermexAppDir} 0700 keewai users -"
-        "d ${hermexCacheRoot} 0700 keewai users -"
-        "d ${hermexUvCacheDir} 0700 keewai users -"
       ];
 
       # Override Immich's default 0700 mount-root rule. Existing files below
@@ -640,11 +588,20 @@ in
     };
 
     services = {
-      podman-hermex = {
-        description = "Hermes WebUI backend for the Hermex iPhone client";
-        serviceConfig.ExecStartPre = lib.mkAfter [
-          (lib.getExe prepareHermexEnvironment)
-        ];
+      # EnvironmentFile is loaded before a unit's ExecStartPre commands. Build
+      # the derived password file in a separate prerequisite unit so it exists
+      # before systemd starts preparing the WebUI process environment.
+      hermes-webui-environment = {
+        description = "Prepare the private Hermes WebUI environment";
+        before = [ "hermes-webui.service" ];
+        requiredBy = [ "hermes-webui.service" ];
+        serviceConfig = {
+          Type = "oneshot";
+          User = "keewai";
+          Group = "users";
+          UMask = "0077";
+          ExecStart = lib.getExe prepareHermesWebUiEnvironment;
+        };
       };
 
       samba-smbd = {

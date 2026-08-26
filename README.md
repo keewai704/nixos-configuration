@@ -66,10 +66,10 @@ shell history, then paste the output into Hermes One's Settings → Connection:
 sed -n 's/^API_SERVER_KEY=//p' ~/.hermes/secrets.env
 ```
 
-Hermex is a different client: it connects to the official `hermes-webui`
+Hermex is a different client: it connects to the community `hermes-webui`
 backend rather than the Hermes dashboard/API endpoint above. The backend runs
-as the rootless `podman-hermex.service`, shares the existing Hermes config and
-sessions, and is published only through Tailscale Serve at
+directly on the host as `hermes-webui.service` from its pinned Nix package,
+shares the existing Hermes config and sessions, and is published only through Tailscale Serve at
 <https://orange.tail1e65cd.ts.net:8444>. In Hermex, use:
 
 - Server URL: `https://orange.tail1e65cd.ts.net:8444`
@@ -81,15 +81,15 @@ store. The WebUI itself remains bound to `127.0.0.1:8787`, and nginx preserves
 streaming and WebSocket connections at the HTTPS endpoint. Check it with:
 
 ```console
-systemctl status podman-hermex.service
-journalctl --unit podman-hermex.service
+systemctl status hermes-webui.service
+journalctl --unit hermes-webui.service
 curl http://127.0.0.1:8787/health
 curl https://orange.tail1e65cd.ts.net:8444/health
 ```
 
-The first start pulls the pinned WebUI image and prepares its Python
-environment; later restarts reuse the versioned state under
-`~/.local/share/hermex`.
+The package is built from the pinned `exp-v0.52.260` source during the NixOS
+rebuild. Application code and its launcher are immutable Nix store paths; only
+WebUI state remains writable under `~/.hermes/webui`.
 
 The current model, browser, computer-use, web-search, reset, progress, and CLI
 toolset settings are declared in `flake.nix`. Home Manager marks the install as
