@@ -1,0 +1,13 @@
+diff --git a/dist/supervisor/Supervisor.js b/dist/supervisor/Supervisor.js
+index 60cc8a0..ef03c1c 100644
+--- a/dist/supervisor/Supervisor.js
++++ b/dist/supervisor/Supervisor.js
+@@ -289,7 +289,7 @@ export class Supervisor {
+                 ? "claude"
+                 : undefined;
+         if (!providerName) {
+-            return this.provider;
++            return this.provider ?? getProvider("codex");
+         }
+         if (this.provider?.name === providerName) {
+             return this.provider;

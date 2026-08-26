@@ -48,6 +48,14 @@ index 5288fc3..49fecaa 100644
 @@ -49 +50 @@ export class ErrorBoundary extends Component<Props, State> {
 -      const res = await fetch("/api/version");
 +      const res = await fetch(`${API_BASE}/version`);
+diff --git a/packages/client/src/components/NewSessionForm.tsx b/packages/client/src/components/NewSessionForm.tsx
+index 2a5dbda..8a8f2d1 100644
+--- a/packages/client/src/components/NewSessionForm.tsx
++++ b/packages/client/src/components/NewSessionForm.tsx
+@@ -1109 +1108,0 @@ export function NewSessionForm({
+-    hasInitializedDefaultsRef.current = true;
+@@ -1114,0 +1114 @@ export function NewSessionForm({
++    hasInitializedDefaultsRef.current = true;
 diff --git a/packages/client/src/lib/connection/WebSocketConnection.ts b/packages/client/src/lib/connection/WebSocketConnection.ts
 index 1dfa220..ca2fe4e 100644
 --- a/packages/client/src/lib/connection/WebSocketConnection.ts

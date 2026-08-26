@@ -79,6 +79,8 @@ buildNpmPackage {
   nodejs = nodejs_24;
   npmDepsHash = "sha256-y+kK6er2qy4NKu7lCqt1Ms1f6XgZyJVZ10+5UcqXm6I=";
 
+  patches = [ ./codex-default-provider.patch ];
+
   postPatch = ''
     cp ${./package-lock.json} package-lock.json
   '';

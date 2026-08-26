@@ -64,7 +64,8 @@ services.
 Yep Anywhere v0.7.0 is packaged from a fixed npm release and starts
 automatically as `yepanywhere.service`. It runs as `keewai`, so it discovers
 the existing authenticated Codex CLI and compatible session history without a
-second sign-in. Its state is stored in `~/.yep-anywhere`.
+second sign-in. New sessions default to Codex when no provider is selected.
+Its state is stored in `~/.yep-anywhere`.
 
 The application backend remains loopback-only on port 3400. Its client is
 rebuilt with subpath-aware API, WebSocket, asset, router, and service-worker
