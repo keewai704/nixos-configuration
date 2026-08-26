@@ -1,13 +1,27 @@
 # Repository workflow
 
-For every change that can affect the NixOS configuration on `orange`:
+For every task that changes this repository, complete this workflow before
+ending the work or reporting it as complete:
 
-1. Run the formatting, static-analysis, evaluation, and build checks appropriate to the change.
-2. Run `sudo nixos-rebuild test --flake .#orange`.
-3. Verify networking and every affected service on the live system.
-4. Only when those checks pass, run `sudo nixos-rebuild switch --flake .#orange` and verify the services again.
+1. Run the formatting, static-analysis, evaluation, and build checks appropriate
+   to the change.
+2. Commit every intended change for the task. Do not include unrelated user
+   changes, and confirm that no task-related change remains uncommitted.
+3. Run `sudo nixos-rebuild test --flake .#orange` against the committed state.
+4. Verify networking and every affected service on the live system.
+5. Only when the test and health checks pass, run
+   `sudo nixos-rebuild switch --flake .#orange`.
+6. Verify networking and every affected service again after `switch`, and
+   confirm that the running system and boot-default system match the tested
+   committed configuration.
 
-Do not run `switch` after a failed test or health check. Always report whether the change was applied to the running system and persisted as the boot default.
+The commit, successful `test`, successful `switch`, and post-switch
+verification are mandatory completion gates, including for repository changes
+that do not alter the evaluated NixOS configuration. If a test or health check
+fails, do not run `switch` and do not report the task as complete; fix the
+problem and repeat the workflow, or report the work as blocked. Always report
+whether the change was committed, applied to the running system, and persisted
+as the boot default.
 
 ## Publishing web services on `orange`
 
