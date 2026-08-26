@@ -1,81 +1,114 @@
-{ ... }:
+{ lib, pkgs, ... }:
 
 let
   camofoxStateDir = "/home/keewai/.local/share/camofox";
-in
-{
-  # Run the browser as an unprivileged, lingering user so the service remains
-  # available to Hermes without granting the container root on the host.
-  users.users.keewai = {
-    uid = 1000;
-    linger = true;
-    subUidRanges = [
-      {
-        startUid = 100000;
-        count = 65536;
-      }
-    ];
-    subGidRanges = [
-      {
-        startGid = 100000;
-        count = 65536;
-      }
-    ];
+  camoufoxCacheDir = "${camofoxStateDir}/cache/camoufox";
+
+  camofoxPackage = pkgs.callPackage ./camofox-package.nix {
+    websockify = pkgs.python3Packages.websockify;
   };
 
+  healthCheck = pkgs.writeShellScript "camofox-health-check" ''
+    for attempt in $(seq 1 60); do
+      if ${lib.getExe pkgs.curl} --fail --silent --show-error \
+        http://127.0.0.1:9377/health >/dev/null; then
+        exit 0
+      fi
+      sleep 1
+    done
+    echo "Camofox did not become healthy within 60 seconds" >&2
+    exit 1
+  '';
+in
+{
   systemd.tmpfiles.rules = [
     "d ${camofoxStateDir} 0700 keewai users -"
+    "d ${camofoxStateDir}/cache 0700 keewai users -"
+    "d ${camoufoxCacheDir} 0700 keewai users -"
+    "d ${camofoxStateDir}/cookies 0700 keewai users -"
+    "d ${camofoxStateDir}/profiles 0700 keewai users -"
+    "d ${camofoxStateDir}/traces 0700 keewai users -"
+    "d ${camofoxStateDir}/uploads 0700 keewai users -"
   ];
 
-  virtualisation.oci-containers = {
-    backend = "podman";
-    containers.camofox = {
-      # Camofox v1.14.0, linux/amd64. The digest prevents a mutable registry
-      # tag from changing the executable code on a later rebuild.
-      image = "ghcr.io/jo-inc/camofox-browser@sha256:86c79eed8a6b3a78859f73bc70d6003c5566b85e969354ec454524b28197ffce";
-      pull = "missing";
+  systemd.services.camofox = {
+    description = "Camofox Browser (native Nix package)";
+    documentation = [ "https://github.com/jo-inc/camofox-browser" ];
+    wantedBy = [ "multi-user.target" ];
+    wants = [ "network-online.target" ];
+    after = [
+      "network-online.target"
+      "systemd-tmpfiles-setup.service"
+    ];
 
-      podman = {
-        user = "keewai";
-        sdnotify = "healthy";
-      };
+    environment = {
+      HOME = camofoxStateDir;
+      XDG_CACHE_HOME = "${camofoxStateDir}/cache";
+      CAMOUFOX_CACHE_DIR = camoufoxCacheDir;
+      CAMOUFOX_INSTALL_DIR = camoufoxCacheDir;
 
-      ports = [
-        # Both the control API and the optional live browser view remain local.
-        # Use an SSH tunnel when noVNC access is needed remotely.
-        "127.0.0.1:9377:9377"
-        "127.0.0.1:6080:6080"
+      CAMOFOX_PORT = "9377";
+      CAMOFOX_BIND_HOST = "127.0.0.1";
+      CAMOFOX_COOKIES_DIR = "${camofoxStateDir}/cookies";
+      CAMOFOX_PROFILE_DIR = "${camofoxStateDir}/profiles";
+      CAMOFOX_TRACES_DIR = "${camofoxStateDir}/traces";
+      CAMOFOX_UPLOADS_DIR = "${camofoxStateDir}/uploads";
+      CAMOFOX_CRASH_REPORT_ENABLED = "false";
+
+      # Keep startup reproducible: do not fetch the mutable default UBO addon.
+      CAMOFOX_DISABLE_DEFAULT_ADDONS = "true";
+
+      # Keep Camoufox and x11vnc available for on-demand noVNC connections.
+      # The packaged v1.14.0 fix makes 0 honor upstream's documented "never".
+      BROWSER_IDLE_TIMEOUT_MS = "0";
+
+      ENABLE_VNC = "1";
+      NOVNC_PORT = "6080";
+      VNC_BIND = "127.0.0.1";
+      VNC_RESOLUTION = "1920x1080";
+    };
+
+    serviceConfig = {
+      Type = "exec";
+      User = "keewai";
+      Group = "users";
+      ExecStart = lib.getExe camofoxPackage;
+      ExecStartPost = healthCheck;
+      Restart = "on-failure";
+      RestartSec = "5s";
+      TimeoutStartSec = "90s";
+      TimeoutStopSec = "30s";
+      KillMode = "mixed";
+      UMask = "0077";
+      LimitNOFILE = 65536;
+
+      RuntimeDirectory = "camofox";
+      RuntimeDirectoryMode = "0700";
+
+      NoNewPrivileges = true;
+      # Xvfb and x11vnc must share the host's /tmp/.X11-unix socket directory.
+      ProtectSystem = "strict";
+      ProtectHome = "read-only";
+      ReadWritePaths = [
+        camofoxStateDir
+        # Camoufox creates launch shims and Xvfb creates X11 sockets here.
+        "/tmp"
       ];
-
-      volumes = [ "${camofoxStateDir}:/data" ];
-
-      environment = {
-        CAMOFOX_PORT = "9377";
-        # The container must listen on its own network interface; the host-side
-        # port publication above still restricts access to loopback.
-        CAMOFOX_BIND_HOST = "0.0.0.0";
-
-        CAMOFOX_COOKIES_DIR = "/data/cookies";
-        CAMOFOX_PROFILE_DIR = "/data/profiles";
-        CAMOFOX_TRACES_DIR = "/data/traces";
-        CAMOFOX_UPLOADS_DIR = "/data/uploads";
-
-        CAMOFOX_CRASH_REPORT_ENABLED = "false";
-        MAX_OLD_SPACE_SIZE = "512";
-
-        ENABLE_VNC = "1";
-        NOVNC_PORT = "6080";
-        VNC_BIND = "0.0.0.0";
-        VNC_RESOLUTION = "1920x1080";
-      };
-
-      extraOptions = [
-        "--shm-size=2g"
-        "--health-cmd=curl --fail --silent http://127.0.0.1:9377/health"
-        "--health-interval=10s"
-        "--health-start-period=60s"
-        "--health-timeout=5s"
-        "--health-retries=12"
+      ProtectClock = true;
+      ProtectControlGroups = true;
+      ProtectHostname = true;
+      ProtectKernelLogs = true;
+      ProtectKernelModules = true;
+      ProtectKernelTunables = true;
+      RestrictRealtime = true;
+      RestrictSUIDSGID = true;
+      LockPersonality = true;
+      CapabilityBoundingSet = "";
+      AmbientCapabilities = "";
+      RestrictAddressFamilies = [
+        "AF_UNIX"
+        "AF_INET"
+        "AF_INET6"
       ];
     };
   };

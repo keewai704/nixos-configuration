@@ -5,6 +5,7 @@
     ./hardware-configuration.nix
     ./camofox.nix
     ./media-services.nix
+    ./minecraft-server.nix
   ];
 
   boot = {

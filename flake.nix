@@ -20,12 +20,6 @@
       inputs.home-manager.follows = "home-manager";
     };
 
-    hermes-agent.url = "github:NousResearch/hermes-agent/v2026.8.19";
-
-    hermes-webui = {
-      url = "github:nesquena/hermes-webui/exp-v0.52.260";
-      inputs.nixpkgs.follows = "nixpkgs";
-    };
   };
 
   outputs =
@@ -34,8 +28,6 @@
       home-manager,
       mcp-servers-nix,
       agent-skills-nix,
-      hermes-agent,
-      hermes-webui,
       ...
     }:
     let
@@ -44,9 +36,7 @@
     {
       nixosConfigurations.orange = nixpkgs.lib.nixosSystem {
         inherit system;
-        specialArgs.hermesAgentPackage = hermes-agent.packages.${system}.default;
         modules = [
-          hermes-webui.nixosModules.default
           ./hosts/orange/configuration.nix
           home-manager.nixosModules.home-manager
           {
@@ -56,39 +46,13 @@
 
               users.keewai =
                 { pkgs, ... }:
-
                 let
-                  hermesHome = "/home/keewai/.hermes";
-                  hermesSecretsFile = "${hermesHome}/secrets.env";
-                  hermesBasePackage = hermes-agent.packages.${pkgs.stdenv.hostPlatform.system}.default;
-                  hindsightPostgres = pkgs.postgresql_18.withPackages (p: [ p.pgvector ]);
-
-                  # Hermes rewrites URLs present in index.html for
-                  # X-Forwarded-Prefix, but Vite's lazy-chunk preloader still
-                  # defaults to root-relative /assets/* URLs. Build the web
-                  # client with a relative base so every lazy route resolves
-                  # beside the entry module under /hermes/assets/.
-                  hermesPatchedWeb = hermesBasePackage.hermesWeb.overrideAttrs (old: {
-                    postPatch = (old.postPatch or "") + ''
-                      substituteInPlace web/vite.config.ts \
-                        --replace-fail \
-                          'export default defineConfig({' \
-                          'export default defineConfig({ base: "./",'
-                    '';
-                  });
-
-                  hermesPackage = hermesBasePackage.overrideAttrs (old: {
-                    postInstall = (old.postInstall or "") + ''
-                      rm "$out/share/hermes-agent/web_dist"
-                      ln -s ${hermesPatchedWeb} "$out/share/hermes-agent/web_dist"
-                    '';
-                  });
+                  ponytailMcp = pkgs.callPackage ./pkgs/ponytail-mcp/package.nix { };
                 in
                 {
                   imports = [
                     mcp-servers-nix.homeManagerModules.default
                     agent-skills-nix.homeManagerModules.default
-                    hermes-agent.homeManagerModules.default
                   ];
 
                   home = {
@@ -98,144 +62,90 @@
                     sessionVariables.CAMOFOX_URL = "http://127.0.0.1:9377";
                   };
 
-                  # Keep the browser endpoint available to other user services.
+                  # Keep the browser endpoint available to user services.
                   systemd.user.sessionVariables.CAMOFOX_URL = "http://127.0.0.1:9377";
-
-                  # Read runtime secrets directly as process environment too.
-                  # environmentFiles below also keeps the interactive Hermes
-                  # CLI's .env in sync, while these unit directives ensure a
-                  # secret rotation takes effect on the next service restart
-                  # even when the Home Manager generation itself is unchanged.
-                  systemd.user.services.hermes-agent.Service.EnvironmentFile = hermesSecretsFile;
-                  systemd.user.services.hermes-backend.Service.EnvironmentFile = hermesSecretsFile;
-
-                  systemd.user.services.hindsight-postgres = {
-                    Unit.Description = "PostgreSQL for Hindsight memory";
-                    Service = {
-                      ExecStart = "${hindsightPostgres}/bin/postgres -D /home/keewai/.local/share/hindsight-postgres -h 127.0.0.1 -p 55432 -k /home/keewai/.local/share/hindsight-postgres";
-                      Restart = "on-failure";
-                      RestartSec = 5;
-                    };
-                    Install.WantedBy = [ "default.target" ];
-                  };
-
-                  systemd.user.services.hindsight-memory = {
-                    Unit = {
-                      Description = "Hindsight temporal knowledge-graph memory";
-                      After = [ "hindsight-postgres.service" ];
-                      Requires = [ "hindsight-postgres.service" ];
-                    };
-                    Service = {
-                      Environment = [
-                        "LD_LIBRARY_PATH=${
-                          pkgs.lib.makeLibraryPath [
-                            pkgs.stdenv.cc.cc.lib
-                            pkgs.zlib
-                          ]
-                        }"
-                        "HINDSIGHT_API_LLM_PROVIDER=openai-codex"
-                        "HINDSIGHT_API_LLM_MODEL=gpt-5.6-sol"
-                        "HINDSIGHT_API_EMBEDDINGS_PROVIDER=onnx"
-                        "HINDSIGHT_API_EMBEDDINGS_ONNX_MODEL_ID=intfloat/multilingual-e5-small"
-                        "HINDSIGHT_API_EMBEDDINGS_ONNX_DIMENSIONS=384"
-                        "HINDSIGHT_API_RERANKER_PROVIDER=rrf"
-                        "HINDSIGHT_API_DATABASE_URL=postgresql://keewai@127.0.0.1:55432/hindsight"
-                      ];
-                      ExecStart = "/home/keewai/.local/share/uv/tools/hindsight-embed/bin/hindsight-api --host 127.0.0.1 --port 8888";
-                      Restart = "on-failure";
-                      RestartSec = 5;
-                    };
-                    Install.WantedBy = [ "default.target" ];
-                  };
-
-                  # Hermes configuration migrated from ~/.hermes/config.yaml.
-                  # OAuth credentials remain in the private runtime auth.json;
-                  # secrets must never be placed in settings or environment.
-                  services.hermes-agent = {
-                    enable = true;
-                    package = hermesPackage;
-                    installPackage = true;
-                    hermesHome = hermesHome;
-                    workingDirectory = "/home/keewai";
-
-                    gateway.enable = true;
-                    backend = {
-                      mode = "dashboard";
-                      host = "127.0.0.1";
-                      port = 9119;
-                      extraArgs = [ "--skip-build" ];
-                    };
-
-                    # Secrets remain outside the Nix store. API_SERVER_KEY and
-                    # HERMES_DASHBOARD_SESSION_TOKEN intentionally share one
-                    # strong value because Hermes One uses it for the legacy
-                    # API and dashboard transports, respectively.
-                    environmentFiles = [ hermesSecretsFile ];
-                    environment.CAMOFOX_URL = "http://127.0.0.1:9377";
-
-                    settings = {
-                      agent.max_turns = 150;
-                      browser = {
-                        cloud_provider = "camofox";
-                        camofox.managed_persistence = false;
-                      };
-                      computer_use.backend = "cua";
-                      compression.codex_responses_native = true;
-                      display.tool_progress = "all";
-                      image_gen = {
-                        model = "gpt-image-2-high";
-                        provider = "openai-codex";
-                      };
-                      model = {
-                        base_url = "https://chatgpt.com/backend-api/codex";
-                        default = "gpt-5.6-sol";
-                        provider = "openai-codex";
-                      };
-                      memory.provider = "hindsight";
-                      platforms.api_server = {
-                        enabled = true;
-                        extra = {
-                          host = "127.0.0.1";
-                          port = 8642;
-                        };
-                      };
-                      platform_toolsets.cli = [
-                        "bfl"
-                        "browser"
-                        "clarify"
-                        "code_execution"
-                        "computer_use"
-                        "cronjob"
-                        "delegation"
-                        "file"
-                        "image_gen"
-                        "memory"
-                        "session_search"
-                        "skills"
-                        "terminal"
-                        "todo"
-                        "tts"
-                        "vision"
-                        "web"
-                      ];
-                      session_reset.mode = "none";
-                      web = {
-                        backend = "parallel";
-                        provider_tier.parallel = "free";
-                      };
-                    };
-                  };
 
                   # MCP servers declared under `mcp-servers.programs` are shared
                   # with MCP-aware clients through Home Manager's registry.
                   programs.mcp.enable = true;
-                  mcp-servers.programs.nixos = {
+
+                  # Codex has no native LSP client. Give it semantic code tools
+                  # through Serena's MCP server while retaining the separately
+                  # pinned Codex CLI package in the user's Nix profile.
+                  programs.codex = {
                     enable = true;
-                    env = {
-                      MCP_NIXOS_TRANSPORT = "stdio";
-                      FASTMCP_CHECK_FOR_UPDATES = "off";
-                      FASTMCP_SHOW_SERVER_BANNER = "false";
-                      FASTMCP_ENV_FILE = "/dev/null";
+                    package = null;
+                    enableMcpIntegration = true;
+
+                    # Preserve the existing user-level Codex configuration when
+                    # Home Manager takes ownership of config.toml.
+                    settings = {
+                      model = "gpt-5.6-sol";
+                      model_reasoning_effort = "max";
+                      service_tier = "priority";
+                      approval_policy = "never";
+                      approvals_reviewer = "user";
+                      sandbox_mode = "danger-full-access";
+
+                      marketplaces.openai-bundled = {
+                        source_type = "local";
+                        source = "/home/keewai/.codex/.tmp/bundled-marketplaces/openai-bundled";
+                      };
+
+                      plugins = {
+                        "sites@openai-bundled".enabled = true;
+                        "visualize@openai-bundled".enabled = true;
+                      };
+
+                      projects."/home/keewai/nixos-configuration".trust_level = "trusted";
+                    };
+                  };
+
+                  # The current config is an unmanaged regular file. Replace it
+                  # only after all of its settings above have been preserved.
+                  home.file.".codex/config.toml".force = true;
+
+                  mcp-servers = {
+                    programs = {
+                      context7.enable = true;
+
+                      nixos = {
+                        enable = true;
+                        env = {
+                          MCP_NIXOS_TRANSPORT = "stdio";
+                          FASTMCP_CHECK_FOR_UPDATES = "off";
+                          FASTMCP_SHOW_SERVER_BANNER = "false";
+                          FASTMCP_ENV_FILE = "/dev/null";
+                        };
+                      };
+
+                      serena = {
+                        enable = true;
+                        context = "codex";
+                        enableWebDashboard = false;
+                        args = [ "--project-from-cwd" ];
+                        extraPackages = [
+                          pkgs.nixd
+                          pkgs.nixfmt
+                        ];
+                        env = {
+                          FASTMCP_ENV_FILE = "/dev/null";
+                          SERENA_USAGE_REPORTING = "false";
+                        };
+                      };
+
+                      textlint = {
+                        enable = true;
+                        settings.rules = { };
+                      };
+                    };
+
+                    # Ponytail is not currently packaged by mcp-servers-nix;
+                    # register its pinned local package through the module's
+                    # freeform server settings.
+                    settings.servers.ponytail = {
+                      command = "${ponytailMcp}/bin/ponytail-mcp";
+                      env.PONYTAIL_DEFAULT_MODE = "full";
                     };
                   };
                 };
