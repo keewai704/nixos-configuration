@@ -145,7 +145,11 @@
                         fi
                         chmod 600 "$mutable_config"
 
-                        exec 9>"$mutable_config.lock"
+                        # Serialize only the config update.  Do not let a
+                        # long-running Codex process inherit and retain this
+                        # lock, or concurrent clients such as Yep Anywhere
+                        # cannot even run `codex --version`.
+                        exec 9>"$mutable_config.update.lock"
                         flock 9
                         export CODEX_TRUST_DIR="$trust_dir"
                         export CODEX_TRUST_ROOT="$trust_root"
@@ -157,6 +161,7 @@
                             "$mutable_config"
                         fi
 
+                        exec 9>&-
                         exec "$real_codex" "$@"
                       '';
                     };
