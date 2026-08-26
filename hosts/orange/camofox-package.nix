@@ -8,8 +8,6 @@
   makeWrapper,
   unzip,
   nodejs,
-  python3,
-  pkg-config,
   gtk3,
   dbus-glib,
   libXt,
@@ -153,18 +151,26 @@ buildNpmPackage {
 
   npmDepsHash = "sha256-J3ggx9bAFClH/fnIQ21gzw66LNFrRFah7K5iwxj/b9I=";
   npmDepsFetcherVersion = 2;
-  makeCacheWritable = true;
   npmFlags = [ "--ignore-scripts" ];
   dontBuild = true;
-  dontNpmBuild = true;
 
-  nativeBuildInputs = [
-    makeWrapper
-    pkg-config
-    python3
-  ];
+  nativeBuildInputs = [ makeWrapper ];
 
   postPatch = ''
+    # Let the service keep the lightweight REST/noVNC frontends warm without
+    # launching Camoufox until an API or VNC request actually needs it.
+    substituteInPlace lib/config.js \
+      --replace-fail \
+        '    browserIdleTimeoutMs: Number.isFinite(browserIdleTimeoutMs) ? browserIdleTimeoutMs : 300000,' \
+        $'    browserPrewarm: process.env.CAMOFOX_BROWSER_PREWARM !== "false",\n    browserIdleTimeoutMs: Number.isFinite(browserIdleTimeoutMs) ? browserIdleTimeoutMs : 300000,'
+    substituteInPlace server.js \
+      --replace-fail \
+        '  // Pre-warm browser' \
+        $'  if (CONFIG.browserPrewarm) {\n    // Pre-warm browser' \
+      --replace-fail \
+        '  // Idle self-shutdown removed -- Fly manages machine lifecycle via fly.toml.' \
+        $'  }\n  // Idle self-shutdown removed -- Fly manages machine lifecycle via fly.toml.'
+
     # Upstream v1.14.0 documents 0 as "never", but schedules a zero-delay
     # shutdown. Keep the browser/X11/VNC backend alive when explicitly disabled.
     substituteInPlace server.js \
@@ -174,9 +180,20 @@ buildNpmPackage {
     substituteInPlace plugins/vnc/vnc-watcher.sh \
       --replace-fail 'NOVNC_DIR="/usr/share/novnc"' \
         'NOVNC_DIR="${novnc}/share/webapps/novnc"'
-    substituteInPlace camofox.config.json \
-      --replace-fail '"vnc": { "enabled": false' \
-        '"vnc": { "enabled": true'
+    substituteInPlace plugins/vnc/vnc-launcher.js \
+      --replace-fail \
+        '    NOVNC_PORT: novncPort,' \
+        $'    NOVNC_PORT: novncPort,\n    NOVNC_TARGET_PORT: env.NOVNC_TARGET_PORT,'
+    substituteInPlace plugins/vnc/vnc-watcher.sh \
+      --replace-fail \
+        'NOVNC_PORT="''${NOVNC_PORT:-6080}"' \
+        $'NOVNC_PORT="''${NOVNC_PORT:-6080}"\nNOVNC_TARGET_PORT="''${NOVNC_TARGET_PORT:-$VNC_PORT}"' \
+      --replace-fail \
+        'log "Starting noVNC (websockify) on $VNC_BIND:$NOVNC_PORT -> 127.0.0.1:$VNC_PORT"' \
+        'log "Starting noVNC (websockify) on $VNC_BIND:$NOVNC_PORT -> 127.0.0.1:$NOVNC_TARGET_PORT"' \
+      --replace-fail \
+        'websockify --web "$NOVNC_DIR" "$VNC_BIND:$NOVNC_PORT" "127.0.0.1:$VNC_PORT" >/tmp/camofox-novnc.log 2>&1 &' \
+        'websockify --web "$NOVNC_DIR" "$VNC_BIND:$NOVNC_PORT" "127.0.0.1:$NOVNC_TARGET_PORT" >/tmp/camofox-novnc.log 2>&1 &'
   '';
 
   installPhase = ''
@@ -185,10 +202,6 @@ buildNpmPackage {
     mkdir -p "$out/bin" "$out/lib/camofox-browser"
 
     npm prune --omit=dev
-    npm rebuild better-sqlite3 --build-from-source --offline
-    find node_modules/better-sqlite3/build/Release -mindepth 1 \
-      ! -name better_sqlite3.node \
-      -exec rm -rf {} +
 
     cp -r \
       LICENSE \
@@ -204,6 +217,9 @@ buildNpmPackage {
       scripts \
       server.js \
       "$out/lib/camofox-browser/"
+
+    ln -s "$out/lib/camofox-browser/mcp/server.mjs" \
+      "$out/bin/camofox-browser-mcp"
 
     makeWrapper ${lib.getExe nodejs} "$out/bin/camofox-browser" \
       --add-flags "--max-old-space-size=512 $out/lib/camofox-browser/server.js" \
@@ -228,10 +244,6 @@ buildNpmPackage {
 
     runHook postInstall
   '';
-
-  passthru = {
-    inherit camoufox;
-  };
 
   meta = {
     description = "Anti-detection browser server for AI agents";

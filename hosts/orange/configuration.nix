@@ -41,27 +41,9 @@
 
   time.timeZone = "Asia/Tokyo";
 
-  i18n = {
-    defaultLocale = "ja_JP.UTF-8";
-    extraLocaleSettings = {
-      LC_ADDRESS = "ja_JP.UTF-8";
-      LC_IDENTIFICATION = "ja_JP.UTF-8";
-      LC_MEASUREMENT = "ja_JP.UTF-8";
-      LC_MONETARY = "ja_JP.UTF-8";
-      LC_NAME = "ja_JP.UTF-8";
-      LC_NUMERIC = "ja_JP.UTF-8";
-      LC_PAPER = "ja_JP.UTF-8";
-      LC_TELEPHONE = "ja_JP.UTF-8";
-      LC_TIME = "ja_JP.UTF-8";
-    };
-  };
+  i18n.defaultLocale = "ja_JP.UTF-8";
 
   services = {
-    xserver.xkb = {
-      layout = "us";
-      variant = "";
-    };
-
     openssh = {
       enable = true;
       openFirewall = false;
@@ -114,8 +96,6 @@
       max-free = 10 * 1024 * 1024 * 1024;
     };
   };
-
-  nixpkgs.config.allowUnfree = true;
 
   system.stateVersion = "26.05";
 }

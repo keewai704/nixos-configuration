@@ -19,9 +19,7 @@
       "sd_mod"
       "sdhci_pci"
     ];
-    initrd.kernelModules = [ ];
     kernelModules = [ "kvm-intel" ];
-    extraModulePackages = [ ];
   };
 
   fileSystems = {

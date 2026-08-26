@@ -13,13 +13,6 @@
       url = "github:natsukium/mcp-servers-nix";
       inputs.nixpkgs.follows = "nixpkgs";
     };
-
-    agent-skills-nix = {
-      url = "github:Kyure-A/agent-skills-nix";
-      inputs.nixpkgs.follows = "nixpkgs";
-      inputs.home-manager.follows = "home-manager";
-    };
-
   };
 
   outputs =
@@ -27,15 +20,16 @@
       nixpkgs,
       home-manager,
       mcp-servers-nix,
-      agent-skills-nix,
       ...
     }:
     let
       system = "x86_64-linux";
+      camofoxSharedUserId = "codex";
     in
     {
       nixosConfigurations.orange = nixpkgs.lib.nixosSystem {
         inherit system;
+        specialArgs = { inherit camofoxSharedUserId; };
         modules = [
           ./hosts/orange/configuration.nix
           home-manager.nixosModules.home-manager
@@ -47,17 +41,17 @@
               users.keewai =
                 { pkgs, ... }:
                 let
+                  camofoxPackage = pkgs.callPackage ./hosts/orange/camofox-package.nix {
+                    websockify = pkgs.python3Packages.websockify;
+                  };
                   ponytailMcp = pkgs.callPackage ./pkgs/ponytail-mcp/package.nix { };
                 in
                 {
                   imports = [
                     mcp-servers-nix.homeManagerModules.default
-                    agent-skills-nix.homeManagerModules.default
                   ];
 
                   home = {
-                    username = "keewai";
-                    homeDirectory = "/home/keewai";
                     stateVersion = "26.05";
                     sessionVariables.CAMOFOX_URL = "http://127.0.0.1:9377";
                   };
@@ -101,10 +95,6 @@
                     };
                   };
 
-                  # The current config is an unmanaged regular file. Replace it
-                  # only after all of its settings above have been preserved.
-                  home.file.".codex/config.toml".force = true;
-
                   mcp-servers = {
                     programs = {
                       context7.enable = true;
@@ -133,19 +123,25 @@
                           SERENA_USAGE_REPORTING = "false";
                         };
                       };
-
-                      textlint = {
-                        enable = true;
-                        settings.rules = { };
-                      };
                     };
 
-                    # Ponytail is not currently packaged by mcp-servers-nix;
-                    # register its pinned local package through the module's
-                    # freeform server settings.
-                    settings.servers.ponytail = {
-                      command = "${ponytailMcp}/bin/ponytail-mcp";
-                      env.PONYTAIL_DEFAULT_MODE = "full";
+                    # These local packages are not currently provided by
+                    # mcp-servers-nix, so register them through its freeform
+                    # server settings.
+                    settings.servers = {
+                      camofox-browser = {
+                        command = "${camofoxPackage}/bin/camofox-browser-mcp";
+                        env = {
+                          CAMOFOX_BASE_URL = "http://127.0.0.1:9377";
+                          CAMOFOX_USER_ID = camofoxSharedUserId;
+                          CAMOFOX_SESSION_KEY = "default";
+                        };
+                      };
+
+                      ponytail = {
+                        command = "${ponytailMcp}/bin/ponytail-mcp";
+                        env.PONYTAIL_DEFAULT_MODE = "full";
+                      };
                     };
                   };
                 };

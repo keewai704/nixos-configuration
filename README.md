@@ -5,40 +5,19 @@ host.
 
 ## Agent tooling
 
-The flake pins and loads both `mcp-servers-nix` and `agent-skills-nix` through
-Home Manager for the `keewai` user. The shared MCP registry is enabled and
-Codex consumes it through `programs.codex.enableMcpIntegration`. No third-party
-skills are installed until they are explicitly selected. MCP servers are
-launched on demand rather than as persistent services.
+The flake loads `mcp-servers-nix` through Home Manager for the `keewai` user.
+Codex consumes the shared MCP registry through
+`programs.codex.enableMcpIntegration`; Camofox Browser, Context7, NixOS,
+Serena, and Ponytail servers are launched on demand rather than as persistent
+services.
 
-The enabled NixOS MCP server is declared in the
-`home-manager.users.keewai` module in `flake.nix`:
-
-```nix
-mcp-servers.programs.nixos = {
-  enable = true;
-  env = {
-    MCP_NIXOS_TRANSPORT = "stdio";
-    FASTMCP_CHECK_FOR_UPDATES = "off";
-    FASTMCP_SHOW_SERVER_BANNER = "false";
-    FASTMCP_ENV_FILE = "/dev/null";
-  };
-};
-```
-
-These environment settings keep the server on local stdio, disable FastMCP's
-update check and banner, and prevent loading settings from a project `.env`.
-
-Codex receives LSP-backed semantic code tools through Serena. Serena starts in
-the current Git workspace, auto-detects the project language, and has `nixd`
-on its private `PATH` for Nix files. `.serena/project.yml` pins this repository
-to the Nix language server, and `.serena/nixd.json` supplies flake-aware NixOS
-and Home Manager option sets. `nixfmt` is available to the same LSP wrapper.
-The Serena dashboard and usage reporting are disabled. Codex itself remains
-installed by the separately pinned user profile (`programs.codex.package =
-null`); Home Manager manages its `config.toml`, including the shared MCP
-entries, while preserving the existing model, approval, plugin, and
-project-trust settings.
+The NixOS server is restricted to local stdio, with update checks, the startup
+banner, and project `.env` loading disabled. Serena starts in the current Git
+workspace with `nixd` and `nixfmt` on its private `PATH`; its dashboard and
+usage reporting are disabled. Codex itself remains installed by the separately
+pinned user profile (`programs.codex.package = null`). Home Manager manages its
+`config.toml`, including the shared MCP entries and the existing model,
+approval, plugin, and project-trust settings.
 
 After activation, verify the integration with:
 
@@ -46,10 +25,6 @@ After activation, verify the integration with:
 codex mcp get serena
 codex doctor --summary
 ```
-
-To manage skills, add a pinned skill source as a flake input, select skills
-under `programs.agent-skills`, and enable only the desired target. Existing
-non-managed target directories are deliberately not taken over automatically.
 
 ### Camofox browser
 
@@ -64,6 +39,13 @@ all backend listeners remain loopback-only:
 Tailnet clients can open the nginx-proxied noVNC view at
 <https://orange.tail1e65cd.ts.net/browser>; it redirects to the viewer and
 connects automatically.
+
+The REST server and noVNC frontend start at boot, but Camoufox, Xvfb, and
+x11vnc remain stopped until the first noVNC WebSocket connection or Codex
+browser tool call. A noVNC connection creates an idempotent `codex`/`default`
+browser session before its RFB stream is forwarded. The Codex MCP adapter uses
+that same user and session key, so `camofox_list_tabs` can discover and operate
+the tab visible in noVNC (and vice versa).
 
 `CAMOFOX_URL` is declared through Home Manager for interactive shells and user
 services.

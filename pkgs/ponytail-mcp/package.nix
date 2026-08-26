@@ -40,11 +40,17 @@ buildNpmPackage (finalAttrs: {
   installPhase = ''
     runHook preInstall
 
-    mkdir -p "$out/bin" "$out/lib/ponytail/ponytail-mcp"
+    mkdir -p \
+      "$out/bin" \
+      "$out/lib/ponytail/hooks" \
+      "$out/lib/ponytail/ponytail-mcp" \
+      "$out/lib/ponytail/skills/ponytail"
     cp -r index.js instructions.js node_modules package.json \
       "$out/lib/ponytail/ponytail-mcp/"
     cp ../package.json "$out/lib/ponytail/package.json"
-    cp -r ../hooks ../skills "$out/lib/ponytail/"
+    cp ../hooks/ponytail-config.js ../hooks/ponytail-instructions.js \
+      "$out/lib/ponytail/hooks/"
+    cp ../skills/ponytail/SKILL.md "$out/lib/ponytail/skills/ponytail/"
 
     makeWrapper ${lib.getExe nodejs_24} "$out/bin/ponytail-mcp" \
       --add-flags "$out/lib/ponytail/ponytail-mcp/index.js"

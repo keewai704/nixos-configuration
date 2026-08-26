@@ -13,7 +13,7 @@ let
   vaultwardenBackupRoot = "${storageRoot}/server/backups/vaultwarden-nixos";
   tailnetHostname = "orange.tail1e65cd.ts.net";
   nginxPort = 8000;
-  noVncViewerUrl = "https://${tailnetHostname}/browser/vnc.html?autoconnect=true&resize=scale&path=browser/websockify";
+  noVncViewerUrl = "https://${tailnetHostname}/browser/vnc.html?autoconnect=true&reconnect=true&reconnect_delay=1000&resize=scale&path=browser/websockify";
   postgresqlPackage = pkgs.postgresql_17;
   nginxProxyHeaders = ''
     proxy_set_header Host $host;
@@ -27,11 +27,9 @@ let
   importImmichDatabase = pkgs.writeShellApplication {
     name = "import-existing-immich-database";
     runtimeInputs = [
-      postgresqlPackage
       pkgs.coreutils
       pkgs.findutils
       pkgs.gzip
-      pkgs.util-linux
     ];
     text = ''
       immich_database="immich"
@@ -177,18 +175,15 @@ in
   services = {
     samba = {
       enable = true;
-      openFirewall = false;
       winbindd.enable = false;
       settings = {
         global = {
           "map to guest" = "Bad User";
-          "server role" = "standalone server";
         };
 
         storage = {
           path = storageRoot;
           comment = "Orange HDD storage";
-          browseable = "yes";
           "guest ok" = "yes";
           "guest only" = "yes";
           "read only" = "no";
@@ -197,7 +192,6 @@ in
           "create mask" = "0664";
           "directory mask" = "0775";
           "veto files" = "/server/lost+found/";
-          "delete veto files" = "no";
         };
       };
     };
@@ -206,7 +200,6 @@ in
       enable = true;
       host = "127.0.0.1";
       port = 2283;
-      openFirewall = false;
       mediaLocation = immichMediaRoot;
       group = "immich-media";
 
@@ -254,7 +247,6 @@ in
       backupDir = vaultwardenBackupRoot;
       config = {
         DOMAIN = "https://${tailnetHostname}/vault";
-        ENABLE_WEBSOCKET = true;
         EXPERIMENTAL_CLIENT_FEATURE_FLAGS = "cxp-import-mobile";
         ROCKET_ADDRESS = "127.0.0.1";
         ROCKET_PORT = 8222;
@@ -371,12 +363,6 @@ in
         description = "Prepare mounted HDD directories for media services";
         requires = [ storageMountUnit ];
         after = [ storageMountUnit ];
-        before = [
-          "backup-vaultwarden.service"
-          "immich-import-existing-database.service"
-          "immich-server.service"
-          "vaultwarden-import-existing.service"
-        ];
         wantedBy = [ "multi-user.target" ];
         serviceConfig = {
           Type = "oneshot";

@@ -50,16 +50,12 @@ let
   jvmArgs = [
     "-Xms2G"
     "-Xmx4G"
-    "-XX:+UseG1GC"
-    "-XX:+ParallelRefProcEnabled"
-    "-XX:MaxGCPauseMillis=200"
     "-XX:+UnlockExperimentalVMOptions"
     "-XX:+DisableExplicitGC"
     "-XX:G1NewSizePercent=30"
     "-XX:G1MaxNewSizePercent=40"
     "-XX:G1HeapRegionSize=8M"
     "-XX:G1ReservePercent=20"
-    "-XX:G1HeapWastePercent=5"
     "-XX:G1MixedGCCountTarget=4"
     "-XX:InitiatingHeapOccupancyPercent=15"
     "-XX:G1MixedGCLiveThresholdPercent=90"
@@ -69,8 +65,6 @@ let
     "-XX:MaxTenuringThreshold=1"
     "-XX:+ExitOnOutOfMemoryError"
     "-Djava.awt.headless=true"
-    "-Dusing.aikars.flags=https://mcflags.emc.gs"
-    "-Daikars.new.flags=true"
     "-Xlog:gc*:logs/gc.log:time,uptime,level,tags:filecount=5,filesize=10M"
   ];
 in
@@ -111,12 +105,10 @@ in
     '';
 
     serviceConfig = {
-      Type = "simple";
       User = "minecraft";
       Group = "minecraft";
       WorkingDirectory = dataDir;
       StateDirectory = "minecraft";
-      StateDirectoryMode = "0755";
       ExecStart = lib.escapeShellArgs (
         [
           "${pkgs.jdk25_headless}/bin/java"
@@ -133,7 +125,6 @@ in
       KillSignal = "SIGINT";
       TimeoutStopSec = 120;
       SuccessExitStatus = [
-        "0"
         "130"
         "143"
       ];
@@ -142,7 +133,6 @@ in
       PrivateTmp = true;
       ProtectHome = true;
       ProtectSystem = "strict";
-      ReadWritePaths = [ dataDir ];
       RestrictAddressFamilies = [
         "AF_INET"
         "AF_INET6"
