@@ -457,6 +457,8 @@ in
       };
 
       backup-vaultwarden = {
+        # Run only from the 06:05 timer, not whenever multi-user.target starts.
+        wantedBy = lib.mkForce [ ];
         requires = [
           "media-storage-prepare.service"
           storageMountUnit
