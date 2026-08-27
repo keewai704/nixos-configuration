@@ -76,7 +76,12 @@ let
         check_service "$service"
       done
 
-      failed_units=$(systemctl --failed --no-legend --plain 2>/dev/null | awk '{print $1}' | paste -sd ', ' -)
+      # Do not turn a previous webhook delivery failure into a self-sustaining
+      # alert loop. The current invocation will still fail if delivery fails,
+      # and the original incident remains unacknowledged for the next run.
+      failed_units=$(systemctl --failed --no-legend --plain 2>/dev/null \
+        | awk '$1 != "orange-health-monitor.service" { print $1 }' \
+        | paste -sd ',' -)
       if [[ -n "$failed_units" ]]; then
         queue_alert "failed-units" "failed systemd units: $failed_units"
       else
@@ -187,7 +192,7 @@ let
         clear_alert "temperature"
       fi
 
-      recent_kernel_errors=$(journalctl --kernel --since '-16 minutes' --priority err..alert --no-pager --output cat 2>/dev/null \
+      recent_kernel_errors=$(journalctl --dmesg --since '-16 minutes' --priority err..alert --no-pager --output cat 2>/dev/null \
         | sed '/^$/d' | tail -n 8 | tr '\n' '; ' || true)
       if [[ -n "$recent_kernel_errors" ]]; then
         queue_alert "kernel-errors" "recent kernel errors: $recent_kernel_errors"
@@ -195,7 +200,7 @@ let
         clear_alert "kernel-errors"
       fi
 
-      recent_oom=$(journalctl --kernel --since '-16 minutes' --no-pager --output cat 2>/dev/null \
+      recent_oom=$(journalctl --dmesg --since '-16 minutes' --no-pager --output cat 2>/dev/null \
         | grep --ignore-case --extended-regexp 'out of memory|oom-kill|killed process' \
         | tail -n 5 | tr '\n' '; ' || true)
       if [[ -n "$recent_oom" ]]; then
