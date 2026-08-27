@@ -1,13 +1,11 @@
 {
+  inputs,
   lib,
   pkgs,
   ...
 }:
 
 let
-  karukan = pkgs.callPackage ./karukan.nix { };
-  karukanDictionary = pkgs.callPackage ./karukan-dictionary.nix { };
-
   hyprlandConfig = pkgs.writeText "citrus-vm-hyprland.conf" ''
     monitor = Virtual-1, 1600x900@60, 0x0, 1
 
@@ -59,6 +57,7 @@ let
 in
 {
   imports = [
+    inputs.nix-hazkey.nixosModules.hazkey
     ../../profiles/networkmanager.nix
     ../../profiles/uefi-systemd-boot.nix
     ./hardware-configuration.nix
@@ -71,21 +70,20 @@ in
     type = "fcitx5";
 
     fcitx5 = {
-      addons = [ karukan ];
       waylandFrontend = true;
 
       settings.inputMethod = {
         "Groups/0" = {
           Name = "Default";
           "Default Layout" = "us";
-          DefaultIM = "karukan";
+          DefaultIM = "hazkey";
         };
         "Groups/0/Items/0" = {
           Name = "keyboard-us";
           Layout = "";
         };
         "Groups/0/Items/1" = {
-          Name = "karukan";
+          Name = "hazkey";
           Layout = "";
         };
         GroupOrder."0" = "Default";
@@ -104,6 +102,8 @@ in
   };
 
   services = {
+    hazkey.enable = true;
+
     greetd = {
       enable = true;
       settings = {
@@ -150,13 +150,6 @@ in
       NIXOS_OZONE_WL = "1";
     };
   };
-
-  systemd.tmpfiles.rules = [
-    "d /home/keewai/.local 0755 keewai users -"
-    "d /home/keewai/.local/share 0755 keewai users -"
-    "d /home/keewai/.local/share/karukan-im 0755 keewai users -"
-    "L+ /home/keewai/.local/share/karukan-im/dict.bin - - - - ${karukanDictionary}/share/karukan-im/dict.bin"
-  ];
 
   home-manager.users.keewai.home.stateVersion = "26.05";
 
