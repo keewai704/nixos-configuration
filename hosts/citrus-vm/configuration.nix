@@ -62,7 +62,6 @@ in
     ../../profiles/networkmanager.nix
     ../../profiles/uefi-systemd-boot.nix
     ./hardware-configuration.nix
-    ./hyperv-enhanced-session.nix
   ];
 
   networking.hostName = "citrus-vm";
@@ -108,9 +107,11 @@ in
     greetd = {
       enable = true;
       settings = {
-        # Keep the local account logged out until it is selected here or from
-        # an enhanced session. Parallel automatic and xrdp logins can leave
-        # the remote X11 session with a black screen.
+        initial_session = {
+          command = hyprlandSession;
+          user = "keewai";
+        };
+
         default_session = {
           command =
             "${lib.getExe pkgs.tuigreet} --time --remember --remember-user-session"
