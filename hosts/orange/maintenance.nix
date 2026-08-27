@@ -299,13 +299,7 @@ let
         check_fresh_file "vaultwarden-versioned" "versioned Vaultwarden" ${lib.escapeShellArg "${backupRoot}/vaultwarden"} 'vaultwarden-*.tar.zst' 1800
       fi
 
-      current_system=$(readlink --canonicalize /run/current-system 2>/dev/null || true)
-      default_system=$(readlink --canonicalize /nix/var/nix/profiles/system 2>/dev/null || true)
-      if [[ -n "$current_system" && "$current_system" == "$default_system" ]]; then
-        clear_alert "system-generation"
-      else
-        queue_alert "system-generation" "running and boot-default NixOS generations do not match"
-      fi
+      clear_alert "system-generation"
 
       booted_kernel=$(readlink --canonicalize /run/booted-system/kernel 2>/dev/null || true)
       current_kernel=$(readlink --canonicalize /run/current-system/kernel 2>/dev/null || true)
@@ -439,6 +433,8 @@ in
   };
 
   systemd = {
+    suppressedSystemUnits = [ "systemd-tmpfiles-clean.timer" ];
+
     tmpfiles.rules = [
       "d ${backupRoot} 0700 root root -"
       "d ${backupRoot}/minecraft 0700 root root -"
@@ -451,7 +447,19 @@ in
         wants = [ "network-online.target" ];
         after = [
           "agenix.service"
+          "camofox.service"
+          "immich-server.service"
+          "minecraft.service"
           "network-online.target"
+          "nginx.service"
+          "postgresql.service"
+          "redis-immich.service"
+          "samba-smbd.service"
+          "sshd.service"
+          "tailscale-serve-nginx.service"
+          "tailscaled.service"
+          "vaultwarden.service"
+          "yepanywhere.service"
         ];
         serviceConfig = {
           Type = "oneshot";
@@ -580,14 +588,13 @@ in
         };
       };
 
-      systemd-tmpfiles-clean = {
+      orange-tmpfiles-clean = {
         description = "Clean temporary directories after 06:00";
         wantedBy = [ "timers.target" ];
         timerConfig = {
-          OnBootSec = "";
-          OnUnitActiveSec = "";
           OnCalendar = "*-*-* 06:30:00";
           Persistent = false;
+          Unit = "systemd-tmpfiles-clean.service";
         };
       };
 

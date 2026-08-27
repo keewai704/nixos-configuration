@@ -137,7 +137,7 @@ contains a user. No application port is opened on the LAN or public firewall.
 critical services, failed units, mounts, capacity, SMART health, memory and
 swap pressure, temperatures, recent kernel errors, OOM events, coredumps,
 Tailscale, HTTP/TCP endpoints, loopback-only backend listeners, backup
-freshness, and pending generation or kernel activation. New incidents are
+freshness, and pending kernel activation. New incidents are
 grouped into one Discord webhook request and deduplicated until they clear.
 Normal checks and recoveries do not produce notifications.
 
