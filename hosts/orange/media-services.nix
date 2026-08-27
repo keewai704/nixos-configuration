@@ -215,7 +215,7 @@ in
       settings = {
         backup.database = {
           enabled = true;
-          cronExpression = "0 2 * * *";
+          cronExpression = "0 6 * * *";
           keepLastAmount = 14;
         };
         ffmpeg = {
@@ -488,6 +488,6 @@ in
       };
     };
 
-    timers.backup-vaultwarden.timerConfig.OnCalendar = lib.mkForce "*-*-* 03:30:00";
+    timers.backup-vaultwarden.timerConfig.OnCalendar = lib.mkForce "*-*-* 06:05:00";
   };
 }

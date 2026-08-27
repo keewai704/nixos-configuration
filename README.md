@@ -130,3 +130,35 @@ Serve publishes it as:
 
 Vaultwarden registration is disabled because the imported database already
 contains a user. No application port is opened on the LAN or public firewall.
+
+## Maintenance and alerting
+
+`orange-health-monitor.timer` checks the host every 15 minutes. It monitors
+critical services, failed units, mounts, capacity, SMART health, memory and
+swap pressure, temperatures, recent kernel errors, OOM events, coredumps,
+Tailscale, HTTP/TCP endpoints, loopback-only backend listeners, backup
+freshness, and pending generation or kernel activation. New incidents are
+grouped into one Discord webhook request and deduplicated until they clear.
+Normal checks and recoveries do not produce notifications.
+
+The Discord webhook is stored as `secrets/discord-webhook.age`, encrypted to
+orange's SSH host key. Agenix decrypts it to a root-only runtime credential; the
+plaintext is never committed or copied into the Nix Store.
+
+Scheduled maintenance starts at or after 06:00 JST:
+
+- 06:00 daily: Immich PostgreSQL backup
+- 06:05 daily: Vaultwarden backup
+- 06:15 daily: versioned Minecraft and Vaultwarden local backups (14 days)
+- 06:20 daily: log rotation
+- 06:30 daily: temporary-file cleanup
+- 06:40 daily: Nix Store optimisation
+- 06:50 Monday: filesystem TRIM
+- 07:00 Monday: Nix garbage collection
+- 06:50 Sunday: SMART short self-tests
+- 07:30 on the first day of each month: SMART long self-tests
+- 08:00 on the first day of each month: full Nix Store content verification
+
+The local backups remain under `/srv/storage/server/backups/orange-local`.
+There is intentionally no off-machine backup target. Missed timers are not run
+before 06:00 after a reboot.

@@ -4,6 +4,7 @@
   imports = [
     ./hardware-configuration.nix
     ./camofox.nix
+    ./maintenance.nix
     ./media-services.nix
     ./minecraft-server.nix
     ./yepanywhere.nix

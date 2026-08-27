@@ -4,6 +4,11 @@
   inputs = {
     nixpkgs.url = "github:NixOS/nixpkgs/nixos-unstable";
 
+    agenix = {
+      url = "github:ryantm/agenix";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
+
     home-manager = {
       url = "github:nix-community/home-manager/master";
       inputs.nixpkgs.follows = "nixpkgs";
@@ -18,6 +23,7 @@
   outputs =
     {
       nixpkgs,
+      agenix,
       home-manager,
       mcp-servers-nix,
       ...
@@ -31,6 +37,7 @@
         inherit system;
         specialArgs = { inherit camofoxSharedUserId; };
         modules = [
+          agenix.nixosModules.default
           ./hosts/orange/configuration.nix
           home-manager.nixosModules.home-manager
           (
