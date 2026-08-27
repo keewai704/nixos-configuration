@@ -344,12 +344,19 @@ in
         "z ${storageRoot} 0775 keewai immich-media -"
       ];
 
-      # Override Immich's default 0700 mount-root rule. Existing files below
-      # this directory already use gid 1000 and remain otherwise untouched.
-      settings.immich.${immichMediaRoot}.e = {
-        user = lib.mkForce "keewai";
-        group = lib.mkForce "immich-media";
-        mode = lib.mkForce "0770";
+      settings = {
+        # The mount root is intentionally owned by keewai, so tmpfiles rejects
+        # Vaultwarden's root-owned child path as an unsafe transition. The
+        # mount-ordered media-storage-prepare service below creates it instead.
+        "10-vaultwarden" = lib.mkForce { };
+
+        # Override Immich's default 0700 mount-root rule. Existing files below
+        # this directory already use gid 1000 and remain otherwise untouched.
+        immich.${immichMediaRoot}.e = {
+          user = lib.mkForce "keewai";
+          group = lib.mkForce "immich-media";
+          mode = lib.mkForce "0770";
+        };
       };
     };
 
