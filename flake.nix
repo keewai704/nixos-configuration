@@ -1,5 +1,5 @@
 {
-  description = "NixOS configuration for orange";
+  description = "NixOS configurations for orange and citrus-vm";
 
   inputs = {
     nixpkgs.url = "github:NixOS/nixpkgs/nixos-unstable";
@@ -287,6 +287,13 @@
               };
             }
           )
+        ];
+      };
+
+      nixosConfigurations.citrus-vm = nixpkgs.lib.nixosSystem {
+        inherit system;
+        modules = [
+          ./hosts/citrus-vm/configuration.nix
         ];
       };
 
