@@ -130,7 +130,7 @@ in
         NOVNC_PORT = "6080";
         NOVNC_TARGET_PORT = toString vncActivationPort;
         VNC_BIND = "127.0.0.1";
-        VNC_RESOLUTION = "1920x1080";
+        VNC_RESOLUTION = "1600x900";
       };
 
       serviceConfig = {
