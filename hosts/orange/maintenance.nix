@@ -256,7 +256,7 @@ let
 
       for port_and_name in '25565 minecraft' '445 samba'; do
         read -r port name <<<"$port_and_name"
-        if nc -z -w 3 127.0.0.1 "$port"; then
+        if nc -z -w 3 127.0.0.1 "$port" >/dev/null 2>&1; then
           clear_alert "tcp-$name"
         else
           queue_alert "tcp-$name" "TCP health check failed for $name on port $port"
@@ -472,7 +472,9 @@ in
           UMask = "0077";
           NoNewPrivileges = true;
           PrivateTmp = true;
-          ProtectSystem = "strict";
+          # "strict" remounts /srv read-only in this service's namespace and
+          # would make the host's writable storage mount look unhealthy.
+          ProtectSystem = "full";
           ProtectHome = true;
           ProtectClock = true;
           ProtectControlGroups = true;
