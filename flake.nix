@@ -182,7 +182,6 @@
                       sessionVariables.CAMOFOX_URL = "http://127.0.0.1:9377";
 
                       file = {
-                        ".agents/skills/camofox-render-testing".source = ./.agents/skills/camofox-render-testing;
                         ".codex/config.toml".source = config.lib.file.mkOutOfStoreSymlink codexMutableConfig;
                         ".local/bin/codex" = {
                           source = codexWrapper + "/bin/codex";
@@ -225,6 +224,7 @@
                     programs.codex = {
                       enable = true;
                       package = null;
+                      skills = ./skills;
                     };
 
                     mcp-servers = {
