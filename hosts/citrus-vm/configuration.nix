@@ -6,50 +6,7 @@
 }:
 
 let
-  hyprlandConfig = pkgs.writeText "citrus-vm-hyprland.conf" ''
-    monitor = Virtual-1, 1600x900@60, 0x0, 1
-
-    $mainMod = SUPER
-    $terminal = kitty
-
-    exec-once = uwsm app -- fcitx5 --replace
-
-    input {
-      kb_layout = us
-      follow_mouse = 1
-    }
-
-    general {
-      border_size = 2
-      gaps_in = 5
-      gaps_out = 10
-      layout = dwindle
-    }
-
-    decoration {
-      rounding = 8
-    }
-
-    bind = $mainMod, Return, exec, uwsm app -- $terminal
-    bind = $mainMod, Q, killactive,
-    bind = $mainMod SHIFT, E, exit,
-    bind = $mainMod, F, fullscreen,
-    bind = $mainMod, V, togglefloating,
-
-    bind = $mainMod, 1, workspace, 1
-    bind = $mainMod, 2, workspace, 2
-    bind = $mainMod, 3, workspace, 3
-    bind = $mainMod, 4, workspace, 4
-    bind = $mainMod, 5, workspace, 5
-    bind = $mainMod SHIFT, 1, movetoworkspace, 1
-    bind = $mainMod SHIFT, 2, movetoworkspace, 2
-    bind = $mainMod SHIFT, 3, movetoworkspace, 3
-    bind = $mainMod SHIFT, 4, movetoworkspace, 4
-    bind = $mainMod SHIFT, 5, movetoworkspace, 5
-
-    bindm = $mainMod, mouse:272, movewindow
-    bindm = $mainMod, mouse:273, resizewindow
-  '';
+  hyprlandConfig = ./hyprland.lua;
 
   hyprlandSession =
     "${lib.getExe pkgs.uwsm} start -e -D Hyprland ${pkgs.hyprland}/bin/start-hyprland"
