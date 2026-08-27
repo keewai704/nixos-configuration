@@ -8,6 +8,76 @@ index 3c574e8b..8d80b416 100644
 +      serviceTier?: string;
 @@ -1178,0 +1181 @@ export const api = {
 +        serviceTier?: string;
+diff --git a/packages/client/src/components/MessageInput.tsx b/packages/client/src/components/MessageInput.tsx
+index 3e26c32a..27e8a84e 100644
+--- a/packages/client/src/components/MessageInput.tsx
++++ b/packages/client/src/components/MessageInput.tsx
+@@ -249,0 +250,2 @@ interface Props {
++    serviceTier?: string;
++    onSetServiceTier?: (serviceTier: string) => void;
+diff --git a/packages/client/src/components/MessageInputToolbar.tsx b/packages/client/src/components/MessageInputToolbar.tsx
+index 31d23946..c0a85997 100644
+--- a/packages/client/src/components/MessageInputToolbar.tsx
++++ b/packages/client/src/components/MessageInputToolbar.tsx
+@@ -2,0 +3 @@ import type {
++  ModelServiceTier,
+@@ -221,0 +223,2 @@ export interface MessageInputToolbarProps {
++    serviceTier?: string;
++    onSetServiceTier?: (serviceTier: string) => void;
+@@ -476,0 +480,3 @@ interface ToolbarThinkingControl {
++  serviceTier?: string;
++  serviceTierOptions?: readonly ModelServiceTier[];
++  onSetServiceTier?: (serviceTier: string) => void;
+@@ -679,7 +685,16 @@ function getToolbarThinkingLabel(
+-  if (control.mode === "off") return t("modelSettingsThinkingOffLabel");
+-  if (control.mode === "auto") return t("modelSettingsThinkingAutoLabel");
+-  if (control.level === "xhigh") return t("effortLevelExtraHighShortLabel");
+-  return (
+-    control.effortOptions.find((option) => option.value === control.level)
+-      ?.label ?? getEffortLevelLabel(control.level, undefined, t)
+-  );
++  const thinkingLabel =
++    control.mode === "off"
++      ? t("modelSettingsThinkingOffLabel")
++      : control.mode === "auto"
++        ? t("modelSettingsThinkingAutoLabel")
++        : control.level === "xhigh"
++          ? t("effortLevelExtraHighShortLabel")
++          : (control.effortOptions.find(
++              (option) => option.value === control.level,
++            )?.label ?? getEffortLevelLabel(control.level, undefined, t));
++  const serviceTierLabel = control.serviceTierOptions?.find(
++    (option) => option.id === control.serviceTier,
++  )?.name;
++  return serviceTierLabel
++    ? `${thinkingLabel} · ${serviceTierLabel}`
++    : thinkingLabel;
+@@ -692 +707 @@ function getToolbarThinkingTitle(
+-  const current =
++  const thinking =
+@@ -702,0 +718,6 @@ function getToolbarThinkingTitle(
++  const serviceTierLabel = control.serviceTierOptions?.find(
++    (option) => option.id === control.serviceTier,
++  )?.name;
++  const current = serviceTierLabel
++    ? `${thinking} · ${serviceTierLabel}`
++    : thinking;
+@@ -819,0 +841,3 @@ function ThinkingToolbarControl({
++            serviceTier={control.serviceTier}
++            serviceTierOptions={control.serviceTierOptions}
++            onSetServiceTier={control.onSetServiceTier}
+@@ -2279,0 +2304,7 @@ export function MessageInputToolbar({
++  const thinkingServiceTierOptions = thinkingModelInfo?.serviceTiers ?? [];
++  const selectedServiceTier = liveThinkingSelection?.serviceTier ?? "default";
++  const effectiveServiceTier = thinkingServiceTierOptions.some(
++    (option) => option.id === selectedServiceTier,
++  )
++    ? selectedServiceTier
++    : "default";
+@@ -2754,0 +2786,3 @@ export function MessageInputToolbar({
++              serviceTier: effectiveServiceTier,
++              serviceTierOptions: thinkingServiceTierOptions,
++              onSetServiceTier: liveThinkingSelection?.onSetServiceTier,
 diff --git a/packages/client/src/components/ModelSwitchModal.tsx b/packages/client/src/components/ModelSwitchModal.tsx
 index d5d13b57..7c04ad10 100644
 --- a/packages/client/src/components/ModelSwitchModal.tsx
@@ -93,7 +163,7 @@ index d5d13b57..7c04ad10 100644
 +            )}
 +
 diff --git a/packages/client/src/components/NewSessionForm.tsx b/packages/client/src/components/NewSessionForm.tsx
-index 2a5dbda3..253c08ed 100644
+index 2a5dbda3..3b002538 100644
 --- a/packages/client/src/components/NewSessionForm.tsx
 +++ b/packages/client/src/components/NewSessionForm.tsx
 @@ -265,0 +266,2 @@ export function NewSessionForm({
@@ -133,49 +203,70 @@ index 2a5dbda3..253c08ed 100644
 +          serviceTier: launchServiceTier,
 @@ -1981,0 +2003 @@ export function NewSessionForm({
 +        serviceTier: launchServiceTier ?? null,
-@@ -2926,0 +2949,38 @@ export function NewSessionForm({
-+  const serviceTierSection = showServiceTierControls ? (
-+    <div className="new-session-helper-section new-session-service-tier-section">
-+      <h3>{t("newSessionSpeedTitle")}</h3>
-+      <div className="new-session-helper-options">
-+        <button
-+          type="button"
-+          className={`new-session-helper-option ${
-+            effectiveServiceTier === "default" ? "selected" : ""
-+          }`}
-+          onClick={() => {
+@@ -2938,28 +2960,35 @@ export function NewSessionForm({
+-  const thinkingSection = showThinkingControls ? (
+-    <div className="new-session-helper-section new-session-thinking-section">
+-      <h3>{t("modelSettingsThinkingTitle")}</h3>
+-      <ThinkingControlsPanel
+-        mode={effectiveThinkingMode}
+-        modeOptions={thinkingModeOptions}
+-        onSetMode={(nextMode) => {
+-          hasUserCustomizedDefaultsRef.current = true;
+-          setSelectedThinkingMode(nextMode);
+-        }}
+-        level={effectiveEffortLevel}
+-        effortOptions={effortOptions}
+-        onSetEffort={(nextEffort) => {
+-          hasUserCustomizedDefaultsRef.current = true;
+-          setSelectedEffortLevel(nextEffort);
+-        }}
+-        onSetEffortMode={(nextEffort) => {
+-          hasUserCustomizedDefaultsRef.current = true;
+-          setSelectedEffortLevel(nextEffort);
+-          setSelectedThinkingMode("on");
+-        }}
+-        showThinkingControl={false}
+-        provider={selectedProvider ?? undefined}
+-        t={t}
+-        className="thinking-controls-panel--inline new-session-thinking-controls"
+-      />
+-    </div>
+-  ) : null;
++  const thinkingSection =
++    showThinkingControls || showServiceTierControls ? (
++      <div className="new-session-helper-section new-session-thinking-section">
++        <h3>{t("modelSettingsThinkingTitle")}</h3>
++        <ThinkingControlsPanel
++          mode={effectiveThinkingMode}
++          modeOptions={thinkingModeOptions}
++          onSetMode={(nextMode) => {
 +            hasUserCustomizedDefaultsRef.current = true;
-+            setSelectedServiceTier("default");
++            setSelectedThinkingMode(nextMode);
 +          }}
-+          disabled={isStarting}
-+          title={t("newSessionSpeedStandardDescription")}
-+        >
-+          <span>{t("newSessionSpeedStandard")}</span>
-+        </button>
-+        {serviceTierOptions.map((tier) => (
-+          <button
-+            key={tier.id}
-+            type="button"
-+            className={`new-session-helper-option ${
-+              effectiveServiceTier === tier.id ? "selected" : ""
-+            }`}
-+            onClick={() => {
-+              hasUserCustomizedDefaultsRef.current = true;
-+              setSelectedServiceTier(tier.id);
-+            }}
-+            disabled={isStarting}
-+            title={tier.description}
-+          >
-+            <span>{tier.name}</span>
-+          </button>
-+        ))}
++          level={effectiveEffortLevel}
++          effortOptions={effortOptions}
++          onSetEffort={(nextEffort) => {
++            hasUserCustomizedDefaultsRef.current = true;
++            setSelectedEffortLevel(nextEffort);
++          }}
++          onSetEffortMode={(nextEffort) => {
++            hasUserCustomizedDefaultsRef.current = true;
++            setSelectedEffortLevel(nextEffort);
++            setSelectedThinkingMode("on");
++          }}
++          serviceTier={effectiveServiceTier}
++          serviceTierOptions={serviceTierOptions}
++          onSetServiceTier={(nextServiceTier) => {
++            hasUserCustomizedDefaultsRef.current = true;
++            setSelectedServiceTier(nextServiceTier);
++          }}
++          showThinkingControl={false}
++          provider={selectedProvider ?? undefined}
++          t={t}
++          className="thinking-controls-panel--inline new-session-thinking-controls"
++        />
 +      </div>
-+    </div>
-+  ) : null;
-@@ -3100,0 +3161 @@ export function NewSessionForm({
-+          serviceTierSection ||
-@@ -3112,0 +3174 @@ export function NewSessionForm({
-+            {serviceTierSection}
++    ) : null;
 diff --git a/packages/client/src/components/RestartSessionModal.tsx b/packages/client/src/components/RestartSessionModal.tsx
 index d374fa33..30be05c0 100644
 --- a/packages/client/src/components/RestartSessionModal.tsx
@@ -266,6 +357,190 @@ index d374fa33..30be05c0 100644
 +          </section>
 +        )}
 +
+diff --git a/packages/client/src/components/ThinkingControls.tsx b/packages/client/src/components/ThinkingControls.tsx
+index b26ad2ac..2b05534d 100644
+--- a/packages/client/src/components/ThinkingControls.tsx
++++ b/packages/client/src/components/ThinkingControls.tsx
+@@ -2,0 +3 @@ import type {
++  ModelServiceTier,
+@@ -114,0 +116,3 @@ interface ThinkingControlsPanelProps {
++  serviceTier?: string;
++  serviceTierOptions?: readonly ModelServiceTier[];
++  onSetServiceTier?: (serviceTier: string) => void;
+@@ -260,0 +265,3 @@ export function ThinkingControlsPanel({
++  serviceTier = "default",
++  serviceTierOptions = [],
++  onSetServiceTier,
+@@ -353,0 +361,33 @@ export function ThinkingControlsPanel({
++      {serviceTierOptions.length > 0 && onSetServiceTier && (
++        <div className="thinking-toolbar-menu-section thinking-controls-section thinking-controls-section--service-tier">
++          <div className="thinking-toolbar-menu-label">
++            {t("newSessionSpeedTitle")}
++          </div>
++          <div className="thinking-toolbar-menu-options" role="group">
++            {[
++              {
++                id: "default",
++                name: t("newSessionSpeedStandard"),
++                description: t("newSessionSpeedStandardDescription"),
++              },
++              ...serviceTierOptions,
++            ].map((option) => (
++              <ThinkingChoiceButton
++                key={option.id}
++                optionRole={optionRole}
++                checked={serviceTier === option.id}
++                className={`thinking-toolbar-option ${
++                  serviceTier === option.id ? "active" : ""
++                }`}
++                title={option.description}
++                onClick={() => {
++                  onSetServiceTier(option.id);
++                  after();
++                }}
++              >
++                <span>{option.name}</span>
++              </ThinkingChoiceButton>
++            ))}
++          </div>
++        </div>
++      )}
+diff --git a/packages/client/src/components/__tests__/MessageInput.test.tsx b/packages/client/src/components/__tests__/MessageInput.test.tsx
+index 00d55c20..89a77e78 100644
+--- a/packages/client/src/components/__tests__/MessageInput.test.tsx
++++ b/packages/client/src/components/__tests__/MessageInput.test.tsx
+@@ -245,0 +246,11 @@ vi.mock("../../hooks/useProviders", () => ({
++      {
++        name: "codex",
++        displayName: "Codex",
++        models: [
++          {
++            id: "gpt-5.6",
++            name: "GPT-5.6",
++            serviceTiers: [{ id: "priority", name: "Fast" }],
++          },
++        ],
++      },
+@@ -282,0 +294,3 @@ vi.mock("../../i18n", () => ({
++          newSessionSpeedTitle: "Speed",
++          newSessionSpeedStandard: "Standard",
++          newSessionSpeedStandardDescription: "Standard processing",
+@@ -604,0 +619,3 @@ const toolbarT = ((key: string, params?: Record<string, string>) => {
++    newSessionSpeedTitle: "Speed",
++    newSessionSpeedStandard: "Standard",
++    newSessionSpeedStandardDescription: "Standard processing",
+@@ -1485,0 +1503,25 @@ describe("MessageInput", () => {
++  it("switches Fast mode from the thinking toolbar menu", () => {
++    const onSetServiceTier = vi.fn();
++    renderToolbarView({
++      mode: "on",
++      level: "ultra",
++      effortOptions: [
++        { value: "ultra", label: "Ultra", description: "Delegated reasoning" },
++      ],
++      serviceTier: "priority",
++      serviceTierOptions: [{ id: "priority", name: "Fast" }],
++      onSetServiceTier,
++      onSetMode: vi.fn(),
++      onSetEffort: vi.fn(),
++      onToggleEnabled: vi.fn(),
++    });
++
++    const button = screen.getByRole("button", { name: /Thinking: on.*Fast/i });
++    expect(button.textContent).toContain("Ultra · Fast");
++
++    fireEvent.click(button);
++    fireEvent.click(screen.getByRole("menuitemradio", { name: "Standard" }));
++
++    expect(onSetServiceTier).toHaveBeenCalledWith("default");
++  });
++
+@@ -1531,0 +1574,27 @@ describe("MessageInput", () => {
++  it("derives live Fast controls from Codex model metadata", () => {
++    const onSetServiceTier = vi.fn();
++    renderMessageInput(vi.fn(), {
++      supportsThinkingToggle: true,
++      thinkingProvider: "codex",
++      thinkingModel: "gpt-5.6",
++      liveThinkingSelection: {
++        mode: "on",
++        level: "ultra",
++        serviceTier: "priority",
++        onSetMode: vi.fn(),
++        onSetEffort: vi.fn(),
++        onSetServiceTier,
++      },
++    });
++
++    const button = screen.getByRole("button", {
++      name: /Current: Thinking on.*Fast/i,
++    });
++    expect(button.textContent).toContain("Ultra · Fast");
++
++    fireEvent.click(button);
++    fireEvent.click(screen.getByRole("menuitemradio", { name: "Standard" }));
++
++    expect(onSetServiceTier).toHaveBeenCalledWith("default");
++  });
++
+diff --git a/packages/client/src/components/__tests__/NewSessionForm.test.tsx b/packages/client/src/components/__tests__/NewSessionForm.test.tsx
+index 9782c1f1..fb363675 100644
+--- a/packages/client/src/components/__tests__/NewSessionForm.test.tsx
++++ b/packages/client/src/components/__tests__/NewSessionForm.test.tsx
+@@ -126,0 +127,5 @@ const {
++        serviceTiers?: Array<{
++          id: string;
++          name: string;
++          description?: string;
++        }>;
+@@ -145,0 +151 @@ const {
++              serviceTier?: string;
+@@ -147 +153,7 @@ const {
+-              effortLevel?: "low" | "medium" | "high" | "xhigh" | "max";
++              effortLevel?:
++                | "low"
++                | "medium"
++                | "high"
++                | "xhigh"
++                | "max"
++                | "ultra";
+@@ -458,0 +471 @@ vi.mock("../../i18n", () => ({
++        effortLevelUltraLabel: "Ultra",
+@@ -464,0 +478,4 @@ vi.mock("../../i18n", () => ({
++        effortLevelUltraDescription: "Delegated reasoning",
++        newSessionSpeedTitle: "Speed",
++        newSessionSpeedStandard: "Standard",
++        newSessionSpeedStandardDescription: "Standard processing",
+@@ -622 +639,5 @@ describe("NewSessionForm", () => {
+-          { id: "gpt-5.4", name: "GPT-5.4" },
++          {
++            id: "gpt-5.4",
++            name: "GPT-5.4",
++            serviceTiers: [{ id: "priority", name: "Fast" }],
++          },
+@@ -796,0 +818,22 @@ describe("NewSessionForm", () => {
++  it("groups Fast with the new-session thinking controls", async () => {
++    serverSettingsState.isLoading = false;
++
++    render(<NewSessionForm projectId="project-1" />);
++    fireEvent.click(screen.getByRole("button", { name: "Codex" }));
++
++    await waitFor(() => {
++      expect(
++        screen
++          .getByRole("radio", { name: "Fast" })
++          .getAttribute("aria-checked"),
++      ).toBe("true");
++    });
++    const speedSection = screen
++      .getByText("Speed")
++      .closest(".thinking-controls-section");
++
++    expect(speedSection?.classList).toContain(
++      "thinking-controls-section--service-tier",
++    );
++  });
++
 diff --git a/packages/client/src/components/__tests__/RestartSessionModal.test.tsx b/packages/client/src/components/__tests__/RestartSessionModal.test.tsx
 index d8e085e6..296745a4 100644
 --- a/packages/client/src/components/__tests__/RestartSessionModal.test.tsx
@@ -339,17 +614,54 @@ index d8e085e6..296745a4 100644
 +    });
 +  });
 +
+diff --git a/packages/client/src/components/__tests__/ThinkingControls.test.tsx b/packages/client/src/components/__tests__/ThinkingControls.test.tsx
+index 34cc9499..a0c0e983 100644
+--- a/packages/client/src/components/__tests__/ThinkingControls.test.tsx
++++ b/packages/client/src/components/__tests__/ThinkingControls.test.tsx
+@@ -26,0 +27,3 @@ const t = ((key: string) =>
++      newSessionSpeedTitle: "Speed",
++      newSessionSpeedStandard: "Standard",
++      newSessionSpeedStandardDescription: "Standard processing",
+@@ -130,0 +134,26 @@ describe("ThinkingControls", () => {
++  it("renders service tiers in the shared thinking controls", () => {
++    const onSetServiceTier = vi.fn();
++
++    render(
++      <ThinkingControlsPanel
++        mode="on"
++        onSetMode={vi.fn()}
++        level="high"
++        effortOptions={effortOptions}
++        onSetEffort={vi.fn()}
++        serviceTier="priority"
++        serviceTierOptions={[{ id: "priority", name: "Fast" }]}
++        onSetServiceTier={onSetServiceTier}
++        showThinkingControl={false}
++        t={t}
++      />,
++    );
++
++    expect(
++      screen.getByRole("radio", { name: "Fast" }).getAttribute("aria-checked"),
++    ).toBe("true");
++    fireEvent.click(screen.getByRole("radio", { name: "Standard" }));
++
++    expect(onSetServiceTier).toHaveBeenCalledWith("default");
++  });
++
 diff --git a/packages/client/src/i18n/en.json b/packages/client/src/i18n/en.json
-index 8bb555f8..562e2b73 100644
+index 8bb555f8..73569f72 100644
 --- a/packages/client/src/i18n/en.json
 +++ b/packages/client/src/i18n/en.json
 @@ -494,0 +495,3 @@
 +  "newSessionSpeedTitle": "Speed",
 +  "newSessionSpeedStandard": "Standard",
 +  "newSessionSpeedStandardDescription": "Use standard processing and credit consumption.",
-@@ -1857,0 +1861 @@
+@@ -617,0 +621 @@
++  "sessionServiceTierChangeFailed": "Failed to change speed: {message}",
+@@ -1857,0 +1862 @@
 +  "modelSettingsSpeedDescription": "Choose Standard or faster processing for new sessions. Fast uses credits at a higher rate.",
-@@ -1887,0 +1892 @@
+@@ -1887,0 +1893 @@
 +  "effortLevelUltraDescription": "Maximum reasoning with automatic task delegation",
 diff --git a/packages/client/src/lib/__tests__/effortLevels.test.ts b/packages/client/src/lib/__tests__/effortLevels.test.ts
 index 597cc78b..4d0bddf4 100644
@@ -427,8 +739,82 @@ index 7295c0fc..8f62f038 100644
 -  | "max";
 +  | "max"
 +  | "ultra";
+diff --git a/packages/client/src/pages/SessionPage.tsx b/packages/client/src/pages/SessionPage.tsx
+index 537efd11..382c63e1 100644
+--- a/packages/client/src/pages/SessionPage.tsx
++++ b/packages/client/src/pages/SessionPage.tsx
+@@ -195,0 +196 @@ interface LiveModelConfig {
++  serviceTier?: string;
+@@ -250,0 +252 @@ function isSameLiveModelConfig(
++    current.serviceTier === next.serviceTier &&
+@@ -1440,0 +1443 @@ function SessionPageContent({
++                serviceTier: process.serviceTier,
+@@ -3045,0 +3049 @@ function SessionPageContent({
++      serviceTier?: string;
+@@ -3053 +3057,5 @@ function SessionPageContent({
+-      if (next.thinking !== undefined || next.effort !== undefined) {
++      if (
++        next.serviceTier !== undefined ||
++        next.thinking !== undefined ||
++        next.effort !== undefined
++      ) {
+@@ -3056,0 +3065 @@ function SessionPageContent({
++          serviceTier: next.serviceTier ?? prev?.serviceTier,
+@@ -3102,0 +3112 @@ function SessionPageContent({
++          serviceTier: result.serviceTier ?? prev?.serviceTier,
+@@ -3150,0 +3161,43 @@ function SessionPageContent({
++  const handleSetLiveServiceTier = useCallback(
++    async (serviceTier: string) => {
++      if (status.owner !== "self" || !currentOwnedProcessId) {
++        return;
++      }
++      try {
++        const result = await api.setProcessConfig(currentOwnedProcessId, {
++          serviceTier,
++        });
++        setLiveModelConfig((prev) => ({
++          model: result.model ?? prev?.model,
++          requestedModel: result.model ?? prev?.requestedModel,
++          serviceTier: result.serviceTier ?? serviceTier,
++          thinking: result.thinking ?? prev?.thinking,
++          effort: result.effort ?? prev?.effort,
++          promptSuggestionMode: prev?.promptSuggestionMode,
++        }));
++        if (result.processId !== currentOwnedProcessId) {
++          setStatus((prev) =>
++            prev.owner === "self"
++              ? { ...prev, processId: result.processId }
++              : { owner: "self", processId: result.processId },
++          );
++          reconnectStream();
++        }
++      } catch (err) {
++        const errorMsg = err instanceof Error ? err.message : String(err);
++        showToast(
++          t("sessionServiceTierChangeFailed", { message: errorMsg }),
++          "error",
++        );
++      }
++    },
++    [
++      currentOwnedProcessId,
++      reconnectStream,
++      showToast,
++      status.owner,
++      t,
++      setStatus,
++    ],
++  );
++
+@@ -5129,0 +5183,3 @@ function SessionPageContent({
++                            serviceTier:
++                              liveModelConfig?.serviceTier ?? "default",
++                            onSetServiceTier: handleSetLiveServiceTier,
+@@ -5276,0 +5333,2 @@ function SessionPageContent({
++                        serviceTier: liveModelConfig?.serviceTier ?? "default",
++                        onSetServiceTier: handleSetLiveServiceTier,
 diff --git a/packages/client/src/pages/settings/ModelSettings.tsx b/packages/client/src/pages/settings/ModelSettings.tsx
-index c63c0756..9a9ed971 100644
+index c63c0756..36a5ba64 100644
 --- a/packages/client/src/pages/settings/ModelSettings.tsx
 +++ b/packages/client/src/pages/settings/ModelSettings.tsx
 @@ -261,0 +262 @@ export function ModelSettings() {
@@ -445,51 +831,15 @@ index c63c0756..9a9ed971 100644
 @@ -571,0 +580,2 @@ export function ModelSettings() {
 +        "speed",
 +        "fast mode",
-@@ -774,0 +785,44 @@ export function ModelSettings() {
-+            {serviceTierOptions.length > 0 && (
-+              <div className="new-session-helper-section session-default-service-tier-section">
-+                <h3>{t("newSessionSpeedTitle")}</h3>
-+                <p className="session-default-section-description">
-+                  {t("modelSettingsSpeedDescription")}
-+                </p>
-+                <div className="new-session-helper-options">
-+                  <button
-+                    type="button"
-+                    className={`new-session-helper-option ${
-+                      effectiveServiceTier === "default" ? "selected" : ""
-+                    }`}
-+                    onClick={() =>
-+                      void updateProviderSessionDefaults({
-+                        serviceTier: "default",
-+                      })
-+                    }
-+                    disabled={settingsLoading}
-+                    title={t("newSessionSpeedStandardDescription")}
-+                  >
-+                    <span>{t("newSessionSpeedStandard")}</span>
-+                  </button>
-+                  {serviceTierOptions.map((tier) => (
-+                    <button
-+                      key={tier.id}
-+                      type="button"
-+                      className={`new-session-helper-option ${
-+                        effectiveServiceTier === tier.id ? "selected" : ""
-+                      }`}
-+                      onClick={() =>
-+                        void updateProviderSessionDefaults({
-+                          serviceTier: tier.id,
-+                        })
-+                      }
-+                      disabled={settingsLoading}
-+                      title={tier.description}
-+                    >
-+                      <span>{tier.name}</span>
-+                    </button>
-+                  ))}
-+                </div>
-+              </div>
-+            )}
-+
+@@ -821 +831 @@ export function ModelSettings() {
+-            {showThinkingControls && (
++            {(showThinkingControls || serviceTierOptions.length > 0) && (
+@@ -843,0 +854,5 @@ export function ModelSettings() {
++                  serviceTier={effectiveServiceTier}
++                  serviceTierOptions={serviceTierOptions}
++                  onSetServiceTier={(serviceTier: string) =>
++                    void updateProviderSessionDefaults({ serviceTier })
++                  }
 diff --git a/packages/client/src/styles/index.css b/packages/client/src/styles/index.css
 index 7e0cb444..eb6d7264 100644
 --- a/packages/client/src/styles/index.css
@@ -544,8 +894,32 @@ index 9949ec71..6a779363 100644
 +++ b/packages/server/src/routes/settings-parsers.ts
 @@ -114,0 +115 @@ const EFFORT_LEVELS = [
 +  "ultra",
+diff --git a/packages/server/src/sdk/providers/claude.ts b/packages/server/src/sdk/providers/claude.ts
+index fc5e2520..1e75102e 100644
+--- a/packages/server/src/sdk/providers/claude.ts
++++ b/packages/server/src/sdk/providers/claude.ts
+@@ -17,0 +18 @@ import {
++  type EffortLevel as ClaudeSdkEffortLevel,
+@@ -88,0 +90,6 @@ const CLAUDE_EFFORT_LEVELS: EffortLevel[] = [
++
++function toClaudeSdkEffortLevel(
++  effort?: EffortLevel,
++): ClaudeSdkEffortLevel | undefined {
++  return effort === "ultra" ? "max" : effort;
++}
+@@ -1386 +1393 @@ export class ClaudeProvider implements AgentProvider {
+-          effort: options.effort,
++          effort: toClaudeSdkEffortLevel(options.effort),
+@@ -1704 +1711 @@ export class ClaudeProvider implements AgentProvider {
+-          effort: options.effort,
++          effort: toClaudeSdkEffortLevel(options.effort),
+@@ -1804 +1811,3 @@ export class ClaudeProvider implements AgentProvider {
+-        sdkQuery.applyFlagSettings({ effortLevel: effort ?? null }),
++        sdkQuery.applyFlagSettings({
++          effortLevel: toClaudeSdkEffortLevel(effort) ?? null,
++        }),
 diff --git a/packages/server/src/sdk/providers/codex.ts b/packages/server/src/sdk/providers/codex.ts
-index d6d6f7ad..0e9f836f 100644
+index d6d6f7ad..7cf907fd 100644
 --- a/packages/server/src/sdk/providers/codex.ts
 +++ b/packages/server/src/sdk/providers/codex.ts
 @@ -1154 +1154,10 @@ export class CodexProvider implements AgentProvider {
@@ -570,6 +944,9 @@ index d6d6f7ad..0e9f836f 100644
 -        return "xhigh";
 +      case "ultra":
 +        return effort;
+@@ -2546,0 +2554,2 @@ export class CodexProvider implements AgentProvider {
++      | "max"
++      | "ultra"
 diff --git a/packages/server/test/routes/processes.test.ts b/packages/server/test/routes/processes.test.ts
 index d2cf26eb..0bd6d410 100644
 --- a/packages/server/test/routes/processes.test.ts
@@ -635,6 +1012,12 @@ index d31c200a..ba7bd96c 100644
 +    expect(startUltra).toMatchObject({
 +      config: { model_reasoning_effort: "ultra" },
 +    });
+diff --git a/packages/shared/src/index.ts b/packages/shared/src/index.ts
+index 5cfa5f0e..d02e8d6a 100644
+--- a/packages/shared/src/index.ts
++++ b/packages/shared/src/index.ts
+@@ -71,0 +72 @@ export type {
++  ModelServiceTier,
 diff --git a/packages/shared/src/types.ts b/packages/shared/src/types.ts
 index 2ac312b5..6eb7a4f5 100644
 --- a/packages/shared/src/types.ts
@@ -645,3 +1028,16 @@ index 2ac312b5..6eb7a4f5 100644
 @@ -596 +596 @@ export type ThinkingMode = "off" | "auto" | "on";
 - * - "on:low" | "on:medium" | "on:high" | "on:xhigh" | "on:max": Forced-on thinking at effort level
 + * - "on:low" | ... | "on:max" | "on:ultra": Forced-on thinking at effort level
+diff --git a/topics/session-defaults.md b/topics/session-defaults.md
+index 113bc652..83e93755 100644
+--- a/topics/session-defaults.md
++++ b/topics/session-defaults.md
+@@ -66,0 +67,8 @@ not overwrite per-provider model/thinking/effort choices.
++### Live session controls
++
++For an owned live session, a model's service-tier choices belong in the same
++composer popover as Thinking Mode and Effort Level. The current process tier is
++selected when the popover opens. Choosing Standard or a provider tier such as
++Fast reconfigures the active process for the next turn and keeps the composer
++control synchronized if that reconfiguration replaces the process.
++
