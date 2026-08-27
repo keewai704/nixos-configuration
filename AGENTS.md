@@ -1,17 +1,48 @@
+# Runtime host boundary
+
+Before starting any task, and before reading or changing repository files,
+running checks, rebuilding, deploying, or inspecting live services, determine
+the host of the current local execution environment with `hostnamectl --static`
+(fall back to `hostname`) and confirm it against `/etc/hostname`. If those
+values disagree, stop and report the mismatch before making changes.
+
+Treat the confirmed local runtime host as the only live system in scope. Do not
+infer the live host from the repository path, a flake target mentioned in these
+instructions, earlier conversation context, or the host whose declarative
+configuration is being edited.
+
+Do not use SSH, mosh, a remote shell, or any other remote-execution mechanism to
+enter another host's workspace, inspect or change its checkout, run checks or
+rebuilds there, deploy to it, or perform live health checks there. A remote
+operation is allowed only when the user explicitly requests that specific
+remote host and operation in the current request. General repository workflow
+instructions never authorize remote access.
+
+It is acceptable to edit another host's declarative configuration in the
+current local checkout when the task requires it. In that case, restrict work
+for that other host to local formatting, evaluation, and builds; do not contact
+the host or apply the result there.
+
 # Repository workflow
 
 For every task that changes this repository, complete this workflow before
 ending the work or reporting it as complete:
 
-1. Run the formatting, static-analysis, evaluation, and build checks appropriate
-   to the change.
-2. Commit every intended change for the task. Do not include unrelated user
+1. Record the locally confirmed runtime hostname and verify that the flake has a
+   matching `nixosConfigurations.<runtime-host>` output. If it does not, stop
+   instead of substituting another host.
+2. Run the formatting, static-analysis, evaluation, and build checks appropriate
+   to the change. Configuration-only checks for another host may be run locally,
+   but do not treat that host as the live system.
+3. Commit every intended change for the task. Do not include unrelated user
    changes, and confirm that no task-related change remains uncommitted.
-3. Run `sudo nixos-rebuild test --flake .#orange` against the committed state.
-4. Verify networking and every affected service on the live system.
-5. Only when the test and health checks pass, run
-   `sudo nixos-rebuild switch --flake .#orange`.
-6. Verify networking and every affected service again after `switch`, and
+4. Run `sudo nixos-rebuild test --flake .#<runtime-host>` locally against the
+   committed state, replacing `<runtime-host>` with the hostname confirmed in
+   step 1. Never use a different host's flake output for this live test.
+5. Verify networking and every affected service on the local live system.
+6. Only when the test and health checks pass, run
+   `sudo nixos-rebuild switch --flake .#<runtime-host>` locally.
+7. Verify networking and every affected service again after `switch`, and
    confirm that the running system and boot-default system match the tested
    committed configuration.
 
@@ -54,4 +85,6 @@ use this topology:
    `tailscale serve status` contains exactly one web listener: HTTPS port 443.
 
 Declarative web-service changes remain subject to the test, live health-check,
-and switch workflow above.
+and switch workflow above only when the confirmed runtime host is `orange`. On
+any other runtime host, validate the Orange configuration locally and do not
+SSH to Orange or deploy it remotely.
