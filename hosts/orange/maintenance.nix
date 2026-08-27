@@ -346,7 +346,7 @@ let
       stamp=$(date +%Y%m%dT%H%M%S)
       minecraft_was_active=false
 
-      install -d -m 0700 "$minecraft_dir" "$vaultwarden_dir"
+      install -d -m 0700 "$backup_root" "$minecraft_dir" "$vaultwarden_dir"
 
       if systemctl is-active --quiet minecraft.service; then
         minecraft_was_active=true
@@ -435,12 +435,6 @@ in
   systemd = {
     suppressedSystemUnits = [ "systemd-tmpfiles-clean.timer" ];
 
-    tmpfiles.rules = [
-      "d ${backupRoot} 0700 root root -"
-      "d ${backupRoot}/minecraft 0700 root root -"
-      "d ${backupRoot}/vaultwarden 0700 root root -"
-    ];
-
     services = {
       orange-health-monitor = {
         description = "Monitor orange and notify Discord only on new failures";
@@ -502,7 +496,7 @@ in
           UMask = "0077";
           Nice = 10;
           IOSchedulingClass = "idle";
-          ReadWritePaths = [ backupRoot ];
+          ReadWritePaths = [ "${storageRoot}/server/backups" ];
           ProtectSystem = "strict";
           ProtectHome = true;
           PrivateTmp = true;
