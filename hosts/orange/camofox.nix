@@ -1,11 +1,16 @@
 {
-  camofoxSharedUserId,
   lib,
+  orangeSettings,
   pkgs,
   ...
 }:
 
 let
+  inherit (orangeSettings)
+    camofoxApiPort
+    camofoxNoVncPort
+    camofoxSharedUserId
+    ;
   camofoxStateDir = "/home/keewai/.local/share/camofox";
   camoufoxCacheDir = "${camofoxStateDir}/cache/camoufox";
   vncBackendPort = 5900;
@@ -18,7 +23,7 @@ let
   healthCheck = pkgs.writeShellScript "camofox-health-check" ''
     for attempt in $(seq 1 60); do
       if ${lib.getExe pkgs.curl} --fail --silent --show-error \
-        http://127.0.0.1:9377/health >/dev/null; then
+        http://127.0.0.1:${toString camofoxApiPort}/health >/dev/null; then
         exit 0
       fi
       sleep 1
@@ -32,7 +37,7 @@ let
     sessionKey = "default";
     # Camofox only permits HTTP(S) for new tabs. Its local status endpoint is
     # deterministic, avoids an external dependency, and gives noVNC a page.
-    url = "http://127.0.0.1:9377/";
+    url = "http://127.0.0.1:${toString camofoxApiPort}/";
   };
 
   ensureSharedSession = pkgs.writeShellApplication {
@@ -44,7 +49,7 @@ let
       pkgs.netcat-openbsd
     ];
     text = ''
-      api_url=http://127.0.0.1:9377
+      api_url=http://127.0.0.1:${toString camofoxApiPort}
       shared_user_id=${lib.escapeShellArg camofoxSharedUserId}
 
       tabs_json="$(
@@ -109,7 +114,7 @@ in
         XDG_CACHE_HOME = "${camofoxStateDir}/cache";
         CAMOUFOX_INSTALL_DIR = camoufoxCacheDir;
 
-        CAMOFOX_PORT = "9377";
+        CAMOFOX_PORT = toString camofoxApiPort;
         CAMOFOX_BIND_HOST = "127.0.0.1";
         CAMOFOX_COOKIES_DIR = "${camofoxStateDir}/cookies";
         CAMOFOX_PROFILE_DIR = "${camofoxStateDir}/profiles";
@@ -127,7 +132,7 @@ in
 
         ENABLE_VNC = "1";
         VNC_PORT = toString vncBackendPort;
-        NOVNC_PORT = "6080";
+        NOVNC_PORT = toString camofoxNoVncPort;
         NOVNC_TARGET_PORT = toString vncActivationPort;
         VNC_BIND = "127.0.0.1";
         VNC_RESOLUTION = "1600x900";

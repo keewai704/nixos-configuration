@@ -1,18 +1,22 @@
 {
   lib,
+  orangeSettings,
   pkgs,
   ...
 }:
 
 let
-  storageRoot = "/srv/storage";
+  inherit (orangeSettings)
+    camofoxNoVncPort
+    nginxPort
+    storageRoot
+    tailnetHostname
+    ;
   storageMountUnit = "srv-storage.mount";
   immichMediaRoot = "${storageRoot}/Pictures";
   immichBackupRoot = "${immichMediaRoot}/backups";
   legacyVaultwardenRoot = "${storageRoot}/server/vaultwarden";
   vaultwardenBackupRoot = "${storageRoot}/server/backups/vaultwarden-nixos";
-  tailnetHostname = "orange.tail1e65cd.ts.net";
-  nginxPort = 8000;
   noVncViewerUrl = "https://${tailnetHostname}/browser/vnc.html?autoconnect=true&reconnect=true&reconnect_delay=1000&resize=scale&path=browser/websockify";
   postgresqlPackage = pkgs.postgresql_17;
   nginxProxyHeaders = ''
@@ -292,7 +296,7 @@ in
           "^~ /browser/" = {
             # The trailing slash strips /browser/ before forwarding to
             # websockify's root-mounted noVNC web application.
-            proxyPass = "http://127.0.0.1:6080/";
+            proxyPass = "http://127.0.0.1:${toString camofoxNoVncPort}/";
             proxyWebsockets = true;
             recommendedProxySettings = false;
             extraConfig = ''
@@ -300,7 +304,7 @@ in
               access_log off;
               proxy_read_timeout 86400s;
               proxy_send_timeout 86400s;
-              proxy_set_header Host 127.0.0.1:6080;
+              proxy_set_header Host 127.0.0.1:${toString camofoxNoVncPort};
               proxy_set_header X-Real-IP $tailscale_client_ip;
               proxy_set_header X-Forwarded-For $tailscale_client_ip;
               proxy_set_header X-Forwarded-Proto https;

@@ -1,15 +1,26 @@
 # nixos-configuration
 
-This repository contains the flake-based NixOS configuration for the `orange`
-host.
+This repository contains flake-based NixOS configurations for the `orange`
+and `citrus-vm` hosts.
+
+## Configuration layout
+
+Every host is constructed through the shared `mkHost` helper in `flake.nix`.
+Host-independent locale, user, Nix, logging, Home Manager, Codex, and generic
+MCP settings live under `modules/global`. Reusable platform and role settings,
+such as NetworkManager, UEFI systemd-boot, and tailnet administration, live
+under `profiles` and are imported explicitly by each compatible host.
+
+Hardware, state versions, network roles, local endpoints, storage, secrets,
+and services remain under `hosts/<name>`. Orange's repeated hostname, storage,
+and loopback-port values are defined once in `hosts/orange/settings.nix`.
 
 ## Agent tooling
 
-The flake loads `mcp-servers-nix` through Home Manager for the `keewai` user.
-Codex consumes the shared MCP registry through
-`programs.codex.enableMcpIntegration`; Camofox Browser, Context7, NixOS,
-Serena, and Ponytail servers are launched on demand rather than as persistent
-services.
+The flake loads `mcp-servers-nix` through Home Manager for the `keewai` user on
+every host. Codex consumes the shared MCP registry; Context7, NixOS, Serena,
+and Ponytail are global on-demand tools. Orange adds its local Camofox Browser
+MCP endpoint without exposing that loopback-only dependency to other hosts.
 
 The NixOS server is restricted to local stdio, with update checks, the startup
 banner, and project `.env` loading disabled. Serena starts in the current Git
@@ -81,6 +92,7 @@ user-facing web ingress is Tailscale Serve HTTPS on port 443, at
 nix --extra-experimental-features 'nix-command flakes' flake check
 sudo nixos-rebuild build --flake .#orange \
   --option experimental-features 'nix-command flakes'
+nix build .#nixosConfigurations.citrus-vm.config.system.build.toplevel --no-link
 ```
 
 ## Apply

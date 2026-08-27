@@ -1,13 +1,13 @@
 {
   lib,
+  orangeSettings,
   pkgs,
   ...
 }:
 
 let
+  inherit (orangeSettings) tailnetHostname yepAnywherePort;
   yepAnywhere = pkgs.callPackage ../../pkgs/yepanywhere/package.nix { };
-  tailnetHostname = "orange.tail1e65cd.ts.net";
-  applicationPort = 3400;
 in
 {
   environment.systemPackages = [ yepAnywhere ];
@@ -52,7 +52,7 @@ in
           User = "keewai";
           Group = "users";
           WorkingDirectory = "/home/keewai";
-          ExecStart = "${lib.getExe yepAnywhere} --host 127.0.0.1 --port ${toString applicationPort}";
+          ExecStart = "${lib.getExe yepAnywhere} --host 127.0.0.1 --port ${toString yepAnywherePort}";
           Restart = "on-failure";
           RestartSec = "5s";
           KillMode = "mixed";
@@ -69,7 +69,7 @@ in
     "^~ /yep/" = {
       # The packaged client is built with /yep/ as its Vite base. The trailing
       # slash strips that prefix before requests reach Yep's root-mounted app.
-      proxyPass = "http://127.0.0.1:${toString applicationPort}/";
+      proxyPass = "http://127.0.0.1:${toString yepAnywherePort}/";
       proxyWebsockets = true;
       recommendedProxySettings = false;
       extraConfig = ''

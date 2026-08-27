@@ -59,67 +59,45 @@ let
 in
 {
   imports = [
+    ../../profiles/networkmanager.nix
+    ../../profiles/uefi-systemd-boot.nix
     ./hardware-configuration.nix
     ./hyperv-enhanced-session.nix
   ];
 
-  boot.loader = {
-    systemd-boot.enable = true;
-    efi.canTouchEfiVariables = true;
-  };
+  networking.hostName = "citrus-vm";
 
-  networking = {
-    hostName = "citrus-vm";
-    networkmanager.enable = true;
-  };
+  i18n.inputMethod = {
+    enable = true;
+    type = "fcitx5";
 
-  time.timeZone = "Asia/Tokyo";
+    fcitx5 = {
+      addons = [ karukan ];
+      waylandFrontend = true;
 
-  i18n = {
-    defaultLocale = "ja_JP.UTF-8";
-
-    inputMethod = {
-      enable = true;
-      type = "fcitx5";
-
-      fcitx5 = {
-        addons = [ karukan ];
-        waylandFrontend = true;
-
-        settings.inputMethod = {
-          "Groups/0" = {
-            Name = "Default";
-            "Default Layout" = "us";
-            DefaultIM = "karukan";
-          };
-          "Groups/0/Items/0" = {
-            Name = "keyboard-us";
-            Layout = "";
-          };
-          "Groups/0/Items/1" = {
-            Name = "karukan";
-            Layout = "";
-          };
-          GroupOrder."0" = "Default";
+      settings.inputMethod = {
+        "Groups/0" = {
+          Name = "Default";
+          "Default Layout" = "us";
+          DefaultIM = "karukan";
         };
+        "Groups/0/Items/0" = {
+          Name = "keyboard-us";
+          Layout = "";
+        };
+        "Groups/0/Items/1" = {
+          Name = "karukan";
+          Layout = "";
+        };
+        GroupOrder."0" = "Default";
       };
     };
   };
 
-  console.keyMap = "us";
-
-  users.users.keewai = {
-    isNormalUser = true;
-    description = "keewai";
-    extraGroups = [
-      "audio"
-      "networkmanager"
-      "video"
-      "wheel"
-    ];
-  };
-
-  security.sudo.wheelNeedsPassword = false;
+  users.users.keewai.extraGroups = [
+    "audio"
+    "video"
+  ];
 
   programs.hyprland = {
     enable = true;
@@ -163,7 +141,6 @@ in
   environment = {
     systemPackages = [
       pkgs.kitty
-      pkgs.ripgrep
     ];
 
     sessionVariables = {
@@ -180,10 +157,7 @@ in
     "L+ /home/keewai/.local/share/karukan-im/dict.bin - - - - ${karukanDictionary}/share/karukan-im/dict.bin"
   ];
 
-  nix.settings.experimental-features = [
-    "nix-command"
-    "flakes"
-  ];
+  home-manager.users.keewai.home.stateVersion = "26.05";
 
   system.stateVersion = "26.05";
 }

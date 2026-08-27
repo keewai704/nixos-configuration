@@ -1,17 +1,23 @@
 {
   config,
   lib,
+  orangeSettings,
   pkgs,
   ...
 }:
 
 let
-  storageRoot = "/srv/storage";
+  inherit (orangeSettings)
+    camofoxApiPort
+    nginxPort
+    storageRoot
+    tailnetHostname
+    yepAnywherePort
+    ;
   storageMountUnit = "srv-storage.mount";
   backupRoot = "${storageRoot}/server/backups/orange-local";
   vaultwardenBackupRoot = "${storageRoot}/server/backups/vaultwarden-nixos";
   immichBackupRoot = "${storageRoot}/Pictures/backups";
-  tailnetHostname = "orange.tail1e65cd.ts.net";
 
   healthMonitor = pkgs.writeShellApplication {
     name = "orange-health-monitor";
@@ -235,7 +241,7 @@ let
       serve_count=$(grep --count '^https://' <<<"$serve_status" || true)
       if (( serve_count == 1 )) \
         && grep --fixed-strings --quiet 'https://${tailnetHostname} (tailnet only)' <<<"$serve_status" \
-        && grep --fixed-strings --quiet 'proxy http://127.0.0.1:8000' <<<"$serve_status"; then
+        && grep --fixed-strings --quiet 'proxy http://127.0.0.1:${toString nginxPort}' <<<"$serve_status"; then
         clear_alert "tailscale-serve"
       else
         summary=$(tr '\n' ' ' <<<"$serve_status" | cut -c1-300)
@@ -252,8 +258,8 @@ let
         fi
       }
 
-      check_http "camofox" "http://127.0.0.1:9377/health"
-      check_http "nginx" "http://127.0.0.1:8000/" --header 'Host: ${tailnetHostname}'
+      check_http "camofox" "http://127.0.0.1:${toString camofoxApiPort}/health"
+      check_http "nginx" "http://127.0.0.1:${toString nginxPort}/" --header 'Host: ${tailnetHostname}'
       check_http "immich" "https://${tailnetHostname}/"
       check_http "vaultwarden" "https://${tailnetHostname}/vault/"
       check_http "yep" "https://${tailnetHostname}/yep/"
@@ -269,7 +275,7 @@ let
       done
 
       exposed_backends=$(ss --listening --tcp --numeric --no-header 2>/dev/null \
-        | awk '$4 ~ /:(2283|8000|3400|8222|9377)$/ && $4 !~ /^127\.0\.0\.1:/ && $4 !~ /^\[::1\]:/ { print $4 }' \
+        | awk '$4 ~ /:(2283|${toString nginxPort}|${toString yepAnywherePort}|8222|${toString camofoxApiPort})$/ && $4 !~ /^127\.0\.0\.1:/ && $4 !~ /^\[::1\]:/ { print $4 }' \
         | paste -sd ', ' -)
       if [[ -n "$exposed_backends" ]]; then
         queue_alert "backend-listeners" "application backend is not loopback-only: $exposed_backends"
