@@ -9,7 +9,7 @@ let
   karukanDictionary = pkgs.callPackage ./karukan-dictionary.nix { };
 
   hyprlandConfig = pkgs.writeText "citrus-vm-hyprland.conf" ''
-    monitor = , preferred, auto, 1
+    monitor = Virtual-1, 1600x900@60, 0x0, 1
 
     $mainMod = SUPER
     $terminal = kitty
