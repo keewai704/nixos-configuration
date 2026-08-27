@@ -1,0 +1,647 @@
+diff --git a/packages/client/src/api/client.ts b/packages/client/src/api/client.ts
+index 3c574e8b..8d80b416 100644
+--- a/packages/client/src/api/client.ts
++++ b/packages/client/src/api/client.ts
+@@ -1121,0 +1122 @@ export const api = {
++      serviceTier?: string;
+@@ -1129,0 +1131 @@ export const api = {
++      serviceTier?: string;
+@@ -1178,0 +1181 @@ export const api = {
++        serviceTier?: string;
+diff --git a/packages/client/src/components/ModelSwitchModal.tsx b/packages/client/src/components/ModelSwitchModal.tsx
+index d5d13b57..7c04ad10 100644
+--- a/packages/client/src/components/ModelSwitchModal.tsx
++++ b/packages/client/src/components/ModelSwitchModal.tsx
+@@ -51,0 +52 @@ interface ModelSwitchModalProps {
++    serviceTier?: string;
+@@ -70 +71 @@ type ThinkingMode = "off" | "auto" | "on";
+-type DirtySection = "thinking" | "effort" | "model" | null;
++type DirtySection = "thinking" | "effort" | "model" | "serviceTier" | null;
+@@ -82,0 +84 @@ function sameSelection(
++  serviceTierA: string,
+@@ -85,0 +88 @@ function sameSelection(
++  serviceTierB: string,
+@@ -89 +92 @@ function sameSelection(
+-  if (modelA !== modelB || modeA !== modeB) {
++  if (modelA !== modelB || serviceTierA !== serviceTierB || modeA !== modeB) {
+@@ -122,0 +126,2 @@ export function ModelSwitchModal({
++  const [currentServiceTier, setCurrentServiceTier] =
++    useState<string>("default");
+@@ -127,0 +133 @@ export function ModelSwitchModal({
++  const [serviceTier, setServiceTier] = useState<string>("default");
+@@ -169,0 +176 @@ export function ModelSwitchModal({
++        const resolvedServiceTier = process?.serviceTier ?? "default";
+@@ -188,0 +196,2 @@ export function ModelSwitchModal({
++        setCurrentServiceTier(resolvedServiceTier);
++        setServiceTier(resolvedServiceTier);
+@@ -214,0 +224,6 @@ export function ModelSwitchModal({
++  const serviceTierOptions = selectedModelInfo?.serviceTiers ?? [];
++  const effectiveServiceTier = serviceTierOptions.some(
++    (tier) => tier.id === serviceTier,
++  )
++    ? serviceTier
++    : "default";
+@@ -246,0 +262 @@ export function ModelSwitchModal({
++      currentServiceTier,
+@@ -249,0 +266 @@ export function ModelSwitchModal({
++      effectiveServiceTier,
+@@ -264,0 +282 @@ export function ModelSwitchModal({
++        serviceTier: provider === "codex" ? effectiveServiceTier : undefined,
+@@ -461,0 +480,44 @@ export function ModelSwitchModal({
++            {processId && serviceTierOptions.length > 0 && (
++              <section className="model-switch-section">
++                <div className="model-switch-section-header">
++                  <strong>{t("newSessionSpeedTitle")}</strong>
++                </div>
++                <div className="model-switch-chip-group">
++                  {[
++                    {
++                      id: "default",
++                      name: t("newSessionSpeedStandard"),
++                      description: t("newSessionSpeedStandardDescription"),
++                    },
++                    ...serviceTierOptions,
++                  ].map((tier) => {
++                    const isCurrent = currentServiceTier === tier.id;
++                    const isSelected = effectiveServiceTier === tier.id;
++                    const showInlineSave =
++                      dirty &&
++                      lastTouchedSection === "serviceTier" &&
++                      isSelected;
++                    return (
++                      <Fragment key={tier.id}>
++                        <button
++                          type="button"
++                          className={`model-switch-chip ${isCurrent ? "current" : ""} ${isSelected ? "active" : ""}`}
++                          onClick={() => {
++                            if (effectiveServiceTier !== tier.id) {
++                              setLastTouchedSection("serviceTier");
++                            }
++                            setServiceTier(tier.id);
++                          }}
++                          disabled={switching}
++                          title={tier.description}
++                        >
++                          <span>{tier.name}</span>
++                        </button>
++                        {showInlineSave && renderInlineSave()}
++                      </Fragment>
++                    );
++                  })}
++                </div>
++              </section>
++            )}
++
+diff --git a/packages/client/src/components/NewSessionForm.tsx b/packages/client/src/components/NewSessionForm.tsx
+index 2a5dbda3..253c08ed 100644
+--- a/packages/client/src/components/NewSessionForm.tsx
++++ b/packages/client/src/components/NewSessionForm.tsx
+@@ -265,0 +266,2 @@ export function NewSessionForm({
++  const [selectedServiceTier, setSelectedServiceTier] =
++    useState<string>("default");
+@@ -780,0 +783,10 @@ export function NewSessionForm({
++  const serviceTierOptions = selectedModelInfo?.serviceTiers ?? [];
++  const showServiceTierControls = serviceTierOptions.length > 0;
++  const effectiveServiceTier = serviceTierOptions.some(
++    (tier) => tier.id === selectedServiceTier,
++  )
++    ? selectedServiceTier
++    : "default";
++  const launchServiceTier = showServiceTierControls
++    ? effectiveServiceTier
++    : undefined;
+@@ -820,0 +833 @@ export function NewSessionForm({
++      serviceTier: providerName === "codex" ? "priority" : undefined,
+@@ -1158,0 +1172 @@ export function NewSessionForm({
++    setSelectedServiceTier(initialProviderDefaults.serviceTier ?? "default");
+@@ -1235,0 +1250 @@ export function NewSessionForm({
++    setSelectedServiceTier(providerDefaults.serviceTier ?? "default");
+@@ -1453,0 +1469 @@ export function NewSessionForm({
++            serviceTier: launchServiceTier,
+@@ -1466,0 +1483 @@ export function NewSessionForm({
++    launchServiceTier,
+@@ -1641,0 +1659 @@ export function NewSessionForm({
++          serviceTier: launchServiceTier,
+@@ -1656,0 +1675 @@ export function NewSessionForm({
++          serviceTier: launchServiceTier ?? null,
+@@ -1722 +1741 @@ export function NewSessionForm({
+-            undefined, // serviceTier
++            launchServiceTier,
+@@ -1875,0 +1895 @@ export function NewSessionForm({
++      launchServiceTier,
+@@ -1952,0 +1973 @@ export function NewSessionForm({
++          serviceTier: launchServiceTier,
+@@ -1981,0 +2003 @@ export function NewSessionForm({
++        serviceTier: launchServiceTier ?? null,
+@@ -2926,0 +2949,38 @@ export function NewSessionForm({
++  const serviceTierSection = showServiceTierControls ? (
++    <div className="new-session-helper-section new-session-service-tier-section">
++      <h3>{t("newSessionSpeedTitle")}</h3>
++      <div className="new-session-helper-options">
++        <button
++          type="button"
++          className={`new-session-helper-option ${
++            effectiveServiceTier === "default" ? "selected" : ""
++          }`}
++          onClick={() => {
++            hasUserCustomizedDefaultsRef.current = true;
++            setSelectedServiceTier("default");
++          }}
++          disabled={isStarting}
++          title={t("newSessionSpeedStandardDescription")}
++        >
++          <span>{t("newSessionSpeedStandard")}</span>
++        </button>
++        {serviceTierOptions.map((tier) => (
++          <button
++            key={tier.id}
++            type="button"
++            className={`new-session-helper-option ${
++              effectiveServiceTier === tier.id ? "selected" : ""
++            }`}
++            onClick={() => {
++              hasUserCustomizedDefaultsRef.current = true;
++              setSelectedServiceTier(tier.id);
++            }}
++            disabled={isStarting}
++            title={tier.description}
++          >
++            <span>{tier.name}</span>
++          </button>
++        ))}
++      </div>
++    </div>
++  ) : null;
+@@ -3100,0 +3161 @@ export function NewSessionForm({
++          serviceTierSection ||
+@@ -3112,0 +3174 @@ export function NewSessionForm({
++            {serviceTierSection}
+diff --git a/packages/client/src/components/RestartSessionModal.tsx b/packages/client/src/components/RestartSessionModal.tsx
+index d374fa33..30be05c0 100644
+--- a/packages/client/src/components/RestartSessionModal.tsx
++++ b/packages/client/src/components/RestartSessionModal.tsx
+@@ -137,0 +138,11 @@ function getRestartDefaultThinking(params: {
++function getRestartDefaultServiceTier(params: {
++  provider: ProviderName;
++  defaults?: NewSessionDefaults | null;
++}): string {
++  return (
++    getProviderSessionDefaults(params.defaults, params.provider, {
++      serviceTier: params.provider === "codex" ? "priority" : undefined,
++    }).serviceTier ?? "default"
++  );
++}
++
+@@ -362,0 +374,13 @@ export function RestartSessionModal({
++  const serviceTierOptions = selectedModelInfo?.serviceTiers ?? [];
++  const [selectedServiceTier, setSelectedServiceTier] = useState<string>(() =>
++    getRestartDefaultServiceTier({
++      provider: selectedProvider,
++      defaults: settings?.newSessionDefaults,
++    }),
++  );
++  const hasUserSelectedServiceTierRef = useRef(false);
++  const effectiveServiceTier = serviceTierOptions.some(
++    (tier) => tier.id === selectedServiceTier,
++  )
++    ? selectedServiceTier
++    : "default";
+@@ -528,0 +553,12 @@ export function RestartSessionModal({
++  useEffect(() => {
++    if (settingsLoading || hasUserSelectedServiceTierRef.current) {
++      return;
++    }
++    setSelectedServiceTier(
++      getRestartDefaultServiceTier({
++        provider: selectedProvider,
++        defaults: settings?.newSessionDefaults,
++      }),
++    );
++  }, [selectedProvider, settings, settingsLoading]);
++
+@@ -551,0 +588,4 @@ export function RestartSessionModal({
++        serviceTier:
++          selectedProvider === "codex" && serviceTierOptions.length > 0
++            ? effectiveServiceTier
++            : undefined,
+@@ -580,0 +621 @@ export function RestartSessionModal({
++    hasUserSelectedServiceTierRef.current = false;
+@@ -599,0 +641,6 @@ export function RestartSessionModal({
++    setSelectedServiceTier(
++      getRestartDefaultServiceTier({
++        provider: providerName,
++        defaults: settings?.newSessionDefaults,
++      }),
++    );
+@@ -848,0 +896,32 @@ export function RestartSessionModal({
++        {serviceTierOptions.length > 0 && (
++          <section className="model-switch-section">
++            <div className="model-switch-section-header">
++              <strong>{t("newSessionSpeedTitle")}</strong>
++            </div>
++            <div className="model-switch-chip-group">
++              {[
++                {
++                  id: "default",
++                  name: t("newSessionSpeedStandard"),
++                  description: t("newSessionSpeedStandardDescription"),
++                },
++                ...serviceTierOptions,
++              ].map((tier) => (
++                <button
++                  key={tier.id}
++                  type="button"
++                  className={`model-switch-chip ${effectiveServiceTier === tier.id ? "active" : ""}`}
++                  onClick={() => {
++                    hasUserSelectedServiceTierRef.current = true;
++                    setSelectedServiceTier(tier.id);
++                  }}
++                  disabled={restarting}
++                  title={tier.description}
++                >
++                  <span>{tier.name}</span>
++                </button>
++              ))}
++            </div>
++          </section>
++        )}
++
+diff --git a/packages/client/src/components/__tests__/RestartSessionModal.test.tsx b/packages/client/src/components/__tests__/RestartSessionModal.test.tsx
+index d8e085e6..296745a4 100644
+--- a/packages/client/src/components/__tests__/RestartSessionModal.test.tsx
++++ b/packages/client/src/components/__tests__/RestartSessionModal.test.tsx
+@@ -31 +31,8 @@ const { mockRestartSession, serverSettingsState } = vi.hoisted(() => ({
+-              effortLevel?: "low" | "medium" | "high" | "xhigh" | "max";
++              effortLevel?:
++                | "low"
++                | "medium"
++                | "high"
++                | "xhigh"
++                | "max"
++                | "ultra";
++              serviceTier?: string;
+@@ -243,0 +251,58 @@ describe("RestartSessionModal", () => {
++  it("uses the saved Fast tier for a Codex handoff", async () => {
++    serverSettingsState.settings = {
++      newSessionDefaults: {
++        provider: "codex",
++        permissionMode: "default",
++        providers: {
++          codex: {
++            model: "gpt-5.6",
++            serviceTier: "priority",
++            thinkingMode: "on",
++            effortLevel: "ultra",
++          },
++        },
++      },
++    };
++
++    render(
++      <RestartSessionModal
++        projectId="proj-1"
++        sessionId="sess-1"
++        provider="codex"
++        models={[
++          {
++            id: "gpt-5.6",
++            name: "GPT-5.6",
++            serviceTiers: [{ id: "priority", name: "Fast" }],
++            supportedEffortLevels: ["max", "ultra"],
++          },
++        ]}
++        currentModel="gpt-5.6"
++        mode="default"
++        thinking="on:max"
++        onRestarted={vi.fn()}
++        onClose={vi.fn()}
++      />,
++    );
++
++    expect(screen.getByRole("button", { name: "Fast" }).className).toContain(
++      "active",
++    );
++    fireEvent.click(
++      screen.getByRole("button", { name: "sessionRestartStart" }),
++    );
++
++    await waitFor(() => {
++      expect(mockRestartSession).toHaveBeenCalledWith(
++        "proj-1",
++        "sess-1",
++        expect.objectContaining({
++          provider: "codex",
++          model: "gpt-5.6",
++          serviceTier: "priority",
++          thinking: "on:ultra",
++        }),
++      );
++    });
++  });
++
+diff --git a/packages/client/src/i18n/en.json b/packages/client/src/i18n/en.json
+index 8bb555f8..562e2b73 100644
+--- a/packages/client/src/i18n/en.json
++++ b/packages/client/src/i18n/en.json
+@@ -494,0 +495,3 @@
++  "newSessionSpeedTitle": "Speed",
++  "newSessionSpeedStandard": "Standard",
++  "newSessionSpeedStandardDescription": "Use standard processing and credit consumption.",
+@@ -1857,0 +1861 @@
++  "modelSettingsSpeedDescription": "Choose Standard or faster processing for new sessions. Fast uses credits at a higher rate.",
+@@ -1887,0 +1892 @@
++  "effortLevelUltraDescription": "Maximum reasoning with automatic task delegation",
+diff --git a/packages/client/src/lib/__tests__/effortLevels.test.ts b/packages/client/src/lib/__tests__/effortLevels.test.ts
+index 597cc78b..4d0bddf4 100644
+--- a/packages/client/src/lib/__tests__/effortLevels.test.ts
++++ b/packages/client/src/lib/__tests__/effortLevels.test.ts
+@@ -76 +76 @@ describe("effort level options", () => {
+-  it("normalizes legacy Codex max to xhigh for display and selection", () => {
++  it("keeps Codex max and ultra available for current models", () => {
+@@ -79,2 +79,10 @@ describe("effort level options", () => {
+-    expect(normalizeEffortLevelForProvider("max", codexProvider)).toBe("xhigh");
+-    expect(resolveSupportedEffortLevel("max", options)).toBe("xhigh");
++    expect(options.map((option) => option.value)).toEqual([
++      "low",
++      "medium",
++      "high",
++      "xhigh",
++      "max",
++      "ultra",
++    ]);
++    expect(normalizeEffortLevelForProvider("max", codexProvider)).toBe("max");
++    expect(resolveSupportedEffortLevel("ultra", options)).toBe("ultra");
+diff --git a/packages/client/src/lib/effortLevels.ts b/packages/client/src/lib/effortLevels.ts
+index 99776662..5d2bf0ab 100644
+--- a/packages/client/src/lib/effortLevels.ts
++++ b/packages/client/src/lib/effortLevels.ts
+@@ -27 +27,2 @@ export type EffortLevelMessageKey =
+-  | "effortLevelMaxDescription";
++  | "effortLevelMaxDescription"
++  | "effortLevelUltraDescription";
+@@ -36,0 +38 @@ export const EFFORT_LEVEL_ORDER: EffortLevel[] = [
++  "ultra",
+@@ -41 +43,16 @@ const GENERIC_EFFORT_LEVELS: EffortLevel[] = ["low", "medium", "high", "max"];
+-const CODEX_EFFORT_LEVELS: EffortLevel[] = ["low", "medium", "high", "xhigh"];
++const CLAUDE_EFFORT_LEVELS: EffortLevel[] = [
++  "low",
++  "medium",
++  "high",
++  "xhigh",
++  "max",
++];
++
++const CODEX_EFFORT_LEVELS: EffortLevel[] = [
++  "low",
++  "medium",
++  "high",
++  "xhigh",
++  "max",
++  "ultra",
++];
+@@ -57,0 +75,2 @@ const DEFAULT_EFFORT_LEVEL_MESSAGES: Record<EffortLevelMessageKey, string> = {
++  effortLevelUltraDescription:
++    "Maximum reasoning with automatic task delegation",
+@@ -114 +133 @@ function getFallbackEffortLevels(providerName?: ProviderName): EffortLevel[] {
+-      return EFFORT_LEVEL_ORDER;
++      return CLAUDE_EFFORT_LEVELS;
+@@ -140,0 +160,2 @@ export function getEffortLevelLabel(
++    case "ultra":
++      return "Ultra";
+@@ -162,0 +184,2 @@ function getFallbackDescription(
++    case "ultra":
++      return translate("effortLevelUltraDescription");
+@@ -239 +262 @@ export function normalizeEffortLevelForProvider(
+-  provider?: ProviderInfo | ProviderName | null,
++  _provider?: ProviderInfo | ProviderName | null,
+@@ -241,4 +263,0 @@ export function normalizeEffortLevelForProvider(
+-  const providerName = getProviderName(provider);
+-  if (effort === "max" && providerName === "codex") {
+-    return "xhigh";
+-  }
+diff --git a/packages/client/src/lib/modelConfigIndicator.ts b/packages/client/src/lib/modelConfigIndicator.ts
+index 7295c0fc..8f62f038 100644
+--- a/packages/client/src/lib/modelConfigIndicator.ts
++++ b/packages/client/src/lib/modelConfigIndicator.ts
+@@ -17 +17,2 @@ export type ModelIndicatorTone =
+-  | "max";
++  | "max"
++  | "ultra";
+diff --git a/packages/client/src/pages/settings/ModelSettings.tsx b/packages/client/src/pages/settings/ModelSettings.tsx
+index c63c0756..9a9ed971 100644
+--- a/packages/client/src/pages/settings/ModelSettings.tsx
++++ b/packages/client/src/pages/settings/ModelSettings.tsx
+@@ -261,0 +262 @@ export function ModelSettings() {
++        serviceTier: selectedProvider.name === "codex" ? "priority" : undefined,
+@@ -285,0 +287,6 @@ export function ModelSettings() {
++  const serviceTierOptions = selectedModelInfo?.serviceTiers ?? [];
++  const effectiveServiceTier = serviceTierOptions.some(
++    (tier) => tier.id === selectedProviderDefaults.serviceTier,
++  )
++    ? selectedProviderDefaults.serviceTier
++    : "default";
+@@ -550,0 +558 @@ export function ModelSettings() {
++          serviceTier: provider.name === "codex" ? "priority" : undefined,
+@@ -571,0 +580,2 @@ export function ModelSettings() {
++        "speed",
++        "fast mode",
+@@ -774,0 +785,44 @@ export function ModelSettings() {
++            {serviceTierOptions.length > 0 && (
++              <div className="new-session-helper-section session-default-service-tier-section">
++                <h3>{t("newSessionSpeedTitle")}</h3>
++                <p className="session-default-section-description">
++                  {t("modelSettingsSpeedDescription")}
++                </p>
++                <div className="new-session-helper-options">
++                  <button
++                    type="button"
++                    className={`new-session-helper-option ${
++                      effectiveServiceTier === "default" ? "selected" : ""
++                    }`}
++                    onClick={() =>
++                      void updateProviderSessionDefaults({
++                        serviceTier: "default",
++                      })
++                    }
++                    disabled={settingsLoading}
++                    title={t("newSessionSpeedStandardDescription")}
++                  >
++                    <span>{t("newSessionSpeedStandard")}</span>
++                  </button>
++                  {serviceTierOptions.map((tier) => (
++                    <button
++                      key={tier.id}
++                      type="button"
++                      className={`new-session-helper-option ${
++                        effectiveServiceTier === tier.id ? "selected" : ""
++                      }`}
++                      onClick={() =>
++                        void updateProviderSessionDefaults({
++                          serviceTier: tier.id,
++                        })
++                      }
++                      disabled={settingsLoading}
++                      title={tier.description}
++                    >
++                      <span>{tier.name}</span>
++                    </button>
++                  ))}
++                </div>
++              </div>
++            )}
++
+diff --git a/packages/client/src/styles/index.css b/packages/client/src/styles/index.css
+index 7e0cb444..eb6d7264 100644
+--- a/packages/client/src/styles/index.css
++++ b/packages/client/src/styles/index.css
+@@ -14522,0 +14523,4 @@ div.bang-command-error-message {
++.provider-badge-effort-dot.tone-ultra {
++  background: #7e22ce;
++}
++
+diff --git a/packages/client/src/styles/renderers.css b/packages/client/src/styles/renderers.css
+index 30ebbc68..36cb6a1c 100644
+--- a/packages/client/src/styles/renderers.css
++++ b/packages/client/src/styles/renderers.css
+@@ -2822,0 +2823,4 @@ details[open] .collapsible__icon {
++.model-switch-indicator-dot.tone-ultra {
++  background: #7e22ce;
++}
++
+diff --git a/packages/server/src/routes/processes.ts b/packages/server/src/routes/processes.ts
+index 26e26a05..eac9182c 100644
+--- a/packages/server/src/routes/processes.ts
++++ b/packages/server/src/routes/processes.ts
+@@ -441 +441 @@ export function createProcessesRoutes(deps: ProcessesDeps): Hono {
+-  // Body: { model?: string, thinking?: ThinkingOption }
++  // Body: { model?: string, serviceTier?: string, thinking?: ThinkingOption }
+@@ -451,0 +452 @@ export function createProcessesRoutes(deps: ProcessesDeps): Hono {
++      serviceTier?: string;
+@@ -456,0 +458 @@ export function createProcessesRoutes(deps: ProcessesDeps): Hono {
++      serviceTier?: string;
+@@ -463,0 +466,16 @@ export function createProcessesRoutes(deps: ProcessesDeps): Hono {
++    if ("serviceTier" in body) {
++      if (
++        typeof body.serviceTier !== "string" ||
++        body.serviceTier.trim().length === 0 ||
++        body.serviceTier.length > 64
++      ) {
++        return c.json(
++          {
++            error:
++              "serviceTier must be a non-empty string of at most 64 characters",
++          },
++          400,
++        );
++      }
++      updates.serviceTier = body.serviceTier.trim();
++    }
+@@ -490,0 +509 @@ export function createProcessesRoutes(deps: ProcessesDeps): Hono {
++      serviceTier: updatedProcess.serviceTier,
+diff --git a/packages/server/src/routes/settings-parsers.ts b/packages/server/src/routes/settings-parsers.ts
+index 9949ec71..6a779363 100644
+--- a/packages/server/src/routes/settings-parsers.ts
++++ b/packages/server/src/routes/settings-parsers.ts
+@@ -114,0 +115 @@ const EFFORT_LEVELS = [
++  "ultra",
+diff --git a/packages/server/src/sdk/providers/codex.ts b/packages/server/src/sdk/providers/codex.ts
+index d6d6f7ad..0e9f836f 100644
+--- a/packages/server/src/sdk/providers/codex.ts
++++ b/packages/server/src/sdk/providers/codex.ts
+@@ -1154 +1154,10 @@ export class CodexProvider implements AgentProvider {
+-  ): "none" | "minimal" | "low" | "medium" | "high" | "xhigh" | undefined {
++  ):
++    | "none"
++    | "minimal"
++    | "low"
++    | "medium"
++    | "high"
++    | "xhigh"
++    | "max"
++    | "ultra"
++    | undefined {
+@@ -1171 +1179,0 @@ export class CodexProvider implements AgentProvider {
+-        return "low";
+@@ -1173 +1180,0 @@ export class CodexProvider implements AgentProvider {
+-        return "medium";
+@@ -1175 +1181,0 @@ export class CodexProvider implements AgentProvider {
+-        return "high";
+@@ -1178 +1184,2 @@ export class CodexProvider implements AgentProvider {
+-        return "xhigh";
++      case "ultra":
++        return effort;
+diff --git a/packages/server/test/routes/processes.test.ts b/packages/server/test/routes/processes.test.ts
+index d2cf26eb..0bd6d410 100644
+--- a/packages/server/test/routes/processes.test.ts
++++ b/packages/server/test/routes/processes.test.ts
+@@ -60,0 +61,34 @@ describe("Processes Routes", () => {
++  it("reconfigures the active process service tier", async () => {
++    const updatedProcess = {
++      id: "proc-2",
++      resolvedModel: "gpt-5.6-sol",
++      serviceTier: "priority",
++      thinking: { type: "adaptive" },
++      effort: "ultra",
++    };
++    const reconfigureProcess = vi.fn(async () => updatedProcess);
++    const routes = createProcessesRoutes({
++      supervisor: {
++        getProcess: vi.fn(() => ({ id: "proc-1" })),
++        reconfigureProcess,
++      } as unknown as Supervisor,
++      scanner: {} as ProjectScanner,
++      readerFactory: vi.fn(),
++    });
++
++    const response = await routes.request("/proc-1/config", {
++      method: "POST",
++      headers: { "Content-Type": "application/json" },
++      body: JSON.stringify({ serviceTier: "priority" }),
++    });
++
++    expect(response.status).toBe(200);
++    expect(reconfigureProcess).toHaveBeenCalledWith("proc-1", {
++      serviceTier: "priority",
++    });
++    await expect(response.json()).resolves.toMatchObject({
++      processId: "proc-2",
++      serviceTier: "priority",
++    });
++  });
++
+diff --git a/packages/server/test/routes/settings.test.ts b/packages/server/test/routes/settings.test.ts
+index bc80efc7..0896cf57 100644
+--- a/packages/server/test/routes/settings.test.ts
++++ b/packages/server/test/routes/settings.test.ts
+@@ -934 +934 @@ describe("Settings Routes", () => {
+-                effortLevel: "xhigh",
++                effortLevel: "ultra",
+@@ -959 +959 @@ describe("Settings Routes", () => {
+-              effortLevel: "xhigh",
++              effortLevel: "ultra",
+diff --git a/packages/server/test/sdk/providers/codex.test.ts b/packages/server/test/sdk/providers/codex.test.ts
+index d31c200a..ba7bd96c 100644
+--- a/packages/server/test/sdk/providers/codex.test.ts
++++ b/packages/server/test/sdk/providers/codex.test.ts
+@@ -2848,0 +2849,4 @@ describe("CodexProvider Event Normalization", () => {
++    const startUltra = provider.createThreadStartParams(
++      { model: "gpt-5.6-sol", cwd: "/tmp", effort: "ultra" },
++      { approvalPolicy: "on-request", sandbox: "workspace-write" },
++    );
+@@ -2886 +2890 @@ describe("CodexProvider Event Normalization", () => {
+-      config: { model_reasoning_effort: "xhigh" },
++      config: { model_reasoning_effort: "max" },
+@@ -2890,0 +2895,3 @@ describe("CodexProvider Event Normalization", () => {
++    expect(startUltra).toMatchObject({
++      config: { model_reasoning_effort: "ultra" },
++    });
+diff --git a/packages/shared/src/types.ts b/packages/shared/src/types.ts
+index 2ac312b5..6eb7a4f5 100644
+--- a/packages/shared/src/types.ts
++++ b/packages/shared/src/types.ts
+@@ -581 +581 @@ export function resolveModel(
+-export type EffortLevel = "low" | "medium" | "high" | "xhigh" | "max";
++export type EffortLevel = "low" | "medium" | "high" | "xhigh" | "max" | "ultra";
+@@ -596 +596 @@ export type ThinkingMode = "off" | "auto" | "on";
+- * - "on:low" | "on:medium" | "on:high" | "on:xhigh" | "on:max": Forced-on thinking at effort level
++ * - "on:low" | ... | "on:max" | "on:ultra": Forced-on thinking at effort level

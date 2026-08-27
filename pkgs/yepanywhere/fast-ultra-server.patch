@@ -1,0 +1,69 @@
+diff --git a/dist/routes/processes.js b/dist/routes/processes.js
+index ae95660..b6bd6b7 100644
+--- a/dist/routes/processes.js
++++ b/dist/routes/processes.js
+@@ -287,7 +287,7 @@ export function createProcessesRoutes(deps) {
+         return c.json({ commands });
+     });
+     // POST /api/processes/:processId/config - Reconfigure an active process
+-    // Body: { model?: string, thinking?: ThinkingOption }
++    // Body: { model?: string, serviceTier?: string, thinking?: ThinkingOption }
+     routes.post("/:processId/config", async (c) => {
+         const processId = c.req.param("processId");
+         const process = deps.supervisor.getProcess(processId);
+@@ -299,6 +299,14 @@ export function createProcessesRoutes(deps) {
+         if ("model" in body) {
+             updates.model = body.model;
+         }
++        if ("serviceTier" in body) {
++            if (typeof body.serviceTier !== "string" ||
++                body.serviceTier.trim().length === 0 ||
++                body.serviceTier.length > 64) {
++                return c.json({ error: "serviceTier must be a non-empty string of at most 64 characters" }, 400);
++            }
++            updates.serviceTier = body.serviceTier.trim();
++        }
+         if ("thinking" in body) {
+             if (body.thinking === undefined) {
+                 updates.thinking = undefined;
+@@ -318,6 +326,7 @@ export function createProcessesRoutes(deps) {
+             success: true,
+             processId: updatedProcess.id,
+             model: updatedProcess.resolvedModel ?? body.model,
++            serviceTier: updatedProcess.serviceTier,
+             thinking: updatedProcess.thinking,
+             effort: updatedProcess.effort,
+         });
+diff --git a/dist/routes/settings-parsers.js b/dist/routes/settings-parsers.js
+index 679ae07..1de1cc6 100644
+--- a/dist/routes/settings-parsers.js
++++ b/dist/routes/settings-parsers.js
+@@ -67,6 +67,7 @@ const EFFORT_LEVELS = [
+     "high",
+     "xhigh",
+     "max",
++    "ultra",
+ ];
+ const MAX_SPEECH_SMART_TURN_TIMEOUT_MS = 10000;
+ export function parseHostAliasList(rawHosts) {
+diff --git a/dist/sdk/providers/codex.js b/dist/sdk/providers/codex.js
+index 5a81fc1..f33ff98 100644
+--- a/dist/sdk/providers/codex.js
++++ b/dist/sdk/providers/codex.js
+@@ -728,14 +728,12 @@ export class CodexProvider {
+         }
+         switch (effort) {
+             case "low":
+-                return "low";
+             case "medium":
+-                return "medium";
+             case "high":
+-                return "high";
+             case "xhigh":
+             case "max":
+-                return "xhigh";
++            case "ultra":
++                return effort;
+         }
+     }
+     mapPermissionModeToThreadPolicy(permissionMode) {

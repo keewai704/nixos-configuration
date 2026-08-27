@@ -38,7 +38,10 @@ let
       hash = "sha256-AorVg545Cza+1X19TnnM3kk/IV+VNrsihgzP9daESKY=";
     };
 
-    patches = [ ./subpath-client.patch ];
+    patches = [
+      ./subpath-client.patch
+      ./fast-ultra-source.patch
+    ];
 
     nativeBuildInputs = [
       nodejs_24
@@ -79,7 +82,10 @@ buildNpmPackage {
   nodejs = nodejs_24;
   npmDepsHash = "sha256-y+kK6er2qy4NKu7lCqt1Ms1f6XgZyJVZ10+5UcqXm6I=";
 
-  patches = [ ./codex-default-provider.patch ];
+  patches = [
+    ./codex-default-provider.patch
+    ./fast-ultra-server.patch
+  ];
 
   postPatch = ''
     cp ${./package-lock.json} package-lock.json

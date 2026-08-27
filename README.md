@@ -65,6 +65,8 @@ Yep Anywhere v0.7.0 is packaged from a fixed npm release and starts
 automatically as `yepanywhere.service`. It runs as `keewai`, so it discovers
 the existing authenticated Codex CLI and compatible session history without a
 second sign-in. New sessions default to Codex when no provider is selected.
+Codex sessions default to Fast processing; Standard/Fast can be selected for
+new and active sessions, and supported GPT-5.6 models expose Ultra reasoning.
 Its state is stored in `~/.yep-anywhere`.
 
 The application backend remains loopback-only on port 3400. Its client is

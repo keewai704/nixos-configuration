@@ -55,10 +55,15 @@
               codexSystemSettings = {
                 model = "gpt-5.6-sol";
                 model_reasoning_effort = "max";
-                service_tier = "priority";
+                service_tier = "fast";
                 approval_policy = "never";
                 approvals_reviewer = "user";
                 sandbox_mode = "danger-full-access";
+
+                features = {
+                  fast_mode = true;
+                  multi_agent = true;
+                };
 
                 marketplaces.openai-bundled = {
                   source_type = "local";
