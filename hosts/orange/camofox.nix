@@ -83,144 +83,146 @@ let
   };
 in
 {
-  systemd.tmpfiles.rules = [
-    "d ${camofoxStateDir} 0700 keewai users -"
-    "d ${camofoxStateDir}/cache 0700 keewai users -"
-    "d ${camoufoxCacheDir} 0700 keewai users -"
-    "d ${camofoxStateDir}/cookies 0700 keewai users -"
-    "d ${camofoxStateDir}/profiles 0700 keewai users -"
-    "d ${camofoxStateDir}/traces 0700 keewai users -"
-    "d ${camofoxStateDir}/uploads 0700 keewai users -"
-  ];
-
-  systemd.services.camofox = {
-    description = "Camofox Browser (native Nix package)";
-    documentation = [ "https://github.com/jo-inc/camofox-browser" ];
-    wantedBy = [ "multi-user.target" ];
-    wants = [ "network-online.target" ];
-    after = [
-      "network-online.target"
-      "systemd-tmpfiles-setup.service"
+  systemd = {
+    tmpfiles.rules = [
+      "d ${camofoxStateDir} 0700 keewai users -"
+      "d ${camofoxStateDir}/cache 0700 keewai users -"
+      "d ${camoufoxCacheDir} 0700 keewai users -"
+      "d ${camofoxStateDir}/cookies 0700 keewai users -"
+      "d ${camofoxStateDir}/profiles 0700 keewai users -"
+      "d ${camofoxStateDir}/traces 0700 keewai users -"
+      "d ${camofoxStateDir}/uploads 0700 keewai users -"
     ];
 
-    environment = {
-      HOME = camofoxStateDir;
-      XDG_CACHE_HOME = "${camofoxStateDir}/cache";
-      CAMOUFOX_INSTALL_DIR = camoufoxCacheDir;
+    services.camofox = {
+      description = "Camofox Browser (native Nix package)";
+      documentation = [ "https://github.com/jo-inc/camofox-browser" ];
+      wantedBy = [ "multi-user.target" ];
+      wants = [ "network-online.target" ];
+      after = [
+        "network-online.target"
+        "systemd-tmpfiles-setup.service"
+      ];
 
-      CAMOFOX_PORT = "9377";
-      CAMOFOX_BIND_HOST = "127.0.0.1";
-      CAMOFOX_COOKIES_DIR = "${camofoxStateDir}/cookies";
-      CAMOFOX_PROFILE_DIR = "${camofoxStateDir}/profiles";
-      CAMOFOX_TRACES_DIR = "${camofoxStateDir}/traces";
-      CAMOFOX_UPLOADS_DIR = "${camofoxStateDir}/uploads";
-      CAMOFOX_CRASH_REPORT_ENABLED = "false";
+      environment = {
+        HOME = camofoxStateDir;
+        XDG_CACHE_HOME = "${camofoxStateDir}/cache";
+        CAMOUFOX_INSTALL_DIR = camoufoxCacheDir;
 
-      # Keep startup reproducible: do not fetch the mutable default UBO addon.
-      CAMOFOX_DISABLE_DEFAULT_ADDONS = "true";
-      CAMOFOX_BROWSER_PREWARM = "false";
+        CAMOFOX_PORT = "9377";
+        CAMOFOX_BIND_HOST = "127.0.0.1";
+        CAMOFOX_COOKIES_DIR = "${camofoxStateDir}/cookies";
+        CAMOFOX_PROFILE_DIR = "${camofoxStateDir}/profiles";
+        CAMOFOX_TRACES_DIR = "${camofoxStateDir}/traces";
+        CAMOFOX_UPLOADS_DIR = "${camofoxStateDir}/uploads";
+        CAMOFOX_CRASH_REPORT_ENABLED = "false";
 
-      # Keep Camoufox and x11vnc available for on-demand noVNC connections.
-      # The packaged v1.14.0 fix makes 0 honor upstream's documented "never".
-      BROWSER_IDLE_TIMEOUT_MS = "0";
+        # Keep startup reproducible: do not fetch the mutable default UBO addon.
+        CAMOFOX_DISABLE_DEFAULT_ADDONS = "true";
+        CAMOFOX_BROWSER_PREWARM = "false";
 
-      ENABLE_VNC = "1";
-      VNC_PORT = toString vncBackendPort;
-      NOVNC_PORT = "6080";
-      NOVNC_TARGET_PORT = toString vncActivationPort;
-      VNC_BIND = "127.0.0.1";
-      VNC_RESOLUTION = "1920x1080";
+        # Keep Camoufox and x11vnc available for on-demand noVNC connections.
+        # The packaged v1.14.0 fix makes 0 honor upstream's documented "never".
+        BROWSER_IDLE_TIMEOUT_MS = "0";
+
+        ENABLE_VNC = "1";
+        VNC_PORT = toString vncBackendPort;
+        NOVNC_PORT = "6080";
+        NOVNC_TARGET_PORT = toString vncActivationPort;
+        VNC_BIND = "127.0.0.1";
+        VNC_RESOLUTION = "1920x1080";
+      };
+
+      serviceConfig = {
+        Type = "exec";
+        User = "keewai";
+        Group = "users";
+        ExecStart = lib.getExe camofoxPackage;
+        ExecStartPost = healthCheck;
+        Restart = "on-failure";
+        RestartSec = "5s";
+        TimeoutStartSec = "90s";
+        TimeoutStopSec = "30s";
+        KillMode = "mixed";
+        UMask = "0077";
+        LimitNOFILE = 65536;
+
+        NoNewPrivileges = true;
+        # Xvfb and x11vnc must share the host's /tmp/.X11-unix socket directory.
+        ProtectSystem = "strict";
+        ProtectHome = "read-only";
+        ReadWritePaths = [
+          camofoxStateDir
+          # Camoufox creates launch shims and Xvfb creates X11 sockets here.
+          "/tmp"
+        ];
+        ProtectClock = true;
+        ProtectControlGroups = true;
+        ProtectHostname = true;
+        ProtectKernelLogs = true;
+        ProtectKernelModules = true;
+        ProtectKernelTunables = true;
+        RestrictRealtime = true;
+        RestrictSUIDSGID = true;
+        LockPersonality = true;
+        CapabilityBoundingSet = "";
+        RestrictAddressFamilies = [
+          "AF_UNIX"
+          "AF_INET"
+          "AF_INET6"
+        ];
+      };
     };
 
-    serviceConfig = {
-      Type = "exec";
-      User = "keewai";
-      Group = "users";
-      ExecStart = lib.getExe camofoxPackage;
-      ExecStartPost = healthCheck;
-      Restart = "on-failure";
-      RestartSec = "5s";
-      TimeoutStartSec = "90s";
-      TimeoutStopSec = "30s";
-      KillMode = "mixed";
-      UMask = "0077";
-      LimitNOFILE = 65536;
-
-      NoNewPrivileges = true;
-      # Xvfb and x11vnc must share the host's /tmp/.X11-unix socket directory.
-      ProtectSystem = "strict";
-      ProtectHome = "read-only";
-      ReadWritePaths = [
-        camofoxStateDir
-        # Camoufox creates launch shims and Xvfb creates X11 sockets here.
-        "/tmp"
-      ];
-      ProtectClock = true;
-      ProtectControlGroups = true;
-      ProtectHostname = true;
-      ProtectKernelLogs = true;
-      ProtectKernelModules = true;
-      ProtectKernelTunables = true;
-      RestrictRealtime = true;
-      RestrictSUIDSGID = true;
-      LockPersonality = true;
-      CapabilityBoundingSet = "";
-      RestrictAddressFamilies = [
-        "AF_UNIX"
-        "AF_INET"
-        "AF_INET6"
-      ];
+    # websockify connects here only after a noVNC client upgrades to WebSocket.
+    # Socket activation holds that connection while ExecStartPre creates the
+    # shared Camofox tab and waits for x11vnc, then proxies the same RFB stream.
+    sockets.camofox-vnc-activation = {
+      description = "Lazy Camofox VNC activation socket";
+      wantedBy = [ "sockets.target" ];
+      socketConfig = {
+        ListenStream = "127.0.0.1:${toString vncActivationPort}";
+        NoDelay = true;
+      };
     };
-  };
 
-  # websockify connects here only after a noVNC client upgrades to WebSocket.
-  # Socket activation holds that connection while ExecStartPre creates the
-  # shared Camofox tab and waits for x11vnc, then proxies the same RFB stream.
-  systemd.sockets.camofox-vnc-activation = {
-    description = "Lazy Camofox VNC activation socket";
-    wantedBy = [ "sockets.target" ];
-    socketConfig = {
-      ListenStream = "127.0.0.1:${toString vncActivationPort}";
-      NoDelay = true;
-    };
-  };
-
-  systemd.services.camofox-vnc-activation = {
-    description = "Start the shared Camofox session for noVNC";
-    requires = [
-      "camofox.service"
-      "camofox-vnc-activation.socket"
-    ];
-    after = [
-      "camofox.service"
-      "camofox-vnc-activation.socket"
-    ];
-    serviceConfig = {
-      Type = "notify";
-      User = "keewai";
-      Group = "users";
-      ExecStartPre = lib.getExe ensureSharedSession;
-      ExecStart = "${pkgs.systemd}/lib/systemd/systemd-socket-proxyd --exit-idle-time=30s 127.0.0.1:${toString vncBackendPort}";
-
-      NoNewPrivileges = true;
-      PrivateTmp = true;
-      ProtectSystem = "strict";
-      ProtectHome = true;
-      ProtectClock = true;
-      ProtectControlGroups = true;
-      ProtectHostname = true;
-      ProtectKernelLogs = true;
-      ProtectKernelModules = true;
-      ProtectKernelTunables = true;
-      RestrictRealtime = true;
-      RestrictSUIDSGID = true;
-      LockPersonality = true;
-      CapabilityBoundingSet = "";
-      RestrictAddressFamilies = [
-        "AF_UNIX"
-        "AF_INET"
-        "AF_INET6"
+    services.camofox-vnc-activation = {
+      description = "Start the shared Camofox session for noVNC";
+      requires = [
+        "camofox.service"
+        "camofox-vnc-activation.socket"
       ];
+      after = [
+        "camofox.service"
+        "camofox-vnc-activation.socket"
+      ];
+      serviceConfig = {
+        Type = "notify";
+        User = "keewai";
+        Group = "users";
+        ExecStartPre = lib.getExe ensureSharedSession;
+        ExecStart = "${pkgs.systemd}/lib/systemd/systemd-socket-proxyd --exit-idle-time=30s 127.0.0.1:${toString vncBackendPort}";
+
+        NoNewPrivileges = true;
+        PrivateTmp = true;
+        ProtectSystem = "strict";
+        ProtectHome = true;
+        ProtectClock = true;
+        ProtectControlGroups = true;
+        ProtectHostname = true;
+        ProtectKernelLogs = true;
+        ProtectKernelModules = true;
+        ProtectKernelTunables = true;
+        RestrictRealtime = true;
+        RestrictSUIDSGID = true;
+        LockPersonality = true;
+        CapabilityBoundingSet = "";
+        RestrictAddressFamilies = [
+          "AF_UNIX"
+          "AF_INET"
+          "AF_INET6"
+        ];
+      };
     };
   };
 }
