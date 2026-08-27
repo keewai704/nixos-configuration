@@ -13,7 +13,10 @@
     extraGroups = [ "wheel" ];
   };
 
-  environment.systemPackages = [ pkgs.ripgrep ];
+  environment.systemPackages = with pkgs; [
+    git
+    ripgrep
+  ];
 
   security.sudo.wheelNeedsPassword = false;
 
