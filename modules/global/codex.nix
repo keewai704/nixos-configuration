@@ -141,7 +141,10 @@ in
           sessionPath = [ "$HOME/.local/bin" ];
 
           file = {
-            ".codex/config.toml".source = config.lib.file.mkOutOfStoreSymlink codexMutableConfig;
+            ".codex/config.toml" = {
+              source = config.lib.file.mkOutOfStoreSymlink codexMutableConfig;
+              force = true;
+            };
             ".local/bin/codex" = {
               source = codexWrapper + "/bin/codex";
               executable = true;
