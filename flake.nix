@@ -48,7 +48,7 @@
           modules = [
             home-manager.nixosModules.home-manager
             ./modules/global/base.nix
-            ./modules/global/codex.nix
+            ./modules/global/pi.nix
           ]
           ++ modules;
         };

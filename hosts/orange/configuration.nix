@@ -11,17 +11,16 @@
     ../../profiles/uefi-systemd-boot.nix
     ./hardware-configuration.nix
     ./camofox.nix
-    ./codex-camofox.nix
+    ./camofox-mcp.nix
     ./maintenance.nix
     ./media-services.nix
     ./minecraft-server.nix
-    ./yepanywhere.nix
   ];
 
   boot.kernelPackages = pkgs.linuxPackages_latest;
 
   networking = {
-    hostName = orangeSettings.hostName;
+    inherit (orangeSettings) hostName;
 
     networkmanager.dispatcherScripts = [
       {

@@ -5,7 +5,7 @@
 }:
 
 let
-  inherit (orangeSettings) camofoxApiPort camofoxSharedUserId;
+  inherit (orangeSettings) camofoxAgentUserId camofoxApiPort;
   camofoxUrl = "http://127.0.0.1:${toString camofoxApiPort}";
   camofoxPackage = pkgs.callPackage ./camofox-package.nix {
     websockify = pkgs.python3Packages.websockify;
@@ -21,7 +21,7 @@ in
       command = "${camofoxPackage}/bin/camofox-browser-mcp";
       env = {
         CAMOFOX_BASE_URL = camofoxUrl;
-        CAMOFOX_USER_ID = camofoxSharedUserId;
+        CAMOFOX_USER_ID = camofoxAgentUserId;
         CAMOFOX_SESSION_KEY = "default";
       };
     };

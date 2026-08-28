@@ -1,0 +1,8 @@
+{
+  "name": "nixos-pi-web",
+  "version": "1.0.0",
+  "private": true,
+  "dependencies": {
+    "@agegr/pi-web": "0.8.11"
+  }
+}

@@ -9,7 +9,7 @@ let
   inherit (orangeSettings)
     camofoxApiPort
     camofoxNoVncPort
-    camofoxSharedUserId
+    camofoxAgentUserId
     ;
   camofoxStateDir = "/home/keewai/.local/share/camofox";
   camoufoxCacheDir = "${camofoxStateDir}/cache/camoufox";
@@ -33,7 +33,7 @@ let
   '';
 
   sharedSessionBody = builtins.toJSON {
-    userId = camofoxSharedUserId;
+    userId = camofoxAgentUserId;
     sessionKey = "default";
     # Camofox only permits HTTP(S) for new tabs. Its local status endpoint is
     # deterministic, avoids an external dependency, and gives noVNC a page.
@@ -50,7 +50,7 @@ let
     ];
     text = ''
       api_url=http://127.0.0.1:${toString camofoxApiPort}
-      shared_user_id=${lib.escapeShellArg camofoxSharedUserId}
+      shared_user_id=${lib.escapeShellArg camofoxAgentUserId}
 
       tabs_json="$(
         curl \

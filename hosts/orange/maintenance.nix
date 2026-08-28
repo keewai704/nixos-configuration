@@ -12,7 +12,6 @@ let
     nginxPort
     storageRoot
     tailnetHostname
-    yepAnywherePort
     ;
   storageMountUnit = "srv-storage.mount";
   backupRoot = "${storageRoot}/server/backups/orange-local";
@@ -77,7 +76,7 @@ let
 
       for service in \
         NetworkManager tailscaled sshd samba-smbd immich-server postgresql \
-        redis-immich vaultwarden nginx minecraft camofox yepanywhere \
+        redis-immich vaultwarden nginx minecraft camofox \
         tailscale-serve-nginx; do
         check_service "$service"
       done
@@ -262,7 +261,6 @@ let
       check_http "nginx" "http://127.0.0.1:${toString nginxPort}/" --header 'Host: ${tailnetHostname}'
       check_http "immich" "https://${tailnetHostname}/"
       check_http "vaultwarden" "https://${tailnetHostname}/vault/"
-      check_http "yep" "https://${tailnetHostname}/yep/"
       check_http "browser" "https://${tailnetHostname}/browser/"
 
       for port_and_name in '25565 minecraft' '445 samba'; do
@@ -275,7 +273,7 @@ let
       done
 
       exposed_backends=$(ss --listening --tcp --numeric --no-header 2>/dev/null \
-        | awk '$4 ~ /:(2283|${toString nginxPort}|${toString yepAnywherePort}|8222|${toString camofoxApiPort})$/ && $4 !~ /^127\.0\.0\.1:/ && $4 !~ /^\[::1\]:/ { print $4 }' \
+        | awk '$4 ~ /:(2283|${toString nginxPort}|8222|${toString camofoxApiPort})$/ && $4 !~ /^127\.0\.0\.1:/ && $4 !~ /^\[::1\]:/ { print $4 }' \
         | paste -sd ', ' -)
       if [[ -n "$exposed_backends" ]]; then
         queue_alert "backend-listeners" "application backend is not loopback-only: $exposed_backends"
@@ -464,7 +462,6 @@ in
           "tailscale-serve-nginx.service"
           "tailscaled.service"
           "vaultwarden.service"
-          "yepanywhere.service"
         ];
         serviceConfig = {
           Type = "oneshot";

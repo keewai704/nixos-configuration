@@ -6,7 +6,7 @@ and `citrus-vm` hosts.
 ## Configuration layout
 
 Every host is constructed through the shared `mkHost` helper in `flake.nix`.
-Host-independent locale, user, Nix, logging, Home Manager, Codex, and generic
+Host-independent locale, user, Nix, logging, Home Manager, Pi, and generic
 MCP settings live under `modules/global`. Reusable platform and role settings,
 such as NetworkManager, UEFI systemd-boot, and tailnet administration, live
 under `profiles` and are imported explicitly by each compatible host.
@@ -17,10 +17,28 @@ and loopback-port values are defined once in `hosts/orange/settings.nix`.
 
 ## Agent tooling
 
-The flake loads `mcp-servers-nix` through Home Manager for the `keewai` user on
-every host. Codex consumes the shared MCP registry; Context7, NixOS, Serena,
-and Ponytail are global on-demand tools. Orange adds its local Camofox Browser
-MCP endpoint without exposing that loopback-only dependency to other hosts.
+The flake installs Pi through Home Manager for the `keewai` user on every host.
+Its package set is locked and built by Nix: `@ff-labs/pi-fff`,
+`pi-mcp-adapter`, `pi-web-access`, `pi-hashline-edit-pro`,
+`pi-background-tasks`, `pi-lens`, `pi-subagents`, and
+`@juicesharp/rpiv-todo`. Pi Web is installed as the `pi-web` command and is
+configured to bind to `127.0.0.1` without opening a browser automatically.
+
+Pi's declarative settings live at `~/.pi/agent/settings.json`. FFF runs in
+`override` mode, so its indexed `grep` and `find` tools replace the built-ins
+and it exposes `multi_grep`. Hashline supplies anchor-aware `read`, `replace`,
+and `insert` tools; Pi's default tool selection disables the built-in `edit`
+tool. The global
+`~/.pi/agent/AGENTS.md` tells Pi to prefer those search tools, use `multi_grep`
+for OR searches, use `rg` when shell search is unavoidable, read only the
+relevant offset/limit range after locating a hit, and directly read known
+paths outside the workspace.
+
+The flake also loads `mcp-servers-nix` through Home Manager. Pi's MCP adapter
+consumes the shared registry at `~/.config/mcp/mcp.json`; Context7, NixOS,
+Serena, and Ponytail are global on-demand servers. Orange adds its local
+Camofox Browser MCP endpoint without exposing that loopback-only dependency to
+other hosts.
 
 The NixOS server is restricted to local stdio, with update checks, the startup
 banner, and project `.env` loading disabled. Serena starts in the current Git
@@ -28,22 +46,18 @@ workspace with `nixd` and `nixfmt` on its private `PATH`; its dashboard and
 usage reporting are disabled. Serena's global trust pattern is `**`, so project
 configuration is trusted in every directory.
 
-Codex itself remains installed by the separately pinned user profile
-(`programs.codex.package = null`). Its shared defaults and MCP entries live in
-the system configuration at `/etc/codex/config.toml`, including
-`sandbox_mode = "danger-full-access"` and `approval_policy = "never"`. The user
-configuration is a writable file at `~/.local/state/codex/config.toml`, linked
-from `~/.codex/config.toml`, so Codex can persist trust decisions. The
-`~/.local/bin/codex` launcher trusts the selected working directory and its Git
-root before starting the pinned CLI, including directories selected with
-`-C`/`--cd`.
+Pi defaults to `gpt-5.6-sol` with maximum thinking and trusts project-local
+resources. Install telemetry and analytics are disabled. The internal
+`openai-codex` provider identifier is Pi's name for ChatGPT subscription OAuth;
+it does not install or invoke the Codex CLI.
 
 After activation, verify the integration with:
 
 ```console
-codex mcp get serena
-codex doctor --summary
-readlink -f ~/.codex/config.toml
+pi --version
+pi list
+readlink -f ~/.pi/agent/settings.json
+pi-web --help
 ```
 
 ### Camofox browser
@@ -61,30 +75,14 @@ Tailnet clients can open the nginx-proxied noVNC view at
 connects automatically.
 
 The REST server and noVNC frontend start at boot, but Camoufox, Xvfb, and
-x11vnc remain stopped until the first noVNC WebSocket connection or Codex
-browser tool call. A noVNC connection creates an idempotent `codex`/`default`
-browser session before its RFB stream is forwarded. The Codex MCP adapter uses
-that same user and session key, so `camofox_list_tabs` can discover and operate
-the tab visible in noVNC (and vice versa).
+x11vnc remain stopped until the first noVNC WebSocket connection or Pi browser
+tool call. A noVNC connection creates an idempotent `pi`/`default` browser
+session before its RFB stream is forwarded. Pi's MCP adapter uses that same
+user and session key, so `camofox_list_tabs` can discover and operate the tab
+visible in noVNC (and vice versa).
 
 `CAMOFOX_URL` is declared through Home Manager for interactive shells and user
 services.
-
-### Yep Anywhere
-
-Yep Anywhere v0.7.0 is packaged from a fixed npm release and starts
-automatically as `yepanywhere.service`. It runs as `keewai`, so it discovers
-the existing authenticated Codex CLI and compatible session history without a
-second sign-in. New sessions default to Codex when no provider is selected.
-Codex sessions default to Fast processing; Standard/Fast can be selected for
-new and active sessions, and supported GPT-5.6 models expose Ultra reasoning.
-Its state is stored in `~/.yep-anywhere`.
-
-The application backend remains loopback-only on port 3400. Its client is
-rebuilt with subpath-aware API, WebSocket, asset, router, and service-worker
-URLs, then proxied through the shared loopback nginx frontend. The only
-user-facing web ingress is Tailscale Serve HTTPS on port 443, at
-<https://orange.tail1e65cd.ts.net/yep/>.
 
 ## Validate
 
