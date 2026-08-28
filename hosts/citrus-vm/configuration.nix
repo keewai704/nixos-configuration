@@ -10,7 +10,7 @@ let
 
   hyprlandSession =
     "${lib.getExe pkgs.uwsm} start -e -D Hyprland ${pkgs.hyprland}/bin/start-hyprland"
-    + " -- --config ${hyprlandConfig}";
+    + " -- -- --config ${hyprlandConfig}";
 in
 {
   imports = [
