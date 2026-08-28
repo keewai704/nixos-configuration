@@ -15,6 +15,7 @@
     ./maintenance.nix
     ./media-services.nix
     ./minecraft-server.nix
+    ./pi-web.nix
   ];
 
   boot.kernelPackages = pkgs.linuxPackages_latest;

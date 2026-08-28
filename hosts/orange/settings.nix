@@ -4,6 +4,7 @@
   storageRoot = "/srv/storage";
 
   nginxPort = 8000;
+  piWebPort = 30141;
   camofoxApiPort = 9377;
   camofoxNoVncPort = 6080;
   camofoxAgentUserId = "pi";
