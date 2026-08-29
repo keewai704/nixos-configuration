@@ -8,6 +8,8 @@ let
   chatgptDesktop = pkgs.callPackage ../pkgs/chatgpt-desktop/package.nix { };
 in
 {
+  imports = [ ../modules/chatgpt-desktop-extensions.nix ];
+
   nixpkgs.config.allowUnfreePredicate = package: lib.getName package == "chatgpt-desktop";
 
   environment.systemPackages = [ chatgptDesktop ];

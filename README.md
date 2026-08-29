@@ -77,6 +77,36 @@ command -v chatgpt
 command -v codex-desktop
 ```
 
+### Nix-managed MCP servers and skills
+
+`modules/chatgpt-desktop-extensions.nix` restores the declarative extension
+layer that predates the ChatGPT Desktop migration and adapts it to the current
+Codex configuration layout. `mcp-servers-nix` packages and registers Context7,
+NixOS, and Serena; the official OpenAI Developer Docs endpoint is registered as
+a remote MCP server. The resulting configuration is generated at
+`/etc/codex/config.toml`, which ChatGPT Desktop, Codex CLI, and the IDE extension
+share as their system layer.
+
+The user's `~/.codex/config.toml` remains writable for the desktop app's bundled
+`node_repl` and `cua_repl` helpers, plugin state, project trust, and preferences.
+Home Manager removes only user-level entries whose names are owned by the Nix
+MCP registry, preventing them from shadowing the generated system definitions.
+
+Personal skills live under `skills/<skill-name>/` in this repository. Home
+Manager links each one into the official user discovery directory at
+`~/.agents/skills/`. OpenAI-bundled system skills and plugin-provided skills stay
+owned by the application and are not copied into this repository.
+
+After adding or changing an MCP server or skill, rebuild the `citrus-vm`
+configuration and restart ChatGPT Desktop or open a new local session. Inspect
+the deployed state with:
+
+```console
+codex mcp list
+codex mcp get context7
+readlink -f ~/.agents/skills/chatgpt-nix-extensions
+```
+
 ## Tailnet web gateway
 
 Orange uses the shared `tailnet-admin` and `tailnet-web` profiles. The former
