@@ -4,5 +4,5 @@
 
   camofoxApiPort = 9377;
   camofoxNoVncPort = 6080;
-  camofoxAgentUserId = "pi";
+  camofoxSharedUserId = "shared";
 }

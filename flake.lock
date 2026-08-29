@@ -69,27 +69,6 @@
     "home-manager_2": {
       "inputs": {
         "nixpkgs": [
-          "nixpkgs"
-        ]
-      },
-      "locked": {
-        "lastModified": 1787540599,
-        "narHash": "sha256-MHwk52ty3NsLhq9a1IbIfBJZlCUJIdiUYFo52JLK9hY=",
-        "owner": "nix-community",
-        "repo": "home-manager",
-        "rev": "03f4cd46bc1dd4f3a96da778d2ce9f7ce39dd450",
-        "type": "github"
-      },
-      "original": {
-        "owner": "nix-community",
-        "ref": "master",
-        "repo": "home-manager",
-        "type": "github"
-      }
-    },
-    "home-manager_3": {
-      "inputs": {
-        "nixpkgs": [
           "nix-hazkey",
           "nixpkgs"
         ]
@@ -108,29 +87,9 @@
         "type": "github"
       }
     },
-    "mcp-servers-nix": {
-      "inputs": {
-        "nixpkgs": [
-          "nixpkgs"
-        ]
-      },
-      "locked": {
-        "lastModified": 1787553855,
-        "narHash": "sha256-TU1BcpC2i6PO73fCNT9l9fgK3OmUNClCqCWmO7DgWT8=",
-        "owner": "natsukium",
-        "repo": "mcp-servers-nix",
-        "rev": "eeffe588a0e97b1a2905fc093a7b3c3184f23d7d",
-        "type": "github"
-      },
-      "original": {
-        "owner": "natsukium",
-        "repo": "mcp-servers-nix",
-        "type": "github"
-      }
-    },
     "nix-hazkey": {
       "inputs": {
-        "home-manager": "home-manager_3",
+        "home-manager": "home-manager_2",
         "nixpkgs": [
           "nixpkgs"
         ]
@@ -168,8 +127,6 @@
     "root": {
       "inputs": {
         "agenix": "agenix",
-        "home-manager": "home-manager_2",
-        "mcp-servers-nix": "mcp-servers-nix",
         "nix-hazkey": "nix-hazkey",
         "nixpkgs": "nixpkgs"
       }

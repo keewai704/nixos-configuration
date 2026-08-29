@@ -18,7 +18,6 @@ in
     ../../profiles/desktop-client.nix
     ../../profiles/networkmanager.nix
     ../../profiles/tailnet-admin.nix
-    ../../profiles/tailnet-web.nix
     ../../profiles/uefi-systemd-boot.nix
     ./hardware-configuration.nix
   ];
@@ -63,7 +62,6 @@ in
 
   services = {
     hazkey.enable = true;
-    tailnetWeb.enable = true;
 
     greetd = {
       enable = true;
@@ -111,8 +109,6 @@ in
       NIXOS_OZONE_WL = "1";
     };
   };
-
-  home-manager.users.keewai.home.stateVersion = "26.05";
 
   system.stateVersion = "26.05";
 }

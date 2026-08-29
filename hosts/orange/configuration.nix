@@ -12,7 +12,6 @@
     ../../profiles/uefi-systemd-boot.nix
     ./hardware-configuration.nix
     ./camofox.nix
-    ./camofox-mcp.nix
     ./maintenance.nix
     ./media-services.nix
     ./minecraft-server.nix
@@ -48,8 +47,6 @@
     min-free = 5 * 1024 * 1024 * 1024;
     max-free = 10 * 1024 * 1024 * 1024;
   };
-
-  home-manager.users.keewai.home.stateVersion = "26.05";
 
   system.stateVersion = "26.05";
 }

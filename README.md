@@ -6,95 +6,65 @@ and `citrus-vm` hosts.
 ## Configuration layout
 
 Every host is constructed through the shared `mkHost` helper in `flake.nix`.
-Host-independent locale, user, Nix, logging, Home Manager, Pi, and generic
-MCP settings live under `modules/global`. Reusable platform and role settings,
-such as desktop clients, NetworkManager, UEFI systemd-boot, and tailnet
-administration, live under `profiles` and are imported explicitly by each
-compatible host.
+Host-independent locale, user, Nix, and logging settings live under
+`modules/global`. Reusable platform and role settings, such as desktop clients,
+NetworkManager, UEFI systemd-boot, and tailnet administration, live under
+`profiles` and are imported explicitly by each compatible host.
 
 Hardware, state versions, network roles, local endpoints, storage, secrets,
 and services remain under `hosts/<name>`. Orange's repeated storage and local
 service values are defined once in `hosts/orange/settings.nix`.
 
-## Agent tooling
+## Codex desktop
 
-The flake installs Pi through Home Manager for the `keewai` user on every host.
-Its package set is locked and built by Nix: `@ff-labs/pi-fff`,
-`pi-mcp-adapter`, `pi-web-access`, `pi-hashline-edit-pro`,
-`pi-background-tasks`, `pi-lens`, `pi-subagents`, and
-`@juicesharp/rpiv-todo`. Pi Web is installed as the `pi-web` command and is
-configured to bind to `127.0.0.1` without opening a browser automatically.
+`citrus-vm` imports `profiles/desktop-client.nix`, which installs the official
+OpenAI Linux desktop application packaged locally by
+`pkgs/chatgpt-desktop/package.nix`. OpenAI now distributes the Codex desktop
+experience inside the ChatGPT desktop app, so the canonical executable and menu
+entry are named `chatgpt`; `codex-desktop` is installed as a convenience alias.
 
-Pi's declarative settings live at `~/.pi/agent/settings.json`. FFF runs in
-`override` mode, so its indexed `grep` and `find` tools replace the built-ins
-and it exposes `multi_grep`. Hashline supplies anchor-aware `read`, `replace`,
-and `insert` tools; Pi's default tool selection disables the built-in `edit`
-tool. The global
-`~/.pi/agent/AGENTS.md` tells Pi to prefer those search tools, use `multi_grep`
-for OR searches, use `rg` when shell search is unavoidable, read only the
-relevant offset/limit range after locating a hit, and directly read known
-paths outside the workspace.
+The derivation downloads OpenAI's official x86_64 `.deb`, pins version
+`26.825.41651` and SHA-256
+`sha256-IbIulcDEOj8RTz7TJpKr7cY49AV6CPmMmINuLT6aZx4=`, extracts its payload with
+`dpkg-deb`, patches ELF dependencies for NixOS, and installs the upstream desktop
+entry and icon. Debian maintainer scripts are deliberately not executed, so the
+package does not add OpenAI's APT repository or write outside the Nix store.
+Updates are performed by refreshing the pinned version and hash in the Nix
+derivation.
 
-Pi-lens is configured globally at `~/.pi-lens/config.json`: LSP stays enabled and
-its situational tools are registered eagerly instead of appearing inactive at
-session start. Nix-managed baseline language servers are on Pi's `PATH`, while
-`nix-ld` lets pi-lens run additional managed native servers installed on demand.
+OpenAI documents the upstream package and supported Linux distributions at
+<https://developers.openai.com/codex/app>. NixOS is not an upstream-supported
+distribution; this repository supplies the compatibility packaging.
 
-The flake also loads `mcp-servers-nix` through Home Manager. Pi's MCP adapter
-consumes the shared registry at `~/.config/mcp/mcp.json`; Context7, NixOS,
-Serena, and Ponytail are global on-demand servers. Orange adds its local
-Camofox Browser MCP endpoint without exposing that loopback-only dependency to
-other hosts.
-
-The NixOS server is restricted to local stdio, with update checks, the startup
-banner, and project `.env` loading disabled. Serena starts in the current Git
-workspace with `nixd` and `nixfmt` on its private `PATH`; its dashboard and
-usage reporting are disabled. Serena's global trust pattern is `**`, so project
-configuration is trusted in every directory.
-
-Pi defaults to `gpt-5.6-sol` with maximum thinking and trusts project-local
-resources. Install telemetry and analytics are disabled. The internal
-`openai-codex` provider identifier is Pi's name for ChatGPT subscription OAuth;
-it does not install or invoke the Codex CLI.
-
-After activation, verify the integration with:
+The flake also exposes the standalone package output:
 
 ```console
-pi --version
-pi list
-readlink -f ~/.pi/agent/settings.json
-pi-web --help
+nix build .#chatgpt-desktop
+nix profile install .#chatgpt-desktop
 ```
 
-### Cua Driver
+The app normally uses XWayland when available. To test OpenAI's experimental
+native Wayland path with Fcitx5 input support, launch:
 
-`profiles/desktop-client.nix` installs Cua Driver v0.22.1 only on hosts with
-an interactive desktop; currently only `citrus-vm` imports this profile. The
-profile enables AT-SPI and registers `cua-driver mcp` in the shared MCP
-registry. Its launcher imports the active display and session-bus variables
-from the user's systemd manager, so Pi Web can reach the logged-in Wayland
-session even though Pi Web itself runs as a system service.
-The upstream-experimental native Wayland backend is explicitly enabled with
-`CUA_DRIVER_RS_ENABLE_WAYLAND=1`; XWayland remains available as a fallback.
+```console
+chatgpt --ozone-platform=wayland --enable-wayland-ime
+```
 
-Cua telemetry and automatic update checks are disabled. Upgrades remain pinned
-to the source hash in `pkgs/cua-driver/package.nix` and are applied through the
-normal NixOS workflow.
+Verify the installed package with:
 
-### Pi Web over Tailscale
+```console
+chatgpt --version
+command -v chatgpt
+command -v codex-desktop
+```
 
-Both hosts use the shared `tailnet-admin` and `tailnet-web` profiles. The
-former enables Tailscale SSH and explicitly keeps each machine's NixOS
-hostname as its Tailscale hostname. The latter publishes a loopback-only
-nginx listener through one Tailscale Serve HTTPS listener on port 443, then
-proxies `/pi` to a loopback-only Pi Web backend:
+## Tailnet web gateway
 
-- citrus-vm: <https://citrus-vm.tail1e65cd.ts.net/pi/>
-- Orange: <https://orange.tail1e65cd.ts.net/pi/>
-
-Pi Web is built with `/pi` as its Next.js base path, including API, static
-asset, manifest, service-worker, notification, and WebSocket/SSE URLs. No
-nginx or Pi Web backend port is opened in the host firewall.
+Orange uses the shared `tailnet-admin` and `tailnet-web` profiles. The former
+enables Tailscale SSH and explicitly keeps the NixOS hostname as the Tailscale
+hostname. The latter publishes a loopback-only nginx listener through one
+Tailscale Serve HTTPS listener on port 443. Citrus-vm retains Tailscale SSH but
+does not run nginx or a Tailscale Serve web mapping.
 
 ### Camofox browser
 
@@ -111,14 +81,9 @@ Tailnet clients can open the nginx-proxied noVNC view at
 connects automatically.
 
 The REST server and noVNC frontend start at boot, but Camoufox, Xvfb, and
-x11vnc remain stopped until the first noVNC WebSocket connection or Pi browser
-tool call. A noVNC connection creates an idempotent `pi`/`default` browser
-session before its RFB stream is forwarded. Pi's MCP adapter uses that same
-user and session key, so `camofox_list_tabs` can discover and operate the tab
-visible in noVNC (and vice versa).
-
-`CAMOFOX_URL` is declared through Home Manager for interactive shells and user
-services.
+x11vnc remain stopped until the first noVNC WebSocket connection. A connection
+creates an idempotent `shared`/`default` browser session before its RFB stream is
+forwarded.
 
 ## Validate
 

@@ -9,7 +9,6 @@
 let
   inherit (config.services.tailnetWeb)
     nginxPort
-    piWebPort
     tailnetHostname
     ;
   inherit (orangeSettings)
@@ -79,7 +78,7 @@ let
 
       for service in \
         NetworkManager tailscaled sshd samba-smbd immich-server postgresql \
-        redis-immich vaultwarden nginx minecraft camofox pi-web \
+        redis-immich vaultwarden nginx minecraft camofox \
         tailscale-serve-nginx; do
         check_service "$service"
       done
@@ -265,8 +264,6 @@ let
       check_http "immich" "https://${tailnetHostname}/"
       check_http "vaultwarden" "https://${tailnetHostname}/vault/"
       check_http "browser" "https://${tailnetHostname}/browser/"
-      check_http "pi-web-backend" "http://127.0.0.1:${toString piWebPort}/pi/api/home" --header 'Host: ${tailnetHostname}'
-      check_http "pi-web" "https://${tailnetHostname}/pi/"
 
       for port_and_name in '25565 minecraft' '445 samba'; do
         read -r port name <<<"$port_and_name"
@@ -278,7 +275,7 @@ let
       done
 
       exposed_backends=$(ss --listening --tcp --numeric --no-header 2>/dev/null \
-        | awk '$4 ~ /:(2283|${toString nginxPort}|8222|${toString camofoxApiPort}|${toString piWebPort})$/ && $4 !~ /^127\.0\.0\.1:/ && $4 !~ /^\[::1\]:/ { print $4 }' \
+        | awk '$4 ~ /:(2283|${toString nginxPort}|8222|${toString camofoxApiPort})$/ && $4 !~ /^127\.0\.0\.1:/ && $4 !~ /^\[::1\]:/ { print $4 }' \
         | paste -sd ', ' -)
       if [[ -n "$exposed_backends" ]]; then
         queue_alert "backend-listeners" "application backend is not loopback-only: $exposed_backends"
@@ -460,7 +457,6 @@ in
           "minecraft.service"
           "network-online.target"
           "nginx.service"
-          "pi-web.service"
           "postgresql.service"
           "redis-immich.service"
           "samba-smbd.service"
