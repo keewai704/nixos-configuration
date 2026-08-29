@@ -110,6 +110,32 @@ readlink -f /home/keewai/.agents/skills/add-nix-mcp
 readlink -f /home/keewai/.agents/skills/add-nix-skill
 ```
 
+### Cua desktop driver
+
+`citrus-vm` also packages TryCua Cua Driver `0.22.2` and registers its local
+stdio server as the `cua-driver` MCP. The launch wrapper imports the active
+desktop's Wayland, XWayland, D-Bus, and Hyprland session variables before
+starting `cua-driver mcp`; the driver's built-in `standard` permission mode and
+native Wayland are enabled while telemetry and mutable update checks are
+disabled. The system AT-SPI service supplies accessibility tree access.
+
+Codex classifies write-capable tools with `default_tools_approval_mode =
+"writes"`, but its global approval profile decides whether a prompt is shown. A
+global `approval_policy = "never"` with an unrestricted permission profile
+auto-approves those calls. Standard mode still applies the driver's built-in
+boundaries, but permits routine screen/accessibility reads and desktop input;
+use a Cua capability manifest when a narrower application or path scope is
+required.
+
+The third-party `cua-driver` server is separate from ChatGPT Desktop's bundled,
+application-managed `cua_repl` entry. Inspect the deployed driver with:
+
+```console
+cua-driver --version
+cua-driver doctor
+codex mcp get cua-driver
+```
+
 ## Tailnet web gateway
 
 Orange uses the shared `tailnet-admin` and `tailnet-web` profiles. The former

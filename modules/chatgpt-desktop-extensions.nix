@@ -9,10 +9,46 @@
 let
   userName = "keewai";
   skillRoot = ../skills;
+  cuaDriver = pkgs.callPackage ../pkgs/cua-driver/package.nix { };
+  cuaEnvironment = {
+    CUA_DRIVER_PERMISSION_MODE = "standard";
+    CUA_DRIVER_RS_ENABLE_WAYLAND = "1";
+    CUA_DRIVER_RS_TELEMETRY_ENABLED = "false";
+    CUA_DRIVER_RS_UPDATE_CHECK = "false";
+  };
+
+  cuaMcp = pkgs.writeShellApplication {
+    name = "cua-driver-mcp";
+    text = ''
+      runtimeDir="/run/user/$(${pkgs.coreutils}/bin/id -u)"
+      export XDG_RUNTIME_DIR="''${XDG_RUNTIME_DIR:-$runtimeDir}"
+      export DBUS_SESSION_BUS_ADDRESS="''${DBUS_SESSION_BUS_ADDRESS:-unix:path=$XDG_RUNTIME_DIR/bus}"
+
+      while IFS='=' read -r name value; do
+        case "$name" in
+          DBUS_SESSION_BUS_ADDRESS | DISPLAY | HYPRLAND_INSTANCE_SIGNATURE | WAYLAND_DISPLAY | XAUTHORITY | XDG_CURRENT_DESKTOP | XDG_RUNTIME_DIR | XDG_SESSION_DESKTOP | XDG_SESSION_TYPE)
+            export "$name=$value"
+            ;;
+        esac
+      done < <(${pkgs.systemd}/bin/systemctl --user show-environment 2>/dev/null || true)
+
+      if [[ -z "''${WAYLAND_DISPLAY:-}" ]]; then
+        for socket in "$XDG_RUNTIME_DIR"/wayland-*; do
+          if [[ -S "$socket" ]]; then
+            export WAYLAND_DISPLAY="''${socket##*/}"
+            break
+          fi
+        done
+      fi
+
+      exec ${lib.getExe cuaDriver} "$@"
+    '';
+  };
+
   sharedMcpServers = config.home-manager.users.${userName}.programs.mcp.servers;
 
   toCodexMcpServer =
-    _name: server:
+    name: server:
     let
       disabled = server.disabled or null;
       enabled = server.enabled or null;
@@ -29,6 +65,9 @@ let
       }
       // lib.optionalAttrs (enabled == null && disabled != null) {
         enabled = !disabled;
+      }
+      // lib.optionalAttrs (name == "cua-driver") {
+        default_tools_approval_mode = "writes";
       }
     );
 
@@ -74,6 +113,8 @@ in
         home = {
           stateVersion = "26.05";
           file = skillEntries;
+          packages = [ cuaDriver ];
+          sessionVariables = cuaEnvironment;
 
           # A user-level entry wins over /etc/codex/config.toml. Remove only
           # duplicate names owned by this module, while leaving ChatGPT's
@@ -99,6 +140,8 @@ in
         };
 
         programs.mcp.enable = true;
+
+        systemd.user.sessionVariables = cuaEnvironment;
 
         mcp-servers = {
           programs = {
@@ -130,7 +173,15 @@ in
             };
           };
 
-          settings.servers.openaiDeveloperDocs.url = "https://developers.openai.com/mcp";
+          settings.servers = {
+            cua-driver = {
+              command = lib.getExe cuaMcp;
+              args = [ "mcp" ];
+              env = cuaEnvironment;
+            };
+
+            openaiDeveloperDocs.url = "https://developers.openai.com/mcp";
+          };
         };
       };
   };
