@@ -15,6 +15,7 @@ in
 {
   imports = [
     inputs.nix-hazkey.nixosModules.hazkey
+    ../../profiles/desktop-client.nix
     ../../profiles/networkmanager.nix
     ../../profiles/tailnet-admin.nix
     ../../profiles/tailnet-web.nix

@@ -8,8 +8,9 @@ and `citrus-vm` hosts.
 Every host is constructed through the shared `mkHost` helper in `flake.nix`.
 Host-independent locale, user, Nix, logging, Home Manager, Pi, and generic
 MCP settings live under `modules/global`. Reusable platform and role settings,
-such as NetworkManager, UEFI systemd-boot, and tailnet administration, live
-under `profiles` and are imported explicitly by each compatible host.
+such as desktop clients, NetworkManager, UEFI systemd-boot, and tailnet
+administration, live under `profiles` and are imported explicitly by each
+compatible host.
 
 Hardware, state versions, network roles, local endpoints, storage, secrets,
 and services remain under `hosts/<name>`. Orange's repeated storage and local
@@ -59,6 +60,19 @@ pi list
 readlink -f ~/.pi/agent/settings.json
 pi-web --help
 ```
+
+### Cua Driver
+
+`profiles/desktop-client.nix` installs Cua Driver v0.22.1 only on hosts with
+an interactive desktop; currently only `citrus-vm` imports this profile. The
+profile enables AT-SPI and registers `cua-driver mcp` in the shared MCP
+registry. Its launcher imports the active display and session-bus variables
+from the user's systemd manager, so Pi Web can reach the logged-in Wayland
+session even though Pi Web itself runs as a system service.
+
+Cua telemetry and automatic update checks are disabled. Upgrades remain pinned
+to the source hash in `pkgs/cua-driver/package.nix` and are applied through the
+normal NixOS workflow.
 
 ### Pi Web over Tailscale
 
