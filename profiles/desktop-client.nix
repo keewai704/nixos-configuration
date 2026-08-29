@@ -12,5 +12,15 @@ in
 
   environment.systemPackages = [ chatgptDesktop ];
 
+  programs.dconf.profiles.user.databases = [
+    {
+      settings."org/gnome/desktop/interface" = {
+        color-scheme = "prefer-dark";
+        gtk-theme = "Adwaita-dark";
+      };
+      lockAll = true;
+    }
+  ];
+
   services.gnome.at-spi2-core.enable = true;
 }
