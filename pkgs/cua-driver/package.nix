@@ -1,10 +1,12 @@
 {
   autoPatchelfHook,
   fetchurl,
+  glib,
   lib,
   libXi,
   libx11,
   libxkbcommon,
+  makeWrapper,
   stdenv,
 }:
 
@@ -17,7 +19,10 @@ stdenv.mkDerivation (finalAttrs: {
     hash = "sha256-QY1LQV8ZHVx7G71oLtAgnJjwvWokAa8s2AZjTvJwxUs=";
   };
 
-  nativeBuildInputs = [ autoPatchelfHook ];
+  nativeBuildInputs = [
+    autoPatchelfHook
+    makeWrapper
+  ];
 
   buildInputs = [
     libXi
@@ -36,7 +41,8 @@ stdenv.mkDerivation (finalAttrs: {
       cua-driver \
       cua-cursor-theme \
       wayland-helper
-    ln -s ../lib/cua-driver/cua-driver "$out/bin/cua-driver"
+    makeWrapper "$out/lib/cua-driver/cua-driver" "$out/bin/cua-driver" \
+      --prefix PATH : ${lib.makeBinPath [ glib ]}
 
     runHook postInstall
   '';
