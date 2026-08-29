@@ -35,6 +35,11 @@ for OR searches, use `rg` when shell search is unavoidable, read only the
 relevant offset/limit range after locating a hit, and directly read known
 paths outside the workspace.
 
+Pi-lens is configured globally at `~/.pi-lens/config.json`: LSP stays enabled and
+its situational tools are registered eagerly instead of appearing inactive at
+session start. Nix-managed baseline language servers are on Pi's `PATH`, while
+`nix-ld` lets pi-lens run additional managed native servers installed on demand.
+
 The flake also loads `mcp-servers-nix` through Home Manager. Pi's MCP adapter
 consumes the shared registry at `~/.config/mcp/mcp.json`; Context7, NixOS,
 Serena, and Ponytail are global on-demand servers. Orange adds its local

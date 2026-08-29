@@ -9,6 +9,24 @@ let
   piWeb = pkgs.callPackage ../../pkgs/pi-web/package.nix { };
   extensionRoot = "${piExtensions}/lib/node_modules";
 
+  piLensSettings = {
+    lsp.enabled = true;
+    tools.lazy = false;
+  };
+
+  # Keep the baseline servers and helper commands on Pi's PATH. Pi-lens can
+  # still install additional language servers on demand for other ecosystems.
+  piLspPackages = with pkgs; [
+    bash-language-server
+    getconf
+    marksman
+    nixd
+    nixfmt
+    typescript-language-server
+    vscode-langservers-extracted
+    which
+    yaml-language-server
+  ];
   piSettings = {
     # This is Pi's provider ID for ChatGPT subscription authentication. It does
     # not install or invoke the Codex CLI.
@@ -57,6 +75,13 @@ let
   '';
 in
 {
+  # Pi-lens downloads some upstream native language servers at runtime. nix-ld
+  # and ICU let those managed ELF/.NET binaries run instead of hitting stub-ld.
+  programs.nix-ld = {
+    enable = true;
+    libraries = [ pkgs.icu ];
+  };
+
   home-manager = {
     useGlobalPkgs = true;
     useUserPackages = true;
@@ -82,7 +107,8 @@ in
             pkgs.pi-coding-agent
             piWeb
             pkgs.yt-dlp
-          ];
+          ]
+          ++ piLspPackages;
 
           sessionVariables = {
             PI_FFF_MODE = "override";
@@ -100,6 +126,10 @@ in
             };
             ".pi/agent/settings.json" = {
               source = (pkgs.formats.json { }).generate "pi-settings.json" piSettings;
+              force = true;
+            };
+            ".pi-lens/config.json" = {
+              source = (pkgs.formats.json { }).generate "pi-lens-settings.json" piLensSettings;
               force = true;
             };
           };
