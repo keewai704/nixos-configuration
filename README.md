@@ -94,8 +94,10 @@ MCP registry, preventing them from shadowing the generated system definitions.
 
 Personal skills live under `skills/<skill-name>/` in this repository. Home
 Manager links each one into the official user discovery directory at
-`~/.agents/skills/`. OpenAI-bundled system skills and plugin-provided skills stay
-owned by the application and are not copied into this repository.
+`~/.agents/skills/`. The `add-nix-mcp` and `add-nix-skill` skills provide focused,
+working-directory-independent workflows for extending this configuration.
+OpenAI-bundled system skills and plugin-provided skills stay owned by the
+application and are not copied into this repository.
 
 After adding or changing an MCP server or skill, rebuild the `citrus-vm`
 configuration and restart ChatGPT Desktop or open a new local session. Inspect
@@ -104,7 +106,8 @@ the deployed state with:
 ```console
 codex mcp list
 codex mcp get context7
-readlink -f ~/.agents/skills/chatgpt-nix-extensions
+readlink -f /home/keewai/.agents/skills/add-nix-mcp
+readlink -f /home/keewai/.agents/skills/add-nix-skill
 ```
 
 ## Tailnet web gateway
