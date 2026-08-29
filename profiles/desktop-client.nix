@@ -7,6 +7,7 @@
 let
   cuaDriver = pkgs.callPackage ../pkgs/cua-driver/package.nix { };
   cuaEnvironment = {
+    CUA_DRIVER_RS_ENABLE_WAYLAND = "1";
     CUA_DRIVER_RS_TELEMETRY_ENABLED = "false";
     CUA_DRIVER_RS_UPDATE_CHECK = "false";
   };

@@ -74,6 +74,8 @@ profile enables AT-SPI and registers `cua-driver mcp` in the shared MCP
 registry. Its launcher imports the active display and session-bus variables
 from the user's systemd manager, so Pi Web can reach the logged-in Wayland
 session even though Pi Web itself runs as a system service.
+The upstream-experimental native Wayland backend is explicitly enabled with
+`CUA_DRIVER_RS_ENABLE_WAYLAND=1`; XWayland remains available as a fallback.
 
 Cua telemetry and automatic update checks are disabled. Upgrades remain pinned
 to the source hash in `pkgs/cua-driver/package.nix` and are applied through the
