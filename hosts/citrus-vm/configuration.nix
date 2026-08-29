@@ -16,6 +16,8 @@ in
   imports = [
     inputs.nix-hazkey.nixosModules.hazkey
     ../../profiles/networkmanager.nix
+    ../../profiles/tailnet-admin.nix
+    ../../profiles/tailnet-web.nix
     ../../profiles/uefi-systemd-boot.nix
     ./hardware-configuration.nix
   ];
@@ -60,6 +62,7 @@ in
 
   services = {
     hazkey.enable = true;
+    tailnetWeb.enable = true;
 
     greetd = {
       enable = true;

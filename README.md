@@ -12,8 +12,8 @@ such as NetworkManager, UEFI systemd-boot, and tailnet administration, live
 under `profiles` and are imported explicitly by each compatible host.
 
 Hardware, state versions, network roles, local endpoints, storage, secrets,
-and services remain under `hosts/<name>`. Orange's repeated hostname, storage,
-and loopback-port values are defined once in `hosts/orange/settings.nix`.
+and services remain under `hosts/<name>`. Orange's repeated storage and local
+service values are defined once in `hosts/orange/settings.nix`.
 
 ## Agent tooling
 
@@ -59,6 +59,21 @@ pi list
 readlink -f ~/.pi/agent/settings.json
 pi-web --help
 ```
+
+### Pi Web over Tailscale
+
+Both hosts use the shared `tailnet-admin` and `tailnet-web` profiles. The
+former enables Tailscale SSH and explicitly keeps each machine's NixOS
+hostname as its Tailscale hostname. The latter publishes a loopback-only
+nginx listener through one Tailscale Serve HTTPS listener on port 443, then
+proxies `/pi` to a loopback-only Pi Web backend:
+
+- citrus-vm: <https://citrus-vm.tail1e65cd.ts.net/pi/>
+- Orange: <https://orange.tail1e65cd.ts.net/pi/>
+
+Pi Web is built with `/pi` as its Next.js base path, including API, static
+asset, manifest, service-worker, notification, and WebSocket/SSE URLs. No
+nginx or Pi Web backend port is opened in the host firewall.
 
 ### Camofox browser
 

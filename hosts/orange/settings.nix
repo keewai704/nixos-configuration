@@ -1,10 +1,7 @@
 {
   hostName = "orange";
-  tailnetHostname = "orange.tail1e65cd.ts.net";
   storageRoot = "/srv/storage";
 
-  nginxPort = 8000;
-  piWebPort = 30141;
   camofoxApiPort = 9377;
   camofoxNoVncPort = 6080;
   camofoxAgentUserId = "pi";

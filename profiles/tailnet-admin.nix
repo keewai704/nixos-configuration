@@ -1,3 +1,5 @@
+{ config, ... }:
+
 {
   networking.firewall.interfaces.tailscale0.allowedTCPPorts = [ 22 ];
 
@@ -9,7 +11,10 @@
 
     tailscale = {
       enable = true;
-      extraSetFlags = [ "--ssh" ];
+      extraSetFlags = [
+        "--hostname=${config.networking.hostName}"
+        "--ssh"
+      ];
     };
   };
 }

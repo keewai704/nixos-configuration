@@ -8,6 +8,7 @@
   imports = [
     ../../profiles/networkmanager.nix
     ../../profiles/tailnet-admin.nix
+    ../../profiles/tailnet-web.nix
     ../../profiles/uefi-systemd-boot.nix
     ./hardware-configuration.nix
     ./camofox.nix
@@ -15,7 +16,6 @@
     ./maintenance.nix
     ./media-services.nix
     ./minecraft-server.nix
-    ./pi-web.nix
   ];
 
   boot.kernelPackages = pkgs.linuxPackages_latest;
@@ -36,9 +36,12 @@
     ];
   };
 
-  services.tailscale = {
-    useRoutingFeatures = "server";
-    extraSetFlags = [ "--advertise-exit-node" ];
+  services = {
+    tailnetWeb.enable = true;
+    tailscale = {
+      useRoutingFeatures = "server";
+      extraSetFlags = [ "--advertise-exit-node" ];
+    };
   };
 
   nix.settings = {

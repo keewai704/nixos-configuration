@@ -7,12 +7,14 @@
 }:
 
 let
-  inherit (orangeSettings)
-    camofoxApiPort
+  inherit (config.services.tailnetWeb)
     nginxPort
     piWebPort
-    storageRoot
     tailnetHostname
+    ;
+  inherit (orangeSettings)
+    camofoxApiPort
+    storageRoot
     ;
   storageMountUnit = "srv-storage.mount";
   backupRoot = "${storageRoot}/server/backups/orange-local";

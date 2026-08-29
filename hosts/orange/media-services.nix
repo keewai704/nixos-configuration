@@ -1,4 +1,5 @@
 {
+  config,
   lib,
   orangeSettings,
   pkgs,
@@ -6,11 +7,10 @@
 }:
 
 let
+  inherit (config.services.tailnetWeb) tailnetHostname;
   inherit (orangeSettings)
     camofoxNoVncPort
-    nginxPort
     storageRoot
-    tailnetHostname
     ;
   storageMountUnit = "srv-storage.mount";
   immichMediaRoot = "${storageRoot}/Pictures";
@@ -259,29 +259,10 @@ in
     };
 
     nginx = {
-      enable = true;
-      recommendedOptimisation = true;
-      recommendedProxySettings = true;
       proxyTimeout = "600s";
       clientMaxBodySize = "50000M";
-      appendHttpConfig = ''
-        # Tailscale Serve supplies the original tailnet client in this header.
-        # Fall back to the direct peer for loopback health checks.
-        map $http_x_forwarded_for $tailscale_client_ip {
-          default $http_x_forwarded_for;
-          "" $remote_addr;
-        }
-
-      '';
 
       virtualHosts.${tailnetHostname} = {
-        default = true;
-        listen = [
-          {
-            addr = "127.0.0.1";
-            port = nginxPort;
-          }
-        ];
         extraConfig = ''
           client_body_buffer_size 1024k;
           send_timeout 600s;
@@ -473,31 +454,6 @@ in
           storageMountUnit
           "vaultwarden-import-existing.service"
         ];
-      };
-
-      tailscale-serve-nginx = {
-        description = "Publish local services with Tailscale Serve";
-        requires = [
-          "nginx.service"
-          "tailscaled.service"
-        ];
-        wants = [ "network-online.target" ];
-        after = [
-          "network-online.target"
-          "nginx.service"
-          "tailscaled.service"
-        ];
-        wantedBy = [ "multi-user.target" ];
-        serviceConfig = {
-          Type = "oneshot";
-          RemainAfterExit = true;
-          Restart = "on-failure";
-          RestartSec = "5s";
-          # Remove persisted imperative mappings first, so old non-443
-          # listeners cannot survive a configuration change.
-          ExecStartPre = "${pkgs.tailscale}/bin/tailscale serve reset";
-          ExecStart = "${pkgs.tailscale}/bin/tailscale serve --bg --yes --https=443 http://127.0.0.1:${toString nginxPort}";
-        };
       };
     };
 
