@@ -201,7 +201,21 @@ stdenv.mkDerivation {
 
     [[ -L "$marker" && "$(readlink "$marker")" == "$sourceResources" ]]
     export CODEX_ELECTRON_BUNDLED_PLUGINS_RESOURCES_PATH="$cacheRoot"
-    exec "@out@/lib/chatgpt/ChatGPT" "$@"
+
+    # Unlike nixpkgs-wrapped Electron applications, the upstream prebuilt
+    # ChatGPT binary does not translate NIXOS_OZONE_WL into Chromium flags.
+    # Without these flags it chooses X11/XWayland even in the Wayland session,
+    # which bypasses the Wayland text-input protocol used by Fcitx5 for inline
+    # preedit. Keep native Wayland opt-in through the existing NixOS variable,
+    # and require a live Wayland display so X11 sessions retain the fallback.
+    ozoneFlags=()
+    if [[ -n "''${NIXOS_OZONE_WL:-}" && -n "''${WAYLAND_DISPLAY:-}" ]]; then
+      ozoneFlags=(--ozone-platform=wayland --enable-wayland-ime=true)
+    fi
+
+    # User arguments come last so an explicit --ozone-platform=x11 remains a
+    # supported escape hatch when native Wayland is unsuitable.
+    exec "@out@/lib/chatgpt/ChatGPT" "''${ozoneFlags[@]}" "$@"
     EOF
     substituteInPlace "$out/lib/chatgpt/launch-chatgpt" \
       --replace-fail '@out@' "$out" \

@@ -49,11 +49,24 @@ nix build .#chatgpt-desktop
 nix profile install .#chatgpt-desktop
 ```
 
-The app normally uses XWayland when available. To test OpenAI's experimental
-native Wayland path with Fcitx5 input support, launch:
+OpenAI's native Wayland path is experimental. The launcher detects a live
+Wayland session and the existing `NIXOS_OZONE_WL` opt-in, then adds
+`--ozone-platform=wayland --enable-wayland-ime=true` to the upstream binary.
+This is required because the prebuilt binary does not implement the Nixpkgs
+`NIXOS_OZONE_WL` wrapper convention; without it, Chromium selects XWayland and
+Fcitx5's Wayland text-input preedit path is not used. The desktop entry and
+`chatgpt` command therefore both get working inline Japanese input on
+`citrus-vm`:
 
 ```console
-chatgpt --ozone-platform=wayland --enable-wayland-ime
+chatgpt
+```
+
+To exercise the upstream default XWayland fallback for comparison, unset the
+opt-in for that launch:
+
+```console
+env -u NIXOS_OZONE_WL chatgpt
 ```
 
 Verify the installed package with:
