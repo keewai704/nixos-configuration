@@ -38,6 +38,7 @@
   nss,
   openssl,
   pango,
+  python3,
   stdenv,
   systemd,
   trash-cli,
@@ -99,6 +100,7 @@ stdenv.mkDerivation {
   nativeBuildInputs = [
     autoPatchelfHook
     dpkg
+    python3
   ];
 
   buildInputs = runtimeLibraries;
@@ -132,11 +134,21 @@ stdenv.mkDerivation {
 
     mkdir -p "$out/bin" "$out/lib" "$out/share/applications" "$out/share/pixmaps"
     cp -r usr/lib/chatgpt "$out/lib/"
+    appAsar="$out/lib/chatgpt/resources/app.asar"
+    chmod u+rw "$appAsar"
+    ${python3}/bin/python3 ${./patch-asar.py} "$appAsar"
+    # Keep the build fail-closed if a future upstream bundle changes the
+    # worker layout, integrity metadata, or watcher branch we patch above.
+    ${python3}/bin/python3 ${./patch-asar.py} --check "$appAsar"
 
     cat > "$out/lib/chatgpt/launch-chatgpt" <<'EOF'
     #!${lib.getExe bash}
     set -euo pipefail
 
+    # NixOS exposes the configured GL/DRI driver through this runtime profile.
+    # Keep it ahead of the store closure so libGLX can find the active driver;
+    # the packaged Mesa/libGL dependencies provide a deterministic fallback.
+    export LD_LIBRARY_PATH="/run/opengl-driver/lib:${lib.makeLibraryPath runtimeLibraries}''${LD_LIBRARY_PATH:+:$LD_LIBRARY_PATH}"
     export PATH="${
       lib.makeBinPath [
         coreutils
