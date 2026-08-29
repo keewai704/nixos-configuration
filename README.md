@@ -32,6 +32,12 @@ package does not add OpenAI's APT repository or write outside the Nix store.
 Updates are performed by refreshing the pinned version and hash in the Nix
 derivation.
 
+The app rewrites bundled plugin manifests when it materializes them. Because Nix
+store files are read-only, the launcher creates a versioned, approximately 48 MiB
+writable resource overlay under
+`~/.cache/chatgpt/bundled-plugin-resources/`; immutable sibling resources remain
+symlinked to the Nix store.
+
 OpenAI documents the upstream package and supported Linux distributions at
 <https://developers.openai.com/codex/app>. NixOS is not an upstream-supported
 distribution; this repository supplies the compatibility packaging.

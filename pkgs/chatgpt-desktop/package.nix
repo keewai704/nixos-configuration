@@ -4,7 +4,9 @@
   at-spi2-core,
   atk,
   autoPatchelfHook,
+  bash,
   cairo,
+  coreutils,
   cups,
   dbus,
   dpkg,
@@ -31,7 +33,6 @@
   libxfixes,
   libxkbcommon,
   libxrandr,
-  makeWrapper,
   mesa,
   nspr,
   nss,
@@ -98,7 +99,6 @@ stdenv.mkDerivation {
   nativeBuildInputs = [
     autoPatchelfHook
     dpkg
-    makeWrapper
   ];
 
   buildInputs = runtimeLibraries;
@@ -133,15 +133,69 @@ stdenv.mkDerivation {
     mkdir -p "$out/bin" "$out/lib" "$out/share/applications" "$out/share/pixmaps"
     cp -r usr/lib/chatgpt "$out/lib/"
 
-    makeWrapper "$out/lib/chatgpt/ChatGPT" "$out/bin/chatgpt" \
-      --prefix PATH : ${
-        lib.makeBinPath [
-          git
-          glib
-          trash-cli
-          xdg-utils
-        ]
-      }
+    cat > "$out/lib/chatgpt/launch-chatgpt" <<'EOF'
+    #!${lib.getExe bash}
+    set -euo pipefail
+
+    export PATH="${
+      lib.makeBinPath [
+        coreutils
+        git
+        glib
+        trash-cli
+        xdg-utils
+      ]
+    }''${PATH:+:$PATH}"
+
+    sourceResources="@out@/lib/chatgpt/resources"
+    sourceMarketplace="$sourceResources/plugins/openai-bundled"
+    cacheHome="''${XDG_CACHE_HOME:-$HOME/.cache}"
+    cacheRoot="$cacheHome/chatgpt/bundled-plugin-resources/@version@-resources-v1"
+    marker="$cacheRoot/.source"
+    cachedSource=""
+    if [[ -L "$marker" ]]; then
+      cachedSource="$(readlink "$marker")"
+    fi
+
+    # Nix store files are intentionally read-only. The app patches bundled
+    # plugin manifests while materializing them, so provide a versioned resource
+    # overlay with writable plugins and immutable siblings linked from the store.
+    if [[ -d "$cacheRoot" && "$cachedSource" != "$sourceResources" ]]; then
+      rm -rf "$cacheRoot"
+    fi
+
+    if [[ "$cachedSource" != "$sourceResources" ]]; then
+      cacheParent="''${cacheRoot%/*}"
+      mkdir -p "$cacheParent"
+      staging="$(mktemp -d "$cacheParent/.@version@.XXXXXX")"
+      trap 'rm -rf "$staging"' EXIT
+
+      for resource in "$sourceResources"/*; do
+        resourceName="''${resource##*/}"
+        if [[ "$resourceName" != plugins ]]; then
+          ln -s "$resource" "$staging/$resourceName"
+        fi
+      done
+
+      mkdir -p "$staging/plugins"
+      cp -R "$sourceMarketplace" "$staging/plugins/openai-bundled"
+      chmod -R u+rwX "$staging"
+      ln -s "$sourceResources" "$staging/.source"
+
+      if mv -T "$staging" "$cacheRoot" 2>/dev/null; then
+        trap - EXIT
+      fi
+    fi
+
+    [[ -L "$marker" && "$(readlink "$marker")" == "$sourceResources" ]]
+    export CODEX_ELECTRON_BUNDLED_PLUGINS_RESOURCES_PATH="$cacheRoot"
+    exec "@out@/lib/chatgpt/ChatGPT" "$@"
+    EOF
+    substituteInPlace "$out/lib/chatgpt/launch-chatgpt" \
+      --replace-fail '@out@' "$out" \
+      --replace-fail '@version@' "$version"
+    chmod 0755 "$out/lib/chatgpt/launch-chatgpt"
+    ln -s ../lib/chatgpt/launch-chatgpt "$out/bin/chatgpt"
     ln -s chatgpt "$out/bin/codex-desktop"
 
     install -Dm644 usr/share/applications/chatgpt.desktop \
