@@ -110,6 +110,29 @@ let
       --replace-fail \
         'const supportedLocales = ["en-US", "en", "pl", "ru"];' \
         'const supportedLocales = ["en-US", "en", "ja", "pl", "ru"];'
+
+    # Sine registers its Fluent source as an app-level override. Without an
+    # index, Firefox also asks that source for native browser resources, and a
+    # Japanese UI falls back to the bundled en-US strings. Limit the override
+    # to Sine's own resources, matching Firefox's indexed override pattern.
+    substituteInPlace "$out/JS/sine.sys.mjs" \
+      --replace-fail \
+        '{ addResourceOptions: { allowOverrides: true } }' \
+        '{ addResourceOptions: { allowOverrides: true } },
+      [
+        "chrome://locales/content/en-US/sine-cmdpalette.ftl",
+        "chrome://locales/content/en-US/sine-preferences.ftl",
+        "chrome://locales/content/en-US/sine-toasts.ftl",
+        "chrome://locales/content/ja/sine-cmdpalette.ftl",
+        "chrome://locales/content/ja/sine-preferences.ftl",
+        "chrome://locales/content/ja/sine-toasts.ftl",
+        "chrome://locales/content/pl/sine-cmdpalette.ftl",
+        "chrome://locales/content/pl/sine-preferences.ftl",
+        "chrome://locales/content/pl/sine-toasts.ftl",
+        "chrome://locales/content/ru/sine-cmdpalette.ftl",
+        "chrome://locales/content/ru/sine-preferences.ftl",
+        "chrome://locales/content/ru/sine-toasts.ftl",
+      ]'
     ${pkgs.coreutils}/bin/install -d "$out/JS/locales/ja"
     ${pkgs.coreutils}/bin/install -m 0444 \
       ${./assets/sine-ja/sine-preferences.ftl} \
@@ -208,6 +231,7 @@ let
 
     # Natsumi has no locale resources. Keep its features intact and load a
     # reviewed Japanese-only DOM translation layer before its UI scripts.
+    ${lib.getExe pkgs.nodejs} --check "$out/JS/sine.sys.mjs"
     ${lib.getExe pkgs.nodejs} --check ${./assets/natsumi-ja.uc.mjs}
 
     ${lib.concatStringsSep "\n" (
@@ -367,12 +391,10 @@ in
         }
       }
     '';
-    policies.RequestedLocales = [
-      "ja"
-      "en-US"
-    ];
     preferences = {
       "intl.accept_languages" = "ja-JP,ja,en-US,en";
+      "intl.locale.requested" = "ja";
+      "intl.regional_prefs.use_os_locales" = false;
       "sine.allow-unsafe-js" = false;
       "sine.auto-updates" = false;
       "sine.engine.auto-update" = false;
