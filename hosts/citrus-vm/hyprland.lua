@@ -18,7 +18,7 @@ end
 local application_launcher = k4_action("toggleLauncher")
 
 hl.on("hyprland.start", function()
-    hl.exec_cmd("/home/keewai/k4rk/start --no-duplicate -d")
+    hl.exec_cmd("/run/current-system/sw/bin/nix develop --no-write-lock-file path:/home/keewai/k4rk --command /home/keewai/k4rk/start --no-duplicate -d")
 end)
 
 hl.monitor({
