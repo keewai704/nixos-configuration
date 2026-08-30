@@ -28,23 +28,40 @@ in
     type = "fcitx5";
 
     fcitx5 = {
+      addons = [
+        (pkgs.catppuccin-fcitx5.override {
+          withRoundedCorners = true;
+        })
+      ];
       waylandFrontend = true;
 
-      settings.inputMethod = {
-        "Groups/0" = {
-          Name = "Default";
-          "Default Layout" = "us";
-          DefaultIM = "hazkey";
+      settings = {
+        addons.classicui.globalSection = {
+          DarkTheme = "catppuccin-mocha-blue";
+          Font = "Noto Sans CJK JP 12";
+          MenuFont = "Noto Sans CJK JP 11";
+          Theme = "catppuccin-mocha-blue";
+          TrayFont = "Noto Sans CJK JP Bold 10";
+          UseAccentColor = false;
+          UseDarkTheme = false;
         };
-        "Groups/0/Items/0" = {
-          Name = "keyboard-us";
-          Layout = "";
+
+        inputMethod = {
+          "Groups/0" = {
+            Name = "Default";
+            "Default Layout" = "us";
+            DefaultIM = "hazkey";
+          };
+          "Groups/0/Items/0" = {
+            Name = "keyboard-us";
+            Layout = "";
+          };
+          "Groups/0/Items/1" = {
+            Name = "hazkey";
+            Layout = "";
+          };
+          GroupOrder."0" = "Default";
         };
-        "Groups/0/Items/1" = {
-          Name = "hazkey";
-          Layout = "";
-        };
-        GroupOrder."0" = "Default";
       };
     };
   };

@@ -30,7 +30,8 @@ The session starts Hyprland through UWSM and greetd. Hazkey is the default
 Fcitx5 input method. Thunar is the directory handler and is paired with GVfs,
 Tumbler, and Xarchiver without installing a full desktop environment. GTK,
 Kitty, icons, and cursors use the shared dark desktop theme configured in
-`hosts/citrus-vm/desktop.nix`.
+`hosts/citrus-vm/desktop.nix`. Fcitx5's Classic UI uses a rounded Catppuccin
+Mocha Blue candidate panel with Noto Sans CJK JP for readable Japanese text.
 
 The wallpaper is repository-owned under `hosts/citrus-vm/assets/`. Keep
 machine-specific display and software-rendering settings in the host entry
@@ -160,6 +161,8 @@ change. Typical checks are:
 systemctl is-active greetd
 systemctl --user --no-pager --full status citrus-wallpaper.service
 systemctl --user show-environment | rg 'WAYLAND_DISPLAY|DISPLAY|DBUS_SESSION_BUS_ADDRESS'
+fcitx5-remote --check
+fcitx5-remote -n
 xdg-mime query default x-scheme-handler/http
 xdg-mime query default x-scheme-handler/codex
 chatgpt --version
