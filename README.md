@@ -22,10 +22,10 @@ directory handler and opens with `Super+E`; GVfs provides trash and removable
 media support, Tumbler supplies thumbnails on demand, and Xarchiver handles
 archives without pulling in a full desktop environment.
 
-GTK 3/4, Kitty, application icons, XWayland cursors, and native Hyprland cursors
-use a shared Catppuccin Mocha Blue theme. The GTK theme follows the compositor's
-existing Mocha palette, Papirus-Dark supplies matching blue folder icons, and
-the cursor remains at 24 pixels across both cursor backends.
+GTK 3/4 and Kitty use Catppuccin Mocha Blue. Colloid's Catppuccin variant
+provides matching rounded application and folder icons, while the light
+`Colloid-dark-cursors` pointer remains at 24 pixels for GTK, XWayland, and
+Hyprland's XCursor fallback.
 
 ## Codex desktop
 

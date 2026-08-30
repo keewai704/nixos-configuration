@@ -12,14 +12,14 @@ let
     tweaks = [ "rimless" ];
     variant = "mocha";
   };
-  iconTheme = pkgs.catppuccin-papirus-folders.override {
-    accent = "blue";
-    flavor = "mocha";
+  iconTheme = pkgs.colloid-icon-theme.override {
+    schemeVariants = [ "catppuccin" ];
   };
-  cursorTheme = pkgs.catppuccin-cursors.mochaBlue;
+  cursorTheme = pkgs.colloid-cursors;
 
   gtkThemeName = "catppuccin-mocha-blue-standard+rimless";
-  cursorThemeName = "catppuccin-mocha-blue-cursors";
+  iconThemeName = "Colloid-Catppuccin-Dark";
+  cursorThemeName = "Colloid-dark-cursors";
 in
 {
   imports = [ ../modules/chatgpt-desktop-extensions.nix ];
@@ -33,8 +33,6 @@ in
     ];
 
     sessionVariables = {
-      HYPRCURSOR_SIZE = "24";
-      HYPRCURSOR_THEME = cursorThemeName;
       XCURSOR_SIZE = "24";
       XCURSOR_THEME = cursorThemeName;
     };
@@ -58,7 +56,7 @@ in
 
       iconTheme = {
         package = iconTheme;
-        name = "Papirus-Dark";
+        name = iconThemeName;
       };
     };
 
@@ -68,7 +66,7 @@ in
       name = cursorThemeName;
       size = 24;
       gtk.enable = true;
-      hyprcursor.enable = true;
+      hyprcursor.enable = false;
     };
 
     programs.kitty = {
