@@ -119,6 +119,7 @@ in
 
   environment = {
     systemPackages = [
+      pkgs.gws
       pkgs.kitty
     ];
 
