@@ -40,35 +40,24 @@
       };
 
       mkHost =
-        {
-          modules,
-          specialArgs ? { },
-        }:
+        modules:
         nixpkgs.lib.nixosSystem {
-          specialArgs = {
-            inherit inputs;
-          }
-          // specialArgs;
+          specialArgs = { inherit inputs; };
           modules = [
-            ./modules/base.nix
+            ./modules/common.nix
           ]
           ++ modules;
         };
     in
     {
-      nixosConfigurations.orange = mkHost {
-        specialArgs.orangeSettings = import ./hosts/orange/settings.nix;
-        modules = [
-          agenix.nixosModules.default
-          ./hosts/orange
-        ];
-      };
+      nixosConfigurations.orange = mkHost [
+        agenix.nixosModules.default
+        ./hosts/orange/configuration.nix
+      ];
 
-      nixosConfigurations.citrus-vm = mkHost {
-        modules = [
-          ./hosts/citrus-vm
-        ];
-      };
+      nixosConfigurations.citrus-vm = mkHost [
+        ./hosts/citrus-vm/configuration.nix
+      ];
 
       packages.x86_64-linux.chatgpt-desktop = chatgptPkgs.callPackage ./pkgs/chatgpt-desktop { };
 

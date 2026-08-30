@@ -1,18 +1,16 @@
 {
-  config,
   lib,
-  orangeSettings,
   pkgs,
   ...
 }:
 
 let
-  inherit (config.services.tailnetWeb) tailnetHostname;
-  inherit (orangeSettings)
+  inherit (import ../settings.nix)
     immichBackupRoot
     immichMediaRoot
     immichPort
     storageMountUnit
+    tailnetHostname
     ;
   postgresqlPackage = pkgs.postgresql_17;
 

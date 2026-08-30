@@ -33,7 +33,7 @@ with `/home/keewai/nixos-configuration#`. Never rely on `.` or a prior `cd`.
 
 ## Choose the declaration route
 
-Edit `/home/keewai/nixos-configuration/modules/chatgpt-desktop-extensions.nix`.
+Edit `/home/keewai/nixos-configuration/hosts/citrus-vm/codex.nix`.
 Do not edit `/etc/codex/config.toml`,
 `/home/keewai/.codex/config.toml`, or
 `/home/keewai/.config/mcp/mcp.json`; those are generated output or application
@@ -51,7 +51,7 @@ find "$mcp_servers_source/modules/servers" -maxdepth 1 -type f -name '*.nix' -pr
   file and configure its actual options under `mcp-servers.programs`.
 - For a remote endpoint or an unsupported server, declare it under
   `mcp-servers.settings.servers` using the shape supported by
-  `/home/keewai/nixos-configuration/modules/chatgpt-desktop-extensions.nix`.
+  `/home/keewai/nixos-configuration/hosts/citrus-vm/codex.nix`.
 - For an unsupported local stdio server, package the executable in Nix under
   `/home/keewai/nixos-configuration/pkgs/` and reference its store executable.
   Do not depend on `npx -y`, mutable language-package caches, or a command found

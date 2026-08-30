@@ -1,22 +1,19 @@
 {
   config,
   lib,
-  orangeSettings,
   pkgs,
   ...
 }:
 
 let
-  inherit (config.services.tailnetWeb)
-    nginxPort
-    tailnetHostname
-    ;
-  inherit (orangeSettings)
+  inherit (import ./settings.nix)
     camofoxApiPort
     immichBackupRoot
     immichPort
     minecraftPort
+    nginxPort
     storageRoot
+    tailnetHostname
     vaultwardenBackupRoot
     vaultwardenPort
     ;

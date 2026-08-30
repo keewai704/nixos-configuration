@@ -5,7 +5,7 @@
 }:
 
 let
-  chatgptDesktop = pkgs.callPackage ../pkgs/chatgpt-desktop { };
+  chatgptDesktop = pkgs.callPackage ../../pkgs/chatgpt-desktop { };
   gtkTheme = pkgs.catppuccin-gtk.override {
     accents = [ "blue" ];
     size = "standard";
@@ -22,7 +22,7 @@ let
   cursorThemeName = "Colloid-dark-cursors";
 in
 {
-  imports = [ ./chatgpt-desktop-extensions.nix ];
+  imports = [ ./codex.nix ];
 
   nixpkgs.config.allowUnfreePredicate = package: lib.getName package == "chatgpt-desktop";
 

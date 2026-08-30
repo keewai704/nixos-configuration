@@ -1,16 +1,14 @@
 {
-  config,
   lib,
-  orangeSettings,
   pkgs,
   ...
 }:
 
 let
-  inherit (config.services.tailnetWeb) tailnetHostname;
-  inherit (orangeSettings)
+  inherit (import ../settings.nix)
     storageMountUnit
     storageRoot
+    tailnetHostname
     vaultwardenBackupRoot
     vaultwardenPort
     ;

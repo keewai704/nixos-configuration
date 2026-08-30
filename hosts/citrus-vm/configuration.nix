@@ -16,11 +16,8 @@ in
 {
   imports = [
     inputs.nix-hazkey.nixosModules.hazkey
-    ../../modules/browser-environment.nix
-    ../../modules/desktop-client.nix
-    ../../modules/networkmanager.nix
-    ../../modules/tailnet-admin.nix
-    ../../modules/uefi-systemd-boot.nix
+    ./browser.nix
+    ./desktop.nix
     ./hardware-configuration.nix
   ];
 

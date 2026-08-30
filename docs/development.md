@@ -54,8 +54,9 @@ rewrite, stage, commit, stash, reset, or delete unrelated work. If an unrelated
 tracked change can affect evaluation or activation, isolate the task safely or
 stop; do not claim that a dirty configuration was tested as the committed task.
 
-Place new code according to the [repository map](../README.md#where-a-change-belongs).
-Keep `hosts/<host>/default.nix` focused on imports and small host-wide settings.
+Place new code according to the [repository map](../README.md#layout). Keep
+`hosts/<host>/configuration.nix` focused on imports and small host-wide
+settings.
 
 ## Format, analyze, evaluate, and build
 
@@ -78,7 +79,8 @@ nix flake check --no-write-lock-file
 ```
 
 Evaluate and build every affected host explicitly. A change to `flake.nix`,
-`modules/base.nix`, or another module shared by both hosts requires both builds:
+`modules/common.nix`, or another module shared by both hosts requires both
+builds:
 
 ```console
 for target_host in citrus-vm orange; do
@@ -96,7 +98,7 @@ nix build .#chatgpt-desktop --no-link
 
 | Change scope | Minimum explicit builds |
 | --- | --- |
-| `flake.nix`, `modules/base.nix`, or a module used by both hosts | `citrus-vm` and `orange` |
+| `flake.nix`, `modules/common.nix`, or a module used by both hosts | `citrus-vm` and `orange` |
 | Citrus host, desktop, ChatGPT, MCP, CUA, or skills | `citrus-vm` and any changed package output |
 | Orange host, service, monitoring, maintenance, or Camofox | `orange` and any changed package |
 | Documentation only | Formatting/link checks appropriate to the files; live completion gates below still apply |

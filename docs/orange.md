@@ -14,22 +14,21 @@ configuration is being edited.
 
 | Path | Responsibility |
 | --- | --- |
-| [`hosts/orange/default.nix`](../hosts/orange/default.nix) | Host composition, exit-node settings, kernel choice, and state version |
+| [`hosts/orange/configuration.nix`](../hosts/orange/configuration.nix) | Host composition, exit-node settings, kernel choice, and state version |
 | [`hosts/orange/settings.nix`](../hosts/orange/settings.nix) | Shared hostname, interface, storage paths, service ports, and identifiers |
 | [`hosts/orange/hardware-configuration.nix`](../hosts/orange/hardware-configuration.nix) | Boot disk, filesystems, and generated hardware settings |
 | [`hosts/orange/services/storage.nix`](../hosts/orange/services/storage.nix) | Existing HDD mount, SMB, ownership, and mount-ordered directory preparation |
 | [`hosts/orange/services/immich.nix`](../hosts/orange/services/immich.nix) | Immich, PostgreSQL pin, hardware acceleration, and one-time database import |
 | [`hosts/orange/services/vaultwarden.nix`](../hosts/orange/services/vaultwarden.nix) | Vaultwarden, backup, and one-time state import |
 | [`hosts/orange/services/camofox.nix`](../hosts/orange/services/camofox.nix) | Camofox service, persistent profiles, and lazy noVNC activation |
-| [`hosts/orange/services/web.nix`](../hosts/orange/services/web.nix) | nginx routes, redirects, proxy headers, and WebSockets |
+| [`hosts/orange/services/web.nix`](../hosts/orange/services/web.nix) | Tailscale Serve, loopback nginx, routes, proxy headers, and WebSockets |
 | [`hosts/orange/services/minecraft.nix`](../hosts/orange/services/minecraft.nix) | Fabric server, pinned artifacts, firewall, and service sandbox |
 | [`hosts/orange/health-monitor.nix`](../hosts/orange/health-monitor.nix) | Health checks, Discord alerting, and the 15-minute monitor timer |
 | [`hosts/orange/maintenance.nix`](../hosts/orange/maintenance.nix) | Local backups, SMART tests, Nix maintenance, and timer scheduling |
 | [`pkgs/camofox/default.nix`](../pkgs/camofox/default.nix) | Reproducible Camofox/Camoufox package |
 
-`flake.nix` passes `hosts/orange/settings.nix` as `orangeSettings` to the host
-modules. Put a shared path or port there only when multiple Orange modules
-consume it.
+Orange modules import `hosts/orange/settings.nix` directly. Put a shared path,
+port, or identifier there only when multiple Orange modules consume it.
 
 ## Storage is non-destructive
 

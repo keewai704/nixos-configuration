@@ -11,18 +11,18 @@ hostname is `citrus-vm` may run `nixos-rebuild test` or `switch` for this host.
 
 | Path | Responsibility |
 | --- | --- |
-| [`hosts/citrus-vm/default.nix`](../hosts/citrus-vm/default.nix) | Host imports, Hyprland session, Hazkey/Fcitx5, wallpaper, graphics, and state version |
+| [`hosts/citrus-vm/configuration.nix`](../hosts/citrus-vm/configuration.nix) | Host imports, Hyprland session, Hazkey/Fcitx5, wallpaper, graphics, and state version |
 | [`hosts/citrus-vm/hardware-configuration.nix`](../hosts/citrus-vm/hardware-configuration.nix) | Generated machine hardware, filesystems, and swap |
 | [`hosts/citrus-vm/hyprland.lua`](../hosts/citrus-vm/hyprland.lua) | Hyprland behavior and key bindings |
-| [`modules/desktop-client.nix`](../modules/desktop-client.nix) | GTK/Kitty theme, pointer, Thunar, GVfs, Tumbler, and the ChatGPT application |
-| [`modules/chatgpt-desktop-extensions.nix`](../modules/chatgpt-desktop-extensions.nix) | Home Manager, system MCP configuration, personal skills, and CUA |
+| [`hosts/citrus-vm/desktop.nix`](../hosts/citrus-vm/desktop.nix) | GTK/Kitty theme, pointer, Thunar, GVfs, Tumbler, and the ChatGPT application |
+| [`hosts/citrus-vm/browser.nix`](../hosts/citrus-vm/browser.nix) | Firefox default handlers, Brave Origin, and vendor-scoped WebHID access |
+| [`hosts/citrus-vm/codex.nix`](../hosts/citrus-vm/codex.nix) | Home Manager, system MCP configuration, personal skills, and CUA |
 | [`pkgs/chatgpt-desktop/default.nix`](../pkgs/chatgpt-desktop/default.nix) | ChatGPT desktop package and launcher |
 | [`pkgs/cua-driver/default.nix`](../pkgs/cua-driver/default.nix) | CUA driver package |
 
-`modules/desktop-client.nix` imports
-`modules/chatgpt-desktop-extensions.nix`, which imports Home Manager and
-`mcp-servers-nix`. Host settings that refer to `home-manager.users.keewai` rely
-on that chain.
+`desktop.nix` imports `codex.nix`, which imports Home Manager and
+`mcp-servers-nix`. The complete desktop stack therefore stays inside the Citrus
+host directory.
 
 ## Desktop
 
@@ -30,11 +30,22 @@ The session starts Hyprland through UWSM and greetd. Hazkey is the default
 Fcitx5 input method. Thunar is the directory handler and is paired with GVfs,
 Tumbler, and Xarchiver without installing a full desktop environment. GTK,
 Kitty, icons, and cursors use the shared dark desktop theme configured in
-`modules/desktop-client.nix`.
+`hosts/citrus-vm/desktop.nix`.
 
 The wallpaper is repository-owned under `hosts/citrus-vm/assets/`. Keep
 machine-specific display and software-rendering settings in the host entry
 point, not in a module used by Orange.
+
+## Browsers and URL handlers
+
+Firefox is the default browser for HTTP, HTTPS, HTML, and unknown URL schemes.
+Brave Origin is also installed for sites that require Chromium behavior.
+`x-scheme-handler/codex` remains mapped to `chatgpt.desktop` so authentication
+and deep links return to the desktop application.
+
+WebHID access is granted through vendor-scoped udev rules for the configured
+SparkLink keyboard and OpenMouse-compatible device vendors. The rules do not
+grant blanket access to every `hidraw` device.
 
 ## ChatGPT desktop package
 
@@ -149,6 +160,8 @@ change. Typical checks are:
 systemctl is-active greetd
 systemctl --user --no-pager --full status citrus-wallpaper.service
 systemctl --user show-environment | rg 'WAYLAND_DISPLAY|DISPLAY|DBUS_SESSION_BUS_ADDRESS'
+xdg-mime query default x-scheme-handler/http
+xdg-mime query default x-scheme-handler/codex
 chatgpt --version
 cua-driver doctor
 codex mcp list

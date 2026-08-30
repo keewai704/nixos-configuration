@@ -7,7 +7,9 @@ in
 
   hostName = "orange";
   lanInterface = "enp2s0";
+  nginxPort = 8000;
   storageMountUnit = "srv-storage.mount";
+  tailnetHostname = "orange.tail1e65cd.ts.net";
 
   immichPort = 2283;
   immichBackupRoot = "${immichMediaRoot}/backups";

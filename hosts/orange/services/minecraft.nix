@@ -1,12 +1,11 @@
 {
   lib,
-  orangeSettings,
   pkgs,
   ...
 }:
 
 let
-  inherit (orangeSettings)
+  inherit (import ../settings.nix)
     lanInterface
     minecraftDataDir
     minecraftPort

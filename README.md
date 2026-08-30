@@ -1,54 +1,52 @@
 # nixos-configuration
 
-Flake-based NixOS configurations for two `x86_64-linux` hosts. The repository
-keeps shared modules, host composition, local packages, personal Codex skills,
-and encrypted secrets in one declarative tree.
+Flake-based NixOS configurations for two `x86_64-linux` machines. The layout
+uses one shared module and keeps everything else beside the host that owns it.
+
+## Layout
+
+```text
+.
+├── flake.nix
+├── modules/
+│   └── common.nix                 # settings used by every host
+├── hosts/
+│   ├── citrus-vm/
+│   │   ├── configuration.nix      # host entry point
+│   │   ├── hardware-configuration.nix
+│   │   ├── desktop.nix            # desktop environment
+│   │   ├── browser.nix            # Firefox, Brave Origin, and WebHID
+│   │   └── codex.nix              # ChatGPT, MCP, CUA, and skills
+│   └── orange/
+│       ├── configuration.nix      # host entry point
+│       ├── hardware-configuration.nix
+│       ├── settings.nix           # values shared inside this host
+│       ├── health-monitor.nix
+│       ├── maintenance.nix
+│       └── services/              # one file per service or service group
+├── pkgs/                           # locally packaged software
+├── skills/                         # personal Codex skills
+├── secrets/                        # Agenix declarations and ciphertext
+└── docs/                           # operational detail
+```
+
+The ownership rules are intentionally small:
+
+1. Put a setting in `modules/common.nix` only when every host uses it.
+2. Put machine-specific code under `hosts/<name>/`.
+3. Put build recipes, skills, and encrypted secrets in their matching top-level
+   directory.
+
+Each host entry point imports only files from its own directory. Orange modules
+read `settings.nix` directly, so there is no hidden host-specific argument
+injection from `flake.nix`.
 
 ## Hosts
 
-| Host | Role | Entry point | Details |
+| Host | Role | Entry point | Guide |
 | --- | --- | --- | --- |
-| `citrus-vm` | Hyprland desktop and local ChatGPT/Codex client | [`hosts/citrus-vm/default.nix`](hosts/citrus-vm/default.nix) | [Citrus guide](docs/citrus-vm.md) |
-| `orange` | Tailnet server, storage, media, browser, password manager, and Minecraft | [`hosts/orange/default.nix`](hosts/orange/default.nix) | [Orange guide](docs/orange.md) |
-
-## How the configuration is assembled
-
-```text
-flake.nix
-└── mkHost
-    ├── modules/base.nix                    # imported by every host
-    ├── hosts/citrus-vm/default.nix
-    │   ├── modules/desktop-client.nix
-    │   │   └── modules/chatgpt-desktop-extensions.nix
-    │   │       └── Home Manager and mcp-servers-nix
-    │   ├── modules/{networkmanager,tailnet-admin,uefi-systemd-boot}.nix
-    │   └── hosts/citrus-vm/{hardware-configuration.nix,hyprland.lua,assets/}
-    └── hosts/orange/default.nix
-        ├── modules/{networkmanager,tailnet-admin,tailnet-web,uefi-systemd-boot}.nix
-        ├── hosts/orange/{hardware-configuration,settings,health-monitor,maintenance}.nix
-        └── hosts/orange/services/{camofox,storage,immich,vaultwarden,web,minecraft}.nix
-```
-
-`flake.nix` passes the flake inputs to every host. Orange also receives the
-plain attribute set from `hosts/orange/settings.nix` as `orangeSettings`.
-Citrus gets Home Manager indirectly through `modules/desktop-client.nix` and
-`modules/chatgpt-desktop-extensions.nix`.
-
-## Where a change belongs
-
-| Change | Location |
-| --- | --- |
-| Baseline applied to every host | `modules/base.nix` |
-| Reusable platform, role, or application configuration | `modules/*.nix` |
-| Host composition, hardware, or machine-specific values | `hosts/<host>/default.nix`, `hardware-configuration.nix`, or `settings.nix` |
-| One Orange service or its operating policy | `hosts/orange/services/*.nix` |
-| Orange monitoring or scheduled maintenance | `hosts/orange/health-monitor.nix` or `hosts/orange/maintenance.nix` |
-| Locally packaged software | `pkgs/<package>/default.nix` |
-| Personal Codex skill deployed through Home Manager | `skills/<skill>/SKILL.md` |
-| Agenix recipients or encrypted payloads | `secrets/secrets.nix` and `secrets/*.age` |
-
-Keep host entry points as composition files. Put implementation in the narrowest
-shared module, host service, or package that owns it.
+| `citrus-vm` | Hyprland desktop and local ChatGPT/Codex client | [`hosts/citrus-vm/configuration.nix`](hosts/citrus-vm/configuration.nix) | [Citrus](docs/citrus-vm.md) |
+| `orange` | Tailnet server, storage, media, browser, password manager, and Minecraft | [`hosts/orange/configuration.nix`](hosts/orange/configuration.nix) | [Orange](docs/orange.md) |
 
 ## Read-only quick start
 
@@ -57,10 +55,7 @@ Run this from the repository root before inspecting or changing a host:
 ```console
 runtime_host="$(hostnamectl --static 2>/dev/null || hostname)"
 etc_host="$(tr -d '\r\n' < /etc/hostname)"
-if [ "$runtime_host" != "$etc_host" ]; then
-  printf 'hostname mismatch: runtime=%s /etc/hostname=%s\n' "$runtime_host" "$etc_host" >&2
-  exit 1
-fi
+test "$runtime_host" = "$etc_host"
 
 flake_host="$(nix eval --raw ".#nixosConfigurations.$runtime_host.config.networking.hostName")"
 test "$runtime_host" = "$flake_host"
@@ -75,10 +70,6 @@ These commands evaluate and build locally; they do not activate a generation.
 Do not substitute another host when the runtime host has no matching flake
 output.
 
-## Documentation
-
-- [Development and deployment workflow](docs/development.md)
-- [Citrus desktop, ChatGPT, MCP, and CUA](docs/citrus-vm.md)
-- [Orange services, storage, ingress, backups, and monitoring](docs/orange.md)
-
-Automated contributors must also follow [`AGENTS.md`](AGENTS.md).
+See [development and deployment](docs/development.md) for the mandatory commit,
+test, health-check, and switch workflow. Automated contributors must also
+follow [`AGENTS.md`](AGENTS.md).

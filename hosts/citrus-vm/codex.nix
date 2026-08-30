@@ -8,8 +8,8 @@
 
 let
   userName = "keewai";
-  skillRoot = ../skills;
-  cuaDriver = pkgs.callPackage ../pkgs/cua-driver { };
+  skillRoot = ../../skills;
+  cuaDriver = pkgs.callPackage ../../pkgs/cua-driver { };
   cuaEnvironment = {
     CUA_DRIVER_PERMISSION_MODE = "standard";
     CUA_DRIVER_RS_ENABLE_WAYLAND = "1";

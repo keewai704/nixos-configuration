@@ -1,18 +1,10 @@
-{
-  orangeSettings,
-  pkgs,
-  ...
-}:
+{ pkgs, ... }:
 
 let
-  inherit (orangeSettings) lanInterface;
+  inherit (import ./settings.nix) hostName lanInterface;
 in
 {
   imports = [
-    ../../modules/networkmanager.nix
-    ../../modules/tailnet-admin.nix
-    ../../modules/tailnet-web.nix
-    ../../modules/uefi-systemd-boot.nix
     ./hardware-configuration.nix
     ./health-monitor.nix
     ./maintenance.nix
@@ -27,7 +19,7 @@ in
   boot.kernelPackages = pkgs.linuxPackages_latest;
 
   networking = {
-    inherit (orangeSettings) hostName;
+    inherit hostName;
 
     networkmanager.dispatcherScripts = [
       {
@@ -43,7 +35,6 @@ in
   };
 
   services = {
-    tailnetWeb.enable = true;
     tailscale = {
       useRoutingFeatures = "server";
       extraSetFlags = [ "--advertise-exit-node" ];
