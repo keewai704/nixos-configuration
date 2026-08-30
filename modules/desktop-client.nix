@@ -39,6 +39,15 @@ in
   };
 
   home-manager.users.keewai = {
+    xdg = {
+      userDirs = {
+        enable = true;
+        createDirectories = true;
+      };
+
+      configFile."user-dirs.dirs".force = true;
+    };
+
     gtk = {
       enable = true;
       colorScheme = "dark";
