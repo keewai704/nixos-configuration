@@ -17,6 +17,10 @@ end
 
 local application_launcher = k4_action("toggleLauncher")
 
+hl.on("hyprland.start", function()
+    hl.exec_cmd("/home/keewai/k4rk/start --no-duplicate -d")
+end)
+
 hl.monitor({
     output = display_output,
     mode = "1920x1080@60",
