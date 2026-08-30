@@ -121,28 +121,14 @@ let
         'const supportedLocales = ["en-US", "en", "pl", "ru"];' \
         'const supportedLocales = ["en-US", "en", "ja", "pl", "ru"];'
 
-    # Sine registers its Fluent source as an app-level override. Without an
-    # index, Firefox also asks that source for native browser resources, and a
-    # Japanese UI falls back to the bundled en-US strings. Limit the override
-    # to Sine's own resources, matching Firefox's indexed override pattern.
-    substituteInPlace "$out/JS/sine.sys.mjs" \
-      --replace-fail \
-        '{ addResourceOptions: { allowOverrides: true } }' \
-        '{ addResourceOptions: { allowOverrides: true } },
-      [
-        "chrome://locales/content/en-US/sine-cmdpalette.ftl",
-        "chrome://locales/content/en-US/sine-preferences.ftl",
-        "chrome://locales/content/en-US/sine-toasts.ftl",
-        "chrome://locales/content/ja/sine-cmdpalette.ftl",
-        "chrome://locales/content/ja/sine-preferences.ftl",
-        "chrome://locales/content/ja/sine-toasts.ftl",
-        "chrome://locales/content/pl/sine-cmdpalette.ftl",
-        "chrome://locales/content/pl/sine-preferences.ftl",
-        "chrome://locales/content/pl/sine-toasts.ftl",
-        "chrome://locales/content/ru/sine-cmdpalette.ftl",
-        "chrome://locales/content/ru/sine-preferences.ftl",
-        "chrome://locales/content/ru/sine-toasts.ftl",
-      ]'
+    # Firefox resolves one Fluent meta-source per bundle. Register Sine's
+    # resources inside each active language pack's meta-source so native and
+    # Sine strings can remain Japanese in the same browser document.
+    ${lib.getExe pkgs.gnupatch} \
+      --directory "$out/JS" \
+      --strip 1 \
+      --fuzz 0 \
+      --input ${./assets/sine-langpack-shadow.patch}
     ${pkgs.coreutils}/bin/install -d "$out/JS/locales/ja"
     ${pkgs.coreutils}/bin/install -m 0444 \
       ${./assets/sine-ja/sine-preferences.ftl} \
