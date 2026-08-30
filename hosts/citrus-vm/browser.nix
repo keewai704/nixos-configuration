@@ -96,11 +96,119 @@ let
       name: value: "defaultPref(${builtins.toJSON name}, ${builtins.toJSON value});"
     ) sineModDefaultPreferences
   );
+  fluentValidator = pkgs.python3.withPackages (pythonPackages: [
+    pythonPackages.fluent-syntax
+  ]);
 
   sineProfile = pkgs.runCommand "firefox-sine-profile-${sineVersion}" { } ''
     mkdir -p "$out/sine-mods"
     ${pkgs.unzip}/bin/unzip -q ${sineEngine} -d "$out"
     ${pkgs.unzip}/bin/unzip -q ${sineBootloaderProfile} -d "$out"
+
+    # Sine 2.3.3 otherwise falls back to en-US for a Japanese Firefox.
+    substituteInPlace "$out/JS/utils/dom.mjs" \
+      --replace-fail \
+        'const supportedLocales = ["en-US", "en", "pl", "ru"];' \
+        'const supportedLocales = ["en-US", "en", "ja", "pl", "ru"];'
+    ${pkgs.coreutils}/bin/install -d "$out/JS/locales/ja"
+    ${pkgs.coreutils}/bin/install -m 0444 \
+      ${./assets/sine-ja/sine-preferences.ftl} \
+      "$out/JS/locales/ja/sine-preferences.ftl"
+    ${pkgs.coreutils}/bin/install -m 0444 \
+      ${./assets/sine-ja/sine-toasts.ftl} \
+      "$out/JS/locales/ja/sine-toasts.ftl"
+    ${pkgs.coreutils}/bin/install -m 0444 \
+      ${./assets/sine-ja/sine-cmdpalette.ftl} \
+      "$out/JS/locales/ja/sine-cmdpalette.ftl"
+
+    ${lib.getExe fluentValidator} - "$out/JS/locales/en-US" "$out/JS/locales/ja" <<'PY'
+    import json
+    import re
+    import sys
+    from collections import Counter
+    from pathlib import Path
+
+    from fluent.syntax import FluentParser
+
+    parser = FluentParser(with_spans=False)
+    reference_types = {
+        "FunctionReference",
+        "MessageReference",
+        "TermReference",
+        "VariableReference",
+    }
+
+    def identifier(node):
+        value = node.get("id", {})
+        name = value.get("name", "")
+        attribute = node.get("attribute")
+        if attribute:
+            name += "." + attribute.get("name", "")
+        return name
+
+    def collect_structure(node, result):
+        if isinstance(node, list):
+            for item in node:
+                collect_structure(item, result)
+            return
+
+        if not isinstance(node, dict):
+            return
+
+        node_type = node.get("type")
+        if node_type in reference_types:
+            result[(node_type, identifier(node))] += 1
+        elif node_type == "Variant":
+            key = node.get("key", {})
+            result[("Variant", key.get("type", ""), str(key.get("name", key.get("value", ""))))] += 1
+        elif node_type == "TextElement":
+            value = node.get("value", "")
+            for closing, tag in re.findall(r"<\s*(/?)\s*([A-Za-z][\w:-]*)\b", value):
+                result[("Markup", closing, tag)] += 1
+            for slot in re.findall(r'data-l10n-name\s*=\s*"([^"]+)"', value):
+                result[("Slot", slot)] += 1
+            return
+
+        for value in node.values():
+            collect_structure(value, result)
+
+    def load_schema(path):
+        resource = parser.parse(path.read_text(encoding="utf-8"))
+        junk = [entry for entry in resource.body if entry.__class__.__name__ == "Junk"]
+        if junk:
+            raise SystemExit(f"invalid Fluent syntax in {path}: {len(junk)} junk entries")
+
+        schema = {}
+        for entry in resource.body:
+            if entry.__class__.__name__ not in {"Message", "Term"}:
+                continue
+            data = entry.to_json()
+            entry_id = data["id"]["name"]
+            if entry.__class__.__name__ == "Term":
+                entry_id = "-" + entry_id
+            attributes = tuple(sorted(attribute["id"]["name"] for attribute in data.get("attributes", [])))
+            structure = Counter()
+            collect_structure(data, structure)
+            schema[entry_id] = {
+                "attributes": attributes,
+                "structure": sorted((list(key), count) for key, count in structure.items()),
+            }
+        return schema
+
+    source_root = Path(sys.argv[1])
+    target_root = Path(sys.argv[2])
+    for filename in ("sine-preferences.ftl", "sine-toasts.ftl", "sine-cmdpalette.ftl"):
+        source_schema = load_schema(source_root / filename)
+        target_schema = load_schema(target_root / filename)
+        if source_schema != target_schema:
+            print(f"Fluent schema mismatch in {filename}", file=sys.stderr)
+            print(json.dumps({"en-US": source_schema, "ja": target_schema}, ensure_ascii=False, indent=2), file=sys.stderr)
+            raise SystemExit(1)
+    PY
+
+    # Natsumi has no locale resources. Keep its features intact and load a
+    # reviewed Japanese-only DOM translation layer before its UI scripts.
+    ${lib.getExe pkgs.nodejs} --check ${./assets/natsumi-ja.uc.mjs}
 
     ${lib.concatStringsSep "\n" (
       lib.mapAttrsToList (id: source: ''
@@ -119,6 +227,10 @@ let
       '') sineModSources
     )}
 
+    ${pkgs.coreutils}/bin/install -m 0444 \
+      ${./assets/natsumi-ja.uc.mjs} \
+      "$out/sine-mods/natsumi-browser/natsumi/scripts/localization-ja.uc.mjs"
+
     ${lib.getExe pkgs.jq} --argjson ids '${builtins.toJSON sineModIds}' '
       def basename_if_string:
         if type == "string" then split("/")[-1] else . end;
@@ -128,6 +240,17 @@ let
           .origin = "store"
           | .["no-updates"] = true
           | .enabled = true
+          | if .id == "natsumi-browser" then
+              .scripts["natsumi/scripts/"]["localization-ja.uc.mjs"] = {
+                "loadOrder": 9,
+                "include": [
+                  "chrome://browser/content/browser.xhtml",
+                  "chrome://global/content/pictureinpicture/player.xhtml*",
+                  "about:preferences*",
+                  "about:settings*"
+                ]
+              }
+            else . end
           | if has("style") then
               if (.style | type) == "string" then
                 .style = { "chrome": (.style | basename_if_string) }
@@ -150,9 +273,18 @@ let
           $expectedVersions | to_entries[];
           $mods[.key].version == .value
         )
+        and $mods["natsumi-browser"].scripts["natsumi/scripts/"]["localization-ja.uc.mjs"].loadOrder == 9
+        and $mods["natsumi-browser"].scripts["natsumi/scripts/"]["localization-ja.uc.mjs"].include == [
+          "chrome://browser/content/browser.xhtml",
+          "chrome://global/content/pictureinpicture/player.xhtml*",
+          "about:preferences*",
+          "about:settings*"
+        ]
     ' "$out/managed-mods.json" >/dev/null
 
     test -f "$out/JS/engine.json"
+    test -f "$out/JS/locales/ja/sine-preferences.ftl"
+    test -f "$out/sine-mods/natsumi-browser/natsumi/scripts/localization-ja.uc.mjs"
     test -f "$out/utils/chrome.manifest"
   '';
 

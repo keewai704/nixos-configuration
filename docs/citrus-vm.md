@@ -87,6 +87,15 @@ hashes, and documented versions together. Sine requires privileged profile
 scripts, so the Firefox AutoConfig sandbox is disabled only as part of this
 explicit browser configuration.
 
+Firefox's Japanese language pack and requested locale cover the native browser
+UI. Sine `2.3.3` has no upstream Japanese locale, so the profile adds matching
+Japanese Fluent resources for its settings, toasts, and command palette.
+Natsumi `6.12.1` hard-codes its UI in English and exposes no localization API;
+a Japanese-only translation layer, restricted to Natsumi/Sine-owned UI in the
+pinned release, covers its onboarding, preferences, shortcuts, notifications,
+Picture-in-Picture indicator, and the installed mods' preference labels while
+leaving preference values and behavior unchanged.
+
 Context Menu Icons is set to its Firefox branch and receives its required SVG
 preference. The marketplace lists every mod above as Firefox-compatible, but
 Better Music Bar and Zen Compact Transparent Mode target controls that exist
