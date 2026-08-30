@@ -1,6 +1,5 @@
--- Hyprland configuration for citrus-vm.
--- Keep this file self-contained: the desktop should remain usable without
--- launchers, bars, or other optional desktop utilities.
+-- Hyprland behavior for citrus-vm. The generated configuration prepends the
+-- shared theme table from theme.nix.
 
 local main_mod = "SUPER"
 local terminal = "uwsm app -- kitty"
@@ -15,8 +14,8 @@ hl.monitor({
     scale = 1,
 })
 
-hl.env("XCURSOR_SIZE", "24")
-hl.env("XCURSOR_THEME", "Colloid-dark-cursors")
+hl.env("XCURSOR_SIZE", tostring(theme.cursor.size))
+hl.env("XCURSOR_THEME", theme.cursor.name)
 
 hl.config({
     general = {
@@ -27,10 +26,10 @@ hl.config({
         extend_border_grab_area = 12,
         col = {
             active_border = {
-                colors = { "rgb(89b4fa)", "rgb(cba6f7)" },
+                colors = theme.colors.activeBorder,
                 angle = 45,
             },
-            inactive_border = "rgba(45475aaa)",
+            inactive_border = theme.colors.inactiveBorder,
         },
         snap = {
             enabled = true,
@@ -50,8 +49,8 @@ hl.config({
             enabled = true,
             range = 12,
             render_power = 3,
-            color = "rgba(00000066)",
-            color_inactive = "rgba(00000044)",
+            color = theme.colors.shadow,
+            color_inactive = theme.colors.shadowInactive,
             offset = { 0, 2 },
         },
         blur = {
@@ -93,7 +92,7 @@ hl.config({
     misc = {
         disable_hyprland_logo = true,
         force_default_wallpaper = 0,
-        background_color = "rgb(11111b)",
+        background_color = theme.colors.background,
         focus_on_activate = true,
     },
 
@@ -271,7 +270,7 @@ bind(main_mod .. " + F1", function()
             "Hold Super+Shift+E: log out",
         }, "\n"),
         timeout = 8000,
-        color = "rgb(89b4fa)",
+        color = theme.colors.notification,
         font_size = 15,
     })
 end, "Show shortcut help")

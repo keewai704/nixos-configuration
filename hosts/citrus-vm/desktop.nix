@@ -5,21 +5,8 @@
 }:
 
 let
+  theme = import ./theme.nix { inherit pkgs; };
   chatgptDesktop = pkgs.callPackage ../../pkgs/chatgpt-desktop { };
-  gtkTheme = pkgs.catppuccin-gtk.override {
-    accents = [ "blue" ];
-    size = "standard";
-    tweaks = [ "rimless" ];
-    variant = "mocha";
-  };
-  iconTheme = pkgs.colloid-icon-theme.override {
-    schemeVariants = [ "catppuccin" ];
-  };
-  cursorTheme = pkgs.colloid-cursors;
-
-  gtkThemeName = "catppuccin-mocha-blue-standard+rimless";
-  iconThemeName = "Colloid-Catppuccin-Dark";
-  cursorThemeName = "Colloid-dark-cursors";
 in
 {
   imports = [ ./codex.nix ];
@@ -33,8 +20,8 @@ in
     ];
 
     sessionVariables = {
-      XCURSOR_SIZE = "24";
-      XCURSOR_THEME = cursorThemeName;
+      XCURSOR_SIZE = toString theme.cursor.size;
+      XCURSOR_THEME = theme.cursor.name;
     };
   };
 
@@ -50,37 +37,47 @@ in
 
     gtk = {
       enable = true;
-      colorScheme = "dark";
+      colorScheme = theme.scheme;
       gtk2.enable = false;
 
-      theme = {
-        package = gtkTheme;
-        name = gtkThemeName;
-      };
-
-      gtk4.theme = {
-        package = gtkTheme;
-        name = gtkThemeName;
-      };
-
-      iconTheme = {
-        package = iconTheme;
-        name = iconThemeName;
-      };
+      iconTheme = theme.icon;
+      theme = theme.gtk;
+      gtk4.theme = theme.gtk;
     };
 
     home.pointerCursor = {
       enable = true;
-      package = cursorTheme;
-      name = cursorThemeName;
-      size = 24;
+      inherit (theme.cursor) name package size;
       gtk.enable = true;
       hyprcursor.enable = false;
     };
 
     programs.kitty = {
       enable = true;
-      themeFile = "Catppuccin-Mocha";
+      settings = theme.kitty.settings;
+    };
+
+    qt = {
+      enable = true;
+      platformTheme.name = "qtct";
+      style.name = "kvantum";
+
+      kvantum = {
+        enable = true;
+        themes = [ theme.qt.package ];
+        settings.General.theme = theme.qt.themeName;
+      };
+
+      qt5ctSettings.Appearance = {
+        icon_theme = theme.icon.name;
+        standard_dialogs = "xdgdesktopportal";
+        style = "kvantum";
+      };
+      qt6ctSettings.Appearance = {
+        icon_theme = theme.icon.name;
+        standard_dialogs = "xdgdesktopportal";
+        style = "kvantum";
+      };
     };
   };
 

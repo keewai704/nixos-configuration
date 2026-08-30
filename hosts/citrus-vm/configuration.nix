@@ -6,7 +6,10 @@
 }:
 
 let
-  hyprlandConfig = ./hyprland.lua;
+  theme = import ./theme.nix { inherit pkgs; };
+  hyprlandConfig = pkgs.writeText "hyprland.lua" (
+    "local theme = ${lib.generators.toLua { } theme.hyprland}\n" + builtins.readFile ./hyprland.lua
+  );
   wallpaper = ./assets/videoframe_150744_10240x4320_clean-faithful.png;
 
   hyprlandSession =
@@ -23,25 +26,23 @@ in
 
   networking.hostName = "citrus-vm";
 
+  console.colors = theme.console.colors;
+
   i18n.inputMethod = {
     enable = true;
     type = "fcitx5";
 
     fcitx5 = {
-      addons = [
-        (pkgs.catppuccin-fcitx5.override {
-          withRoundedCorners = true;
-        })
-      ];
+      addons = [ theme.fcitx5.addon ];
       waylandFrontend = true;
 
       settings = {
         addons.classicui.globalSection = {
-          DarkTheme = "catppuccin-mocha-blue";
-          Font = "Noto Sans CJK JP 10";
-          MenuFont = "Noto Sans CJK JP 11";
-          Theme = "catppuccin-mocha-blue";
-          TrayFont = "Noto Sans CJK JP Bold 10";
+          DarkTheme = theme.fcitx5.themeName;
+          Font = theme.fcitx5.font;
+          MenuFont = theme.fcitx5.menuFont;
+          Theme = theme.fcitx5.themeName;
+          TrayFont = theme.fcitx5.trayFont;
           UseAccentColor = false;
           UseDarkTheme = false;
         };
@@ -107,6 +108,7 @@ in
         default_session = {
           command =
             "${lib.getExe pkgs.tuigreet} --time --remember --remember-user-session"
+            + " --theme ${lib.escapeShellArg theme.tuigreetTheme}"
             + " --cmd ${lib.escapeShellArg hyprlandSession}";
         };
       };

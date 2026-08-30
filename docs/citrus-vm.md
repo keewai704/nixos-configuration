@@ -12,9 +12,10 @@ hostname is `citrus-vm` may run `nixos-rebuild test` or `switch` for this host.
 | Path | Responsibility |
 | --- | --- |
 | [`hosts/citrus-vm/configuration.nix`](../hosts/citrus-vm/configuration.nix) | Host imports, Hyprland session, Hazkey/Fcitx5, wallpaper, graphics, and state version |
+| [`hosts/citrus-vm/theme.nix`](../hosts/citrus-vm/theme.nix) | Canonical Catppuccin palette, semantic colors, and application theme selections |
 | [`hosts/citrus-vm/hardware-configuration.nix`](../hosts/citrus-vm/hardware-configuration.nix) | Generated machine hardware, filesystems, and swap |
-| [`hosts/citrus-vm/hyprland.lua`](../hosts/citrus-vm/hyprland.lua) | Hyprland behavior and key bindings |
-| [`hosts/citrus-vm/desktop.nix`](../hosts/citrus-vm/desktop.nix) | GTK/Kitty theme, pointer, Thunar, GVfs, Tumbler, and the ChatGPT application |
+| [`hosts/citrus-vm/hyprland.lua`](../hosts/citrus-vm/hyprland.lua) | Hyprland behavior and key bindings; Nix prepends the shared theme table |
+| [`hosts/citrus-vm/desktop.nix`](../hosts/citrus-vm/desktop.nix) | Thunar, GVfs, Tumbler, Xarchiver, and the ChatGPT application |
 | [`hosts/citrus-vm/browser.nix`](../hosts/citrus-vm/browser.nix) | Firefox default handlers, Brave Origin, and vendor-scoped WebHID access |
 | [`hosts/citrus-vm/codex.nix`](../hosts/citrus-vm/codex.nix) | Home Manager, system MCP configuration, personal skills, and CUA |
 | [`pkgs/chatgpt-desktop/default.nix`](../pkgs/chatgpt-desktop/default.nix) | ChatGPT desktop package and launcher |
@@ -28,10 +29,15 @@ host directory.
 
 The session starts Hyprland through UWSM and greetd. Hazkey is the default
 Fcitx5 input method. Thunar is the directory handler and is paired with GVfs,
-Tumbler, and Xarchiver without installing a full desktop environment. GTK,
-Kitty, icons, and cursors use the shared dark desktop theme configured in
-`hosts/citrus-vm/desktop.nix`. Fcitx5's Classic UI uses a rounded Catppuccin
-Mocha Blue candidate panel with Noto Sans CJK JP for readable Japanese text.
+Tumbler, and Xarchiver without installing a full desktop environment.
+`hosts/citrus-vm/theme.nix` is the single source for the Catppuccin Mocha Blue
+palette and semantic colors. Kitty and Hyprland are generated directly from
+it; GTK, Qt/Kvantum, Fcitx5, Colloid icons and cursors, the virtual console,
+and tuigreet select their matching variants from the same theme definition.
+GTK applications such as Thunar and Xarchiver inherit it directly, while
+Firefox, Brave, and ChatGPT receive the shared dark desktop preference.
+Fcitx5's Classic UI keeps its rounded candidate panel and Noto Sans CJK JP
+fonts.
 
 The wallpaper is repository-owned under `hosts/citrus-vm/assets/`. Keep
 machine-specific display and software-rendering settings in the host entry
