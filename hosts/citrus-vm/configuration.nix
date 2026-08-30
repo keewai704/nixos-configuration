@@ -7,6 +7,7 @@
 
 let
   hyprlandConfig = ./hyprland.lua;
+  wallpaper = ./wallpapers/videoframe_150744_10240x4320_clean-faithful.png;
 
   hyprlandSession =
     "${lib.getExe pkgs.uwsm} start -e -D Hyprland ${pkgs.hyprland}/bin/start-hyprland"
@@ -58,6 +59,23 @@ in
   programs.hyprland = {
     enable = true;
     withUWSM = true;
+  };
+
+  home-manager.users.keewai.systemd.user.services.citrus-wallpaper = {
+    Unit = {
+      Description = "Citrus desktop wallpaper";
+      After = [ "graphical-session.target" ];
+      PartOf = [ "graphical-session.target" ];
+      ConditionEnvironment = "WAYLAND_DISPLAY";
+    };
+
+    Service = {
+      ExecStart = "${lib.getExe pkgs.swaybg} --output Virtual-1" + " --image ${wallpaper} --mode fill";
+      Restart = "on-failure";
+      RestartSec = 5;
+    };
+
+    Install.WantedBy = [ "graphical-session.target" ];
   };
 
   services = {
