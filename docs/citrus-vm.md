@@ -12,13 +12,12 @@ hostname is `citrus-vm` may run `nixos-rebuild test` or `switch` for this host.
 | Path | Responsibility |
 | --- | --- |
 | [`hosts/citrus-vm/configuration.nix`](../hosts/citrus-vm/configuration.nix) | Host imports, Hyprland session, Hazkey/Fcitx5, wallpaper, graphics, and state version |
-| [`hosts/citrus-vm/theme.nix`](../hosts/citrus-vm/theme.nix) | Canonical Tokyo Night palette, semantic colors, and application theme selections |
+| [`hosts/citrus-vm/theme.nix`](../hosts/citrus-vm/theme.nix) | Stylix palette adapter for Hyprland, K4, Fcitx5, and tuigreet |
 | [`hosts/citrus-vm/hardware-configuration.nix`](../hosts/citrus-vm/hardware-configuration.nix) | Generated machine hardware, filesystems, and swap |
 | [`hosts/citrus-vm/hyprland.lua`](../hosts/citrus-vm/hyprland.lua) | Hyprland behavior and key bindings; Nix prepends the shared theme table |
 | [`hosts/citrus-vm/desktop.nix`](../hosts/citrus-vm/desktop.nix) | Thunar, GVfs, Tumbler, Xarchiver, and the ChatGPT application |
 | [`hosts/citrus-vm/browser.nix`](../hosts/citrus-vm/browser.nix) | Firefox default handlers, Brave Origin, and vendor-scoped WebHID access |
 | [`hosts/citrus-vm/codex.nix`](../hosts/citrus-vm/codex.nix) | Home Manager, system MCP configuration, personal skills, and CUA |
-| [`pkgs/tokyonight-gtk/default.nix`](../pkgs/tokyonight-gtk/default.nix) | Pinned GTK3/GTK4-only Tokyo Night theme package |
 | [`pkgs/chatgpt-desktop/default.nix`](../pkgs/chatgpt-desktop/default.nix) | ChatGPT desktop package and launcher |
 | [`pkgs/cua-driver/default.nix`](../pkgs/cua-driver/default.nix) | CUA driver package |
 
@@ -31,15 +30,18 @@ host directory.
 The session starts Hyprland through UWSM and greetd. Hazkey is the default
 Fcitx5 input method. Thunar is the directory handler and is paired with GVfs,
 Tumbler, and Xarchiver without installing a full desktop environment.
-`hosts/citrus-vm/theme.nix` is the desktop's central theme selector and the
-single source for its generated Tokyo Night `night` palette and semantic colors.
-Kitty, Hyprland, the Qt Fusion palette, and the virtual console are generated
-directly from it, and Home Manager exports the same colors to QuickShell/K4 as
-`~/.config/k4/theme.json`. GTK uses the pinned
-GTK3/GTK4-only Tokyo Night package, Fcitx5 uses its Tokyo Night Storm panel,
-and neutral dark Colloid icons and cursors complete the desktop without
-reintroducing another color scheme. Tuigreet uses the Tokyo Night console
-palette.
+The community-maintained [Stylix](https://github.com/nix-community/stylix)
+module applies the faithful Tokyo Night Base16 palette to supported NixOS and
+Home Manager targets. It owns GTK3/4, Qt5/6 through Base16 Kvantum, Kitty, the
+virtual console, and Brave's browser theme color. Neutral dark Colloid icons
+and cursors remain the system-wide choice.
+
+`hosts/citrus-vm/theme.nix` adapts `config.lib.stylix.colors` for components
+outside the generic targets: the custom Hyprland Lua session, QuickShell/K4's
+`~/.config/k4/theme.json`, and tuigreet. Fcitx5 keeps its Tokyo Night Storm
+panel because its active configuration is managed by the NixOS input-method
+module. Stylix's Firefox target stays disabled to avoid replacing Sine and
+Natsumi profile styling.
 
 GTK applications such as Thunar and Xarchiver inherit it directly, while
 Firefox, Brave, and ChatGPT receive the shared dark desktop preference.
@@ -216,6 +218,7 @@ change. Typical checks are:
 systemctl is-active greetd
 systemctl --user --no-pager --full status citrus-wallpaper.service
 systemctl --user show-environment | rg 'WAYLAND_DISPLAY|DISPLAY|DBUS_SESSION_BUS_ADDRESS'
+test -r /etc/stylix/palette.html
 fcitx5-remote --check
 fcitx5-remote -n
 xdg-mime query default x-scheme-handler/http

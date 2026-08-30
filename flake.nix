@@ -15,6 +15,11 @@
       inputs.nixpkgs.follows = "nixpkgs";
     };
 
+    stylix = {
+      url = "github:nix-community/stylix";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
+
     mcp-servers-nix = {
       url = "github:natsukium/mcp-servers-nix";
       inputs.nixpkgs.follows = "nixpkgs";
@@ -56,6 +61,7 @@
       ];
 
       nixosConfigurations.citrus-vm = mkHost [
+        inputs.stylix.nixosModules.stylix
         ./hosts/citrus-vm/configuration.nix
       ];
 

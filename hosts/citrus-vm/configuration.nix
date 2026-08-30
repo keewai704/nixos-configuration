@@ -1,4 +1,5 @@
 {
+  config,
   inputs,
   lib,
   pkgs,
@@ -6,7 +7,10 @@
 }:
 
 let
-  theme = import ./theme.nix { inherit pkgs; };
+  theme = import ./theme.nix {
+    inherit pkgs;
+    colors = config.lib.stylix.colors;
+  };
   hyprlandConfig = pkgs.writeText "hyprland.lua" (
     "local theme = ${lib.generators.toLua { } theme.hyprland}\n" + builtins.readFile ./hyprland.lua
   );
@@ -26,7 +30,53 @@ in
 
   networking.hostName = "citrus-vm";
 
-  console.colors = theme.console.colors;
+  stylix = {
+    enable = true;
+    autoEnable = false;
+    base16Scheme = {
+      scheme = "Tokyo Night";
+      slug = "tokyo-night";
+      author = "folke";
+      base00 = "1a1b26";
+      base01 = "292e42";
+      base02 = "3b4261";
+      base03 = "565f89";
+      base04 = "a9b1d6";
+      base05 = "c0caf5";
+      base06 = "89ddff";
+      base07 = "b4f9f8";
+      base08 = "f7768e";
+      base09 = "ff9e64";
+      base0A = "e0af68";
+      base0B = "9ece6a";
+      base0C = "7dcfff";
+      base0D = "7aa2f7";
+      base0E = "bb9af7";
+      base0F = "db4b4b";
+    };
+    polarity = "dark";
+    cursor = theme.cursor;
+    fonts.sizes = {
+      applications = 10;
+      desktop = 10;
+      popups = 10;
+      terminal = 11;
+    };
+    icons = {
+      enable = true;
+      inherit (theme.icon) package;
+      dark = theme.icon.name;
+      light = theme.icon.name;
+    };
+    targets = {
+      chromium.enable = true;
+      console.enable = true;
+      font-packages.enable = true;
+      fontconfig.enable = true;
+      gtk.enable = true;
+      qt.enable = true;
+    };
+  };
 
   i18n.inputMethod = {
     enable = true;
