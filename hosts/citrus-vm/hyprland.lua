@@ -4,8 +4,18 @@
 local main_mod = "SUPER"
 local terminal = "uwsm app -- kitty"
 local file_manager = "uwsm app -- thunar"
-local application_launcher =
-    "/run/current-system/sw/bin/quickshell ipc -p /home/keewai/k4rk/shell.qml call k4.launcher toggle"
+local k4_ipc =
+    "/run/current-system/sw/bin/quickshell ipc -p /home/keewai/k4rk/shell.qml call "
+
+local function k4_command(target, action)
+    return k4_ipc .. target .. " " .. action
+end
+
+local function k4_action(action)
+    return k4_command("k4", action)
+end
+
+local application_launcher = k4_action("toggleLauncher")
 
 hl.monitor({
     output = "Virtual-1",
@@ -130,6 +140,51 @@ bind(
     main_mod .. " + Space",
     hl.dsp.exec_cmd(application_launcher),
     "Open application launcher"
+)
+bind(
+    main_mod .. " + SHIFT + Space",
+    hl.dsp.exec_cmd(k4_command("k4.apps", "toggle")),
+    "Open k4 application center"
+)
+bind(
+    main_mod .. " + I",
+    hl.dsp.exec_cmd(k4_action("togglePanel")),
+    "Open k4 Control Center"
+)
+bind(
+    main_mod .. " + N",
+    hl.dsp.exec_cmd(k4_action("toggleNotifications")),
+    "Open k4 notifications"
+)
+bind(
+    main_mod .. " + V",
+    hl.dsp.exec_cmd(k4_action("clipboard")),
+    "Open k4 clipboard history"
+)
+bind(
+    main_mod .. " + G",
+    hl.dsp.exec_cmd(k4_action("ask")),
+    "Ask with k4"
+)
+bind(
+    main_mod .. " + Z",
+    hl.dsp.exec_cmd(k4_action("settings")),
+    "Open k4 settings"
+)
+bind(
+    main_mod .. " + ALT + S",
+    hl.dsp.exec_cmd(k4_command("k4.ssh", "open")),
+    "Open k4 SSH launcher"
+)
+bind(
+    main_mod .. " + ALT + C",
+    hl.dsp.exec_cmd(k4_action("session")),
+    "Open k4 session menu"
+)
+bind(
+    main_mod .. " + ALT + L",
+    hl.dsp.exec_cmd(k4_action("lock")),
+    "Lock with k4"
 )
 bind(
     main_mod .. " + F",
@@ -257,6 +312,30 @@ bind(
     "Toggle microphone mute",
     { locked = true }
 )
+bind(
+    "XF86AudioPlay",
+    hl.dsp.exec_cmd(k4_action("togglePlay")),
+    "Toggle media playback",
+    { locked = true }
+)
+bind(
+    "XF86AudioPause",
+    hl.dsp.exec_cmd(k4_action("togglePlay")),
+    "Toggle media playback",
+    { locked = true }
+)
+bind(
+    "XF86AudioNext",
+    hl.dsp.exec_cmd(k4_action("nextTrack")),
+    "Play next track",
+    { locked = true }
+)
+bind(
+    "XF86AudioPrev",
+    hl.dsp.exec_cmd(k4_action("prevTrack")),
+    "Play previous track",
+    { locked = true }
+)
 
 bind(main_mod .. " + F1", function()
     hl.notification.create({
@@ -265,7 +344,11 @@ bind(main_mod .. " + F1", function()
             "Super+Enter: terminal    Super+E: files    Super+Q: close",
             "Super+H/J/K/L: focus    +Shift: move    +Ctrl: resize",
             "Super+1..0: workspace    +Shift: move window",
-            "Super+Space: launcher    Super+F: fullscreen",
+            "Super+Space: launcher    +Shift: k4 apps    Super+I: controls",
+            "Super+N: notifications    Super+V: clipboard",
+            "Super+G: Ask    Super+Z: k4 settings",
+            "Super+Alt+S: SSH    Super+Alt+C: session    Super+Alt+L: lock",
+            "Super+F: fullscreen",
             "Super+S: scratchpad    Alt+Tab: cycle windows",
             "Hold Super+Shift+E: log out",
         }, "\n"),
