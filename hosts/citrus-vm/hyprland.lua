@@ -20,7 +20,8 @@ hl.env("HYPRCURSOR_THEME", "catppuccin-mocha-blue-cursors")
 
 hl.config({
     general = {
-        gaps_out = 10,
+        gaps_in = 6,
+        gaps_out = 12,
         border_size = 2,
         resize_on_border = true,
         extend_border_grab_area = 12,
@@ -38,14 +39,34 @@ hl.config({
     },
 
     decoration = {
-        rounding = 8,
+        rounding = 12,
+        rounding_power = 2,
+        active_opacity = 0.99,
+        inactive_opacity = 0.96,
+        fullscreen_opacity = 1.0,
+        dim_inactive = true,
+        dim_strength = 0.03,
         shadow = {
-            range = 6,
-            color = 0x66000000,
+            enabled = true,
+            range = 12,
+            render_power = 3,
+            color = "rgba(00000066)",
+            color_inactive = "rgba(00000044)",
+            offset = { 0, 2 },
         },
         blur = {
-            -- citrus-vm uses software rendering, so avoid an expensive blur.
-            enabled = false,
+            -- Keep this deliberately light: citrus-vm uses software rendering.
+            enabled = true,
+            size = 3,
+            passes = 1,
+            new_optimizations = true,
+            ignore_opacity = true,
+            noise = 0.01,
+            contrast = 0.92,
+            brightness = 0.95,
+            vibrancy = 0.15,
+            popups = true,
+            popups_ignorealpha = 0.2,
         },
     },
 
