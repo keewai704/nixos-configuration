@@ -32,8 +32,10 @@ Fcitx5 input method. Thunar is the directory handler and is paired with GVfs,
 Tumbler, and Xarchiver without installing a full desktop environment.
 `hosts/citrus-vm/theme.nix` is the single source for the Catppuccin Mocha Blue
 palette and semantic colors. Kitty and Hyprland are generated directly from
-it; GTK, Qt/Kvantum, Fcitx5, Colloid icons and cursors, the virtual console,
-and tuigreet select their matching variants from the same theme definition.
+it, and Home Manager exports the same colors to QuickShell/K4 as
+`~/.config/k4/theme.json`; GTK, Qt/Kvantum, Fcitx5, Colloid icons and cursors,
+the virtual console, and tuigreet select their matching variants from the same
+theme definition.
 GTK applications such as Thunar and Xarchiver inherit it directly, while
 Firefox, Brave, and ChatGPT receive the shared dark desktop preference.
 Fcitx5's Classic UI keeps its rounded candidate panel and Noto Sans CJK JP

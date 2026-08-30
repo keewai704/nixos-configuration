@@ -105,6 +105,21 @@ in
     themeName = "catppuccin-${flavour}-${accent}";
   };
 
+  quickShell = {
+    schemaVersion = 1;
+    islandBg = hex semantic.desktopBackground;
+    ink = hex semantic.text;
+    muted = hex semantic.muted;
+    dim = hex semantic.dim;
+    surface = hex semantic.surface;
+    surfaceHigh = hex semantic.surfaceHigh;
+    track = hex semantic.track;
+    green = hex palette.green;
+    red = hex palette.red;
+    blue = hex palette.blue;
+    yellow = hex palette.yellow;
+  };
+
   kitty.settings = {
     foreground = hex palette.text;
     background = hex palette.base;

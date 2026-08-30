@@ -57,6 +57,8 @@ in
       settings = theme.kitty.settings;
     };
 
+    xdg.configFile."k4/theme.json".text = builtins.toJSON theme.quickShell;
+
     qt = {
       enable = true;
       platformTheme.name = "qtct";
