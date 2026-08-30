@@ -4,6 +4,7 @@
 
 local main_mod = "SUPER"
 local terminal = "uwsm app -- kitty"
+local file_manager = "uwsm app -- thunar"
 
 hl.monitor({
     output = "Virtual-1",
@@ -13,7 +14,9 @@ hl.monitor({
 })
 
 hl.env("XCURSOR_SIZE", "24")
+hl.env("XCURSOR_THEME", "catppuccin-mocha-blue-cursors")
 hl.env("HYPRCURSOR_SIZE", "24")
+hl.env("HYPRCURSOR_THEME", "catppuccin-mocha-blue-cursors")
 
 hl.config({
     general = {
@@ -101,6 +104,7 @@ local function bind(keys, dispatcher, description, flags)
 end
 
 bind(main_mod .. " + Return", hl.dsp.exec_cmd(terminal), "Open terminal")
+bind(main_mod .. " + E", hl.dsp.exec_cmd(file_manager), "Open file manager")
 bind(main_mod .. " + Q", hl.dsp.window.close(), "Close window")
 bind(main_mod .. " + Space", hl.dsp.window.float({ action = "toggle" }), "Toggle floating")
 bind(
@@ -234,7 +238,7 @@ bind(main_mod .. " + F1", function()
     hl.notification.create({
         text = table.concat({
             "Hyprland shortcuts",
-            "Super+Enter: terminal    Super+Q: close",
+            "Super+Enter: terminal    Super+E: files    Super+Q: close",
             "Super+H/J/K/L: focus    +Shift: move    +Ctrl: resize",
             "Super+1..0: workspace    +Shift: move window",
             "Super+Space: float    Super+F: fullscreen",

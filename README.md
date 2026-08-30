@@ -15,6 +15,18 @@ Hardware, state versions, network roles, local endpoints, storage, secrets,
 and services remain under `hosts/<name>`. Orange's repeated storage and local
 service values are defined once in `hosts/orange/settings.nix`.
 
+## Citrus desktop
+
+`citrus-vm` runs a deliberately small Hyprland session. Thunar is the default
+directory handler and opens with `Super+E`; GVfs provides trash and removable
+media support, Tumbler supplies thumbnails on demand, and Xarchiver handles
+archives without pulling in a full desktop environment.
+
+GTK 3/4, Kitty, application icons, XWayland cursors, and native Hyprland cursors
+use a shared Catppuccin Mocha Blue theme. The GTK theme follows the compositor's
+existing Mocha palette, Papirus-Dark supplies matching blue folder icons, and
+the cursor remains at 24 pixels across both cursor backends.
+
 ## Codex desktop
 
 `citrus-vm` imports `profiles/desktop-client.nix`, which installs the official
