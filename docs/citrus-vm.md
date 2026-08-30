@@ -1,0 +1,158 @@
+# citrus-vm
+
+`citrus-vm` is the local graphical workstation. It runs a small Hyprland
+session and the locally packaged ChatGPT desktop application used by Codex.
+
+For the mandatory validation and activation sequence, use the
+[development workflow](development.md). Only a machine whose confirmed runtime
+hostname is `citrus-vm` may run `nixos-rebuild test` or `switch` for this host.
+
+## Composition
+
+| Path | Responsibility |
+| --- | --- |
+| [`hosts/citrus-vm/default.nix`](../hosts/citrus-vm/default.nix) | Host imports, Hyprland session, Hazkey/Fcitx5, wallpaper, graphics, and state version |
+| [`hosts/citrus-vm/hardware-configuration.nix`](../hosts/citrus-vm/hardware-configuration.nix) | Generated machine hardware, filesystems, and swap |
+| [`hosts/citrus-vm/hyprland.lua`](../hosts/citrus-vm/hyprland.lua) | Hyprland behavior and key bindings |
+| [`modules/desktop-client.nix`](../modules/desktop-client.nix) | GTK/Kitty theme, pointer, Thunar, GVfs, Tumbler, and the ChatGPT application |
+| [`modules/chatgpt-desktop-extensions.nix`](../modules/chatgpt-desktop-extensions.nix) | Home Manager, system MCP configuration, personal skills, and CUA |
+| [`pkgs/chatgpt-desktop/default.nix`](../pkgs/chatgpt-desktop/default.nix) | ChatGPT desktop package and launcher |
+| [`pkgs/cua-driver/default.nix`](../pkgs/cua-driver/default.nix) | CUA driver package |
+
+`modules/desktop-client.nix` imports
+`modules/chatgpt-desktop-extensions.nix`, which imports Home Manager and
+`mcp-servers-nix`. Host settings that refer to `home-manager.users.keewai` rely
+on that chain.
+
+## Desktop
+
+The session starts Hyprland through UWSM and greetd. Hazkey is the default
+Fcitx5 input method. Thunar is the directory handler and is paired with GVfs,
+Tumbler, and Xarchiver without installing a full desktop environment. GTK,
+Kitty, icons, and cursors use the shared dark desktop theme configured in
+`modules/desktop-client.nix`.
+
+The wallpaper is repository-owned under `hosts/citrus-vm/assets/`. Keep
+machine-specific display and software-rendering settings in the host entry
+point, not in a module used by Orange.
+
+## ChatGPT desktop package
+
+The package repacks OpenAI's official Linux `.deb` for NixOS, patches its ELF
+dependencies, and installs the upstream desktop entry and icon. Debian
+maintainer scripts are not run, so it does not add an APT repository or write
+outside the Nix store during the build. NixOS is a repository-supported
+compatibility target rather than an upstream-supported distribution.
+[OpenAI documents the upstream application and supported Linux distributions](https://developers.openai.com/codex/app).
+
+The version, source URL, and hashes have one source of truth:
+`pkgs/chatgpt-desktop/default.nix`. Update them there rather than copying them
+into documentation.
+
+Build the standalone flake output with:
+
+```console
+nix build .#chatgpt-desktop
+```
+
+After the host configuration has been applied, verify the installed commands:
+
+```console
+chatgpt --version
+command -v chatgpt
+command -v codex-desktop
+```
+
+`chatgpt` is the canonical executable; `codex-desktop` is a convenience alias.
+
+### Writable resource overlay
+
+The application rewrites bundled plugin manifests while materializing them.
+Nix store resources are immutable, so the launcher creates a versioned writable
+overlay below:
+
+```text
+~/.cache/chatgpt/bundled-plugin-resources/
+```
+
+Writable plugin resources are copied there and immutable siblings remain linked
+to the Nix store. This cache is derived state, not a configuration source.
+
+### Wayland and Japanese input
+
+The host sets `NIXOS_OZONE_WL=1`. When a live Wayland display is present, the
+launcher translates that opt-in into Chromium's native Wayland and Wayland IME
+flags so Fcitx5 inline preedit works. User-supplied arguments remain last and
+can override the platform.
+
+Compare the upstream XWayland fallback with:
+
+```console
+env -u NIXOS_OZONE_WL chatgpt
+```
+
+## System and user configuration boundary
+
+| Path | Owner and purpose |
+| --- | --- |
+| `/etc/codex/config.toml` | Nix-generated system MCP layer shared by ChatGPT Desktop, Codex CLI, and the IDE extension; immutable at runtime |
+| `~/.codex/config.toml` | Writable application/user layer for bundled helpers, plugin state, project trust, UI settings, and unrelated preferences |
+| `skills/<name>/` | Repository source for personal skills |
+| `~/.agents/skills/<name>` | Home Manager links to repository-owned personal skills |
+| `~/.cache/chatgpt/bundled-plugin-resources/` | Disposable writable resource overlay |
+
+A user MCP entry shadows a system entry of the same name. Home Manager removes
+only user-level entries whose names are owned by the Nix MCP registry; bundled
+`node_repl`/`cua_repl` entries and unrelated preferences remain writable and
+untouched.
+
+After changing an MCP server or personal skill, rebuild through the development
+workflow and restart ChatGPT Desktop or begin a new local session.
+
+## MCP and CUA
+
+The declarative MCP registry enables Context7, the NixOS server, Serena, the
+OpenAI Developer Docs endpoint, and the local CUA driver. Inspect deployed
+state with:
+
+```console
+codex mcp list
+codex mcp get context7
+codex mcp get cua-driver
+readlink -f /home/keewai/.agents/skills/add-nix-mcp
+readlink -f /home/keewai/.agents/skills/add-nix-skill
+```
+
+The CUA wrapper imports the active Wayland, XWayland, D-Bus, and Hyprland
+session variables before starting its local stdio MCP server. Native Wayland
+and the driver's `standard` permission mode are enabled; telemetry and mutable
+update checks are disabled. The system AT-SPI service provides accessibility
+tree access. Codex marks the driver's write-capable tools as writes, while the
+effective prompt behavior still depends on the active global approval policy.
+
+The third-party driver is separate from ChatGPT Desktop's bundled `cua_repl`
+helper. Verify it with:
+
+```console
+cua-driver --version
+cua-driver doctor
+codex mcp get cua-driver
+```
+
+## Verification
+
+After both `test` and `switch`, run the common checks from
+`docs/development.md` and verify the graphical/user components affected by the
+change. Typical checks are:
+
+```console
+systemctl is-active greetd
+systemctl --user --no-pager --full status citrus-wallpaper.service
+systemctl --user show-environment | rg 'WAYLAND_DISPLAY|DISPLAY|DBUS_SESSION_BUS_ADDRESS'
+chatgpt --version
+cua-driver doctor
+codex mcp list
+```
+
+For theme, input-method, wallpaper, or window-manager changes, verify the
+running Hyprland session directly as well as the corresponding service status.

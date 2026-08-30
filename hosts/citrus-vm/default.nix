@@ -7,7 +7,7 @@
 
 let
   hyprlandConfig = ./hyprland.lua;
-  wallpaper = ./wallpapers/videoframe_150744_10240x4320_clean-faithful.png;
+  wallpaper = ./assets/videoframe_150744_10240x4320_clean-faithful.png;
 
   hyprlandSession =
     "${lib.getExe pkgs.uwsm} start -e -D Hyprland ${pkgs.hyprland}/bin/start-hyprland"
@@ -16,10 +16,10 @@ in
 {
   imports = [
     inputs.nix-hazkey.nixosModules.hazkey
-    ../../profiles/desktop-client.nix
-    ../../profiles/networkmanager.nix
-    ../../profiles/tailnet-admin.nix
-    ../../profiles/uefi-systemd-boot.nix
+    ../../modules/desktop-client.nix
+    ../../modules/networkmanager.nix
+    ../../modules/tailnet-admin.nix
+    ../../modules/uefi-systemd-boot.nix
     ./hardware-configuration.nix
   ];
 

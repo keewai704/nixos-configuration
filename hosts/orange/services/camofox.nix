@@ -16,7 +16,7 @@ let
   vncBackendPort = 5900;
   vncActivationPort = 5901;
 
-  camofoxPackage = pkgs.callPackage ./camofox-package.nix {
+  camofoxPackage = pkgs.callPackage ../../../pkgs/camofox {
     websockify = pkgs.python3Packages.websockify;
   };
 

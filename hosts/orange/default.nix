@@ -9,15 +9,19 @@ let
 in
 {
   imports = [
-    ../../profiles/networkmanager.nix
-    ../../profiles/tailnet-admin.nix
-    ../../profiles/tailnet-web.nix
-    ../../profiles/uefi-systemd-boot.nix
+    ../../modules/networkmanager.nix
+    ../../modules/tailnet-admin.nix
+    ../../modules/tailnet-web.nix
+    ../../modules/uefi-systemd-boot.nix
     ./hardware-configuration.nix
-    ./camofox.nix
+    ./health-monitor.nix
     ./maintenance.nix
-    ./media-services.nix
-    ./minecraft-server.nix
+    ./services/camofox.nix
+    ./services/immich.nix
+    ./services/minecraft.nix
+    ./services/storage.nix
+    ./services/vaultwarden.nix
+    ./services/web.nix
   ];
 
   boot.kernelPackages = pkgs.linuxPackages_latest;

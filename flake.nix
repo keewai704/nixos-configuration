@@ -50,7 +50,7 @@
           }
           // specialArgs;
           modules = [
-            ./modules/global/base.nix
+            ./modules/base.nix
           ]
           ++ modules;
         };
@@ -60,19 +60,17 @@
         specialArgs.orangeSettings = import ./hosts/orange/settings.nix;
         modules = [
           agenix.nixosModules.default
-          ./hosts/orange/configuration.nix
+          ./hosts/orange
         ];
       };
 
       nixosConfigurations.citrus-vm = mkHost {
         modules = [
-          ./hosts/citrus-vm/configuration.nix
+          ./hosts/citrus-vm
         ];
       };
 
-      packages.x86_64-linux.chatgpt-desktop =
-        chatgptPkgs.callPackage ./pkgs/chatgpt-desktop/package.nix
-          { };
+      packages.x86_64-linux.chatgpt-desktop = chatgptPkgs.callPackage ./pkgs/chatgpt-desktop { };
 
       formatter.x86_64-linux = nixpkgs.legacyPackages.x86_64-linux.nixfmt-tree;
     };
