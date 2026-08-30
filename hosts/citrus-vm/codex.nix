@@ -9,6 +9,76 @@
 let
   userName = "keewai";
   skillRoot = ../../skills;
+  ponytailVersion = "4.9.0";
+  ponytailSource = pkgs.fetchFromGitHub {
+    owner = "DietrichGebert";
+    repo = "ponytail";
+    rev = "2ed6c52c9d7e5e56942508591085fd45dea277d3";
+    hash = "sha256-bGdXvzhWPwGdz3T2Yh2h6lf+3PBRFAfdBxP5pESmCHI=";
+  };
+  ponytailSkill = pkgs.runCommand "ponytail-skill-${ponytailVersion}" { } ''
+    install -Dm644 ${lib.escapeShellArg "${skillRoot}/ponytail/SKILL.md"} "$out/SKILL.md"
+  '';
+  ponytailHookRoot =
+    pkgs.runCommand "ponytail-hooks-${ponytailVersion}"
+      {
+        nativeBuildInputs = [ pkgs.nodejs ];
+      }
+      ''
+        mkdir -p "$out/hooks" "$out/skills/ponytail"
+
+        for script in \
+          ponytail-activate.js \
+          ponytail-config.js \
+          ponytail-instructions.js \
+          ponytail-mode-tracker.js \
+          ponytail-runtime.js \
+          ponytail-subagent.js; do
+          install -Dm644 "${ponytailSource}/hooks/$script" "$out/hooks/$script"
+          node --check "$out/hooks/$script"
+        done
+
+        sed '/^argument-hint:/d' \
+          "${ponytailSource}/skills/ponytail/SKILL.md" \
+          > "$TMPDIR/ponytail-SKILL.md"
+        cmp \
+          "$TMPDIR/ponytail-SKILL.md" \
+          "${skillRoot}/ponytail/SKILL.md"
+        install -Dm644 \
+          "${skillRoot}/ponytail/SKILL.md" \
+          "$out/skills/ponytail/SKILL.md"
+        install -Dm644 "${ponytailSource}/LICENSE" "$out/LICENSE"
+
+        node --test "${ponytailSource}/tests/hooks.test.js"
+      '';
+
+  mkPonytailHook =
+    name: script:
+    pkgs.writeShellApplication {
+      name = "ponytail-${name}";
+      runtimeInputs = [ pkgs.coreutils ];
+      text = ''
+        pluginData="''${XDG_STATE_HOME:-$HOME/.local/state}/codex/plugins/ponytail"
+        mkdir -p "$pluginData"
+
+        export PLUGIN_ROOT=${lib.escapeShellArg "${ponytailHookRoot}"}
+        export CLAUDE_PLUGIN_ROOT="$PLUGIN_ROOT"
+        export PLUGIN_DATA="$pluginData"
+        export CLAUDE_PLUGIN_DATA="$pluginData"
+
+        exec ${lib.getExe pkgs.nodejs} ${lib.escapeShellArg "${ponytailHookRoot}/hooks/${script}"}
+      '';
+    };
+
+  ponytailManagedHooks = pkgs.symlinkJoin {
+    name = "ponytail-managed-hooks-${ponytailVersion}";
+    paths = [
+      (mkPonytailHook "activate" "ponytail-activate.js")
+      (mkPonytailHook "mode-tracker" "ponytail-mode-tracker.js")
+      (mkPonytailHook "subagent" "ponytail-subagent.js")
+    ];
+  };
+
   cuaDriver = pkgs.callPackage ../../pkgs/cua-driver { };
   cuaEnvironment = {
     CUA_DRIVER_PERMISSION_MODE = "standard";
@@ -74,6 +144,53 @@ let
   codexSystemConfig = (pkgs.formats.toml { }).generate "chatgpt-desktop-mcp.toml" {
     mcp_servers = lib.mapAttrs toCodexMcpServer sharedMcpServers;
   };
+
+  codexSystemRequirements = (pkgs.formats.toml { }).generate "codex-requirements.toml" {
+    features.hooks = true;
+    hooks = {
+      managed_dir = "${ponytailManagedHooks}/bin";
+
+      SessionStart = [
+        {
+          matcher = "startup|resume|clear|compact";
+          hooks = [
+            {
+              type = "command";
+              command = "${ponytailManagedHooks}/bin/ponytail-activate";
+              timeout = 5;
+              statusMessage = "Loading ponytail mode...";
+            }
+          ];
+        }
+      ];
+
+      SubagentStart = [
+        {
+          hooks = [
+            {
+              type = "command";
+              command = "${ponytailManagedHooks}/bin/ponytail-subagent";
+              timeout = 5;
+              statusMessage = "Loading ponytail mode...";
+            }
+          ];
+        }
+      ];
+
+      UserPromptSubmit = [
+        {
+          hooks = [
+            {
+              type = "command";
+              command = "${ponytailManagedHooks}/bin/ponytail-mode-tracker";
+              timeout = 5;
+              statusMessage = "Tracking ponytail mode...";
+            }
+          ];
+        }
+      ];
+    };
+  };
 in
 {
   imports = [ inputs.home-manager.nixosModules.home-manager ];
@@ -82,6 +199,8 @@ in
   # layer. Keep the user layer writable so the desktop app can persist its
   # own bundled MCP helpers, plugin state, project trust, and UI preferences.
   environment.etc."codex/config.toml".source = codexSystemConfig;
+  environment.etc."codex/requirements.toml".source = codexSystemRequirements;
+  environment.etc."codex/skills/ponytail".source = ponytailSkill;
 
   home-manager = {
     useGlobalPkgs = true;
@@ -101,7 +220,7 @@ in
             source = skillRoot + "/${name}";
             force = true;
           }
-        ) (builtins.readDir skillRoot);
+        ) (lib.filterAttrs (name: _type: name != "ponytail") (builtins.readDir skillRoot));
 
         managedMcpNames = lib.attrNames config.programs.mcp.servers;
         managedMcpNameArgs = lib.escapeShellArgs managedMcpNames;
