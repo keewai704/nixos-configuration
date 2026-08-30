@@ -5,6 +5,8 @@
 local main_mod = "SUPER"
 local terminal = "uwsm app -- kitty"
 local file_manager = "uwsm app -- thunar"
+local application_launcher =
+    "/run/current-system/sw/bin/quickshell ipc -p /home/keewai/k4rk/shell.qml call k4.launcher toggle"
 
 hl.monitor({
     output = "Virtual-1",
@@ -125,7 +127,11 @@ end
 bind(main_mod .. " + Return", hl.dsp.exec_cmd(terminal), "Open terminal")
 bind(main_mod .. " + E", hl.dsp.exec_cmd(file_manager), "Open file manager")
 bind(main_mod .. " + Q", hl.dsp.window.close(), "Close window")
-bind(main_mod .. " + Space", hl.dsp.window.float({ action = "toggle" }), "Toggle floating")
+bind(
+    main_mod .. " + Space",
+    hl.dsp.exec_cmd(application_launcher),
+    "Open application launcher"
+)
 bind(
     main_mod .. " + F",
     hl.dsp.window.fullscreen({ mode = "fullscreen", action = "toggle" }),
@@ -260,7 +266,7 @@ bind(main_mod .. " + F1", function()
             "Super+Enter: terminal    Super+E: files    Super+Q: close",
             "Super+H/J/K/L: focus    +Shift: move    +Ctrl: resize",
             "Super+1..0: workspace    +Shift: move window",
-            "Super+Space: float    Super+F: fullscreen",
+            "Super+Space: launcher    Super+F: fullscreen",
             "Super+S: scratchpad    Alt+Tab: cycle windows",
             "Hold Super+Shift+E: log out",
         }, "\n"),

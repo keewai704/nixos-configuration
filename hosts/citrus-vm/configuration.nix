@@ -121,6 +121,7 @@ in
     systemPackages = [
       pkgs.gws
       pkgs.kitty
+      pkgs.quickshell
     ];
 
     sessionVariables = {
