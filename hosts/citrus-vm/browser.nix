@@ -4,17 +4,28 @@ let
   # Use the current official binary until the pinned nixpkgs package catches up.
   # This only repackages the binary for NixOS; Chromium is not compiled locally.
   braveOriginVersion = "1.94.117";
-  braveOrigin =
-    if lib.versionAtLeast pkgs.brave-origin.version braveOriginVersion then
-      pkgs.brave-origin
+  braveOriginBase = pkgs.brave-origin.override {
+    commandLineArgs = "--lang=ja --accept-lang=ja-JP,ja,en-US,en";
+  };
+  braveOriginCurrent =
+    if lib.versionAtLeast braveOriginBase.version braveOriginVersion then
+      braveOriginBase
     else
-      pkgs.brave-origin.overrideAttrs (_: {
+      braveOriginBase.overrideAttrs (_: {
         version = braveOriginVersion;
         src = pkgs.fetchurl {
           url = "https://github.com/brave/brave-browser/releases/download/v${braveOriginVersion}/brave-origin_${braveOriginVersion}_amd64.deb";
           hash = "sha256-xY1483jABvhlaCVSh9yDAwrXQ08EoE++wQcJalTVvuY=";
         };
       });
+  braveOrigin = braveOriginCurrent.overrideAttrs (previous: {
+    preFixup = (previous.preFixup or "") + ''
+      gappsWrapperArgs+=(
+        --set LANG ja_JP.UTF-8
+        --set LANGUAGE ja_JP:ja
+      )
+    '';
+  });
 
   firefoxDesktop = "firefox.desktop";
 
@@ -37,7 +48,17 @@ in
 {
   environment.systemPackages = [ braveOrigin ];
 
-  programs.firefox.enable = true;
+  programs.firefox = {
+    enable = true;
+    languagePacks = [ "ja" ];
+    policies.RequestedLocales = [
+      "ja"
+      "en-US"
+    ];
+    preferences = {
+      "intl.accept_languages" = "ja-JP,ja,en-US,en";
+    };
+  };
 
   services.udev.packages = [ webhidUdevRules ];
 
@@ -46,8 +67,8 @@ in
 
     desktopEntries = {
       everglide-web-driver = {
-        name = "Everglide SU75 Pro Web Driver";
-        comment = "Configure the Everglide SU75 Pro over WebHID";
+        name = "Everglide SU75 Pro Webドライバー";
+        comment = "Everglide SU75 ProをWebHIDで設定";
         exec = "${lib.getExe braveOrigin} --new-window https://www.xsyd.top/connect";
         icon = "input-keyboard";
         categories = [ "Settings" ];
@@ -55,8 +76,8 @@ in
       };
 
       openmouse = {
-        name = "OpenMouse Control Panel";
-        comment = "Configure supported mice over WebHID";
+        name = "OpenMouse コントロールパネル";
+        comment = "対応マウスをWebHIDで設定";
         exec = "${lib.getExe braveOrigin} --new-window https://keewai704.github.io/openmouse/";
         icon = "input-mouse";
         categories = [ "Settings" ];
