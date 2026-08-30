@@ -56,6 +56,39 @@ WebHID access is granted through vendor-scoped udev rules for the configured
 SparkLink keyboard and OpenMouse-compatible device vendors. The rules do not
 grant blanket access to every `hidraw` device.
 
+### Firefox Sine mods
+
+Firefox loads Sine through the Nix-generated AutoConfig file. Home Manager
+resolves the current default profile from `profiles.ini` and copies Sine's
+writable engine, bootloader utilities, and pinned marketplace mods into that
+profile's `chrome/` directory. It does not replace the profile or manage
+`prefs.js`, extensions, history, or other browser data.
+
+Sine `2.3.3` uses bootloader `0.1.4`. The following marketplace mods are
+installed and enabled:
+
+| Mod | Version |
+| --- | --- |
+| Better Music Bar | `1.0.4` |
+| Context Menu Icons | `2.7.4.3` |
+| Natsumi Browser | `6.12.1` |
+| Tidy Popup & Extension | `2.9.1` |
+| Zen Compact Transparent Mode | `2.0.0` |
+| Zen Custom URL Bar | `2.0.3` |
+
+The Sine engine and mods are pinned in `browser.nix`, and their mutable update
+checks are disabled. Update the release, marketplace revision, fixed-output
+hashes, and documented versions together. Sine requires privileged profile
+scripts, so the Firefox AutoConfig sandbox is disabled only as part of this
+explicit browser configuration.
+
+Context Menu Icons is set to its Firefox branch and receives its required SVG
+preference. The marketplace lists every mod above as Firefox-compatible, but
+Better Music Bar and Zen Compact Transparent Mode target controls that exist
+only in Zen Browser, so they have no visible effect in stock Firefox. Zen
+Custom URL Bar has only partial Firefox coverage and can overlap Natsumi's URL
+bar styling; the requested mods remain installed so Sine can manage them.
+
 ## ChatGPT desktop package
 
 The package repacks OpenAI's official Linux `.deb` for NixOS, patches its ELF
