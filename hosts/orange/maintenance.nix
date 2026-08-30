@@ -25,8 +25,6 @@ let
       zstd
     ];
     text = ''
-      set -euo pipefail
-
       backup_root=${lib.escapeShellArg localBackupRoot}
       minecraft_dir="$backup_root/minecraft"
       vaultwarden_dir="$backup_root/vaultwarden"
@@ -83,7 +81,6 @@ let
       name = "orange-smart-${testType}";
       runtimeInputs = with pkgs; [ smartmontools ];
       text = ''
-        set -euo pipefail
         for device in ${lib.escapeShellArgs smartDevices}; do
           [[ -b "$device" ]] || {
             echo "Missing block device: $device" >&2
@@ -98,7 +95,6 @@ let
     name = "orange-nix-store-verify";
     runtimeInputs = [ config.nix.package ];
     text = ''
-      set -euo pipefail
       nix-store --verify --check-contents
     '';
   };

@@ -11,10 +11,12 @@ let
     inherit pkgs;
     colors = config.lib.stylix.colors;
   };
+  displayOutput = "Virtual-1";
   hyprlandConfig = pkgs.writeText "hyprland.lua" (
-    "local theme = ${lib.generators.toLua { } theme.hyprland}\n" + builtins.readFile ./hyprland.lua
+    "local display_output = ${builtins.toJSON displayOutput}\n"
+    + "local theme = ${lib.generators.toLua { } theme.hyprland}\n"
+    + builtins.readFile ./hyprland.lua
   );
-  wallpaper = ./assets/videoframe_150744_10240x4320_clean-faithful.png;
 
   hyprlandSession =
     "${lib.getExe pkgs.uwsm} start -e -D Hyprland ${pkgs.hyprland}/bin/start-hyprland"
@@ -137,7 +139,8 @@ in
     };
 
     Service = {
-      ExecStart = "${lib.getExe pkgs.swaybg} --output Virtual-1" + " --image ${wallpaper} --mode fill";
+      ExecStart =
+        "${lib.getExe pkgs.swaybg} --output ${displayOutput}" + " --image ${theme.wallpaper} --mode fill";
       Restart = "on-failure";
       RestartSec = 5;
     };

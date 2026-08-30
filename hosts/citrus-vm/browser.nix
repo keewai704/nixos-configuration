@@ -71,7 +71,7 @@ let
     lib.imap0 (index: color: lib.nameValuePair "color${toString index}" "#${color}") pywalfoxPalette
   );
   pywalfoxTheme = builtins.toJSON {
-    wallpaper = toString ./assets/videoframe_150744_10240x4320_clean-faithful.png;
+    wallpaper = toString theme.wallpaper;
     alpha = "100";
     special = {
       background = "#${theme.semantic.windowBackground}";

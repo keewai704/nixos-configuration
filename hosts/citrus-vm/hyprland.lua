@@ -1,5 +1,5 @@
 -- Hyprland behavior for citrus-vm. The generated configuration prepends the
--- shared theme table from theme.nix.
+-- Nix-managed display output and shared theme table.
 
 local main_mod = "SUPER"
 local terminal = "uwsm app -- kitty"
@@ -18,7 +18,7 @@ end
 local application_launcher = k4_action("toggleLauncher")
 
 hl.monitor({
-    output = "Virtual-1",
+    output = display_output,
     mode = "1920x1080@60",
     position = "0x0",
     scale = 1,

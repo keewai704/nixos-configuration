@@ -41,9 +41,15 @@ let
     name = "Colloid-dark-cursors";
     size = 24;
   };
+  wallpaper = ./assets/videoframe_150744_10240x4320_clean-faithful.png;
 in
 {
-  inherit cursor palette semantic;
+  inherit
+    cursor
+    palette
+    semantic
+    wallpaper
+    ;
 
   icon = {
     package = pkgs.colloid-icon-theme;

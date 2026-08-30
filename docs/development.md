@@ -20,7 +20,10 @@ if [ "$runtime_host" != "$etc_host" ]; then
   exit 1
 fi
 
-flake_host="$(nix eval --raw ".#nixosConfigurations.$runtime_host.config.networking.hostName")"
+flake_host="$(
+  nix eval --raw --no-write-lock-file \
+    ".#nixosConfigurations.$runtime_host.config.networking.hostName"
+)"
 if [ "$runtime_host" != "$flake_host" ]; then
   printf 'no matching flake host for %s\n' "$runtime_host" >&2
   exit 1
@@ -63,10 +66,13 @@ settings.
 Format intended Nix changes and inspect the result before continuing:
 
 ```console
-nix fmt
-nix fmt -- --ci
+nix fmt --no-write-lock-file -- path/to/changed.nix
+nix fmt --no-write-lock-file -- --ci path/to/changed.nix
 git diff --check
 ```
+
+List every intended Nix file in these commands. A repository-wide `nix fmt` is
+safe only after confirming that the worktree contains no unrelated changes.
 
 Do not run a repository-wide formatter over unrelated dirty files. Isolate the
 task first when formatting would rewrite someone else's changes.
@@ -84,8 +90,11 @@ builds:
 
 ```console
 for target_host in citrus-vm orange; do
-  nix eval ".#nixosConfigurations.$target_host.config.system.build.toplevel.drvPath"
-  nix build ".#nixosConfigurations.$target_host.config.system.build.toplevel" --no-link
+  nix eval --no-write-lock-file \
+    ".#nixosConfigurations.$target_host.config.system.build.toplevel.drvPath"
+  nix build ".#nixosConfigurations.$target_host.config.system.build.toplevel" \
+    --no-link \
+    --no-write-lock-file
 done
 ```
 
@@ -93,7 +102,9 @@ Narrowly host-specific changes may build only that host. Package changes also
 build the package and every host that consumes it:
 
 ```console
-nix build .#chatgpt-desktop --no-link
+nix build .#chatgpt-desktop --no-link --no-write-lock-file
+nix build .#cua-driver --no-link --no-write-lock-file
+nix build .#camofox-browser --no-link --no-write-lock-file
 ```
 
 | Change scope | Minimum explicit builds |
@@ -132,10 +143,11 @@ tested_system="$(
   nix build \
     ".#nixosConfigurations.$runtime_host.config.system.build.toplevel" \
     --no-link \
+    --no-write-lock-file \
     --print-out-paths
 )"
 
-sudo nixos-rebuild test --flake ".#$runtime_host"
+sudo nixos-rebuild test --flake ".#$runtime_host" --no-write-lock-file
 running_system="$(readlink -f /run/current-system)"
 test "$running_system" = "$tested_system"
 ```
@@ -160,7 +172,7 @@ or service check fails, fix it and repeat the workflow. Do not run `switch`.
 Only after the temporary generation and health checks pass:
 
 ```console
-sudo nixos-rebuild switch --flake ".#$runtime_host"
+sudo nixos-rebuild switch --flake ".#$runtime_host" --no-write-lock-file
 
 running_system="$(readlink -f /run/current-system)"
 boot_default_system="$(readlink -f /nix/var/nix/profiles/system)"

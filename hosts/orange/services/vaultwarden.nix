@@ -8,7 +8,7 @@ let
   inherit (import ../settings.nix)
     storageMountUnit
     storageRoot
-    tailnetHostname
+    tailnetOrigin
     vaultwardenBackupRoot
     vaultwardenPort
     ;
@@ -75,7 +75,7 @@ in
     dbBackend = "sqlite";
     backupDir = vaultwardenBackupRoot;
     config = {
-      DOMAIN = "https://${tailnetHostname}/vault";
+      DOMAIN = "${tailnetOrigin}/vault";
       EXPERIMENTAL_CLIENT_FEATURE_FLAGS = "cxp-import-mobile";
       ROCKET_ADDRESS = "127.0.0.1";
       ROCKET_PORT = vaultwardenPort;

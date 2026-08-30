@@ -10,7 +10,7 @@ let
     immichMediaRoot
     immichPort
     storageMountUnit
-    tailnetHostname
+    tailnetOrigin
     ;
   postgresqlPackage = pkgs.postgresql_17;
   importDependencies = [
@@ -136,7 +136,7 @@ in
           ocr.enabled = false;
         };
         nightlyTasks.clusterNewFaces = false;
-        server.externalDomain = "https://${tailnetHostname}";
+        server.externalDomain = tailnetOrigin;
       };
     };
 

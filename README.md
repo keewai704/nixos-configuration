@@ -50,7 +50,7 @@ injection from `flake.nix`.
 | `citrus-vm` | Hyprland desktop and local ChatGPT/Codex client | [`hosts/citrus-vm/configuration.nix`](hosts/citrus-vm/configuration.nix) | [Citrus](docs/citrus-vm.md) |
 | `orange` | Tailnet server, storage, media, browser, password manager, and Minecraft | [`hosts/orange/configuration.nix`](hosts/orange/configuration.nix) | [Orange](docs/orange.md) |
 
-## Read-only quick start
+## Non-activating quick start
 
 Run this from the repository root before inspecting or changing a host:
 
@@ -59,7 +59,10 @@ runtime_host="$(hostnamectl --static 2>/dev/null || hostname)"
 etc_host="$(tr -d '\r\n' < /etc/hostname)"
 test "$runtime_host" = "$etc_host"
 
-flake_host="$(nix eval --raw ".#nixosConfigurations.$runtime_host.config.networking.hostName")"
+flake_host="$(
+  nix eval --raw --no-write-lock-file \
+    ".#nixosConfigurations.$runtime_host.config.networking.hostName"
+)"
 test "$runtime_host" = "$flake_host"
 
 nix flake show --no-write-lock-file

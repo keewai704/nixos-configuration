@@ -2,9 +2,15 @@ let
   storageRoot = "/srv/storage";
   immichMediaRoot = "${storageRoot}/Pictures";
   localBackupRoot = "${storageRoot}/server/backups/orange-local";
+  tailnetHostname = "orange.tail1e65cd.ts.net";
 in
 {
-  inherit immichMediaRoot localBackupRoot storageRoot;
+  inherit
+    immichMediaRoot
+    localBackupRoot
+    storageRoot
+    tailnetHostname
+    ;
 
   hostName = "orange";
   lanInterface = "enp2s0";
@@ -14,7 +20,7 @@ in
     "/dev/sdb"
   ];
   storageMountUnit = "srv-storage.mount";
-  tailnetHostname = "orange.tail1e65cd.ts.net";
+  tailnetOrigin = "https://${tailnetHostname}";
 
   immichPort = 2283;
   immichBackupRoot = "${immichMediaRoot}/backups";

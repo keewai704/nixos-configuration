@@ -6,9 +6,10 @@ let
     immichPort
     nginxPort
     tailnetHostname
+    tailnetOrigin
     vaultwardenPort
     ;
-  noVncViewerUrl = "https://${tailnetHostname}/browser/vnc.html?autoconnect=true&reconnect=true&reconnect_delay=1000&resize=scale&path=browser/websockify";
+  noVncViewerUrl = "${tailnetOrigin}/browser/vnc.html?autoconnect=true&reconnect=true&reconnect_delay=1000&resize=scale&path=browser/websockify";
   forwardedProxyHeaders = ''
     proxy_set_header X-Real-IP $tailscale_client_ip;
     proxy_set_header X-Forwarded-For $tailscale_client_ip;
@@ -75,7 +76,7 @@ in
           '';
         };
 
-        "= /vault".return = "308 https://${tailnetHostname}/vault/";
+        "= /vault".return = "308 ${tailnetOrigin}/vault/";
 
         "^~ /vault/" = {
           proxyPass = "http://127.0.0.1:${toString vaultwardenPort}";

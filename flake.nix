@@ -34,16 +34,22 @@
 
   outputs =
     inputs@{
-      agenix,
       nixpkgs,
       ...
     }:
     let
       system = "x86_64-linux";
 
-      chatgptPkgs = import nixpkgs {
+      packagePkgs = import nixpkgs {
         inherit system;
         config.allowUnfreePredicate = package: nixpkgs.lib.getName package == "chatgpt-desktop";
+      };
+      localPackages = {
+        camofox-browser = packagePkgs.callPackage ./pkgs/camofox {
+          websockify = packagePkgs.python3Packages.websockify;
+        };
+        chatgpt-desktop = packagePkgs.callPackage ./pkgs/chatgpt-desktop { };
+        cua-driver = packagePkgs.callPackage ./pkgs/cua-driver { };
       };
 
       mkHost =
@@ -58,7 +64,7 @@
     in
     {
       nixosConfigurations.orange = mkHost [
-        agenix.nixosModules.default
+        inputs.agenix.nixosModules.default
         ./hosts/orange/configuration.nix
       ];
 
@@ -67,7 +73,7 @@
         ./hosts/citrus-vm/configuration.nix
       ];
 
-      packages.${system}.chatgpt-desktop = chatgptPkgs.callPackage ./pkgs/chatgpt-desktop { };
+      packages.${system} = localPackages;
 
       formatter.${system} = nixpkgs.legacyPackages.${system}.nixfmt-tree;
     };

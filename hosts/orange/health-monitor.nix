@@ -19,6 +19,7 @@ let
     smartDevices
     storageRoot
     tailnetHostname
+    tailnetOrigin
     vaultwardenBackupRoot
     vaultwardenPort
     ;
@@ -68,8 +69,6 @@ let
       util-linux
     ];
     text = ''
-      set -u -o pipefail
-
       state_dir=''${STATE_DIRECTORY:?STATE_DIRECTORY is not set}
       runtime_dir=''${RUNTIME_DIRECTORY:?RUNTIME_DIRECTORY is not set}
       webhook_file=''${CREDENTIALS_DIRECTORY:?CREDENTIALS_DIRECTORY is not set}/discord-webhook
@@ -268,7 +267,7 @@ let
       serve_status=$(tailscale serve status 2>&1 || true)
       serve_count=$(grep --count '^https://' <<<"$serve_status" || true)
       if (( serve_count == 1 )) \
-        && grep --fixed-strings --quiet 'https://${tailnetHostname} (tailnet only)' <<<"$serve_status" \
+        && grep --fixed-strings --quiet '${tailnetOrigin} (tailnet only)' <<<"$serve_status" \
         && grep --fixed-strings --quiet 'proxy http://127.0.0.1:${toString nginxPort}' <<<"$serve_status"; then
         clear_alert "tailscale-serve"
       else
@@ -288,9 +287,9 @@ let
 
       check_http "camofox" "http://127.0.0.1:${toString camofoxApiPort}/health"
       check_http "nginx" "http://127.0.0.1:${toString nginxPort}/" --header 'Host: ${tailnetHostname}'
-      check_http "immich" "https://${tailnetHostname}/"
-      check_http "vaultwarden" "https://${tailnetHostname}/vault/"
-      check_http "browser" "https://${tailnetHostname}/browser/"
+      check_http "immich" "${tailnetOrigin}/"
+      check_http "vaultwarden" "${tailnetOrigin}/vault/"
+      check_http "browser" "${tailnetOrigin}/browser/"
 
       for port_and_name in '${toString minecraftPort} minecraft' '445 samba'; do
         read -r port name <<<"$port_and_name"
