@@ -25,7 +25,7 @@ in
     };
   };
 
-  home-manager.users.keewai = {
+  home-manager.users.keewai = { config, ... }: {
     xdg = {
       userDirs = {
         enable = true;
@@ -33,6 +33,9 @@ in
       };
 
       configFile."user-dirs.dirs".force = true;
+      configFile."k4/theme.json".text = builtins.toJSON theme.quickShell;
+      configFile."qt5ct/colors/${theme.qt.colorSchemeName}.conf".text = theme.qt.colorScheme;
+      configFile."qt6ct/colors/${theme.qt.colorSchemeName}.conf".text = theme.qt.colorScheme;
     };
 
     gtk = {
@@ -57,28 +60,24 @@ in
       settings = theme.kitty.settings;
     };
 
-    xdg.configFile."k4/theme.json".text = builtins.toJSON theme.quickShell;
-
     qt = {
       enable = true;
       platformTheme.name = "qtct";
-      style.name = "kvantum";
-
-      kvantum = {
-        enable = true;
-        themes = [ theme.qt.package ];
-        settings.General.theme = theme.qt.themeName;
-      };
+      style.name = theme.qt.styleName;
 
       qt5ctSettings.Appearance = {
+        color_scheme_path = "${config.xdg.configHome}/qt5ct/colors/${theme.qt.colorSchemeName}.conf";
+        custom_palette = true;
         icon_theme = theme.icon.name;
         standard_dialogs = "xdgdesktopportal";
-        style = "kvantum";
+        style = theme.qt.styleName;
       };
       qt6ctSettings.Appearance = {
+        color_scheme_path = "${config.xdg.configHome}/qt6ct/colors/${theme.qt.colorSchemeName}.conf";
+        custom_palette = true;
         icon_theme = theme.icon.name;
         standard_dialogs = "xdgdesktopportal";
-        style = "kvantum";
+        style = theme.qt.styleName;
       };
     };
   };

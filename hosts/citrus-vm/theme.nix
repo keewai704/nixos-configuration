@@ -1,36 +1,45 @@
 { pkgs }:
 
 let
-  flavour = "mocha";
-  accent = "blue";
+  variant = "night";
 
   palette = {
-    rosewater = "f5e0dc";
-    flamingo = "f2cdcd";
-    pink = "f5c2e7";
-    mauve = "cba6f7";
-    red = "f38ba8";
-    maroon = "eba0ac";
-    peach = "fab387";
-    yellow = "f9e2af";
-    green = "a6e3a1";
-    teal = "94e2d5";
-    sky = "89dceb";
-    sapphire = "74c7ec";
-    blue = "89b4fa";
-    lavender = "b4befe";
-    text = "cdd6f4";
-    subtext1 = "bac2de";
-    subtext0 = "a6adc8";
-    overlay2 = "9399b2";
-    overlay1 = "7f849c";
-    overlay0 = "6c7086";
-    surface2 = "585b70";
-    surface1 = "45475a";
-    surface0 = "313244";
-    base = "1e1e2e";
-    mantle = "181825";
-    crust = "11111b";
+    background = "1a1b26";
+    backgroundDark = "16161e";
+    backgroundDarker = "15161e";
+    backgroundHighlight = "292e42";
+    backgroundVisual = "283457";
+    terminalBlack = "414868";
+    foreground = "c0caf5";
+    foregroundDark = "a9b1d6";
+    foregroundGutter = "3b4261";
+    comment = "565f89";
+    dark5 = "737aa2";
+    blue0 = "3d59a1";
+    blue = "7aa2f7";
+    cyan = "7dcfff";
+    blue1 = "2ac3de";
+    blue2 = "0db9d7";
+    blue5 = "89ddff";
+    blue6 = "b4f9f8";
+    blue7 = "394b70";
+    magenta = "bb9af7";
+    magenta2 = "ff007c";
+    purple = "9d7cd8";
+    orange = "ff9e64";
+    yellow = "e0af68";
+    green = "9ece6a";
+    green1 = "73daca";
+    green2 = "41a6b5";
+    teal = "1abc9c";
+    red = "f7768e";
+    red1 = "db4b4b";
+    brightRed = "ff899d";
+    brightGreen = "9fe044";
+    brightYellow = "faba4a";
+    brightBlue = "8db0ff";
+    brightMagenta = "c7a9ff";
+    brightCyan = "a4daff";
     black = "000000";
   };
 
@@ -39,17 +48,17 @@ let
   rgba = color: alpha: "rgba(${color}${alpha})";
 
   semantic = {
-    accent = palette.${accent};
-    accentAlt = palette.mauve;
-    desktopBackground = palette.crust;
-    windowBackground = palette.base;
-    surface = palette.surface0;
-    surfaceHigh = palette.surface1;
-    track = palette.surface2;
-    border = palette.surface1;
-    text = palette.text;
-    muted = palette.subtext0;
-    dim = palette.overlay0;
+    accent = palette.blue;
+    accentAlt = palette.magenta;
+    desktopBackground = palette.backgroundDarker;
+    windowBackground = palette.background;
+    surface = palette.backgroundHighlight;
+    surfaceHigh = palette.foregroundGutter;
+    track = palette.terminalBlack;
+    border = palette.foregroundGutter;
+    text = palette.foreground;
+    muted = palette.foregroundDark;
+    dim = palette.comment;
     shadow = palette.black;
   };
 
@@ -58,51 +67,98 @@ let
     name = "Colloid-dark-cursors";
     size = 24;
   };
+
+  qtColor = color: "#ff${color}";
+  qtPalette = colors: builtins.concatStringsSep ", " (map qtColor colors);
+  qtActiveColors = [
+    palette.foreground
+    palette.backgroundHighlight
+    palette.terminalBlack
+    palette.foregroundGutter
+    palette.backgroundDark
+    palette.backgroundHighlight
+    palette.foreground
+    palette.foreground
+    palette.foreground
+    palette.background
+    palette.background
+    palette.black
+    palette.blue
+    palette.backgroundDark
+    palette.cyan
+    palette.magenta
+    palette.backgroundHighlight
+    palette.foreground
+    palette.backgroundHighlight
+    palette.foreground
+  ];
+  qtDisabledColors = [
+    palette.comment
+    palette.backgroundHighlight
+    palette.foregroundGutter
+    palette.foregroundGutter
+    palette.backgroundDark
+    palette.backgroundHighlight
+    palette.comment
+    palette.foreground
+    palette.comment
+    palette.background
+    palette.background
+    palette.black
+    palette.foregroundGutter
+    palette.comment
+    palette.comment
+    palette.comment
+    palette.backgroundHighlight
+    palette.foreground
+    palette.backgroundHighlight
+    palette.comment
+  ];
+  qtPlaceholderColor = "#80${palette.comment}";
+  qtColorScheme =
+    assert builtins.length qtActiveColors == 20;
+    assert builtins.length qtDisabledColors == 20;
+    ''
+      [ColorScheme]
+      active_colors=${qtPalette qtActiveColors}, ${qtPlaceholderColor}
+      disabled_colors=${qtPalette qtDisabledColors}, ${qtPlaceholderColor}
+      inactive_colors=${qtPalette qtActiveColors}, ${qtPlaceholderColor}
+    '';
+
+  gtkPackage = pkgs.callPackage ../../pkgs/tokyonight-gtk { };
 in
 {
   inherit
-    accent
     cursor
-    flavour
     palette
     semantic
+    variant
     ;
 
   scheme = "dark";
 
   gtk = {
-    package = pkgs.catppuccin-gtk.override {
-      accents = [ accent ];
-      size = "standard";
-      tweaks = [ "rimless" ];
-      variant = flavour;
-    };
-    name = "catppuccin-${flavour}-${accent}-standard+rimless";
+    package = gtkPackage;
+    name = "Tokyonight-Dark";
   };
 
   icon = {
-    package = pkgs.colloid-icon-theme.override {
-      schemeVariants = [ "catppuccin" ];
-    };
-    name = "Colloid-Catppuccin-Dark";
+    package = pkgs.colloid-icon-theme;
+    name = "Colloid-Dark";
   };
 
   fcitx5 = {
-    addon = pkgs.catppuccin-fcitx5.override {
-      withRoundedCorners = true;
-    };
-    themeName = "catppuccin-${flavour}-${accent}";
+    addon = pkgs.fcitx5-tokyonight;
+    themeName = "Tokyonight-Storm";
     font = "Noto Sans CJK JP 10";
     menuFont = "Noto Sans CJK JP 11";
     trayFont = "Noto Sans CJK JP Bold 10";
   };
 
   qt = {
-    package = pkgs.catppuccin-kvantum.override {
-      inherit accent;
-      variant = flavour;
-    };
-    themeName = "catppuccin-${flavour}-${accent}";
+    colorScheme = qtColorScheme;
+    colorSchemeName = "tokyonight";
+    styleName = "fusion";
   };
 
   quickShell = {
@@ -121,44 +177,46 @@ in
   };
 
   kitty.settings = {
-    foreground = hex palette.text;
-    background = hex palette.base;
-    selection_foreground = hex palette.base;
-    selection_background = hex palette.rosewater;
-    cursor = hex palette.rosewater;
-    cursor_text_color = hex palette.base;
-    url_color = hex palette.rosewater;
-    active_border_color = hex palette.lavender;
-    inactive_border_color = hex palette.overlay0;
+    foreground = hex palette.foreground;
+    background = hex palette.background;
+    selection_foreground = hex palette.foreground;
+    selection_background = hex palette.backgroundVisual;
+    cursor = hex palette.foreground;
+    cursor_text_color = hex palette.background;
+    url_color = hex palette.green1;
+    active_border_color = hex palette.blue;
+    inactive_border_color = hex palette.backgroundHighlight;
     bell_border_color = hex palette.yellow;
     wayland_titlebar_color = "system";
-    active_tab_foreground = hex palette.crust;
-    active_tab_background = hex palette.mauve;
-    inactive_tab_foreground = hex palette.text;
-    inactive_tab_background = hex palette.mantle;
-    tab_bar_background = hex palette.crust;
-    mark1_foreground = hex palette.base;
-    mark1_background = hex palette.lavender;
-    mark2_foreground = hex palette.base;
-    mark2_background = hex palette.mauve;
-    mark3_foreground = hex palette.base;
-    mark3_background = hex palette.sapphire;
-    color0 = hex palette.surface1;
-    color8 = hex palette.surface2;
+    active_tab_foreground = hex palette.backgroundDark;
+    active_tab_background = hex palette.blue;
+    inactive_tab_foreground = hex palette.dark5;
+    inactive_tab_background = hex palette.backgroundHighlight;
+    tab_bar_background = hex palette.backgroundDarker;
+    mark1_foreground = hex palette.backgroundDark;
+    mark1_background = hex palette.blue;
+    mark2_foreground = hex palette.backgroundDark;
+    mark2_background = hex palette.magenta;
+    mark3_foreground = hex palette.backgroundDark;
+    mark3_background = hex palette.cyan;
+    color0 = hex palette.backgroundDarker;
+    color8 = hex palette.terminalBlack;
     color1 = hex palette.red;
-    color9 = hex palette.red;
+    color9 = hex palette.brightRed;
     color2 = hex palette.green;
-    color10 = hex palette.green;
+    color10 = hex palette.brightGreen;
     color3 = hex palette.yellow;
-    color11 = hex palette.yellow;
+    color11 = hex palette.brightYellow;
     color4 = hex palette.blue;
-    color12 = hex palette.blue;
-    color5 = hex palette.pink;
-    color13 = hex palette.pink;
-    color6 = hex palette.teal;
-    color14 = hex palette.teal;
-    color7 = hex palette.subtext1;
-    color15 = hex palette.subtext0;
+    color12 = hex palette.brightBlue;
+    color5 = hex palette.magenta;
+    color13 = hex palette.brightMagenta;
+    color6 = hex palette.cyan;
+    color14 = hex palette.brightCyan;
+    color7 = hex palette.foregroundDark;
+    color15 = hex palette.foreground;
+    color16 = hex palette.orange;
+    color17 = hex palette.red1;
   };
 
   hyprland = {
@@ -179,22 +237,22 @@ in
   };
 
   console.colors = [
-    palette.surface1
+    palette.backgroundDarker
     palette.red
     palette.green
     palette.yellow
     palette.blue
-    palette.pink
-    palette.teal
-    palette.subtext1
-    palette.surface2
-    palette.red
-    palette.green
-    palette.yellow
-    palette.blue
-    palette.pink
-    palette.teal
-    palette.subtext0
+    palette.magenta
+    palette.cyan
+    palette.foregroundDark
+    palette.terminalBlack
+    palette.brightRed
+    palette.brightGreen
+    palette.brightYellow
+    palette.brightBlue
+    palette.brightMagenta
+    palette.brightCyan
+    palette.foreground
   ];
 
   tuigreetTheme = builtins.concatStringsSep ";" [
