@@ -1,6 +1,16 @@
-{ lib, pkgs, ... }:
+{
+  config,
+  lib,
+  pkgs,
+  ...
+}:
 
 let
+  theme = import ./theme.nix {
+    inherit pkgs;
+    colors = config.lib.stylix.colors;
+  };
+
   sineVersion = "2.3.3";
   sineBootloaderVersion = "0.1.4";
   sineStoreRevision = "7df9388eb064254ee6f26733404b9b604c9a485f";
@@ -348,6 +358,56 @@ let
 
   firefoxDesktop = "firefox.desktop";
 
+  pywalfox = pkgs.pywalfox-native;
+  pywalfoxManifest = pkgs.writeTextDir "lib/mozilla/native-messaging-hosts/pywalfox.json" (
+    builtins.toJSON {
+      name = "pywalfox";
+      description = "Automatically theme Firefox using the Nix-managed Pywal palette";
+      path = lib.getExe pywalfox;
+      type = "stdio";
+      allowed_extensions = [ "pywalfox@frewacom.org" ];
+    }
+  );
+  pywalfoxPalette = with theme.palette; [
+    background
+    red
+    green
+    yellow
+    blue
+    magenta
+    cyan
+    foreground
+    comment
+    red
+    green
+    yellow
+    blue
+    magenta
+    cyan
+    config.lib.stylix.colors.base07
+  ];
+  pywalfoxColorLines = lib.imap0 (
+    index: color:
+    let
+      name = "color${toString index}";
+    in
+    "    ${builtins.toJSON name}: ${builtins.toJSON "#${color}"}"
+  ) pywalfoxPalette;
+  pywalfoxTheme = ''
+    {
+      "wallpaper": ${builtins.toJSON (toString ./assets/videoframe_150744_10240x4320_clean-faithful.png)},
+      "alpha": "100",
+      "special": {
+        "background": ${builtins.toJSON "#${theme.semantic.windowBackground}"},
+        "foreground": ${builtins.toJSON "#${theme.semantic.text}"},
+        "cursor": ${builtins.toJSON "#${theme.semantic.text}"}
+      },
+      "colors": {
+    ${lib.concatStringsSep ",\n" pywalfoxColorLines}
+      }
+    }
+  '';
+
   webhidUdevRules = pkgs.writeTextFile {
     name = "webhid-udev-rules";
     destination = "/lib/udev/rules.d/70-webhid.rules";
@@ -365,12 +425,16 @@ let
   };
 in
 {
-  environment.systemPackages = [ braveOrigin ];
+  environment.systemPackages = [
+    braveOrigin
+    pywalfox
+  ];
 
   programs.firefox = {
     enable = true;
     package = firefoxWithSine;
     languagePacks = [ "ja" ];
+    nativeMessagingHosts.packages = [ pywalfoxManifest ];
     autoConfig = ''
       // Defaults required by the requested Sine mods. Users can override them.
       ${sineModDefaultPrefs}
@@ -523,6 +587,7 @@ in
       '';
 
       xdg = {
+        cacheFile."wal/colors.json".text = pywalfoxTheme;
         configFile."mimeapps.list".force = true;
 
         desktopEntries = {

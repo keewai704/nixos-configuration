@@ -16,7 +16,7 @@ hostname is `citrus-vm` may run `nixos-rebuild test` or `switch` for this host.
 | [`hosts/citrus-vm/hardware-configuration.nix`](../hosts/citrus-vm/hardware-configuration.nix) | Generated machine hardware, filesystems, and swap |
 | [`hosts/citrus-vm/hyprland.lua`](../hosts/citrus-vm/hyprland.lua) | Hyprland behavior and key bindings; Nix prepends the shared theme table |
 | [`hosts/citrus-vm/desktop.nix`](../hosts/citrus-vm/desktop.nix) | Thunar, GVfs, Tumbler, Xarchiver, and the ChatGPT application |
-| [`hosts/citrus-vm/browser.nix`](../hosts/citrus-vm/browser.nix) | Firefox default handlers, Brave Origin, and vendor-scoped WebHID access |
+| [`hosts/citrus-vm/browser.nix`](../hosts/citrus-vm/browser.nix) | Firefox, Pywalfox, Brave Origin, default handlers, and vendor-scoped WebHID access |
 | [`hosts/citrus-vm/codex.nix`](../hosts/citrus-vm/codex.nix) | Home Manager, system MCP configuration, personal skills, and CUA |
 | [`pkgs/chatgpt-desktop/default.nix`](../pkgs/chatgpt-desktop/default.nix) | ChatGPT desktop package and launcher |
 | [`pkgs/cua-driver/default.nix`](../pkgs/cua-driver/default.nix) | CUA driver package |
@@ -58,6 +58,12 @@ Firefox is the default browser for HTTP, HTTPS, HTML, and unknown URL schemes.
 Brave Origin is also installed for sites that require Chromium behavior.
 `x-scheme-handler/codex` remains mapped to `chatgpt.desktop` so authentication
 and deep links return to the desktop application.
+
+The Nix-managed Pywalfox native messenger is registered in the wrapped Firefox
+package, and Home Manager publishes the shared Tokyo Night palette at
+`~/.cache/wal/colors.json`. The Pywalfox Firefox add-on, its settings, and its
+optional profile CSS remain user-managed; this configuration does not install
+or modify them.
 
 WebHID access is granted through vendor-scoped udev rules for the configured
 SparkLink keyboard and OpenMouse-compatible device vendors. The rules do not
@@ -223,6 +229,10 @@ fcitx5-remote --check
 fcitx5-remote -n
 xdg-mime query default x-scheme-handler/http
 xdg-mime query default x-scheme-handler/codex
+pywalfox --version
+jq -e '.colors | length == 16' ~/.cache/wal/colors.json
+firefox_root="$(dirname "$(dirname "$(readlink -f "$(command -v firefox)")")")"
+jq -e '.name == "pywalfox"' "$firefox_root/lib/mozilla/native-messaging-hosts/pywalfox.json"
 chatgpt --version
 cua-driver doctor
 codex mcp list
