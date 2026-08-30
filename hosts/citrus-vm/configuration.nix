@@ -24,6 +24,7 @@ in
   imports = [
     inputs.nix-hazkey.nixosModules.hazkey
     ./browser.nix
+    ./codex.nix
     ./desktop.nix
     ./hardware-configuration.nix
   ];
@@ -55,7 +56,7 @@ in
       base0F = "db4b4b";
     };
     polarity = "dark";
-    cursor = theme.cursor;
+    inherit (theme) cursor;
     fonts.sizes = {
       applications = 10;
       desktop = 10;
@@ -172,7 +173,6 @@ in
   environment = {
     systemPackages = [
       pkgs.gws
-      pkgs.kitty
       pkgs.quickshell
     ];
 

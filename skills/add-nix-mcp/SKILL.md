@@ -18,18 +18,32 @@ with `/home/keewai/nixos-configuration#`. Never rely on `.` or a prior `cd`.
 
    ```bash
    runtime_host="$(hostnamectl --static 2>/dev/null || hostname)"
-   etc_host="$(tr -d '\n' < /etc/hostname)"
+   etc_host="$(tr -d '\r\n' < /etc/hostname)"
    test "$runtime_host" = "$etc_host"
    ```
 3. Confirm the exact runtime host exists in the flake:
 
    ```bash
-   nix eval --json /home/keewai/nixos-configuration#nixosConfigurations --apply builtins.attrNames
+   flake_host="$(nix eval --raw --no-write-lock-file \
+     "/home/keewai/nixos-configuration#nixosConfigurations.${runtime_host}.config.networking.hostName")"
+   test "$runtime_host" = "$flake_host"
    ```
 
-4. Inspect `git -C /home/keewai/nixos-configuration status --short` and preserve
-   every unrelated change. Never contact another host unless the current user
-   request explicitly authorizes that exact remote operation.
+4. Record the existing worktree before editing:
+
+   ```bash
+   git -C /home/keewai/nixos-configuration status --short --branch
+   git -C /home/keewai/nixos-configuration diff
+   git -C /home/keewai/nixos-configuration diff --cached
+   ```
+
+   Preserve every unrelated change. Do not format, stage, stash, reset, or
+   delete it. If an unrelated tracked change can affect evaluation or
+   activation, isolate the task safely or stop; do not claim that the mixed
+   worktree validates only this task. If `git diff --cached --quiet` fails,
+   isolate the task in a separate worktree or stop before editing; never share
+   an existing index with this workflow. Never contact another host unless the
+   current user request explicitly authorizes that exact remote operation.
 
 ## Choose the declaration route
 
@@ -69,21 +83,39 @@ the generated TOML when doing so.
 
 ## Validate before committing
 
-Run every command against the absolute flake path:
+Format only the Nix files changed by this task. Start with `codex.nix` and append
+an explicit absolute package or module path only when this task changed it;
+never pass the repository root as the formatting target:
 
 ```bash
-nix run /home/keewai/nixos-configuration#formatter.x86_64-linux -- --tree-root /home/keewai/nixos-configuration /home/keewai/nixos-configuration
-nix flake check --no-build /home/keewai/nixos-configuration
-nix flake check /home/keewai/nixos-configuration
-nix eval --json /home/keewai/nixos-configuration#nixosConfigurations.citrus-vm.config.home-manager.users.keewai.programs.mcp.servers
-nix build --no-link /home/keewai/nixos-configuration#nixosConfigurations.citrus-vm.config.system.build.toplevel
+task_nix_files=(
+  /home/keewai/nixos-configuration/hosts/citrus-vm/codex.nix
+)
+nix run --no-write-lock-file /home/keewai/nixos-configuration#formatter.x86_64-linux -- \
+  --tree-root /home/keewai/nixos-configuration "${task_nix_files[@]}"
+```
+
+Before any flake-based check, stage every task path explicitly with
+`git -C /home/keewai/nixos-configuration add -- <absolute-task-path>...` and
+inspect `git -C /home/keewai/nixos-configuration diff --cached`. Git flakes
+omit untracked files, so evaluation before this task-only staging step does not
+validate a new package or module. The initial clean-index gate ensures the
+staged diff contains only this task.
+
+Then run every check against the absolute flake path:
+
+```bash
+nix flake check --no-build --no-write-lock-file /home/keewai/nixos-configuration
+nix flake check --no-write-lock-file /home/keewai/nixos-configuration
+nix eval --json --no-write-lock-file /home/keewai/nixos-configuration#nixosConfigurations.citrus-vm.config.home-manager.users.keewai.programs.mcp.servers
+nix build --no-link --no-write-lock-file /home/keewai/nixos-configuration#nixosConfigurations.citrus-vm.config.system.build.toplevel
 git -C /home/keewai/nixos-configuration diff --check
 ```
 
 Build and inspect the generated system layer:
 
 ```bash
-nix build --no-link --print-out-paths '/home/keewai/nixos-configuration#nixosConfigurations.citrus-vm.config.environment.etc."codex/config.toml".source'
+nix build --no-link --no-write-lock-file --print-out-paths '/home/keewai/nixos-configuration#nixosConfigurations.citrus-vm.config.environment.etc."codex/config.toml".source'
 ```
 
 Verify that the new server has the intended command or URL and that no secret
@@ -92,19 +124,12 @@ tool call against the built server before deployment.
 
 ## Commit and deploy
 
-Stage only task files with absolute paths, inspect the staged diff, commit, and
-confirm that no task-related change remains uncommitted. Then follow every gate
-in `/home/keewai/nixos-configuration/AGENTS.md`. Re-resolve the confirmed runtime
-host and use only its flake output for the live operations:
-
-```bash
-runtime_host="$(hostnamectl --static 2>/dev/null || hostname)"
-sudo nixos-rebuild test --flake "/home/keewai/nixos-configuration#${runtime_host}"
-sudo nixos-rebuild switch --flake "/home/keewai/nixos-configuration#${runtime_host}"
-```
-
-Run `switch` only after the `test` generation, networking, and affected-service
-checks pass. Before and after `switch`, verify at least:
+Confirm that the staged diff contains only task paths, commit it, and confirm
+that no task-related change remains uncommitted. Then follow every gate in
+`/home/keewai/nixos-configuration/AGENTS.md`, substituting the absolute flake
+reference `/home/keewai/nixos-configuration#${runtime_host}` wherever that
+workflow uses `.#${runtime_host}`. Before and after `switch`, also verify the
+MCP-specific state:
 
 ```bash
 systemctl is-active NetworkManager tailscaled

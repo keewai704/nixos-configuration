@@ -7,12 +7,13 @@
 
 let
   inherit (import ./settings.nix)
+    localBackupRoot
     minecraftDataDir
+    smartDevices
     storageMountUnit
     storageRoot
     vaultwardenBackupRoot
     ;
-  backupRoot = "${storageRoot}/server/backups/orange-local";
 
   localBackup = pkgs.writeShellApplication {
     name = "orange-local-backup";
@@ -26,7 +27,7 @@ let
     text = ''
       set -euo pipefail
 
-      backup_root=${lib.escapeShellArg backupRoot}
+      backup_root=${lib.escapeShellArg localBackupRoot}
       minecraft_dir="$backup_root/minecraft"
       vaultwarden_dir="$backup_root/vaultwarden"
       stamp=$(date +%Y%m%dT%H%M%S)
@@ -83,7 +84,7 @@ let
       runtimeInputs = with pkgs; [ smartmontools ];
       text = ''
         set -euo pipefail
-        for device in /dev/sda /dev/sdb; do
+        for device in ${lib.escapeShellArgs smartDevices}; do
           [[ -b "$device" ]] || {
             echo "Missing block device: $device" >&2
             exit 1

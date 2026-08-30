@@ -8,16 +8,47 @@
 let
   inherit (import ./settings.nix)
     camofoxApiPort
+    camofoxNoVncPort
+    camofoxVncActivationPort
+    camofoxVncBackendPort
     immichBackupRoot
     immichPort
+    localBackupRoot
     minecraftPort
     nginxPort
+    smartDevices
     storageRoot
     tailnetHostname
     vaultwardenBackupRoot
     vaultwardenPort
     ;
-  backupRoot = "${storageRoot}/server/backups/orange-local";
+
+  monitoredServices = [
+    "NetworkManager"
+    "tailscaled"
+    "sshd"
+    "samba-smbd"
+    "immich-server"
+    "postgresql"
+    "redis-immich"
+    "vaultwarden"
+    "nginx"
+    "minecraft"
+    "camofox"
+    "tailscale-serve-nginx"
+  ];
+  monitoredServiceUnits = map (service: "${service}.service") monitoredServices;
+
+  loopbackBackendPorts = [
+    camofoxApiPort
+    camofoxNoVncPort
+    camofoxVncActivationPort
+    camofoxVncBackendPort
+    immichPort
+    nginxPort
+    vaultwardenPort
+  ];
+  loopbackBackendPortPattern = lib.concatStringsSep "|" (map toString loopbackBackendPorts);
 
   healthMonitor = pkgs.writeShellApplication {
     name = "orange-health-monitor";
@@ -75,10 +106,7 @@ let
         fi
       }
 
-      for service in \
-        NetworkManager tailscaled sshd samba-smbd immich-server postgresql \
-        redis-immich vaultwarden nginx minecraft camofox \
-        tailscale-serve-nginx; do
+      for service in ${lib.escapeShellArgs monitoredServices}; do
         check_service "$service"
       done
 
@@ -134,7 +162,7 @@ let
         clear_alert "disk-space-command"
       fi
 
-      for device in /dev/sda /dev/sdb; do
+      for device in ${lib.escapeShellArgs smartDevices}; do
         key=''${device##*/}
         if [[ ! -b "$device" ]]; then
           queue_alert "smart-$key" "block device is missing: $device"
@@ -274,7 +302,7 @@ let
       done
 
       exposed_backends=$(ss --listening --tcp --numeric --no-header 2>/dev/null \
-        | awk '$4 ~ /:(${toString immichPort}|${toString nginxPort}|${toString vaultwardenPort}|${toString camofoxApiPort})$/ && $4 !~ /^127\.0\.0\.1:/ && $4 !~ /^\[::1\]:/ { print $4 }' \
+        | awk '$4 ~ /:(${loopbackBackendPortPattern})$/ && $4 !~ /^127\.0\.0\.1:/ && $4 !~ /^\[::1\]:/ { print $4 }' \
         | paste -sd ', ' -)
       if [[ -n "$exposed_backends" ]]; then
         queue_alert "backend-listeners" "application backend is not loopback-only: $exposed_backends"
@@ -305,8 +333,8 @@ let
 
       local_backup_trigger=$(systemctl show orange-local-backup.timer --property LastTriggerUSec --value 2>/dev/null || true)
       if [[ -n "$local_backup_trigger" && "$local_backup_trigger" != n/a ]]; then
-        check_fresh_file "minecraft" "Minecraft" ${lib.escapeShellArg "${backupRoot}/minecraft"} 'minecraft-*.tar.zst' 1800
-        check_fresh_file "vaultwarden-versioned" "versioned Vaultwarden" ${lib.escapeShellArg "${backupRoot}/vaultwarden"} 'vaultwarden-*.tar.zst' 1800
+        check_fresh_file "minecraft" "Minecraft" ${lib.escapeShellArg "${localBackupRoot}/minecraft"} 'minecraft-*.tar.zst' 1800
+        check_fresh_file "vaultwarden-versioned" "versioned Vaultwarden" ${lib.escapeShellArg "${localBackupRoot}/vaultwarden"} 'vaultwarden-*.tar.zst' 1800
       fi
 
       clear_alert "system-generation"
@@ -353,19 +381,9 @@ in
         wants = [ "network-online.target" ];
         after = [
           "agenix.service"
-          "camofox.service"
-          "immich-server.service"
-          "minecraft.service"
           "network-online.target"
-          "nginx.service"
-          "postgresql.service"
-          "redis-immich.service"
-          "samba-smbd.service"
-          "sshd.service"
-          "tailscale-serve-nginx.service"
-          "tailscaled.service"
-          "vaultwarden.service"
-        ];
+        ]
+        ++ monitoredServiceUnits;
         serviceConfig = {
           Type = "oneshot";
           ExecStart = lib.getExe healthMonitor;

@@ -8,12 +8,32 @@ let
   inherit (import ../settings.nix)
     camofoxApiPort
     camofoxNoVncPort
-    camofoxSharedUserId
+    camofoxVncActivationPort
+    camofoxVncBackendPort
     ;
   camofoxStateDir = "/home/keewai/.local/share/camofox";
   camoufoxCacheDir = "${camofoxStateDir}/cache/camoufox";
-  vncBackendPort = 5900;
-  vncActivationPort = 5901;
+  camofoxSharedUserId = "shared";
+
+  commonHardening = {
+    NoNewPrivileges = true;
+    ProtectSystem = "strict";
+    ProtectClock = true;
+    ProtectControlGroups = true;
+    ProtectHostname = true;
+    ProtectKernelLogs = true;
+    ProtectKernelModules = true;
+    ProtectKernelTunables = true;
+    RestrictRealtime = true;
+    RestrictSUIDSGID = true;
+    LockPersonality = true;
+    CapabilityBoundingSet = "";
+    RestrictAddressFamilies = [
+      "AF_UNIX"
+      "AF_INET"
+      "AF_INET6"
+    ];
+  };
 
   camofoxPackage = pkgs.callPackage ../../../pkgs/camofox {
     websockify = pkgs.python3Packages.websockify;
@@ -75,13 +95,13 @@ let
       fi
 
       for _ in $(seq 1 120); do
-        if nc -z -w 1 127.0.0.1 ${toString vncBackendPort}; then
+        if nc -z -w 1 127.0.0.1 ${toString camofoxVncBackendPort}; then
           exit 0
         fi
         sleep 0.25
       done
 
-      echo "Camofox did not expose VNC port ${toString vncBackendPort} within 30 seconds" >&2
+      echo "Camofox did not expose VNC port ${toString camofoxVncBackendPort} within 30 seconds" >&2
       exit 1
     '';
   };
@@ -130,14 +150,14 @@ in
         BROWSER_IDLE_TIMEOUT_MS = "0";
 
         ENABLE_VNC = "1";
-        VNC_PORT = toString vncBackendPort;
+        VNC_PORT = toString camofoxVncBackendPort;
         NOVNC_PORT = toString camofoxNoVncPort;
-        NOVNC_TARGET_PORT = toString vncActivationPort;
+        NOVNC_TARGET_PORT = toString camofoxVncActivationPort;
         VNC_BIND = "127.0.0.1";
         VNC_RESOLUTION = "1600x900";
       };
 
-      serviceConfig = {
+      serviceConfig = commonHardening // {
         Type = "exec";
         User = "keewai";
         Group = "users";
@@ -151,29 +171,12 @@ in
         UMask = "0077";
         LimitNOFILE = 65536;
 
-        NoNewPrivileges = true;
         # Xvfb and x11vnc must share the host's /tmp/.X11-unix socket directory.
-        ProtectSystem = "strict";
         ProtectHome = "read-only";
         ReadWritePaths = [
           camofoxStateDir
           # Camoufox creates launch shims and Xvfb creates X11 sockets here.
           "/tmp"
-        ];
-        ProtectClock = true;
-        ProtectControlGroups = true;
-        ProtectHostname = true;
-        ProtectKernelLogs = true;
-        ProtectKernelModules = true;
-        ProtectKernelTunables = true;
-        RestrictRealtime = true;
-        RestrictSUIDSGID = true;
-        LockPersonality = true;
-        CapabilityBoundingSet = "";
-        RestrictAddressFamilies = [
-          "AF_UNIX"
-          "AF_INET"
-          "AF_INET6"
         ];
       };
     };
@@ -185,7 +188,7 @@ in
       description = "Lazy Camofox VNC activation socket";
       wantedBy = [ "sockets.target" ];
       socketConfig = {
-        ListenStream = "127.0.0.1:${toString vncActivationPort}";
+        ListenStream = "127.0.0.1:${toString camofoxVncActivationPort}";
         NoDelay = true;
       };
     };
@@ -200,32 +203,15 @@ in
         "camofox.service"
         "camofox-vnc-activation.socket"
       ];
-      serviceConfig = {
+      serviceConfig = commonHardening // {
         Type = "notify";
         User = "keewai";
         Group = "users";
         ExecStartPre = lib.getExe ensureSharedSession;
-        ExecStart = "${pkgs.systemd}/lib/systemd/systemd-socket-proxyd --exit-idle-time=30s 127.0.0.1:${toString vncBackendPort}";
+        ExecStart = "${pkgs.systemd}/lib/systemd/systemd-socket-proxyd --exit-idle-time=30s 127.0.0.1:${toString camofoxVncBackendPort}";
 
-        NoNewPrivileges = true;
         PrivateTmp = true;
-        ProtectSystem = "strict";
         ProtectHome = true;
-        ProtectClock = true;
-        ProtectControlGroups = true;
-        ProtectHostname = true;
-        ProtectKernelLogs = true;
-        ProtectKernelModules = true;
-        ProtectKernelTunables = true;
-        RestrictRealtime = true;
-        RestrictSUIDSGID = true;
-        LockPersonality = true;
-        CapabilityBoundingSet = "";
-        RestrictAddressFamilies = [
-          "AF_UNIX"
-          "AF_INET"
-          "AF_INET6"
-        ];
       };
     };
   };

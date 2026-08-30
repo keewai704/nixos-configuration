@@ -39,8 +39,10 @@
       ...
     }:
     let
+      system = "x86_64-linux";
+
       chatgptPkgs = import nixpkgs {
-        system = "x86_64-linux";
+        inherit system;
         config.allowUnfreePredicate = package: nixpkgs.lib.getName package == "chatgpt-desktop";
       };
 
@@ -65,8 +67,8 @@
         ./hosts/citrus-vm/configuration.nix
       ];
 
-      packages.x86_64-linux.chatgpt-desktop = chatgptPkgs.callPackage ./pkgs/chatgpt-desktop { };
+      packages.${system}.chatgpt-desktop = chatgptPkgs.callPackage ./pkgs/chatgpt-desktop { };
 
-      formatter.x86_64-linux = nixpkgs.legacyPackages.x86_64-linux.nixfmt-tree;
+      formatter.${system} = nixpkgs.legacyPackages.${system}.nixfmt-tree;
     };
 }

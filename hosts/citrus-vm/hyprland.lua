@@ -200,10 +200,10 @@ bind(main_mod .. " + P", hl.dsp.window.pseudo({ action = "toggle" }), "Toggle ps
 bind(main_mod .. " + O", hl.dsp.layout("togglesplit"), "Toggle split direction")
 
 local directions = {
-    { key = "H", arrow = "left", direction = "l", label = "left" },
-    { key = "J", arrow = "down", direction = "d", label = "down" },
-    { key = "K", arrow = "up", direction = "u", label = "up" },
-    { key = "L", arrow = "right", direction = "r", label = "right" },
+    { key = "H", arrow = "left", direction = "l", label = "left", x = -30, y = 0 },
+    { key = "J", arrow = "down", direction = "d", label = "down", x = 0, y = 30 },
+    { key = "K", arrow = "up", direction = "u", label = "up", x = 0, y = -30 },
+    { key = "L", arrow = "right", direction = "r", label = "right", x = 30, y = 0 },
 }
 
 for _, item in ipairs(directions) do
@@ -229,14 +229,7 @@ for _, item in ipairs(directions) do
     )
 end
 
-local resize_steps = {
-    { key = "H", arrow = "left", x = -30, y = 0 },
-    { key = "J", arrow = "down", x = 0, y = 30 },
-    { key = "K", arrow = "up", x = 0, y = -30 },
-    { key = "L", arrow = "right", x = 30, y = 0 },
-}
-
-for _, item in ipairs(resize_steps) do
+for _, item in ipairs(directions) do
     local flags = { repeating = true }
     bind(
         main_mod .. " + CTRL + " .. item.key,

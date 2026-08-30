@@ -13,6 +13,16 @@ let
     tailnetHostname
     ;
   postgresqlPackage = pkgs.postgresql_17;
+  importDependencies = [
+    "media-storage-prepare.service"
+    storageMountUnit
+    "postgresql-setup.service"
+  ];
+  serverDependencies = [
+    "media-storage-prepare.service"
+    storageMountUnit
+    "immich-import-existing-database.service"
+  ];
 
   importImmichDatabase = pkgs.writeShellApplication {
     name = "import-existing-immich-database";
@@ -138,16 +148,8 @@ in
   systemd.services = {
     immich-import-existing-database = {
       description = "Import the existing Immich PostgreSQL backup once";
-      requires = [
-        "media-storage-prepare.service"
-        storageMountUnit
-        "postgresql-setup.service"
-      ];
-      after = [
-        "media-storage-prepare.service"
-        storageMountUnit
-        "postgresql-setup.service"
-      ];
+      requires = importDependencies;
+      after = importDependencies;
       before = [ "immich-server.service" ];
       serviceConfig = {
         Type = "oneshot";
@@ -156,16 +158,8 @@ in
     };
 
     immich-server = {
-      requires = [
-        "media-storage-prepare.service"
-        storageMountUnit
-        "immich-import-existing-database.service"
-      ];
-      after = [
-        "media-storage-prepare.service"
-        storageMountUnit
-        "immich-import-existing-database.service"
-      ];
+      requires = serverDependencies;
+      after = serverDependencies;
       serviceConfig.ReadWritePaths = [ immichMediaRoot ];
     };
   };

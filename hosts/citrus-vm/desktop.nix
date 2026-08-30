@@ -13,8 +13,6 @@ let
   chatgptDesktop = pkgs.callPackage ../../pkgs/chatgpt-desktop { };
 in
 {
-  imports = [ ./codex.nix ];
-
   nixpkgs.config.allowUnfreePredicate = package: lib.getName package == "chatgpt-desktop";
 
   environment.systemPackages = [

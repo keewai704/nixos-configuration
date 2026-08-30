@@ -13,6 +13,15 @@ let
     vaultwardenPort
     ;
   legacyVaultwardenRoot = "${storageRoot}/server/vaultwarden";
+  storagePreparationDependencies = [
+    "media-storage-prepare.service"
+    storageMountUnit
+  ];
+  vaultwardenDependencies = [
+    storageMountUnit
+    "vaultwarden-import-existing.service"
+  ];
+  backupDependencies = storagePreparationDependencies ++ [ "vaultwarden-import-existing.service" ];
 
   importVaultwardenData = pkgs.writeShellApplication {
     name = "import-existing-vaultwarden-data";
@@ -78,14 +87,8 @@ in
     services = {
       vaultwarden-import-existing = {
         description = "Import the existing Vaultwarden state once";
-        requires = [
-          "media-storage-prepare.service"
-          storageMountUnit
-        ];
-        after = [
-          "media-storage-prepare.service"
-          storageMountUnit
-        ];
+        requires = storagePreparationDependencies;
+        after = storagePreparationDependencies;
         before = [
           "backup-vaultwarden.service"
           "vaultwarden.service"
@@ -97,29 +100,15 @@ in
       };
 
       vaultwarden = {
-        requires = [
-          storageMountUnit
-          "vaultwarden-import-existing.service"
-        ];
-        after = [
-          storageMountUnit
-          "vaultwarden-import-existing.service"
-        ];
+        requires = vaultwardenDependencies;
+        after = vaultwardenDependencies;
       };
 
       backup-vaultwarden = {
         # Run only from the 06:05 timer, not whenever multi-user.target starts.
         wantedBy = lib.mkForce [ ];
-        requires = [
-          "media-storage-prepare.service"
-          storageMountUnit
-          "vaultwarden-import-existing.service"
-        ];
-        after = [
-          "media-storage-prepare.service"
-          storageMountUnit
-          "vaultwarden-import-existing.service"
-        ];
+        requires = backupDependencies;
+        after = backupDependencies;
       };
     };
 

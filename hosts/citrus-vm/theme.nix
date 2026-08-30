@@ -3,20 +3,17 @@
 let
   palette = {
     background = colors.base00;
-    backgroundDark = colors.base00;
     backgroundHighlight = colors.base01;
     terminalBlack = colors.base02;
     comment = colors.base03;
     foreground = colors.base05;
     foregroundDark = colors.base04;
     red = colors.base08;
-    orange = colors.base09;
     yellow = colors.base0A;
     green = colors.base0B;
     cyan = colors.base0C;
     blue = colors.base0D;
     magenta = colors.base0E;
-    redDark = colors.base0F;
     black = "000000";
   };
 

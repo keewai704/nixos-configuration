@@ -9,13 +9,16 @@ let
     vaultwardenPort
     ;
   noVncViewerUrl = "https://${tailnetHostname}/browser/vnc.html?autoconnect=true&reconnect=true&reconnect_delay=1000&resize=scale&path=browser/websockify";
-  nginxProxyHeaders = ''
-    proxy_set_header Host $host;
+  forwardedProxyHeaders = ''
     proxy_set_header X-Real-IP $tailscale_client_ip;
     proxy_set_header X-Forwarded-For $tailscale_client_ip;
     proxy_set_header X-Forwarded-Proto https;
     proxy_set_header X-Forwarded-Host $host;
     proxy_set_header X-Forwarded-Server $hostname;
+  '';
+  nginxProxyHeaders = ''
+    proxy_set_header Host $host;
+    ${forwardedProxyHeaders}
   '';
 in
 {
@@ -67,12 +70,8 @@ in
             proxy_read_timeout 86400s;
             proxy_send_timeout 86400s;
             proxy_set_header Host 127.0.0.1:${toString camofoxNoVncPort};
-            proxy_set_header X-Real-IP $tailscale_client_ip;
-            proxy_set_header X-Forwarded-For $tailscale_client_ip;
-            proxy_set_header X-Forwarded-Proto https;
-            proxy_set_header X-Forwarded-Host $host;
+            ${forwardedProxyHeaders}
             proxy_set_header X-Forwarded-Prefix /browser;
-            proxy_set_header X-Forwarded-Server $hostname;
           '';
         };
 

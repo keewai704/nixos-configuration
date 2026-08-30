@@ -16,14 +16,16 @@ hostname is `citrus-vm` may run `nixos-rebuild test` or `switch` for this host.
 | [`hosts/citrus-vm/hardware-configuration.nix`](../hosts/citrus-vm/hardware-configuration.nix) | Generated machine hardware, filesystems, and swap |
 | [`hosts/citrus-vm/hyprland.lua`](../hosts/citrus-vm/hyprland.lua) | Hyprland behavior and key bindings; Nix prepends the shared theme table |
 | [`hosts/citrus-vm/desktop.nix`](../hosts/citrus-vm/desktop.nix) | Thunar, GVfs, Tumbler, Xarchiver, and the ChatGPT application |
-| [`hosts/citrus-vm/browser.nix`](../hosts/citrus-vm/browser.nix) | Firefox, Pywalfox, Brave Origin, default handlers, and vendor-scoped WebHID access |
+| [`hosts/citrus-vm/browser.nix`](../hosts/citrus-vm/browser.nix) | Pywalfox, Brave Origin, default handlers, and vendor-scoped WebHID access |
+| [`hosts/citrus-vm/browser/sine.nix`](../hosts/citrus-vm/browser/sine.nix) | Firefox, pinned Sine assembly, locale validation, and profile activation |
 | [`hosts/citrus-vm/codex.nix`](../hosts/citrus-vm/codex.nix) | Home Manager, system MCP configuration, personal skills, and CUA |
 | [`pkgs/chatgpt-desktop/default.nix`](../pkgs/chatgpt-desktop/default.nix) | ChatGPT desktop package and launcher |
 | [`pkgs/cua-driver/default.nix`](../pkgs/cua-driver/default.nix) | CUA driver package |
 
-`desktop.nix` imports `codex.nix`, which imports Home Manager and
-`mcp-servers-nix`. The complete desktop stack therefore stays inside the Citrus
-host directory.
+The host entry point imports the browser, Codex, desktop, and hardware modules
+explicitly. `codex.nix` imports Home Manager and `mcp-servers-nix`; the complete
+desktop stack therefore stays inside the Citrus host directory without hidden
+cross-module imports.
 
 ## Desktop
 
@@ -89,11 +91,11 @@ installed and enabled:
 | Zen Compact Transparent Mode | `2.0.0` |
 | Zen Custom URL Bar | `2.0.3` |
 
-The Sine engine and mods are pinned in `browser.nix`, and their mutable update
-checks are disabled. Update the release, marketplace revision, fixed-output
-hashes, and documented versions together. Sine requires privileged profile
-scripts, so the Firefox AutoConfig sandbox is disabled only as part of this
-explicit browser configuration.
+The Sine engine and mods are pinned in `browser/sine.nix`, and their mutable
+update checks are disabled. Update the release, marketplace revision,
+fixed-output hashes, and documented versions together. Sine requires
+privileged profile scripts, so the Firefox AutoConfig sandbox is disabled only
+as part of this explicit browser configuration.
 
 Firefox's Japanese language pack and requested locale cover the native browser
 UI. Sine `2.3.3` has no upstream Japanese locale, so the profile adds matching

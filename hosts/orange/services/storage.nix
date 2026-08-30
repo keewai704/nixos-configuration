@@ -12,6 +12,7 @@ let
     storageRoot
     vaultwardenBackupRoot
     ;
+  storageDependencies = [ storageMountUnit ];
 in
 {
   # This disk already contains the previous Immich and Vaultwarden data. It is
@@ -90,14 +91,14 @@ in
 
     services = {
       samba-smbd = {
-        requires = [ storageMountUnit ];
-        after = [ storageMountUnit ];
+        requires = storageDependencies;
+        after = storageDependencies;
       };
 
       media-storage-prepare = {
         description = "Prepare mounted HDD directories for media services";
-        requires = [ storageMountUnit ];
-        after = [ storageMountUnit ];
+        requires = storageDependencies;
+        after = storageDependencies;
         wantedBy = [ "multi-user.target" ];
         serviceConfig = {
           Type = "oneshot";

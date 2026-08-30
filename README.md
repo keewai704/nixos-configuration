@@ -15,7 +15,9 @@ uses one shared module and keeps everything else beside the host that owns it.
 │   │   ├── configuration.nix      # host entry point
 │   │   ├── hardware-configuration.nix
 │   │   ├── desktop.nix            # desktop environment
-│   │   ├── browser.nix            # Firefox, Brave Origin, and WebHID
+│   │   ├── browser.nix            # browser entry point, Brave Origin, Pywalfox, and WebHID
+│   │   ├── browser/
+│   │   │   └── sine.nix           # Firefox, Sine assembly, and profile activation
 │   │   └── codex.nix              # ChatGPT, MCP, CUA, and skills
 │   └── orange/
 │       ├── configuration.nix      # host entry point
