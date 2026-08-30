@@ -1,7 +1,17 @@
-{ lib, pkgs, ... }:
+{
+  lib,
+  orangeSettings,
+  pkgs,
+  ...
+}:
 
 let
-  dataDir = "/var/lib/minecraft";
+  inherit (orangeSettings)
+    lanInterface
+    minecraftDataDir
+    minecraftPort
+    ;
+  dataDir = minecraftDataDir;
   minecraftVersion = "26.2";
   fabricLoaderVersion = "0.19.3";
   fabricInstallerVersion = "1.1.2";
@@ -79,8 +89,8 @@ in
   };
 
   networking.firewall.interfaces = {
-    enp2s0.allowedTCPPorts = [ 25565 ];
-    tailscale0.allowedTCPPorts = [ 25565 ];
+    ${lanInterface}.allowedTCPPorts = [ minecraftPort ];
+    tailscale0.allowedTCPPorts = [ minecraftPort ];
   };
 
   systemd.services.minecraft = {
@@ -99,7 +109,7 @@ in
       printf 'eula=true\n' > ${dataDir}/eula.txt
 
       if [ ! -e ${dataDir}/server.properties ]; then
-        printf 'motd=Minecraft ${minecraftVersion} Fabric server\nserver-port=25565\n' \
+        printf 'motd=Minecraft ${minecraftVersion} Fabric server\nserver-port=${toString minecraftPort}\n' \
           > ${dataDir}/server.properties
       fi
     '';

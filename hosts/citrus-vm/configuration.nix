@@ -75,28 +75,14 @@ in
           command =
             "${lib.getExe pkgs.tuigreet} --time --remember --remember-user-session"
             + " --cmd ${lib.escapeShellArg hyprlandSession}";
-          user = "greeter";
         };
       };
-    };
-
-    pipewire = {
-      enable = true;
-      alsa.enable = true;
-      pulse.enable = true;
     };
   };
 
   security.rtkit.enable = true;
 
-  hardware.graphics.enable = true;
-
-  fonts.packages = with pkgs; [
-    noto-fonts
-    noto-fonts-cjk-sans
-    noto-fonts-cjk-serif
-    noto-fonts-color-emoji
-  ];
+  fonts.packages = [ pkgs.noto-fonts ];
 
   environment = {
     systemPackages = [

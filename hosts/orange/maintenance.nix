@@ -13,12 +13,16 @@ let
     ;
   inherit (orangeSettings)
     camofoxApiPort
+    immichBackupRoot
+    immichPort
+    minecraftDataDir
+    minecraftPort
+    storageMountUnit
     storageRoot
+    vaultwardenBackupRoot
+    vaultwardenPort
     ;
-  storageMountUnit = "srv-storage.mount";
   backupRoot = "${storageRoot}/server/backups/orange-local";
-  vaultwardenBackupRoot = "${storageRoot}/server/backups/vaultwarden-nixos";
-  immichBackupRoot = "${storageRoot}/Pictures/backups";
 
   healthMonitor = pkgs.writeShellApplication {
     name = "orange-health-monitor";
@@ -265,7 +269,7 @@ let
       check_http "vaultwarden" "https://${tailnetHostname}/vault/"
       check_http "browser" "https://${tailnetHostname}/browser/"
 
-      for port_and_name in '25565 minecraft' '445 samba'; do
+      for port_and_name in '${toString minecraftPort} minecraft' '445 samba'; do
         read -r port name <<<"$port_and_name"
         if nc -z -w 3 127.0.0.1 "$port" >/dev/null 2>&1; then
           clear_alert "tcp-$name"
@@ -275,7 +279,7 @@ let
       done
 
       exposed_backends=$(ss --listening --tcp --numeric --no-header 2>/dev/null \
-        | awk '$4 ~ /:(2283|${toString nginxPort}|8222|${toString camofoxApiPort})$/ && $4 !~ /^127\.0\.0\.1:/ && $4 !~ /^\[::1\]:/ { print $4 }' \
+        | awk '$4 ~ /:(${toString immichPort}|${toString nginxPort}|${toString vaultwardenPort}|${toString camofoxApiPort})$/ && $4 !~ /^127\.0\.0\.1:/ && $4 !~ /^\[::1\]:/ { print $4 }' \
         | paste -sd ', ' -)
       if [[ -n "$exposed_backends" ]]; then
         queue_alert "backend-listeners" "application backend is not loopback-only: $exposed_backends"
@@ -373,11 +377,10 @@ let
 
       minecraft_tmp="$minecraft_dir/.minecraft-$stamp.tar.zst.tmp"
       tar --create --zstd --acls --xattrs --numeric-owner \
-        --file "$minecraft_tmp" --directory / var/lib/minecraft
+        --file "$minecraft_tmp" --directory / ${lib.escapeShellArg (lib.removePrefix "/" minecraftDataDir)}
       mv "$minecraft_tmp" "$minecraft_dir/minecraft-$stamp.tar.zst"
 
       restart_minecraft
-      minecraft_was_active=false
       trap - EXIT
 
       if [[ ! -s ${lib.escapeShellArg "${vaultwardenBackupRoot}/db.sqlite3"} ]]; then
@@ -436,7 +439,7 @@ in
     group = "root";
   };
 
-  services.fstrim.interval = lib.mkForce "Mon *-*-* 06:50:00";
+  services.fstrim.interval = "Mon *-*-* 06:50:00";
 
   nix = {
     gc.dates = lib.mkForce "Mon *-*-* 07:00:00";

@@ -12,23 +12,15 @@ hl.monitor({
     scale = 1,
 })
 
-hl.on("hyprland.start", function()
-    hl.exec_cmd("uwsm app -- fcitx5 --replace")
-end)
-
 hl.env("XCURSOR_SIZE", "24")
 hl.env("HYPRCURSOR_SIZE", "24")
 
 hl.config({
     general = {
-        gaps_in = 5,
         gaps_out = 10,
         border_size = 2,
-        layout = "dwindle",
         resize_on_border = true,
         extend_border_grab_area = 12,
-        hover_icon_on_border = true,
-        allow_tearing = false,
         col = {
             active_border = {
                 colors = { "rgb(89b4fa)", "rgb(cba6f7)" },
@@ -38,21 +30,14 @@ hl.config({
         },
         snap = {
             enabled = true,
-            window_gap = 10,
-            monitor_gap = 10,
             respect_gaps = true,
         },
     },
 
     decoration = {
         rounding = 8,
-        rounding_power = 2,
-        active_opacity = 1.0,
-        inactive_opacity = 1.0,
         shadow = {
-            enabled = true,
             range = 6,
-            render_power = 3,
             color = 0x66000000,
         },
         blur = {
@@ -61,27 +46,17 @@ hl.config({
         },
     },
 
-    animations = {
-        enabled = true,
-    },
-
     input = {
-        kb_layout = "us",
-        follow_mouse = 1,
-        mouse_refocus = true,
         repeat_rate = 35,
         repeat_delay = 300,
         numlock_by_default = true,
         touchpad = {
             natural_scroll = true,
-            tap_to_click = true,
-            disable_while_typing = true,
         },
     },
 
     dwindle = {
         preserve_split = true,
-        smart_resizing = true,
         precise_mouse_move = true,
     },
 
@@ -96,9 +71,6 @@ hl.config({
         force_default_wallpaper = 0,
         background_color = "rgb(11111b)",
         focus_on_activate = true,
-        close_special_on_empty = true,
-        animate_manual_resizes = false,
-        animate_mouse_windowdragging = false,
     },
 
     cursor = {

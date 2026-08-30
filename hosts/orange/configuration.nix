@@ -4,6 +4,9 @@
   ...
 }:
 
+let
+  inherit (orangeSettings) lanInterface;
+in
 {
   imports = [
     ../../profiles/networkmanager.nix
@@ -25,7 +28,7 @@
     networkmanager.dispatcherScripts = [
       {
         source = pkgs.writeShellScript "tailscale-udp-gro-forwarding" ''
-          if [ "$1" = "enp2s0" ] && [ "$2" = "up" ]; then
+          if [ "$1" = "${lanInterface}" ] && [ "$2" = "up" ]; then
             ${pkgs.ethtool}/bin/ethtool -K "$1" \
               rx-udp-gro-forwarding on \
               rx-gro-list off

@@ -1,8 +1,6 @@
 {
   alsa-lib,
-  at-spi2-atk,
   at-spi2-core,
-  atk,
   autoPatchelfHook,
   bash,
   cairo,
@@ -51,9 +49,7 @@ let
   version = "26.825.41651";
   runtimeLibraries = [
     alsa-lib
-    at-spi2-atk
     at-spi2-core
-    atk
     cairo
     cups
     dbus
@@ -70,7 +66,6 @@ let
     libsecret
     libusb1
     libx11
-    libx11.dev
     libxcb
     libxcomposite
     libxdamage
@@ -100,7 +95,6 @@ stdenv.mkDerivation {
   nativeBuildInputs = [
     autoPatchelfHook
     dpkg
-    python3
   ];
 
   buildInputs = runtimeLibraries;

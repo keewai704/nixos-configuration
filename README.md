@@ -177,14 +177,20 @@ nix build .#nixosConfigurations.citrus-vm.config.system.build.toplevel --no-link
 Test a generation without changing the boot default:
 
 ```console
-sudo nixos-rebuild test --flake .#orange \
+runtime_host="$(hostnamectl --static 2>/dev/null || hostname)"
+test "$runtime_host" = "$(tr -d '\n' < /etc/hostname)"
+test "$runtime_host" = "$(nix eval --raw ".#nixosConfigurations.${runtime_host}.config.networking.hostName")"
+sudo nixos-rebuild test --flake ".#${runtime_host}" \
   --option experimental-features 'nix-command flakes'
 ```
 
 After verifying networking, SSH, and Tailscale, make it the boot default:
 
 ```console
-sudo nixos-rebuild switch --flake .#orange \
+runtime_host="$(hostnamectl --static 2>/dev/null || hostname)"
+test "$runtime_host" = "$(tr -d '\n' < /etc/hostname)"
+test "$runtime_host" = "$(nix eval --raw ".#nixosConfigurations.${runtime_host}.config.networking.hostName")"
+sudo nixos-rebuild switch --flake ".#${runtime_host}" \
   --option experimental-features 'nix-command flakes'
 ```
 

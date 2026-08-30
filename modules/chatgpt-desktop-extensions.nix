@@ -150,10 +150,8 @@ in
             nixos = {
               enable = true;
               env = {
-                MCP_NIXOS_TRANSPORT = "stdio";
                 FASTMCP_CHECK_FOR_UPDATES = "off";
                 FASTMCP_SHOW_SERVER_BANNER = "false";
-                FASTMCP_ENV_FILE = "/dev/null";
               };
             };
 

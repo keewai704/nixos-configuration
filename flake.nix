@@ -6,6 +6,7 @@
 
     agenix = {
       url = "github:ryantm/agenix";
+      inputs.home-manager.follows = "home-manager";
       inputs.nixpkgs.follows = "nixpkgs";
     };
 
@@ -21,6 +22,7 @@
 
     nix-hazkey = {
       url = "github:aster-void/nix-hazkey";
+      inputs.home-manager.follows = "home-manager";
       inputs.nixpkgs.follows = "nixpkgs";
     };
   };
@@ -41,10 +43,8 @@
         {
           modules,
           specialArgs ? { },
-          system,
         }:
         nixpkgs.lib.nixosSystem {
-          inherit system;
           specialArgs = {
             inherit inputs;
           }
@@ -57,7 +57,6 @@
     in
     {
       nixosConfigurations.orange = mkHost {
-        system = "x86_64-linux";
         specialArgs.orangeSettings = import ./hosts/orange/settings.nix;
         modules = [
           agenix.nixosModules.default
@@ -66,7 +65,6 @@
       };
 
       nixosConfigurations.citrus-vm = mkHost {
-        system = "x86_64-linux";
         modules = [
           ./hosts/citrus-vm/configuration.nix
         ];

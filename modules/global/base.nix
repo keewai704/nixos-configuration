@@ -5,8 +5,6 @@
 
   i18n.defaultLocale = "ja_JP.UTF-8";
 
-  console.keyMap = "us";
-
   users.users.keewai = {
     isNormalUser = true;
     description = "keewai";
@@ -34,7 +32,6 @@
 
     optimise = {
       automatic = true;
-      dates = [ "03:45" ];
     };
 
     settings.experimental-features = [

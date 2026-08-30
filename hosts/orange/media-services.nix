@@ -10,13 +10,16 @@ let
   inherit (config.services.tailnetWeb) tailnetHostname;
   inherit (orangeSettings)
     camofoxNoVncPort
+    immichBackupRoot
+    immichMediaRoot
+    immichPort
+    lanInterface
+    storageMountUnit
     storageRoot
+    vaultwardenBackupRoot
+    vaultwardenPort
     ;
-  storageMountUnit = "srv-storage.mount";
-  immichMediaRoot = "${storageRoot}/Pictures";
-  immichBackupRoot = "${immichMediaRoot}/backups";
   legacyVaultwardenRoot = "${storageRoot}/server/vaultwarden";
-  vaultwardenBackupRoot = "${storageRoot}/server/backups/vaultwarden-nixos";
   noVncViewerUrl = "https://${tailnetHostname}/browser/vnc.html?autoconnect=true&reconnect=true&reconnect_delay=1000&resize=scale&path=browser/websockify";
   postgresqlPackage = pkgs.postgresql_17;
   nginxProxyHeaders = ''
@@ -144,7 +147,7 @@ in
   # Publish the HDD on the trusted LAN and tailnet only. NetBIOS discovery is
   # useful on the LAN; tailnet clients connect directly over modern SMB/445.
   networking.firewall.interfaces = {
-    enp2s0 = {
+    ${lanInterface} = {
       allowedTCPPorts = [
         139
         445
@@ -203,7 +206,7 @@ in
     immich = {
       enable = true;
       host = "127.0.0.1";
-      port = 2283;
+      port = immichPort;
       mediaLocation = immichMediaRoot;
       group = "immich-media";
 
@@ -253,7 +256,7 @@ in
         DOMAIN = "https://${tailnetHostname}/vault";
         EXPERIMENTAL_CLIENT_FEATURE_FLAGS = "cxp-import-mobile";
         ROCKET_ADDRESS = "127.0.0.1";
-        ROCKET_PORT = 8222;
+        ROCKET_PORT = vaultwardenPort;
         SIGNUPS_ALLOWED = false;
       };
     };
@@ -298,7 +301,7 @@ in
           "= /vault".return = "308 https://${tailnetHostname}/vault/";
 
           "^~ /vault/" = {
-            proxyPass = "http://127.0.0.1:8222";
+            proxyPass = "http://127.0.0.1:${toString vaultwardenPort}";
             proxyWebsockets = true;
             recommendedProxySettings = false;
             extraConfig = ''
@@ -308,7 +311,7 @@ in
           };
 
           "/" = {
-            proxyPass = "http://127.0.0.1:2283";
+            proxyPass = "http://127.0.0.1:${toString immichPort}";
             proxyWebsockets = true;
             recommendedProxySettings = false;
             extraConfig = ''
@@ -457,6 +460,6 @@ in
       };
     };
 
-    timers.backup-vaultwarden.timerConfig.OnCalendar = lib.mkForce "*-*-* 06:05:00";
+    timers.backup-vaultwarden.timerConfig.OnCalendar = "*-*-* 06:05:00";
   };
 }
