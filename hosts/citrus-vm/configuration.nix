@@ -38,7 +38,7 @@ in
       settings = {
         addons.classicui.globalSection = {
           DarkTheme = "catppuccin-mocha-blue";
-          Font = "Noto Sans CJK JP 12";
+          Font = "Noto Sans CJK JP 10";
           MenuFont = "Noto Sans CJK JP 11";
           Theme = "catppuccin-mocha-blue";
           TrayFont = "Noto Sans CJK JP Bold 10";
