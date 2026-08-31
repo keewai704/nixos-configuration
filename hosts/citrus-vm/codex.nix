@@ -16,9 +16,6 @@ let
     rev = "2ed6c52c9d7e5e56942508591085fd45dea277d3";
     hash = "sha256-bGdXvzhWPwGdz3T2Yh2h6lf+3PBRFAfdBxP5pESmCHI=";
   };
-  ponytailSkill = pkgs.runCommand "ponytail-skill-${ponytailVersion}" { } ''
-    install -Dm644 ${lib.escapeShellArg "${skillRoot}/ponytail/SKILL.md"} "$out/SKILL.md"
-  '';
   ponytailHookRoot =
     pkgs.runCommand "ponytail-hooks-${ponytailVersion}"
       {
@@ -198,9 +195,11 @@ in
   # ChatGPT Desktop, Codex CLI, and the IDE extension all read this system
   # layer. Keep the user layer writable so the desktop app can persist its
   # own bundled MCP helpers, plugin state, project trust, and UI preferences.
-  environment.etc."codex/config.toml".source = codexSystemConfig;
-  environment.etc."codex/requirements.toml".source = codexSystemRequirements;
-  environment.etc."codex/skills/ponytail".source = ponytailSkill;
+  environment.etc = {
+    "codex/config.toml".source = codexSystemConfig;
+    "codex/requirements.toml".source = codexSystemRequirements;
+    "codex/skills/ponytail".source = "${ponytailHookRoot}/skills/ponytail";
+  };
 
   home-manager = {
     useGlobalPkgs = true;
@@ -220,7 +219,7 @@ in
             source = skillRoot + "/${name}";
             force = true;
           }
-        ) (lib.filterAttrs (name: _type: name != "ponytail") (builtins.readDir skillRoot));
+        ) (lib.removeAttrs (builtins.readDir skillRoot) [ "ponytail" ]);
 
         managedMcpNames = lib.attrNames config.programs.mcp.servers;
         managedMcpNameArgs = lib.escapeShellArgs managedMcpNames;

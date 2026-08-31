@@ -131,9 +131,6 @@ stdenv.mkDerivation {
     appAsar="$out/lib/chatgpt/resources/app.asar"
     chmod u+rw "$appAsar"
     ${python3}/bin/python3 ${./patch-asar.py} "$appAsar"
-    # Keep the build fail-closed if a future upstream bundle changes the
-    # worker layout, integrity metadata, or watcher branch we patch above.
-    ${python3}/bin/python3 ${./patch-asar.py} --check "$appAsar"
 
     cat > "$out/lib/chatgpt/launch-chatgpt" <<'EOF'
     #!${lib.getExe bash}

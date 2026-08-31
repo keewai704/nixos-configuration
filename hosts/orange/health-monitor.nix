@@ -179,7 +179,7 @@ let
 
         bad_attributes=$(smartctl --attributes "$device" 2>/dev/null \
           | awk '$2 ~ /^(Reallocated_Sector_Ct|Current_Pending_Sector|Offline_Uncorrectable)$/ && $10 ~ /^[0-9]+$/ && $10 != 0 { print $2 "=" $10 }' \
-          | paste -sd ', ' -)
+          | paste -sd ', ' - || true)
         if [[ -n "$bad_attributes" ]]; then
           queue_alert "smart-attributes-$key" "SMART media errors on $device: $bad_attributes"
         else
@@ -379,7 +379,6 @@ in
         description = "Monitor orange and notify Discord only on new failures";
         wants = [ "network-online.target" ];
         after = [
-          "agenix.service"
           "network-online.target"
         ]
         ++ monitoredServiceUnits;
