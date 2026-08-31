@@ -172,7 +172,7 @@ env -u NIXOS_OZONE_WL chatgpt
 
 | Path | Owner and purpose |
 | --- | --- |
-| `/etc/codex/config.toml` | Nix-generated system MCP layer shared by ChatGPT Desktop, Codex CLI, and the IDE extension; immutable at runtime |
+| `/etc/codex/config.toml` | Nix-generated system MCP and developer-instruction layer shared by ChatGPT Desktop, Codex CLI, and the IDE extension; immutable at runtime |
 | `~/.codex/config.toml` | Writable application/user layer for bundled helpers, plugin state, project trust, UI settings, and unrelated preferences |
 | `skills/<name>/` | Repository source for personal skills |
 | `~/.agents/skills/<name>` | Home Manager links to repository-owned personal skills |
