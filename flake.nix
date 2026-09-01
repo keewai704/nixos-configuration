@@ -25,9 +25,16 @@
       inputs.nixpkgs.follows = "nixpkgs";
     };
 
+    millennium.url = "github:SteamClientHomebrew/Millennium?dir=packages/nix";
+
     nix-hazkey = {
       url = "github:aster-void/nix-hazkey";
       inputs.home-manager.follows = "home-manager";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
+
+    proton-cachyos = {
+      url = "github:Daaboulex/proton-cachyos-nix";
       inputs.nixpkgs.follows = "nixpkgs";
     };
   };

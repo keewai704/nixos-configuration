@@ -1,5 +1,6 @@
 {
   config,
+  inputs,
   lib,
   pkgs,
   ...
@@ -57,6 +58,12 @@ in
 
   programs = {
     dconf.enable = true;
+
+    steam = {
+      enable = true;
+      package = inputs.millennium.packages.${pkgs.stdenv.hostPlatform.system}.millennium-steam;
+      extraCompatPackages = [ inputs.proton-cachyos.packages.${pkgs.stdenv.hostPlatform.system}.default ];
+    };
 
     thunar = {
       enable = true;
