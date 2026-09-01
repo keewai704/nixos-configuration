@@ -139,15 +139,15 @@ codex mcp get <server-name>
 ```
 
 The ChatGPT Desktop extension module is currently deployed by the `citrus-vm`
-configuration. On another runtime host, validate the `citrus-vm` configuration
-locally but do not contact or deploy to `citrus-vm`; perform the mandatory live
-gates only against the confirmed runtime host and report that the MCP was not
-activated on the desktop host.
+configuration. Run the live gates only when the confirmed runtime host is
+`citrus-vm`. On another runtime host, validate the `citrus-vm` configuration
+locally, do not contact either host or activate an unrelated local generation,
+and report that the MCP was not activated on the desktop host.
 
 Repeat the bounded MCP smoke test after `switch` when the runtime host is
-`citrus-vm`. Confirm that
-`/run/current-system` and `/nix/var/nix/profiles/system` resolve to the tested
-generation, and report the commit, running state, and boot-default state.
+`citrus-vm`. When those live gates apply, confirm that `/run/current-system`
+and `/nix/var/nix/profiles/system` resolve to the tested generation. Report the
+commit and whether deployment and boot-default checks were applied.
 
 Do not terminate the ChatGPT Desktop process that owns the current task. Tell
 the user to open a new task or restart the app after MCP configuration changes.

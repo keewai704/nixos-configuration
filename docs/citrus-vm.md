@@ -29,9 +29,12 @@ cross-module imports.
 
 ## Desktop
 
-The session starts Hyprland through UWSM and greetd. Hazkey is the default
-Fcitx5 input method. Thunar is the directory handler and is paired with GVfs,
-Tumbler, and Xarchiver without installing a full desktop environment.
+The session starts Hyprland through UWSM and greetd. K4 is pinned by the root
+flake and its package materializes a derived writable runtime mirror under
+`~/.local/share/k4`; the desktop no longer depends on a source checkout under
+the user's home directory. Hazkey is the default Fcitx5 input method. Thunar is
+the directory handler and is paired with GVfs, Tumbler, and Xarchiver without
+installing a full desktop environment.
 The community-maintained [Stylix](https://github.com/nix-community/stylix)
 module applies the faithful Tokyo Night Base16 palette to supported NixOS and
 Home Manager targets. It owns GTK3/4, Qt5/6 through Base16 Kvantum, Kitty, the
@@ -78,6 +81,11 @@ resolves the current default profile from `profiles.ini` and copies Sine's
 writable engine, bootloader utilities, and pinned marketplace mods into that
 profile's `chrome/` directory. It does not replace the profile or manage
 `prefs.js`, extensions, history, or other browser data.
+
+Nix-owned Sine trees are replaced atomically rather than overlaid. A managed-ID
+manifest removes only mods installed by earlier generations, while preserving
+unmanaged profile content. On a fresh account, activation waits until Firefox
+has created its first profile instead of failing the system deployment.
 
 Sine `2.3.3` uses bootloader `0.1.4`. The following marketplace mods are
 installed and enabled:

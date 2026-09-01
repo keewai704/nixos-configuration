@@ -277,8 +277,8 @@ in
         profiles_ini="$profiles_root/profiles.ini"
 
         if [[ ! -f "$profiles_ini" ]]; then
-          echo "Sine activation: Firefox profiles.ini is missing at $profiles_ini" >&2
-          exit 1
+          echo "Sine activation: Firefox has not created $profiles_ini yet; launch Firefox once and rebuild." >&2
+          exit 0
         fi
 
         profile_info="$(${lib.getExe pkgs.gawk} '
@@ -346,18 +346,40 @@ in
 
         chrome_dir="$profile_dir/chrome"
         mods_dir="$chrome_dir/sine-mods"
+        if [[ -L "$chrome_dir" || -L "$mods_dir" ]]; then
+          echo "Sine activation: refusing a symlink in the managed profile path" >&2
+          exit 1
+        fi
         ${pkgs.coreutils}/bin/install -d -m 0700 "$chrome_dir" "$mods_dir"
 
         copy_sine_tree() {
-          source_dir="$1"
-          target_dir="$2"
-          if [[ -L "$target_dir" ]]; then
-            echo "Sine activation: refusing symlink target $target_dir" >&2
-            exit 1
+          local source_dir="$1" target_dir="$2"
+          local staging_dir="$target_dir.nix-managed-new"
+          local previous_dir="$target_dir.nix-managed-old"
+
+          for managed_path in "$target_dir" "$staging_dir" "$previous_dir"; do
+            if [[ -L "$managed_path" ]]; then
+              echo "Sine activation: refusing symlink target $managed_path" >&2
+              return 1
+            fi
+          done
+
+          if [[ ! -e "$target_dir" && -e "$previous_dir" ]]; then
+            ${pkgs.coreutils}/bin/mv "$previous_dir" "$target_dir"
           fi
-          ${pkgs.coreutils}/bin/install -d -m 0700 "$target_dir"
-          ${pkgs.coreutils}/bin/cp -R --no-preserve=mode,ownership "$source_dir/." "$target_dir/"
-          ${pkgs.coreutils}/bin/chmod -R u+rwX "$target_dir"
+          ${pkgs.coreutils}/bin/rm -rf "$staging_dir" "$previous_dir"
+          ${pkgs.coreutils}/bin/install -d -m 0700 "$staging_dir"
+          ${pkgs.coreutils}/bin/cp -R --no-preserve=mode,ownership "$source_dir/." "$staging_dir/"
+          ${pkgs.coreutils}/bin/chmod -R u+rwX "$staging_dir"
+
+          if [[ -e "$target_dir" ]]; then
+            ${pkgs.coreutils}/bin/mv "$target_dir" "$previous_dir"
+          fi
+          if ! ${pkgs.coreutils}/bin/mv "$staging_dir" "$target_dir"; then
+            [[ -e "$previous_dir" ]] && ${pkgs.coreutils}/bin/mv "$previous_dir" "$target_dir"
+            return 1
+          fi
+          ${pkgs.coreutils}/bin/rm -rf "$previous_dir"
         }
 
         copy_sine_tree ${sineProfile}/JS "$chrome_dir/JS"
@@ -367,17 +389,50 @@ in
           copy_sine_tree "${sineProfile}/sine-mods/$mod_id" "$mods_dir/$mod_id"
         done
 
+        managed_ids="$mods_dir/.nix-managed-ids"
+        managed_ids_tmp="$mods_dir/.nix-managed-ids.new"
+        if [[ -L "$managed_ids" || -L "$managed_ids_tmp" ]]; then
+          echo "Sine activation: refusing symlink managed-mod manifest" >&2
+          exit 1
+        fi
+        printf '%s\n' ${lib.escapeShellArgs sineModIds} > "$managed_ids_tmp"
+
+        if [[ -f "$managed_ids" ]]; then
+          previous_ids_json="$(${lib.getExe pkgs.jq} --raw-input --slurp \
+            'split("\n") | map(select(length > 0))' "$managed_ids")"
+          while IFS= read -r old_mod_id; do
+            [[ -n "$old_mod_id" ]] || continue
+            if [[ ! "$old_mod_id" =~ ^[A-Za-z0-9._-]+$ ]]; then
+              echo "Sine activation: refusing invalid managed mod id $old_mod_id" >&2
+              exit 1
+            fi
+            if ! ${pkgs.gnugrep}/bin/grep --fixed-strings --line-regexp --quiet \
+              "$old_mod_id" "$managed_ids_tmp"; then
+              old_mod_dir="$mods_dir/$old_mod_id"
+              if [[ -L "$old_mod_dir" ]]; then
+                echo "Sine activation: refusing symlink target $old_mod_dir" >&2
+                exit 1
+              fi
+              ${pkgs.coreutils}/bin/rm -rf "$old_mod_dir"
+            fi
+          done < "$managed_ids"
+        else
+          previous_ids_json='[]'
+        fi
+
         mods_json="$mods_dir/mods.json"
         mods_tmp="$mods_dir/.mods.json.nix-managed"
         if [[ -f "$mods_json" ]] && ${lib.getExe pkgs.jq} -e 'type == "object"' "$mods_json" >/dev/null 2>&1; then
-          ${lib.getExe pkgs.jq} -s '
-            .[0] * .[1]
+          ${lib.getExe pkgs.jq} --argjson previous "$previous_ids_json" -s '
+            (.[0] | with_entries(select(.key as $key | ($previous | index($key) | not)))) * .[1]
           ' "$mods_json" ${sineProfile}/managed-mods.json > "$mods_tmp"
         else
           ${pkgs.coreutils}/bin/cp ${sineProfile}/managed-mods.json "$mods_tmp"
         fi
         ${pkgs.coreutils}/bin/chmod 0600 "$mods_tmp"
         ${pkgs.coreutils}/bin/mv -f "$mods_tmp" "$mods_json"
+        ${pkgs.coreutils}/bin/chmod 0600 "$managed_ids_tmp"
+        ${pkgs.coreutils}/bin/mv -f "$managed_ids_tmp" "$managed_ids"
       '';
     };
 }

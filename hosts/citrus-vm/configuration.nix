@@ -12,8 +12,11 @@ let
     colors = config.lib.stylix.colors;
   };
   displayOutput = "Virtual-1";
+  k4Package = inputs.k4.packages.${pkgs.stdenv.hostPlatform.system}.default;
   hyprlandConfig = pkgs.writeText "hyprland.lua" (
     "local display_output = ${builtins.toJSON displayOutput}\n"
+    + "local k4_start_command = ${builtins.toJSON "${k4Package}/bin/k4 --no-duplicate -d"}\n"
+    + "local k4_ipc = ${builtins.toJSON "${lib.getExe pkgs.quickshell} ipc -p /home/keewai/.local/share/k4/code/shell.qml call "}\n"
     + "local theme = ${lib.generators.toLua { } theme.hyprland}\n"
     + builtins.readFile ./hyprland.lua
   );
@@ -182,6 +185,7 @@ in
   environment = {
     systemPackages = [
       pkgs.gws
+      k4Package
       pkgs.quickshell
     ];
 

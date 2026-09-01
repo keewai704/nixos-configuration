@@ -1,10 +1,9 @@
 # Development and deployment
 
 This is the canonical human workflow for every change to this repository. It
-preserves the same completion gates as `AGENTS.md`: identify the local host,
-validate, commit, test locally, verify health, switch locally, and verify again.
-A documentation-only change still requires the commit, `test`, `switch`, and
-post-switch gates.
+preserves the same scope-aware completion gates as `AGENTS.md`: identify the
+local host, validate, and commit every change; test, health-check, and switch
+only when the committed change affects that local host.
 
 ## Runtime-host boundary
 
@@ -104,15 +103,15 @@ build the package and every host that consumes it:
 ```console
 nix build .#chatgpt-desktop --no-link --no-write-lock-file
 nix build .#cua-driver --no-link --no-write-lock-file
-nix build .#camofox-browser --no-link --no-write-lock-file
 ```
 
 | Change scope | Minimum explicit builds |
 | --- | --- |
 | `flake.nix`, `modules/common.nix`, or a module used by both hosts | `citrus-vm` and `orange` |
 | Citrus host, desktop, ChatGPT, MCP, CUA, or skills | `citrus-vm` and any changed package output |
-| Orange host, service, monitoring, maintenance, or Camofox | `orange` and any changed package |
-| Documentation only | Formatting/link checks appropriate to the files; live completion gates below still apply |
+| Orange host, service, monitoring, or maintenance | `orange` and any changed package |
+| Configuration used only by another host | That host; do not activate it or an unrelated local host |
+| Documentation only | Formatting and link checks appropriate to the files; no live activation |
 
 Never treat a successful build for one host as authorization to activate it on
 a different runtime host.
@@ -134,6 +133,11 @@ Every intended task change must be committed, and no task-related change may
 remain uncommitted. Do not include unrelated changes in the commit.
 
 ## Test the committed generation locally
+
+Run the remaining live gates only when the committed change affects the
+confirmed runtime host's evaluated configuration, deployed files, or services.
+For documentation-only, undeployed tooling, or another-host-only changes,
+report that live activation was not applicable and stop after the commit.
 
 Resolve the expected store path from the committed configuration, then activate
 it temporarily on the confirmed runtime host:
@@ -180,8 +184,8 @@ test "$running_system" = "$tested_system"
 test "$boot_default_system" = "$tested_system"
 ```
 
-Repeat all networking and affected-service checks after `switch`. Completion
-requires all of the following:
+Repeat all networking and affected-service checks after `switch`. When live
+activation applies, completion requires all of the following:
 
 - the intended change is committed;
 - `test` succeeded against the local runtime host;

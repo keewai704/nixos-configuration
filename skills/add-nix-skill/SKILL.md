@@ -126,13 +126,15 @@ cmp /home/keewai/.agents/skills/<skill-name>/SKILL.md /home/keewai/nixos-configu
 ```
 
 The personal skills in this repository are currently deployed by the
-`citrus-vm` configuration. On another runtime host, validate the `citrus-vm`
-configuration locally but do not contact or deploy to `citrus-vm`; perform the
-mandatory live gates only against the confirmed runtime host and report that the
-skill was not activated on the desktop host.
+`citrus-vm` configuration. Run the live gates only when the confirmed runtime
+host is `citrus-vm`. On another runtime host, validate the `citrus-vm`
+configuration locally, do not contact either host or activate an unrelated
+local generation, and report that the skill was not activated on the desktop
+host.
 
-Confirm that `/run/current-system` and `/nix/var/nix/profiles/system` resolve to
-the tested generation, and report the commit, running state, and boot-default
-state. Codex usually detects skill changes automatically; if the skill is not
-listed in the current client, tell the user to open a new task or restart the
-app without terminating the process that owns the current task.
+When the live gates apply, confirm that `/run/current-system` and
+`/nix/var/nix/profiles/system` resolve to the tested generation. Report the
+commit and whether deployment and boot-default checks were applied. Codex
+usually detects skill changes automatically; if the skill is not listed in the
+current client, tell the user to open a new task or restart the app without
+terminating the process that owns the current task.

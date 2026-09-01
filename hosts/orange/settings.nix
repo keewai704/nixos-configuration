@@ -30,9 +30,4 @@ in
 
   minecraftPort = 25565;
   minecraftDataDir = "/var/lib/minecraft";
-
-  camofoxApiPort = 9377;
-  camofoxNoVncPort = 6080;
-  camofoxVncBackendPort = 5900;
-  camofoxVncActivationPort = 5901;
 }

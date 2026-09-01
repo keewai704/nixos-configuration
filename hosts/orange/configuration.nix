@@ -8,7 +8,6 @@ in
     ./hardware-configuration.nix
     ./health-monitor.nix
     ./maintenance.nix
-    ./services/camofox.nix
     ./services/immich.nix
     ./services/minecraft.nix
     ./services/storage.nix

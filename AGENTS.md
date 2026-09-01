@@ -25,8 +25,8 @@ the host or apply the result there.
 
 # Repository workflow
 
-For every task that changes this repository, complete this workflow before
-ending the work or reporting it as complete:
+For every task that changes this repository, complete the applicable part of
+this workflow before ending the work or reporting it as complete:
 
 1. Record the locally confirmed runtime hostname and verify that the flake has a
    matching `nixosConfigurations.<runtime-host>` output. If it does not, stop
@@ -36,23 +36,30 @@ ending the work or reporting it as complete:
    but do not treat that host as the live system.
 3. Commit every intended change for the task. Do not include unrelated user
    changes, and confirm that no task-related change remains uncommitted.
-4. Run `sudo nixos-rebuild test --flake .#<runtime-host>` locally against the
-   committed state, replacing `<runtime-host>` with the hostname confirmed in
-   step 1. Never use a different host's flake output for this live test.
-5. Verify networking and every affected service on the local live system.
-6. Only when the test and health checks pass, run
+4. Determine whether the committed change affects the confirmed runtime host's
+   evaluated NixOS configuration, deployed files, or services. If it does, run
+   `sudo nixos-rebuild test --flake .#<runtime-host>` locally against the
+   committed state. Never use a different host's flake output for this live
+   test.
+5. When step 4 applies, verify networking and every affected service on the
+   local live system.
+6. When step 4 applies, only after the test and health checks pass, run
    `sudo nixos-rebuild switch --flake .#<runtime-host>` locally.
-7. Verify networking and every affected service again after `switch`, and
-   confirm that the running system and boot-default system match the tested
-   committed configuration.
+7. When step 4 applies, verify networking and every affected service again
+   after `switch`, and confirm that the running system and boot-default system
+   match the tested committed configuration.
 
-The commit, successful `test`, successful `switch`, and post-switch
-verification are mandatory completion gates, including for repository changes
-that do not alter the evaluated NixOS configuration. If a test or health check
-fails, do not run `switch` and do not report the task as complete; fix the
-problem and repeat the workflow, or report the work as blocked. Always report
-whether the change was committed, applied to the running system, and persisted
-as the boot default.
+Formatting, appropriate checks, and a clean task commit are always mandatory.
+The live `test`, health-check, `switch`, and post-switch gates are mandatory
+only when the change affects the confirmed runtime host. Documentation-only
+changes, repository tooling that is not deployed, and configuration used only
+by another host stop after their appropriate checks and commit; build another
+host locally when applicable, but do not activate an unrelated generation on
+the runtime host. Report that the live gates were not applicable. If an
+applicable test or health check fails, do not run `switch` or report the task as
+complete; fix the problem and repeat the workflow, or report the work as
+blocked. Always report whether the change was committed and, when applicable,
+whether it was applied to the running system and persisted as the boot default.
 
 ## Publishing web services on `orange`
 

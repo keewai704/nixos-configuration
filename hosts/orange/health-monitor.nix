@@ -7,10 +7,6 @@
 
 let
   inherit (import ./settings.nix)
-    camofoxApiPort
-    camofoxNoVncPort
-    camofoxVncActivationPort
-    camofoxVncBackendPort
     immichBackupRoot
     immichPort
     localBackupRoot
@@ -35,21 +31,117 @@ let
     "vaultwarden"
     "nginx"
     "minecraft"
-    "camofox"
     "tailscale-serve-nginx"
   ];
   monitoredServiceUnits = map (service: "${service}.service") monitoredServices;
 
   loopbackBackendPorts = [
-    camofoxApiPort
-    camofoxNoVncPort
-    camofoxVncActivationPort
-    camofoxVncBackendPort
     immichPort
     nginxPort
     vaultwardenPort
   ];
   loopbackBackendPortPattern = lib.concatStringsSep "|" (map toString loopbackBackendPorts);
+
+  checkFreshFile = ''
+    check_fresh_file() {
+      local key="$1" label="$2" path="$3" pattern="$4" max_age_minutes="$5"
+      local newest modified now age_minutes
+
+      if [[ ! -d "$path" ]]; then
+        queue_alert "backup-$key" "$label directory is missing"
+        return
+      fi
+      if ! newest=$(find "$path" -maxdepth 1 -type f -name "$pattern" -printf '%T@ %p\n' 2>/dev/null \
+        | sort --numeric-sort | tail -n 1 | cut -d' ' -f2-); then
+        queue_alert "backup-$key" "$label backup directory could not be read"
+        return
+      fi
+      if [[ -z "$newest" ]]; then
+        queue_alert "backup-$key" "$label backup is missing"
+        return
+      fi
+      if ! modified=$(stat --format %Y "$newest"); then
+        queue_alert "backup-$key" "$label backup timestamp could not be read"
+        return
+      fi
+
+      now=$(date +%s)
+      age_minutes=$(( (now - modified) / 60 ))
+      if (( age_minutes > max_age_minutes )); then
+        queue_alert "backup-$key" "$label backup is stale ($age_minutes minutes old)"
+      else
+        clear_alert "backup-$key"
+      fi
+    }
+  '';
+
+  alertStateFunctions = ''
+    incident_hash() {
+      printf '%s' "$1" | sha256sum | cut -d' ' -f1
+    }
+
+    queue_alert() {
+      local key="$1" message="$2" hash current_size message_size
+      hash=$(incident_hash "$key")
+      if [[ ! -e "$state_dir/$hash" ]] && ! grep --fixed-strings --line-regexp --quiet "$hash" "$new_keys"; then
+        current_size=$(wc -c <"$new_messages")
+        message_size=$(printf -- '- %s\n' "$message" | wc -c)
+        if (( current_size > 0 && current_size + message_size > 1700 )); then
+          return
+        fi
+        printf -- '- %s\n' "$message" >>"$new_messages"
+        printf '%s\n' "$hash" >>"$new_keys"
+      fi
+    }
+
+    clear_alert() {
+      local hash
+      hash=$(incident_hash "$1")
+      rm -f "$state_dir/$hash"
+    }
+  '';
+
+  healthMonitorCheck =
+    pkgs.runCommand "orange-health-monitor-check"
+      {
+        nativeBuildInputs = with pkgs; [
+          coreutils
+          findutils
+          gnugrep
+        ];
+      }
+      ''
+        alerts="$TMPDIR/alerts"
+        : > "$alerts"
+        queue_alert() { printf '%s|%s\n' "$1" "$2" >> "$alerts"; }
+        clear_alert() { printf 'clear|%s\n' "$1" >> "$alerts"; }
+        ${checkFreshFile}
+
+        check_fresh_file missing "Missing backup" "$TMPDIR/not-there" '*.backup' 60
+        grep --fixed-strings --line-regexp \
+          'backup-missing|Missing backup directory is missing' "$alerts"
+
+        mkdir "$TMPDIR/fresh"
+        touch "$TMPDIR/fresh/current.backup"
+        check_fresh_file fresh "Fresh" "$TMPDIR/fresh" '*.backup' 60
+        grep --fixed-strings --line-regexp 'clear|backup-fresh' "$alerts"
+
+        state_dir="$TMPDIR/state"
+        new_keys="$TMPDIR/new-keys"
+        new_messages="$TMPDIR/new-messages"
+        mkdir "$state_dir"
+        : > "$new_keys"
+        : > "$new_messages"
+        ${alertStateFunctions}
+        long_message=$(printf 'x%.0s' {1..1000})
+        queue_alert first "$long_message"
+        queue_alert deferred "$long_message"
+        test "$(wc -l < "$new_keys")" -eq 1
+        grep --fixed-strings --line-regexp --quiet "$(incident_hash first)" "$new_keys"
+        ! grep --fixed-strings --line-regexp --quiet "$(incident_hash deferred)" "$new_keys"
+
+        touch "$out"
+      '';
 
   healthMonitor = pkgs.writeShellApplication {
     name = "orange-health-monitor";
@@ -77,24 +169,39 @@ let
       : >"$new_keys"
       : >"$new_messages"
 
-      incident_hash() {
-        printf '%s' "$1" | sha256sum | cut -d' ' -f1
-      }
+      ${alertStateFunctions}
 
-      queue_alert() {
-        local key="$1" message="$2" hash
-        hash=$(incident_hash "$key")
-        if [[ ! -e "$state_dir/$hash" ]] && ! grep --fixed-strings --line-regexp --quiet "$hash" "$new_keys"; then
-          printf '%s\n' "$hash" >>"$new_keys"
-          printf -- '- %s\n' "$message" >>"$new_messages"
+      finish() {
+        local status=$? payload
+        trap - EXIT
+        set +o errexit
+
+        if (( status == 0 )); then
+          clear_alert "monitor-execution"
+        else
+          queue_alert "monitor-execution" "health monitor exited before completing its checks (status $status)"
         fi
-      }
 
-      clear_alert() {
-        local hash
-        hash=$(incident_hash "$1")
-        rm -f "$state_dir/$hash"
+        if [[ -s "$new_messages" ]]; then
+          if payload=$(jq --null-input --rawfile details "$new_messages" \
+            '{username: "orange health monitor", content: ("🔴 **orangeで異常を検出しました**\n" + ($details[0:1700]))}') \
+            && curl --fail --silent --show-error --max-time 20 \
+              --retry 2 --retry-all-errors \
+              --header 'Content-Type: application/json' \
+              --data "$payload" \
+              "$(<"$webhook_file")" >/dev/null; then
+            while IFS= read -r hash; do
+              touch "$state_dir/$hash" || status=1
+            done <"$new_keys"
+          else
+            echo 'Failed to deliver Discord health alert' >&2
+            status=1
+          fi
+        fi
+
+        exit "$status"
       }
+      trap finish EXIT
 
       check_service() {
         local service="$1"
@@ -285,11 +392,9 @@ let
         fi
       }
 
-      check_http "camofox" "http://127.0.0.1:${toString camofoxApiPort}/health"
       check_http "nginx" "http://127.0.0.1:${toString nginxPort}/" --header 'Host: ${tailnetHostname}'
       check_http "immich" "${tailnetOrigin}/"
       check_http "vaultwarden" "${tailnetOrigin}/vault/"
-      check_http "browser" "${tailnetOrigin}/browser/"
 
       for port_and_name in '${toString minecraftPort} minecraft' '445 samba'; do
         read -r port name <<<"$port_and_name"
@@ -300,32 +405,20 @@ let
         fi
       done
 
-      exposed_backends=$(ss --listening --tcp --numeric --no-header 2>/dev/null \
+      if exposed_backends=$(ss --listening --tcp --numeric --no-header 2>/dev/null \
         | awk '$4 ~ /:(${loopbackBackendPortPattern})$/ && $4 !~ /^127\.0\.0\.1:/ && $4 !~ /^\[::1\]:/ { print $4 }' \
-        | paste -sd ', ' -)
-      if [[ -n "$exposed_backends" ]]; then
-        queue_alert "backend-listeners" "application backend is not loopback-only: $exposed_backends"
+        | paste -sd ', ' -); then
+        clear_alert "backend-listeners-check"
+        if [[ -n "$exposed_backends" ]]; then
+          queue_alert "backend-listeners" "application backend is not loopback-only: $exposed_backends"
+        else
+          clear_alert "backend-listeners"
+        fi
       else
-        clear_alert "backend-listeners"
+        queue_alert "backend-listeners-check" "could not inspect application backend listeners"
       fi
 
-      check_fresh_file() {
-        local key="$1" label="$2" path="$3" pattern="$4" max_age_minutes="$5"
-        local newest age_minutes now
-        newest=$(find "$path" -maxdepth 1 -type f -name "$pattern" -printf '%T@ %p\n' 2>/dev/null \
-          | sort --numeric-sort --reverse | head -n 1 | cut -d' ' -f2-)
-        if [[ -z "$newest" ]]; then
-          queue_alert "backup-$key" "$label backup is missing"
-          return
-        fi
-        now=$(date +%s)
-        age_minutes=$(( (now - $(stat --format %Y "$newest")) / 60 ))
-        if (( age_minutes > max_age_minutes )); then
-          queue_alert "backup-$key" "$label backup is stale ($age_minutes minutes old)"
-        else
-          clear_alert "backup-$key"
-        fi
-      }
+      ${checkFreshFile}
 
       check_fresh_file "immich" "Immich database" ${lib.escapeShellArg immichBackupRoot} 'immich-db-backup-*.sql.gz' 1800
       check_fresh_file "vaultwarden" "Vaultwarden" ${lib.escapeShellArg vaultwardenBackupRoot} 'db.sqlite3' 1800
@@ -346,26 +439,12 @@ let
         queue_alert "kernel-reboot" "a reboot is required to run the configured kernel"
       fi
 
-      if [[ -s "$new_messages" ]]; then
-        payload=$(jq --null-input --rawfile details "$new_messages" \
-          '{username: "orange health monitor", content: ("🔴 **orangeで異常を検出しました**\n" + ($details[0:1700]))}')
-        if curl --fail --silent --show-error --max-time 20 \
-          --retry 2 --retry-all-errors \
-          --header 'Content-Type: application/json' \
-          --data "$payload" \
-          "$(<"$webhook_file")" >/dev/null; then
-          while IFS= read -r hash; do
-            touch "$state_dir/$hash"
-          done <"$new_keys"
-        else
-          echo 'Failed to deliver Discord health alert' >&2
-          exit 1
-        fi
-      fi
     '';
   };
 in
 {
+  system.build.orangeHealthMonitorCheck = healthMonitorCheck;
+
   age.secrets.discord-webhook = {
     file = ../../secrets/discord-webhook.age;
     mode = "0400";

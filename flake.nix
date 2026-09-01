@@ -17,6 +17,12 @@
       inputs.nixpkgs.follows = "nixpkgs";
     };
 
+    k4 = {
+      url = "github:rukh-debug/k4rk";
+      inputs.home-manager.follows = "home-manager";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
+
     stylix = {
       url = "github:nix-community/stylix";
       inputs.nixpkgs.follows = "nixpkgs";
@@ -54,9 +60,6 @@
         config.allowUnfreePredicate = package: nixpkgs.lib.getName package == "chatgpt-desktop";
       };
       localPackages = {
-        camofox-browser = packagePkgs.callPackage ./pkgs/camofox {
-          websockify = packagePkgs.python3Packages.websockify;
-        };
         chatgpt-desktop = packagePkgs.callPackage ./pkgs/chatgpt-desktop { };
         cua-driver = packagePkgs.callPackage ./pkgs/cua-driver { };
       };

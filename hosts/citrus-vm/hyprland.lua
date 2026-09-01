@@ -1,12 +1,9 @@
 -- Hyprland behavior for citrus-vm. The generated configuration prepends the
--- Nix-managed display output and shared theme table.
+-- Nix-managed display output, K4 commands, and shared theme table.
 
 local main_mod = "SUPER"
 local terminal = "uwsm app -- kitty"
 local file_manager = "uwsm app -- thunar"
-local k4_ipc =
-    "/run/current-system/sw/bin/quickshell ipc -p /home/keewai/k4rk/shell.qml call "
-
 local function k4_command(target, action)
     return k4_ipc .. target .. " " .. action
 end
@@ -18,7 +15,7 @@ end
 local application_launcher = k4_action("toggleLauncher")
 
 hl.on("hyprland.start", function()
-    hl.exec_cmd("/run/current-system/sw/bin/nix develop --no-write-lock-file path:/home/keewai/k4rk --command /home/keewai/k4rk/start --no-duplicate -d")
+    hl.exec_cmd(k4_start_command)
 end)
 
 hl.monitor({
@@ -257,7 +254,6 @@ bind(
 bind("ALT + Tab", function()
     hl.dispatch(hl.dsp.window.cycle_next())
     hl.dispatch(hl.dsp.window.bring_to_top())
-    hl.exec_cmd(k4_command("k4.window-switcher", "open"))
 end, "Cycle windows")
 
 for workspace = 1, 10 do

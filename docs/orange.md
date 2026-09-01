@@ -1,8 +1,8 @@
 # orange
 
 `orange` is the tailnet server and storage host. It provides Tailscale SSH and
-exit-node routing, storage over SMB, Immich, Vaultwarden, Camofox/noVNC, and a
-Fabric Minecraft server.
+exit-node routing, storage over SMB, Immich, Vaultwarden, and a Fabric Minecraft
+server.
 
 Use the mandatory [development workflow](development.md). Orange may be
 evaluated and built from another local host, but `nixos-rebuild test`,
@@ -20,12 +20,10 @@ configuration is being edited.
 | [`hosts/orange/services/storage.nix`](../hosts/orange/services/storage.nix) | Existing HDD mount, SMB, ownership, and mount-ordered directory preparation |
 | [`hosts/orange/services/immich.nix`](../hosts/orange/services/immich.nix) | Immich, PostgreSQL pin, hardware acceleration, and one-time database import |
 | [`hosts/orange/services/vaultwarden.nix`](../hosts/orange/services/vaultwarden.nix) | Vaultwarden, backup, and one-time state import |
-| [`hosts/orange/services/camofox.nix`](../hosts/orange/services/camofox.nix) | Camofox service, persistent profiles, and lazy noVNC activation |
 | [`hosts/orange/services/web.nix`](../hosts/orange/services/web.nix) | Tailscale Serve, loopback nginx, routes, proxy headers, and WebSockets |
 | [`hosts/orange/services/minecraft.nix`](../hosts/orange/services/minecraft.nix) | Fabric server, pinned artifacts, firewall, and service sandbox |
 | [`hosts/orange/health-monitor.nix`](../hosts/orange/health-monitor.nix) | Health checks, Discord alerting, and the 15-minute monitor timer |
 | [`hosts/orange/maintenance.nix`](../hosts/orange/maintenance.nix) | Local backups, SMART tests, Nix maintenance, and timer scheduling |
-| [`pkgs/camofox/default.nix`](../pkgs/camofox/default.nix) | Reproducible Camofox/Camoufox package |
 
 Orange modules import `hosts/orange/settings.nix` directly. Put a shared path,
 port, or identifier there only when multiple Orange modules consume it.
@@ -50,10 +48,11 @@ PostgreSQL, Redis, and the live Vaultwarden SQLite database remain on the SSD.
 Media, generated Immich data, and backups remain on the HDD.
 
 The Immich import runs only when the target database has no application schema
-and selects the newest existing SQL backup. The Vaultwarden import runs only
-when its SSD database is absent. Each import uses the existing backup or legacy
-data, validates it, and leaves the old source data in place. Do not weaken those
-empty-target guards or delete the old data as part of an ordinary activation.
+and selects the newest existing SQL backup. The Vaultwarden import validates
+the SQLite copy, reconciles missing legacy auxiliary files after an interrupted
+run, and writes its completion marker last. Each import leaves the old source
+data in place. Do not weaken those guards or delete the old data as part of an
+ordinary activation.
 
 There is intentionally no off-machine backup target. The local backup set is
 not disaster recovery for loss of the Orange host or its storage disk.
@@ -77,8 +76,6 @@ The canonical tailnet origin is `https://orange.tail1e65cd.ts.net`:
 | --- | --- | --- |
 | Immich | `https://orange.tail1e65cd.ts.net/` | `127.0.0.1:2283` |
 | Vaultwarden | `https://orange.tail1e65cd.ts.net/vault/` | `127.0.0.1:8222` |
-| Camofox noVNC | `https://orange.tail1e65cd.ts.net/browser` | `127.0.0.1:6080` |
-| Camofox control API | not published directly | `127.0.0.1:9377` |
 
 Preserve forwarded host, HTTPS scheme, and tailnet client IP. Enable WebSocket
 proxying where required. If an application cannot safely operate below its
@@ -108,17 +105,6 @@ Immich and its import unit start.
 Vaultwarden uses SQLite on the SSD and mirrors backups to the HDD. Its external
 domain includes the `/vault` prefix and new registrations are disabled. The
 backup timer is intentionally schedule-only rather than boot-triggered.
-
-### Camofox
-
-Camofox runs as the non-root `keewai` user. Persistent profiles, cookies,
-uploads, and traces live under `~/.local/share/camofox`. Crash telemetry,
-mutable default add-ons, and browser prewarming are disabled.
-
-The REST server and noVNC frontend start at boot, but Camoufox, Xvfb, and
-x11vnc remain stopped until a noVNC WebSocket connection arrives. Socket
-activation creates the idempotent shared/default browser session before
-forwarding the RFB stream.
 
 ### Minecraft and SMB
 
@@ -176,7 +162,7 @@ the common checks in `docs/development.md`:
 systemctl is-active \
   NetworkManager tailscaled sshd nginx \
   samba-smbd immich-server postgresql redis-immich \
-  vaultwarden minecraft camofox tailscale-serve-nginx
+  vaultwarden minecraft tailscale-serve-nginx
 
 systemctl list-timers \
   orange-health-monitor.timer orange-local-backup.timer \
@@ -187,7 +173,6 @@ tailscale serve status
 ss --listening --tcp --numeric
 curl --fail --silent --show-error https://orange.tail1e65cd.ts.net/ >/dev/null
 curl --fail --silent --show-error https://orange.tail1e65cd.ts.net/vault/ >/dev/null
-curl --fail --silent --show-error --location https://orange.tail1e65cd.ts.net/browser >/dev/null
 ```
 
 Confirm that `tailscale serve status` contains exactly one web listener, HTTPS

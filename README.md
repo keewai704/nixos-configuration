@@ -48,7 +48,7 @@ injection from `flake.nix`.
 | Host | Role | Entry point | Guide |
 | --- | --- | --- | --- |
 | `citrus-vm` | Hyprland desktop and local ChatGPT/Codex client | [`hosts/citrus-vm/configuration.nix`](hosts/citrus-vm/configuration.nix) | [Citrus](docs/citrus-vm.md) |
-| `orange` | Tailnet server, storage, media, browser, password manager, and Minecraft | [`hosts/orange/configuration.nix`](hosts/orange/configuration.nix) | [Orange](docs/orange.md) |
+| `orange` | Tailnet server, storage, media, password manager, and Minecraft | [`hosts/orange/configuration.nix`](hosts/orange/configuration.nix) | [Orange](docs/orange.md) |
 
 ## Non-activating quick start
 
@@ -75,6 +75,6 @@ These commands evaluate and build locally; they do not activate a generation.
 Do not substitute another host when the runtime host has no matching flake
 output.
 
-See [development and deployment](docs/development.md) for the mandatory commit,
-test, health-check, and switch workflow. Automated contributors must also
+See [development and deployment](docs/development.md) for the mandatory commit
+and scope-dependent activation workflow. Automated contributors must also
 follow [`AGENTS.md`](AGENTS.md).

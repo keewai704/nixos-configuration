@@ -338,6 +338,29 @@
         "type": "github"
       }
     },
+    "k4": {
+      "inputs": {
+        "home-manager": [
+          "home-manager"
+        ],
+        "nixpkgs": [
+          "nixpkgs"
+        ]
+      },
+      "locked": {
+        "lastModified": 1788292977,
+        "narHash": "sha256-aSFvCuiqa8rYweUgX4N80rr1sGq8GW7kg97F9/LKUlc=",
+        "owner": "rukh-debug",
+        "repo": "k4rk",
+        "rev": "6c7edb4465eeba64054c4aa1273e6d1350b72460",
+        "type": "github"
+      },
+      "original": {
+        "owner": "rukh-debug",
+        "repo": "k4rk",
+        "type": "github"
+      }
+    },
     "mcp-servers-nix": {
       "inputs": {
         "nixpkgs": [
@@ -550,6 +573,7 @@
         "agenix": "agenix",
         "chaotic": "chaotic",
         "home-manager": "home-manager_2",
+        "k4": "k4",
         "mcp-servers-nix": "mcp-servers-nix",
         "millennium": "millennium",
         "nix-hazkey": "nix-hazkey",
