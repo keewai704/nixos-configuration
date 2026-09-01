@@ -257,6 +257,7 @@ bind(
 bind("ALT + Tab", function()
     hl.dispatch(hl.dsp.window.cycle_next())
     hl.dispatch(hl.dsp.window.bring_to_top())
+    hl.exec_cmd(k4_command("k4.window-switcher", "open"))
 end, "Cycle windows")
 
 for workspace = 1, 10 do
