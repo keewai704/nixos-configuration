@@ -10,6 +10,8 @@
       inputs.nixpkgs.follows = "nixpkgs";
     };
 
+    chaotic.url = "github:chaotic-cx/nyx/nyxpkgs-unstable";
+
     home-manager = {
       url = "github:nix-community/home-manager/master";
       inputs.nixpkgs.follows = "nixpkgs";
@@ -76,6 +78,7 @@
       ];
 
       nixosConfigurations.citrus-vm = mkHost [
+        inputs.chaotic.nixosModules.default
         inputs.stylix.nixosModules.stylix
         ./hosts/citrus-vm/configuration.nix
       ];

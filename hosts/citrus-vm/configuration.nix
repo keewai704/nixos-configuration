@@ -23,6 +23,12 @@ let
     + " -- -- --config ${hyprlandConfig}";
 in
 {
+  boot.kernelPackages = pkgs.linuxPackages_cachyos.extend (
+    _: _: {
+      inherit (pkgs.linuxPackages_latest) hyperv-daemons;
+    }
+  );
+
   imports = [
     inputs.nix-hazkey.nixosModules.hazkey
     ./browser.nix
