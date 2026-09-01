@@ -142,6 +142,8 @@ let
     developer_instructions = ''
       Codexクレジットの消費を抑えること。品質、安全性、検証の十分性を損なわない範囲で、単純・定型的な作業や、長時間でも独立して委任できる作業には、GPT-5.6 Lunaをreasoning effort=maxで優先的に活用すること。難しい設計判断、行き詰まりの解消、最終レビューなど、追加の高品質な推論が実質的に有益な場合に限り、use-chatgpt-5-6-proスキルでChatGPTのGPT-5.6 Sol Proを活用すること。
 
+      シェル出力によるトークン消費を抑えるため、RTKが対応するコマンドは原則として `rtk <command>` で実行すること。未加工の出力が必要な場合は `rtk proxy <command>` を使うこと。
+
       Gitリポジトリ内のファイルを変更した場合は、無関係な変更を含めず、作業終了前に意図した変更を必ずコミットし、最終回答でコミットIDを報告すること。変更がない場合は空コミットを作成しないこと。
     '';
     mcp_servers = lib.mapAttrs toCodexMcpServer sharedMcpServers;
@@ -236,7 +238,10 @@ in
         home = {
           stateVersion = "26.05";
           file = skillEntries;
-          packages = [ cuaDriver ];
+          packages = [
+            cuaDriver
+            pkgs.rtk
+          ];
           sessionVariables = cuaEnvironment;
 
           # A user-level entry wins over /etc/codex/config.toml. Remove only
