@@ -24,6 +24,17 @@ let
     + " -- -- --config ${hyprlandConfig}";
 in
 {
+  nixpkgs.overlays = [
+    (_final: previous: {
+      noctalia = previous.noctalia.overrideAttrs (old: {
+        patches = (old.patches or [ ]) ++ [ ./assets/noctalia-settings-ja.patch ];
+        postPatch = (old.postPatch or "") + ''
+          install -m0644 ${./assets/noctalia-settings-ja.json} assets/translations/ja.json
+        '';
+      });
+    })
+  ];
+
   boot.kernelPackages = pkgs.linuxPackages_cachyos.extend (
     _: _: {
       inherit (pkgs.linuxPackages_latest) hyperv-daemons;
