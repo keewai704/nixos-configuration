@@ -11,12 +11,12 @@ hostname is `citrus-vm` may run `nixos-rebuild test` or `switch` for this host.
 
 | Path | Responsibility |
 | --- | --- |
-| [`hosts/citrus-vm/configuration.nix`](../hosts/citrus-vm/configuration.nix) | Host imports, Hyprland session, Hazkey/Fcitx5, wallpaper, graphics, and state version |
+| [`hosts/citrus-vm/default.nix`](../hosts/citrus-vm/default.nix) | Host imports, Hyprland session, Hazkey/Fcitx5, wallpaper, graphics, and state version |
 | [`hosts/citrus-vm/theme.nix`](../hosts/citrus-vm/theme.nix) | Stylix palette adapter for Hyprland, Noctalia, Fcitx5, and tuigreet |
 | [`hosts/citrus-vm/hardware-configuration.nix`](../hosts/citrus-vm/hardware-configuration.nix) | Generated machine hardware, filesystems, and swap |
 | [`hosts/citrus-vm/hyprland.lua`](../hosts/citrus-vm/hyprland.lua) | Hyprland behavior and key bindings; Nix prepends the shared theme table |
 | [`hosts/citrus-vm/desktop.nix`](../hosts/citrus-vm/desktop.nix) | Thunar, GVfs, Tumbler, Xarchiver, and the ChatGPT application |
-| [`hosts/citrus-vm/browser.nix`](../hosts/citrus-vm/browser.nix) | Pywalfox, Brave Origin, default handlers, and vendor-scoped WebHID access |
+| [`hosts/citrus-vm/browser/default.nix`](../hosts/citrus-vm/browser/default.nix) | Pywalfox, Brave Origin, default handlers, and vendor-scoped WebHID access |
 | [`hosts/citrus-vm/browser/sine.nix`](../hosts/citrus-vm/browser/sine.nix) | Firefox, pinned Sine assembly, locale validation, and profile activation |
 | [`hosts/citrus-vm/codex.nix`](../hosts/citrus-vm/codex.nix) | Home Manager, system MCP configuration, personal skills, and CUA |
 | [`pkgs/chatgpt-desktop/default.nix`](../pkgs/chatgpt-desktop/default.nix) | ChatGPT desktop package and launcher |

@@ -6,7 +6,7 @@
 }:
 
 let
-  inherit (import ./settings.nix)
+  inherit (import ../settings.nix)
     localBackupRoot
     minecraftDataDir
     smartDevices

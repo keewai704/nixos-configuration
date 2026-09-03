@@ -6,9 +6,9 @@ in
 {
   imports = [
     ./hardware-configuration.nix
-    ./health-monitor.nix
-    ./maintenance.nix
+    ./services/health-monitor.nix
     ./services/immich.nix
+    ./services/maintenance.nix
     ./services/minecraft.nix
     ./services/storage.nix
     ./services/vaultwarden.nix

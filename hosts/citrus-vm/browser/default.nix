@@ -6,7 +6,7 @@
 }:
 
 let
-  theme = import ./theme.nix {
+  theme = import ../theme.nix {
     inherit pkgs;
     colors = config.lib.stylix.colors;
   };
@@ -98,7 +98,7 @@ let
   };
 in
 {
-  imports = [ ./browser/sine.nix ];
+  imports = [ ./sine.nix ];
 
   environment.systemPackages = [
     braveOrigin

@@ -14,7 +14,7 @@ configuration is being edited.
 
 | Path | Responsibility |
 | --- | --- |
-| [`hosts/orange/configuration.nix`](../hosts/orange/configuration.nix) | Host composition, exit-node settings, kernel choice, and state version |
+| [`hosts/orange/default.nix`](../hosts/orange/default.nix) | Host composition, exit-node settings, kernel choice, and state version |
 | [`hosts/orange/settings.nix`](../hosts/orange/settings.nix) | Shared hostname, interface, storage paths, service ports, and identifiers |
 | [`hosts/orange/hardware-configuration.nix`](../hosts/orange/hardware-configuration.nix) | Boot disk, filesystems, and generated hardware settings |
 | [`hosts/orange/services/storage.nix`](../hosts/orange/services/storage.nix) | Existing HDD mount, SMB, ownership, and mount-ordered directory preparation |
@@ -22,8 +22,8 @@ configuration is being edited.
 | [`hosts/orange/services/vaultwarden.nix`](../hosts/orange/services/vaultwarden.nix) | Vaultwarden, backup, and one-time state import |
 | [`hosts/orange/services/web.nix`](../hosts/orange/services/web.nix) | Tailscale Serve, loopback nginx, routes, proxy headers, and WebSockets |
 | [`hosts/orange/services/minecraft.nix`](../hosts/orange/services/minecraft.nix) | Fabric server, pinned artifacts, firewall, and service sandbox |
-| [`hosts/orange/health-monitor.nix`](../hosts/orange/health-monitor.nix) | Health checks, Discord alerting, and the 15-minute monitor timer |
-| [`hosts/orange/maintenance.nix`](../hosts/orange/maintenance.nix) | Local backups, SMART tests, Nix maintenance, and timer scheduling |
+| [`hosts/orange/services/health-monitor.nix`](../hosts/orange/services/health-monitor.nix) | Health checks, Discord alerting, and the 15-minute monitor timer |
+| [`hosts/orange/services/maintenance.nix`](../hosts/orange/services/maintenance.nix) | Local backups, SMART tests, Nix maintenance, and timer scheduling |
 
 Orange modules import `hosts/orange/settings.nix` directly. Put a shared path,
 port, or identifier there only when multiple Orange modules consume it.

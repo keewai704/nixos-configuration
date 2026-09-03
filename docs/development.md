@@ -57,7 +57,7 @@ tracked change can affect evaluation or activation, isolate the task safely or
 stop; do not claim that a dirty configuration was tested as the committed task.
 
 Place new code according to the [repository map](../README.md#layout). Keep
-`hosts/<host>/configuration.nix` focused on imports and small host-wide
+`hosts/<host>/default.nix` focused on imports and small host-wide
 settings.
 
 ## Format, analyze, evaluate, and build

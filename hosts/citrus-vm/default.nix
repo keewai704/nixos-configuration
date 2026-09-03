@@ -32,7 +32,7 @@ in
 
   imports = [
     inputs.nix-hazkey.nixosModules.hazkey
-    ./browser.nix
+    ./browser
     ./codex.nix
     ./desktop.nix
     ./hardware-configuration.nix

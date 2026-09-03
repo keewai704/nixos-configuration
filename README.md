@@ -12,21 +12,31 @@ uses one shared module and keeps everything else beside the host that owns it.
 │   └── common.nix                 # settings used by every host
 ├── hosts/
 │   ├── citrus-vm/
-│   │   ├── configuration.nix      # host entry point
+│   │   ├── default.nix            # host entry point
 │   │   ├── hardware-configuration.nix
 │   │   ├── desktop.nix            # desktop environment
-│   │   ├── browser.nix            # browser entry point, Brave Origin, Pywalfox, and WebHID
 │   │   ├── browser/
+│   │   │   ├── default.nix        # Brave Origin, Pywalfox, WebHID, and browser composition
 │   │   │   └── sine.nix           # Firefox, Sine assembly, and profile activation
-│   │   └── codex.nix              # ChatGPT, MCP, CUA, and skills
+│   │   ├── codex.nix              # ChatGPT, MCP, CUA, and skills
+│   │   ├── theme.nix              # shared desktop palette and assets
+│   │   ├── hyprland.lua           # Hyprland behavior and key bindings
+│   │   └── assets/                # wallpaper and browser localization files
 │   └── orange/
-│       ├── configuration.nix      # host entry point
+│       ├── default.nix            # host entry point
 │       ├── hardware-configuration.nix
 │       ├── settings.nix           # values shared inside this host
-│       ├── health-monitor.nix
-│       ├── maintenance.nix
-│       └── services/              # one file per service or service group
-├── pkgs/                           # locally packaged software
+│       └── services/
+│           ├── storage.nix        # storage and SMB
+│           ├── immich.nix
+│           ├── vaultwarden.nix
+│           ├── web.nix            # nginx and Tailscale Serve
+│           ├── minecraft.nix
+│           ├── health-monitor.nix
+│           └── maintenance.nix
+├── pkgs/                           # one directory per local package
+│   ├── chatgpt-desktop/
+│   └── cua-driver/
 ├── skills/                         # personal Codex skills
 ├── secrets/                        # Agenix declarations and ciphertext
 └── docs/                           # operational detail
@@ -47,8 +57,8 @@ injection from `flake.nix`.
 
 | Host | Role | Entry point | Guide |
 | --- | --- | --- | --- |
-| `citrus-vm` | Hyprland desktop and local ChatGPT/Codex client | [`hosts/citrus-vm/configuration.nix`](hosts/citrus-vm/configuration.nix) | [Citrus](docs/citrus-vm.md) |
-| `orange` | Tailnet server, storage, media, password manager, and Minecraft | [`hosts/orange/configuration.nix`](hosts/orange/configuration.nix) | [Orange](docs/orange.md) |
+| `citrus-vm` | Hyprland desktop and local ChatGPT/Codex client | [`hosts/citrus-vm/default.nix`](hosts/citrus-vm/default.nix) | [Citrus](docs/citrus-vm.md) |
+| `orange` | Tailnet server, storage, media, password manager, and Minecraft | [`hosts/orange/default.nix`](hosts/orange/default.nix) | [Orange](docs/orange.md) |
 
 ## Non-activating quick start
 

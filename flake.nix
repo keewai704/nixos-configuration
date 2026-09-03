@@ -71,13 +71,13 @@
     {
       nixosConfigurations.orange = mkHost [
         inputs.agenix.nixosModules.default
-        ./hosts/orange/configuration.nix
+        ./hosts/orange
       ];
 
       nixosConfigurations.citrus-vm = mkHost [
         inputs.chaotic.nixosModules.default
         inputs.stylix.nixosModules.stylix
-        ./hosts/citrus-vm/configuration.nix
+        ./hosts/citrus-vm
       ];
 
       packages.${system} = localPackages;

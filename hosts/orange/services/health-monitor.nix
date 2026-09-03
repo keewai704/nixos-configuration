@@ -6,7 +6,7 @@
 }:
 
 let
-  inherit (import ./settings.nix)
+  inherit (import ../settings.nix)
     immichBackupRoot
     immichPort
     localBackupRoot
@@ -446,7 +446,7 @@ in
   system.build.orangeHealthMonitorCheck = healthMonitorCheck;
 
   age.secrets.discord-webhook = {
-    file = ../../secrets/discord-webhook.age;
+    file = ../../../secrets/discord-webhook.age;
     mode = "0400";
     owner = "root";
     group = "root";
