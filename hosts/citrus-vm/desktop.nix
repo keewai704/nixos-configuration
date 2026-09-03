@@ -18,7 +18,7 @@ in
 
   environment.systemPackages = [
     chatgptDesktop
-    pkgs.equibop
+    pkgs.legcord
     pkgs.xarchiver
   ];
 
