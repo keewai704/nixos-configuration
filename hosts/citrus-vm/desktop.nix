@@ -18,11 +18,12 @@ in
 
   environment.systemPackages = [
     chatgptDesktop
-    pkgs.legcord
     pkgs.xarchiver
   ];
 
   home-manager.users.keewai = {
+    imports = [ inputs.nixcord.homeModules.nixcord ];
+
     xdg = {
       userDirs = {
         enable = true;
@@ -33,6 +34,15 @@ in
     };
 
     programs.kitty.enable = true;
+
+    programs.nixcord = {
+      enable = true;
+      discord.enable = false;
+      legcord = {
+        enable = true;
+        equicord.enable = true;
+      };
+    };
 
     programs.noctalia = {
       enable = true;
