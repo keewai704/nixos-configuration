@@ -49,7 +49,7 @@ in
       enable = true;
       systemd.enable = true;
       settings = {
-        bar.default = { };
+        bar.default.background_opacity = 0.68999998457729816;
         calendar = {
           enabled = true;
           account.personal_google.type = "google";
@@ -108,7 +108,7 @@ in
           mode = "dark";
           source = "wallpaper";
           custom_palette = "Stylix";
-          pure_black_dark = true;
+          pure_black_dark = false;
           templates = {
             enable_builtin_templates = false;
             enable_community_templates = false;
