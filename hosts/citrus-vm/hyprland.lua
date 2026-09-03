@@ -1,22 +1,12 @@
 -- Hyprland behavior for citrus-vm. The generated configuration prepends the
--- Nix-managed display output, K4 commands, and shared theme table.
+-- Nix-managed display output, Noctalia IPC, and shared theme table.
 
 local main_mod = "SUPER"
 local terminal = "uwsm app -- kitty"
 local file_manager = "uwsm app -- thunar"
-local function k4_command(target, action)
-    return k4_ipc .. target .. " " .. action
+local function noctalia(action)
+    return noctalia_ipc .. action
 end
-
-local function k4_action(action)
-    return k4_command("k4", action)
-end
-
-local application_launcher = k4_action("toggleLauncher")
-
-hl.on("hyprland.start", function()
-    hl.exec_cmd(k4_start_command)
-end)
 
 hl.monitor({
     output = display_output,
@@ -112,6 +102,23 @@ hl.config({
     },
 })
 
+hl.window_rule({
+    match = { class = "dev.noctalia.Noctalia" },
+    float = true,
+    size = { 1080, 920 },
+})
+
+hl.layer_rule({
+    name = "noctalia",
+    match = {
+        namespace = "^noctalia-(bar-.+|notification|dock|panel|attached-panel|osd|window-switcher)$",
+    },
+    no_anim = true,
+    ignore_alpha = 0.5,
+    blur = true,
+    blur_popups = true,
+})
+
 hl.curve("quick", {
     type = "bezier",
     points = { { 0.2, 0.9 }, { 0.3, 1.0 } },
@@ -139,53 +146,43 @@ bind(main_mod .. " + E", hl.dsp.exec_cmd(file_manager), "Open file manager")
 bind(main_mod .. " + Q", hl.dsp.window.close(), "Close window")
 bind(
     main_mod .. " + Space",
-    hl.dsp.exec_cmd(application_launcher),
+    hl.dsp.exec_cmd(noctalia("panel-toggle launcher")),
     "Open application launcher"
 )
 bind(
     main_mod .. " + SHIFT + Space",
-    hl.dsp.exec_cmd(k4_command("k4.apps", "toggle")),
-    "Open k4 application center"
+    hl.dsp.exec_cmd(noctalia("panel-toggle wallpaper")),
+    "Open wallpaper picker"
 )
 bind(
     main_mod .. " + I",
-    hl.dsp.exec_cmd(k4_action("togglePanel")),
-    "Open k4 Control Center"
+    hl.dsp.exec_cmd(noctalia("panel-toggle control-center")),
+    "Open Noctalia Control Center"
 )
 bind(
     main_mod .. " + N",
-    hl.dsp.exec_cmd(k4_action("toggleNotifications")),
-    "Open k4 notifications"
+    hl.dsp.exec_cmd(noctalia("panel-toggle control-center notifications")),
+    "Open notification history"
 )
 bind(
     main_mod .. " + V",
-    hl.dsp.exec_cmd(k4_action("clipboard")),
-    "Open k4 clipboard history"
-)
-bind(
-    main_mod .. " + G",
-    hl.dsp.exec_cmd(k4_action("ask")),
-    "Ask with k4"
+    hl.dsp.exec_cmd(noctalia("panel-toggle clipboard")),
+    "Open clipboard history"
 )
 bind(
     main_mod .. " + Z",
-    hl.dsp.exec_cmd(k4_action("settings")),
-    "Open k4 settings"
-)
-bind(
-    main_mod .. " + ALT + S",
-    hl.dsp.exec_cmd(k4_command("k4.ssh", "open")),
-    "Open k4 SSH launcher"
+    hl.dsp.exec_cmd(noctalia("settings-toggle")),
+    "Open Noctalia settings"
 )
 bind(
     main_mod .. " + ALT + C",
-    hl.dsp.exec_cmd(k4_action("session")),
-    "Open k4 session menu"
+    hl.dsp.exec_cmd(noctalia("panel-toggle session")),
+    "Open session menu"
 )
 bind(
     main_mod .. " + ALT + L",
-    hl.dsp.exec_cmd(k4_action("lock")),
-    "Lock with k4"
+    hl.dsp.exec_cmd(noctalia("session lock")),
+    "Lock session"
 )
 bind(
     main_mod .. " + F",
@@ -251,10 +248,7 @@ bind(
     hl.dsp.focus({ workspace = "previous_per_monitor" }),
     "Previous workspace"
 )
-bind("ALT + Tab", function()
-    hl.dispatch(hl.dsp.window.cycle_next())
-    hl.dispatch(hl.dsp.window.bring_to_top())
-end, "Cycle windows")
+bind("ALT + Tab", hl.dsp.exec_cmd(noctalia("window-switcher")), "Switch windows")
 
 for workspace = 1, 10 do
     local key = workspace % 10
@@ -284,49 +278,49 @@ bind(main_mod .. " + mouse:273", hl.dsp.window.resize(), "Resize window", { mous
 
 bind(
     "XF86AudioRaiseVolume",
-    hl.dsp.exec_cmd("wpctl set-volume -l 1 @DEFAULT_AUDIO_SINK@ 5%+"),
+    hl.dsp.exec_cmd(noctalia("volume-up")),
     "Raise volume",
     { locked = true, repeating = true }
 )
 bind(
     "XF86AudioLowerVolume",
-    hl.dsp.exec_cmd("wpctl set-volume @DEFAULT_AUDIO_SINK@ 5%-"),
+    hl.dsp.exec_cmd(noctalia("volume-down")),
     "Lower volume",
     { locked = true, repeating = true }
 )
 bind(
     "XF86AudioMute",
-    hl.dsp.exec_cmd("wpctl set-mute @DEFAULT_AUDIO_SINK@ toggle"),
+    hl.dsp.exec_cmd(noctalia("volume-mute")),
     "Toggle audio mute",
     { locked = true }
 )
 bind(
     "XF86AudioMicMute",
-    hl.dsp.exec_cmd("wpctl set-mute @DEFAULT_AUDIO_SOURCE@ toggle"),
+    hl.dsp.exec_cmd(noctalia("mic-mute")),
     "Toggle microphone mute",
     { locked = true }
 )
 bind(
     "XF86AudioPlay",
-    hl.dsp.exec_cmd(k4_action("togglePlay")),
+    hl.dsp.exec_cmd(noctalia("media toggle")),
     "Toggle media playback",
     { locked = true }
 )
 bind(
     "XF86AudioPause",
-    hl.dsp.exec_cmd(k4_action("togglePlay")),
+    hl.dsp.exec_cmd(noctalia("media toggle")),
     "Toggle media playback",
     { locked = true }
 )
 bind(
     "XF86AudioNext",
-    hl.dsp.exec_cmd(k4_action("nextTrack")),
+    hl.dsp.exec_cmd(noctalia("media next")),
     "Play next track",
     { locked = true }
 )
 bind(
     "XF86AudioPrev",
-    hl.dsp.exec_cmd(k4_action("prevTrack")),
+    hl.dsp.exec_cmd(noctalia("media previous")),
     "Play previous track",
     { locked = true }
 )
@@ -338,10 +332,10 @@ bind(main_mod .. " + F1", function()
             "Super+Enter: terminal    Super+E: files    Super+Q: close",
             "Super+H/J/K/L: focus    +Shift: move    +Ctrl: resize",
             "Super+1..0: workspace    +Shift: move window",
-            "Super+Space: launcher    +Shift: k4 apps    Super+I: controls",
+            "Super+Space: launcher    +Shift: wallpapers    Super+I: controls",
             "Super+N: notifications    Super+V: clipboard",
-            "Super+G: Ask    Super+Z: k4 settings",
-            "Super+Alt+S: SSH    Super+Alt+C: session    Super+Alt+L: lock",
+            "Super+Z: Noctalia settings",
+            "Super+Alt+C: session    Super+Alt+L: lock",
             "Super+F: fullscreen",
             "Super+S: scratchpad    Alt+Tab: cycle windows",
             "Hold Super+Shift+E: log out",

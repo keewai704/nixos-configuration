@@ -12,11 +12,9 @@ let
     colors = config.lib.stylix.colors;
   };
   displayOutput = "Virtual-1";
-  k4Package = inputs.k4.packages.${pkgs.stdenv.hostPlatform.system}.default;
   hyprlandConfig = pkgs.writeText "hyprland.lua" (
     "local display_output = ${builtins.toJSON displayOutput}\n"
-    + "local k4_start_command = ${builtins.toJSON "${k4Package}/bin/k4 --no-duplicate -d"}\n"
-    + "local k4_ipc = ${builtins.toJSON "${lib.getExe pkgs.quickshell} ipc -p /home/keewai/.local/share/k4/code/shell.qml call "}\n"
+    + "local noctalia_ipc = ${builtins.toJSON "${lib.getExe pkgs.noctalia} msg "}\n"
     + "local theme = ${lib.generators.toLua { } theme.hyprland}\n"
     + builtins.readFile ./hyprland.lua
   );
@@ -139,24 +137,6 @@ in
     withUWSM = true;
   };
 
-  home-manager.users.keewai.systemd.user.services.citrus-wallpaper = {
-    Unit = {
-      Description = "Citrus desktop wallpaper";
-      After = [ "graphical-session.target" ];
-      PartOf = [ "graphical-session.target" ];
-      ConditionEnvironment = "WAYLAND_DISPLAY";
-    };
-
-    Service = {
-      ExecStart =
-        "${lib.getExe pkgs.swaybg} --output ${displayOutput}" + " --image ${theme.wallpaper} --mode fill";
-      Restart = "on-failure";
-      RestartSec = 5;
-    };
-
-    Install.WantedBy = [ "graphical-session.target" ];
-  };
-
   services = {
     hazkey.enable = true;
 
@@ -183,11 +163,7 @@ in
   fonts.packages = [ pkgs.noto-fonts ];
 
   environment = {
-    systemPackages = [
-      pkgs.gws
-      k4Package
-      pkgs.quickshell
-    ];
+    systemPackages = [ pkgs.gws ];
 
     sessionVariables = {
       AQ_DRM_DEVICES = "/dev/dri/card1";

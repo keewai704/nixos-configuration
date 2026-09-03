@@ -12,7 +12,7 @@ hostname is `citrus-vm` may run `nixos-rebuild test` or `switch` for this host.
 | Path | Responsibility |
 | --- | --- |
 | [`hosts/citrus-vm/configuration.nix`](../hosts/citrus-vm/configuration.nix) | Host imports, Hyprland session, Hazkey/Fcitx5, wallpaper, graphics, and state version |
-| [`hosts/citrus-vm/theme.nix`](../hosts/citrus-vm/theme.nix) | Stylix palette adapter for Hyprland, K4, Fcitx5, and tuigreet |
+| [`hosts/citrus-vm/theme.nix`](../hosts/citrus-vm/theme.nix) | Stylix palette adapter for Hyprland, Noctalia, Fcitx5, and tuigreet |
 | [`hosts/citrus-vm/hardware-configuration.nix`](../hosts/citrus-vm/hardware-configuration.nix) | Generated machine hardware, filesystems, and swap |
 | [`hosts/citrus-vm/hyprland.lua`](../hosts/citrus-vm/hyprland.lua) | Hyprland behavior and key bindings; Nix prepends the shared theme table |
 | [`hosts/citrus-vm/desktop.nix`](../hosts/citrus-vm/desktop.nix) | Thunar, GVfs, Tumbler, Xarchiver, and the ChatGPT application |
@@ -29,10 +29,9 @@ cross-module imports.
 
 ## Desktop
 
-The session starts Hyprland through UWSM and greetd. K4 is pinned by the root
-flake and its package materializes a derived writable runtime mirror under
-`~/.local/share/k4`; the desktop no longer depends on a source checkout under
-the user's home directory. Hazkey is the default Fcitx5 input method. Thunar is
+The session starts Hyprland through UWSM and greetd. Home Manager installs
+Noctalia v5 from the pinned nixpkgs input and runs it as a systemd user service
+for the graphical session. Hazkey is the default Fcitx5 input method. Thunar is
 the directory handler and is paired with GVfs, Tumbler, and Xarchiver without
 installing a full desktop environment.
 The community-maintained [Stylix](https://github.com/nix-community/stylix)
@@ -42,20 +41,25 @@ virtual console, and Brave's browser theme color. Neutral dark Colloid icons
 and cursors remain the system-wide choice.
 
 `hosts/citrus-vm/theme.nix` adapts `config.lib.stylix.colors` for components
-outside the generic targets: the custom Hyprland Lua session, QuickShell/K4's
-`~/.config/k4/theme.json`, and tuigreet. Fcitx5 keeps its Tokyo Night Storm
-panel because its active configuration is managed by the NixOS input-method
-module. Stylix's Firefox target stays disabled to avoid replacing Sine and
-Natsumi profile styling.
+outside the generic targets: the custom Hyprland Lua session, Noctalia's
+`Stylix` palette, and tuigreet. The immutable Noctalia baseline selects that
+palette, the Stylix font, and the repository wallpaper. All GUI changes are
+written separately to `~/.local/state/noctalia/settings.toml`, load after the
+baseline, and remain editable and persistent. Open Settings with `Super+Z`.
+GNOME Keyring supplies Secret Service for Noctalia's encrypted clipboard history.
+Fcitx5 keeps its Tokyo Night Storm panel because its active configuration is
+managed by the NixOS input-method module. Stylix's Firefox target stays disabled
+to avoid replacing Sine and Natsumi profile styling.
 
 GTK applications such as Thunar and Xarchiver inherit it directly, while
 Firefox, Brave, and ChatGPT receive the shared dark desktop preference.
 Fcitx5's Classic UI keeps its rounded candidate panel and Noto Sans CJK JP
 fonts.
 
-The wallpaper is repository-owned under `hosts/citrus-vm/assets/`. Keep
-machine-specific display and software-rendering settings in the host entry
-point, not in a module used by Orange.
+The initial wallpaper is repository-owned under `hosts/citrus-vm/assets/` and
+rendered by Noctalia; choosing another wallpaper in the GUI persists as a user
+override. Keep machine-specific display and software-rendering settings in the
+host entry point, not in a module used by Orange.
 
 ## Browsers and URL handlers
 
@@ -232,7 +236,11 @@ change. Typical checks are:
 
 ```console
 systemctl is-active greetd
-systemctl --user --no-pager --full status citrus-wallpaper.service
+systemctl --user --no-pager --full status noctalia.service
+noctalia --version
+noctalia config validate
+noctalia msg status
+busctl --user list | rg org.freedesktop.secrets
 systemctl --user show-environment | rg 'WAYLAND_DISPLAY|DISPLAY|DBUS_SESSION_BUS_ADDRESS'
 test -r /etc/stylix/palette.html
 fcitx5-remote --check

@@ -30,10 +30,31 @@ in
       };
 
       configFile."user-dirs.dirs".force = true;
-      configFile."k4/theme.json".text = builtins.toJSON theme.quickShell;
     };
 
     programs.kitty.enable = true;
+
+    programs.noctalia = {
+      enable = true;
+      systemd.enable = true;
+      settings = {
+        shell = {
+          font_family = config.stylix.fonts.sansSerif.name;
+          launch_apps_as_systemd_services = true;
+          polkit_agent = true;
+        };
+        theme = {
+          mode = "dark";
+          source = "custom";
+          custom_palette = "Stylix";
+        };
+        wallpaper = {
+          enabled = true;
+          default.path = toString theme.wallpaper;
+        };
+      };
+      customPalettes.Stylix = theme.noctaliaPalette;
+    };
 
     gtk = {
       colorScheme = "dark";
@@ -76,6 +97,7 @@ in
 
   services = {
     gnome.at-spi2-core.enable = true;
+    gnome.gnome-keyring.enable = true;
     gvfs.enable = true;
     tumbler.enable = true;
   };

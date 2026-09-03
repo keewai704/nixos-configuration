@@ -17,12 +17,6 @@
       inputs.nixpkgs.follows = "nixpkgs";
     };
 
-    k4 = {
-      url = "github:rukh-debug/k4rk";
-      inputs.home-manager.follows = "home-manager";
-      inputs.nixpkgs.follows = "nixpkgs";
-    };
-
     stylix = {
       url = "github:nix-community/stylix";
       inputs.nixpkgs.follows = "nixpkgs";
