@@ -18,6 +18,7 @@ in
 
   environment.systemPackages = [
     chatgptDesktop
+    pkgs.ddcutil
     pkgs.xarchiver
   ];
 
