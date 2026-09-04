@@ -14,7 +14,6 @@ let
   displayOutput = "Virtual-1";
   hyprlandConfig = pkgs.writeText "hyprland.lua" (
     "local display_output = ${builtins.toJSON displayOutput}\n"
-    + "local noctalia_ipc = ${builtins.toJSON "${lib.getExe pkgs.noctalia} msg "}\n"
     + "local theme = ${lib.generators.toLua { } theme.hyprland}\n"
     + builtins.readFile ./hyprland.lua
   );
@@ -24,17 +23,6 @@ let
     + " -- -- --config ${hyprlandConfig}";
 in
 {
-  nixpkgs.overlays = [
-    (_final: previous: {
-      noctalia = previous.noctalia.overrideAttrs (old: {
-        patches = (old.patches or [ ]) ++ [ ./assets/noctalia-settings-ja.patch ];
-        postPatch = (old.postPatch or "") + ''
-          install -m0644 ${./assets/noctalia-settings-ja.json} assets/translations/ja.json
-        '';
-      });
-    })
-  ];
-
   boot.kernelPackages = pkgs.linuxPackages_cachyos.extend (
     _: _: {
       inherit (pkgs.linuxPackages_latest) hyperv-daemons;
@@ -148,6 +136,8 @@ in
     withUWSM = true;
   };
 
+  programs.hyprlock.enable = true;
+
   services = {
     hazkey.enable = true;
 
@@ -171,7 +161,13 @@ in
 
   security.rtkit.enable = true;
 
-  fonts.packages = [ pkgs.noto-fonts ];
+  fonts.packages = [
+    pkgs.iosevka
+    pkgs.nerd-fonts.caskaydia-cove
+    pkgs.nerd-fonts.jetbrains-mono
+    pkgs.nerd-fonts.symbols-only
+    pkgs.noto-fonts
+  ];
 
   environment = {
     systemPackages = [ pkgs.gws ];

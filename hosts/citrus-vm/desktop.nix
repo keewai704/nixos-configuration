@@ -12,6 +12,22 @@ let
     colors = config.lib.stylix.colors;
   };
   chatgptDesktop = pkgs.callPackage ../../pkgs/chatgpt-desktop { };
+  dotfiles43pr = pkgs.fetchFromGitHub {
+    owner = "43PR";
+    repo = "dotfiles";
+    rev = "5354e7d42cc3d76e63ba749cbc878f3f989939d5";
+    hash = "sha256-k087ANymgeVmwoA6eilSIx4xzs4KfhSSZE4go27w6AU=";
+  };
+  wlogoutConfig = pkgs.runCommandLocal "43pr-wlogout-config" { } ''
+    cp -R ${dotfiles43pr}/.config/wlogout "$out"
+    chmod -R u+w "$out"
+    substituteInPlace "$out/layout" \
+      --replace-fail "hyprctl dispatch 'hl.dsp.exit()'" "${lib.getExe pkgs.uwsm} stop"
+    substituteInPlace "$out/style.css" \
+      --replace-fail "/home/rp34/.config/wlogout/icons" "$out/icons"
+    grep -Fq "${lib.getExe pkgs.uwsm} stop" "$out/layout"
+    grep -Fq "$out/icons/shutdown.png" "$out/style.css"
+  '';
 in
 {
   nixpkgs.config.allowUnfreePredicate = package: lib.getName package == "chatgpt-desktop";
@@ -25,16 +41,105 @@ in
   home-manager.users.keewai = {
     imports = [ inputs.nixcord.homeModules.nixcord ];
 
+    home = {
+      file."Pictures/Wallpapers/tokyo-night.png".source = theme.wallpaper;
+      packages = [
+        pkgs.imagemagick
+        pkgs.jq
+        pkgs.playerctl
+        pkgs.pavucontrol
+        pkgs.quickshell
+        pkgs.rofi
+        pkgs.wl-clipboard
+        pkgs.wlogout
+      ];
+    };
+
     xdg = {
       userDirs = {
         enable = true;
         createDirectories = true;
       };
 
-      configFile."user-dirs.dirs".force = true;
+      configFile = {
+        "hypr/hyprlock.conf".source = "${dotfiles43pr}/.config/hypr/hyprlock.conf";
+        "hypr/scripts/now-playing.sh".source = "${dotfiles43pr}/.config/hypr/scripts/now-playing.sh";
+        "hypr/scripts/password-cursor.sh".source =
+          "${dotfiles43pr}/.config/hypr/scripts/password-cursor.sh";
+        "quickshell".source = "${dotfiles43pr}/.config/quickshell";
+        "rofi".source = "${dotfiles43pr}/.config/rofi";
+        "user-dirs.dirs".force = true;
+        "wlogout".source = wlogoutConfig;
+      };
     };
 
     programs.kitty.enable = true;
+
+    programs.waybar = {
+      enable = true;
+      systemd.enable = true;
+      settings.mainBar = {
+        layer = "top";
+        position = "top";
+        exclusive = true;
+        spacing = 0;
+        modules-left = [
+          "cpu"
+          "memory"
+        ];
+        modules-center = [ "clock" ];
+        modules-right = [
+          "custom/mpris-marquee"
+          "pulseaudio"
+          "custom/power"
+        ];
+        cpu = {
+          interval = 1;
+          format = "CPU {usage}%";
+        };
+        memory = {
+          interval = 1;
+          format = "RAM {percentage}%";
+          tooltip-format = "{used} / {total}GiB";
+        };
+        clock = {
+          format = "{:%H:%M}";
+          tooltip-format = "<tt><small>{calendar}</small></tt>";
+          calendar = {
+            mode = "month";
+            format.today = "<b><u>{}</u></b>";
+          };
+        };
+        "custom/mpris-marquee" = {
+          exec = "${dotfiles43pr}/.config/waybar/scripts/mpris-marquee.sh";
+          return-type = "json";
+          format = "{}";
+          on-click = "${lib.getExe pkgs.playerctl} play-pause";
+          on-scroll-up = "${lib.getExe pkgs.playerctl} next";
+          on-scroll-down = "${lib.getExe pkgs.playerctl} previous";
+        };
+        pulseaudio = {
+          format = "{icon}  {volume}%";
+          format-muted = "Muted";
+          format-icons.default = [
+            ""
+            ""
+            ""
+          ];
+          tooltip = false;
+          on-click = lib.getExe pkgs.pavucontrol;
+          on-click-right = "${pkgs.wireplumber}/bin/wpctl set-mute @DEFAULT_AUDIO_SINK@ toggle";
+        };
+        "custom/power" = {
+          format = "⏻";
+          tooltip = false;
+          on-click =
+            "${pkgs.procps}/bin/pgrep -x wlogout >/dev/null"
+            + " || ${lib.getExe pkgs.wlogout} -b 1 -c 20 -r 20 -L 1700 -R 1700 -T 325 -B 325";
+        };
+      };
+      style = builtins.readFile "${dotfiles43pr}/.config/waybar/style.css";
+    };
 
     programs.nixcord = {
       enable = true;
@@ -45,83 +150,34 @@ in
       };
     };
 
-    programs.noctalia = {
-      enable = true;
-      systemd.enable = true;
-      settings = {
-        bar.default.background_opacity = 0.68999998457729816;
-        calendar = {
-          enabled = true;
-          account.personal_google.type = "google";
+    services = {
+      awww.enable = true;
+      cliphist.enable = true;
+      dunst.enable = true;
+      hyprpolkitagent.enable = true;
+    };
+
+    systemd.user.services = {
+      dunst.Install.WantedBy = [ "graphical-session.target" ];
+
+      quickshell-volume-osd = {
+        Unit = {
+          Description = "43PR Quickshell volume OSD";
+          After = [ "graphical-session.target" ];
+          PartOf = [ "graphical-session.target" ];
+          ConditionEnvironment = "WAYLAND_DISPLAY";
+          X-Restart-Triggers = [ "${dotfiles43pr}/.config/quickshell/volume-osd" ];
         };
-        control_center.calendar.event_date_format = "%m/%d (%a)";
-        desktop_widgets.enabled = false;
-        location.auto_locate = true;
-        lockscreen.blurred_desktop = true;
-        lockscreen_widgets = {
-          enabled = false;
-          schema_version = 2;
-          widget_order = [ "lockscreen-login-box@Virtual-1" ];
-          grid = {
-            cell_size = 16;
-            major_interval = 4;
-            visible = true;
-          };
-          widget."lockscreen-login-box@Virtual-1" = {
-            box_height = 196.0;
-            box_width = 810.0;
-            cx = 960.0;
-            cy = 898.0;
-            output = "Virtual-1";
-            placement_height = 1080.0;
-            placement_width = 1920.0;
-            rotation = 0.0;
-            type = "login_box";
-            settings = {
-              background_color = "surface_variant";
-              background_opacity = 0.88;
-              background_radius = 12.0;
-              center_password_text = false;
-              input_opacity = 1.0;
-              input_radius = 6.0;
-              layout = "regular";
-              show_caps_lock = true;
-              show_keyboard_layout = true;
-              show_login_button = true;
-              show_media = true;
-              show_session_buttons = true;
-              show_unlock_hint = true;
-              show_weather = true;
-            };
-          };
+        Service = {
+          ExecStart = lib.escapeShellArgs [
+            (lib.getExe pkgs.quickshell)
+            "--config"
+            "volume-osd"
+          ];
+          Restart = "on-failure";
         };
-        notification.position = "top_center";
-        shell = {
-          font_family = config.stylix.fonts.sansSerif.name;
-          launch_apps_as_systemd_services = true;
-          panel_anchor_bar = "default";
-          polkit_agent = true;
-          launcher.compact = true;
-          panel.polkit_placement = "attached";
-        };
-        theme = {
-          mode = "dark";
-          source = "wallpaper";
-          custom_palette = "Stylix";
-          pure_black_dark = false;
-          templates = {
-            enable_builtin_templates = false;
-            enable_community_templates = false;
-          };
-        };
-        wallpaper = {
-          enabled = true;
-          default.path = toString theme.wallpaper;
-          last.path = toString theme.wallpaper;
-          monitors.Virtual-1.path = toString theme.wallpaper;
-        };
+        Install.WantedBy = [ "graphical-session.target" ];
       };
-      customPalettes.Stylix = theme.noctaliaPalette;
     };
 
     gtk = {

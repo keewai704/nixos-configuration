@@ -17,18 +17,8 @@ let
     black = "000000";
   };
 
-  hex = color: "#${color}";
   rgb = color: "rgb(${color})";
   rgba = color: alpha: "rgba(${color}${alpha})";
-
-  terminalColors = {
-    red = hex palette.red;
-    green = hex palette.green;
-    yellow = hex palette.yellow;
-    blue = hex palette.blue;
-    magenta = hex palette.magenta;
-    cyan = hex palette.cyan;
-  };
 
   semantic = {
     accent = palette.blue;
@@ -71,41 +61,6 @@ in
     font = "Noto Sans CJK JP 10";
     menuFont = "Noto Sans CJK JP 11";
     trayFont = "Noto Sans CJK JP Bold 10";
-  };
-
-  noctaliaPalette.dark = {
-    mPrimary = hex semantic.accent;
-    mOnPrimary = hex semantic.desktopBackground;
-    mSecondary = hex semantic.accentAlt;
-    mOnSecondary = hex semantic.desktopBackground;
-    mTertiary = hex palette.cyan;
-    mOnTertiary = hex semantic.desktopBackground;
-    mError = hex palette.red;
-    mOnError = hex semantic.desktopBackground;
-    mSurface = hex semantic.desktopBackground;
-    mOnSurface = hex semantic.text;
-    mSurfaceVariant = hex semantic.surface;
-    mOnSurfaceVariant = hex semantic.muted;
-    mOutline = hex semantic.dim;
-    mShadow = hex semantic.shadow;
-    mHover = hex semantic.surfaceHigh;
-    mOnHover = hex semantic.text;
-    terminal = {
-      background = hex semantic.desktopBackground;
-      foreground = hex semantic.text;
-      cursor = hex semantic.text;
-      cursorText = hex semantic.desktopBackground;
-      selectionBg = hex semantic.surfaceHigh;
-      selectionFg = hex semantic.text;
-      normal = terminalColors // {
-        black = hex palette.background;
-        white = hex palette.foreground;
-      };
-      bright = terminalColors // {
-        black = hex palette.comment;
-        white = hex colors.base07;
-      };
-    };
   };
 
   hyprland = {
