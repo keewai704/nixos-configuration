@@ -46,7 +46,7 @@
 }:
 
 let
-  version = "26.825.41651";
+  version = "26.901.41123";
   runtimeLibraries = [
     alsa-lib
     at-spi2-core
@@ -89,7 +89,7 @@ stdenv.mkDerivation {
 
   src = fetchurl {
     url = "https://persistent.oaistatic.com/codex-app-prod/linux/deb/pool/main/c/chatgpt/chatgpt_${version}_amd64.deb";
-    hash = "sha256-IbIulcDEOj8RTz7TJpKr7cY49AV6CPmMmINuLT6aZx4=";
+    hash = "sha256-C/eEeNVLDNDgsEy5yMabKyMbvAwm7Cgrylg2Qw2a1fY=";
   };
 
   nativeBuildInputs = [
