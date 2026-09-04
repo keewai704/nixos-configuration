@@ -13,9 +13,7 @@ let
   };
   displayOutput = "Virtual-1";
   hyprlandConfig = pkgs.writeText "hyprland.lua" (
-    "local display_output = ${builtins.toJSON displayOutput}\n"
-    + "local theme = ${lib.generators.toLua { } theme.hyprland}\n"
-    + builtins.readFile ./hyprland.lua
+    "local display_output = ${builtins.toJSON displayOutput}\n" + builtins.readFile ./hyprland.lua
   );
 
   hyprlandSession =
@@ -162,6 +160,7 @@ in
   security.rtkit.enable = true;
 
   fonts.packages = [
+    pkgs.adwaita-fonts
     pkgs.iosevka
     pkgs.nerd-fonts.caskaydia-cove
     pkgs.nerd-fonts.jetbrains-mono

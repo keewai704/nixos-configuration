@@ -11,10 +11,10 @@ hostname is `citrus-vm` may run `nixos-rebuild test` or `switch` for this host.
 
 | Path | Responsibility |
 | --- | --- |
-| [`hosts/citrus-vm/default.nix`](../hosts/citrus-vm/default.nix) | Host imports, Hyprland session, Hazkey/Fcitx5, wallpaper, graphics, and state version |
-| [`hosts/citrus-vm/theme.nix`](../hosts/citrus-vm/theme.nix) | Stylix palette adapter for Hyprland, Fcitx5, and tuigreet |
+| [`hosts/citrus-vm/default.nix`](../hosts/citrus-vm/default.nix) | Host imports, Hyprland session, Hazkey/Fcitx5, graphics, and state version |
+| [`hosts/citrus-vm/theme.nix`](../hosts/citrus-vm/theme.nix) | Stylix palette adapter for Fcitx5 and tuigreet |
 | [`hosts/citrus-vm/hardware-configuration.nix`](../hosts/citrus-vm/hardware-configuration.nix) | Generated machine hardware, filesystems, and swap |
-| [`hosts/citrus-vm/hyprland.lua`](../hosts/citrus-vm/hyprland.lua) | Hyprland behavior and key bindings; Nix prepends the shared theme table |
+| [`hosts/citrus-vm/hyprland.lua`](../hosts/citrus-vm/hyprland.lua) | 43PR Hyprland behavior and key bindings with Citrus hardware adaptations |
 | [`hosts/citrus-vm/desktop.nix`](../hosts/citrus-vm/desktop.nix) | 43PR desktop components, Thunar, and the ChatGPT application |
 | [`hosts/citrus-vm/browser/default.nix`](../hosts/citrus-vm/browser/default.nix) | Pywalfox, Brave Origin, default handlers, and vendor-scoped WebHID access |
 | [`hosts/citrus-vm/browser/sine.nix`](../hosts/citrus-vm/browser/sine.nix) | Firefox, pinned Sine assembly, locale validation, and profile activation |
@@ -31,37 +31,44 @@ cross-module imports.
 
 The session starts Hyprland through UWSM and greetd. Home Manager pins
 [43PR/dotfiles](https://github.com/43PR/dotfiles) at commit
-`5354e7d42cc3d76e63ba749cbc878f3f989939d5` and uses its Waybar style, Rofi,
-Hyprlock, Wlogout, hyprquickpaper, and Quickshell volume OSD configurations.
-Home Manager's native services run Waybar, Dunst, awww, cliphist, and the
-Hyprland polkit agent for the graphical session. The upstream GPU and
-temperature widgets are hardware-specific and are omitted on this VM.
+`5354e7d42cc3d76e63ba749cbc878f3f989939d5`. The desktop reproduces its
+Hyprland spacing, blur, opacity, animations, complete key map, wallpapers,
+Waybar, Rofi, Hyprlock, Wlogout, hyprquickpaper, Quickshell volume OSD, GTK,
+Kitty, btop, and cava styling. Home Manager's native services run Waybar,
+Dunst, awww, cliphist, and the Hyprland polkit agent for the graphical session.
+
+The VM has neither a physical GPU telemetry source nor a temperature sensor,
+so the matching Waybar slots remain visible as `GPU 0%` and `--°C` instead of
+being removed. Recording uses CPU-compatible `wf-recorder` on `Virtual-1`, the
+browser shortcut opens the configured Firefox, and `Super+X` toggles Fcitx5
+rather than a second XKB layout. Those are the only host-specific behavioral
+substitutions.
 
 Hazkey is the default Fcitx5 input method. Thunar is the directory handler and
 is paired with GVfs, Tumbler, and Xarchiver without installing a full desktop
 environment.
 The community-maintained [Stylix](https://github.com/nix-community/stylix)
-module applies the faithful Tokyo Night Base16 palette to supported NixOS and
-Home Manager targets. It owns GTK3/4, Qt5/6 through Base16 Kvantum, Kitty, the
-virtual console, and Brave's browser theme color. Neutral dark Colloid icons
-and cursors remain the system-wide choice.
+module applies the Tokyo Night Base16 palette to the remaining supported NixOS
+and Home Manager targets. The 43PR source owns GTK3/4 and Kitty; Qt5/6, the
+virtual console, Brave's browser theme color, and the system cursor remain
+Stylix-managed. GTK uses the rice's white-folder Papirus variant.
 
-`hosts/citrus-vm/theme.nix` adapts `config.lib.stylix.colors` for components
-outside the generic targets: the custom Hyprland Lua session and tuigreet.
-Fcitx5 keeps its Tokyo Night Storm panel because its active configuration is
-managed by the NixOS input-method module. Stylix's Firefox target stays disabled
-to avoid replacing Sine and Natsumi profile styling.
+`hosts/citrus-vm/theme.nix` adapts `config.lib.stylix.colors` for tuigreet and
+Fcitx5. Fcitx5 keeps its Tokyo Night Storm panel because its active
+configuration is managed by the NixOS input-method module. Stylix's Firefox
+target stays disabled to avoid replacing Sine and Natsumi profile styling.
 
 GTK applications such as Thunar and Xarchiver inherit it directly, while
 Firefox, Brave, and ChatGPT receive the shared dark desktop preference.
 Fcitx5's Classic UI keeps its rounded candidate panel and Noto Sans CJK JP
 fonts.
 
-The repository wallpaper is linked into `~/Pictures/Wallpapers` and rendered by
-awww. The hyprquickpaper picker at `Super+Shift+Space` changes it and awww restores
-its cached selection on the next session. Keep machine-specific display and
-software-rendering settings in the host entry point, not in a module used by
-Orange.
+The complete upstream wallpaper set is linked into
+`~/Pictures/Wallpapers/43PR` and rendered by awww. The initial background is the
+mountain image used by the showcase; the hyprquickpaper picker at `Super+W`
+changes it and awww restores its cached selection on later sessions. Keep
+machine-specific display and software-rendering settings in the host entry
+point, not in a module used by Orange.
 
 ## Browsers and URL handlers
 
