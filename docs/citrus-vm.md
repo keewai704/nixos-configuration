@@ -11,21 +11,21 @@ hostname is `citrus-vm` may run `nixos-rebuild test` or `switch` for this host.
 
 | Path | Responsibility |
 | --- | --- |
-| [`hosts/citrus-vm/default.nix`](../hosts/citrus-vm/default.nix) | Host imports, Hyprland session, Hazkey/Fcitx5, graphics, and state version |
-| [`hosts/citrus-vm/theme.nix`](../hosts/citrus-vm/theme.nix) | Stylix palette adapter for Fcitx5 and tuigreet |
+| [`hosts/citrus-vm/default.nix`](../hosts/citrus-vm/default.nix) | Host imports, Home Manager setup, Hyprland session, Hazkey/Fcitx5, graphics, and state versions |
+| [`hosts/citrus-vm/theme.nix`](../hosts/citrus-vm/theme.nix) | Pywalfox palette, wallpaper, cursor, icon, Fcitx5, and tuigreet settings |
 | [`hosts/citrus-vm/hardware-configuration.nix`](../hosts/citrus-vm/hardware-configuration.nix) | Generated machine hardware, filesystems, and swap |
 | [`hosts/citrus-vm/hyprland.lua`](../hosts/citrus-vm/hyprland.lua) | 43PR Hyprland behavior and key bindings with Citrus hardware adaptations |
 | [`hosts/citrus-vm/desktop.nix`](../hosts/citrus-vm/desktop.nix) | 43PR desktop components, Thunar, and the ChatGPT application |
 | [`hosts/citrus-vm/browser/default.nix`](../hosts/citrus-vm/browser/default.nix) | Pywalfox, Brave Origin, default handlers, and vendor-scoped WebHID access |
 | [`hosts/citrus-vm/browser/sine.nix`](../hosts/citrus-vm/browser/sine.nix) | Firefox, pinned Sine assembly, locale validation, and profile activation |
-| [`hosts/citrus-vm/codex.nix`](../hosts/citrus-vm/codex.nix) | Home Manager, system MCP configuration, personal skills, and CUA |
+| [`hosts/citrus-vm/codex.nix`](../hosts/citrus-vm/codex.nix) | System MCP configuration, personal skills, Ponytail hooks, and CUA |
 | [`pkgs/chatgpt-desktop/default.nix`](../pkgs/chatgpt-desktop/default.nix) | ChatGPT desktop package and launcher |
 | [`pkgs/cua-driver/default.nix`](../pkgs/cua-driver/default.nix) | CUA driver package |
 
-The host entry point imports the browser, Codex, desktop, and hardware modules
-explicitly. `codex.nix` imports Home Manager and `mcp-servers-nix`; the complete
-desktop stack therefore stays inside the Citrus host directory without hidden
-cross-module imports.
+The host entry point imports Home Manager and the browser, Codex, desktop, and
+hardware modules explicitly. It owns the shared Home Manager settings and
+state version; `codex.nix` imports only the application-specific
+`mcp-servers-nix` Home Manager module.
 
 ## Desktop
 
@@ -53,10 +53,11 @@ and Home Manager targets. The 43PR source owns GTK3/4 and Kitty; Qt5/6, the
 virtual console, Brave's browser theme color, and the system cursor remain
 Stylix-managed. GTK uses the rice's white-folder Papirus variant.
 
-`hosts/citrus-vm/theme.nix` adapts `config.lib.stylix.colors` for tuigreet and
-Fcitx5. Fcitx5 keeps its Tokyo Night Storm panel because its active
-configuration is managed by the NixOS input-method module. Stylix's Firefox
-target stays disabled to avoid replacing Sine and Natsumi profile styling.
+`hosts/citrus-vm/theme.nix` adapts `config.lib.stylix.colors` for Pywalfox and
+holds the cursor, icon, Fcitx5, and tuigreet choices. Fcitx5 keeps its Tokyo
+Night Storm panel because its active configuration is managed by the NixOS
+input-method module. Stylix's Firefox target stays disabled to avoid replacing
+Sine and Natsumi profile styling.
 
 GTK applications such as Thunar and Xarchiver inherit it directly, while
 Firefox, Brave, and ChatGPT receive the shared dark desktop preference.

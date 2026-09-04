@@ -28,12 +28,19 @@ in
   );
 
   imports = [
+    inputs.home-manager.nixosModules.home-manager
     inputs.nix-hazkey.nixosModules.hazkey
     ./browser
     ./codex.nix
     ./desktop.nix
     ./hardware-configuration.nix
   ];
+
+  home-manager = {
+    useGlobalPkgs = true;
+    useUserPackages = true;
+    users.keewai.home.stateVersion = "26.05";
+  };
 
   networking.hostName = "citrus-vm";
 

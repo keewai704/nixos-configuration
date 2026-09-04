@@ -50,7 +50,7 @@ let
       '';
 
   mkPonytailHook =
-    name: script:
+    name:
     pkgs.writeShellApplication {
       name = "ponytail-${name}";
       runtimeInputs = [ pkgs.coreutils ];
@@ -63,16 +63,27 @@ let
         export PLUGIN_DATA="$pluginData"
         export CLAUDE_PLUGIN_DATA="$pluginData"
 
-        exec ${lib.getExe pkgs.nodejs} ${lib.escapeShellArg "${ponytailHookRoot}/hooks/${script}"}
+        exec ${lib.getExe pkgs.nodejs} ${lib.escapeShellArg "${ponytailHookRoot}/hooks/ponytail-${name}.js"}
       '';
     };
 
   ponytailManagedHooks = pkgs.symlinkJoin {
     name = "ponytail-managed-hooks-${ponytailVersion}";
-    paths = [
-      (mkPonytailHook "activate" "ponytail-activate.js")
-      (mkPonytailHook "mode-tracker" "ponytail-mode-tracker.js")
-      (mkPonytailHook "subagent" "ponytail-subagent.js")
+    paths = map mkPonytailHook [
+      "activate"
+      "mode-tracker"
+      "subagent"
+    ];
+  };
+
+  mkPonytailHookGroup = name: statusMessage: {
+    hooks = [
+      {
+        type = "command";
+        command = "${ponytailManagedHooks}/bin/ponytail-${name}";
+        timeout = 5;
+        inherit statusMessage;
+      }
     ];
   };
 
@@ -155,50 +166,25 @@ let
       managed_dir = "${ponytailManagedHooks}/bin";
 
       SessionStart = [
-        {
-          matcher = "startup|resume|clear|compact";
-          hooks = [
-            {
-              type = "command";
-              command = "${ponytailManagedHooks}/bin/ponytail-activate";
-              timeout = 5;
-              statusMessage = "Loading ponytail mode...";
-            }
-          ];
-        }
+        (
+          (mkPonytailHookGroup "activate" "Loading ponytail mode...")
+          // {
+            matcher = "startup|resume|clear|compact";
+          }
+        )
       ];
 
       SubagentStart = [
-        {
-          hooks = [
-            {
-              type = "command";
-              command = "${ponytailManagedHooks}/bin/ponytail-subagent";
-              timeout = 5;
-              statusMessage = "Loading ponytail mode...";
-            }
-          ];
-        }
+        (mkPonytailHookGroup "subagent" "Loading ponytail mode...")
       ];
 
       UserPromptSubmit = [
-        {
-          hooks = [
-            {
-              type = "command";
-              command = "${ponytailManagedHooks}/bin/ponytail-mode-tracker";
-              timeout = 5;
-              statusMessage = "Tracking ponytail mode...";
-            }
-          ];
-        }
+        (mkPonytailHookGroup "mode-tracker" "Tracking ponytail mode...")
       ];
     };
   };
 in
 {
-  imports = [ inputs.home-manager.nixosModules.home-manager ];
-
   # ChatGPT Desktop, Codex CLI, and the IDE extension all read this system
   # layer. Keep the user layer writable so the desktop app can persist its
   # own bundled MCP helpers, plugin state, project trust, and UI preferences.
@@ -208,107 +194,101 @@ in
     "codex/skills/ponytail".source = "${ponytailHookRoot}/skills/ponytail";
   };
 
-  home-manager = {
-    useGlobalPkgs = true;
-    useUserPackages = true;
+  home-manager.users.${userName} =
+    {
+      config,
+      lib,
+      pkgs,
+      ...
+    }:
+    let
+      skillEntries = lib.mapAttrs' (
+        name: _type:
+        lib.nameValuePair ".agents/skills/${name}" {
+          source = skillRoot + "/${name}";
+          force = true;
+        }
+      ) (lib.removeAttrs (builtins.readDir skillRoot) [ "ponytail" ]);
 
-    users.${userName} =
-      {
-        config,
-        lib,
-        pkgs,
-        ...
-      }:
-      let
-        skillEntries = lib.mapAttrs' (
-          name: _type:
-          lib.nameValuePair ".agents/skills/${name}" {
-            source = skillRoot + "/${name}";
-            force = true;
-          }
-        ) (lib.removeAttrs (builtins.readDir skillRoot) [ "ponytail" ]);
+      managedMcpNames = lib.attrNames config.programs.mcp.servers;
+      managedMcpNameArgs = lib.escapeShellArgs managedMcpNames;
+      userCodexConfig = "${config.home.homeDirectory}/.codex/config.toml";
+    in
+    {
+      imports = [ inputs.mcp-servers-nix.homeManagerModules.default ];
 
-        managedMcpNames = lib.attrNames config.programs.mcp.servers;
-        managedMcpNameArgs = lib.escapeShellArgs managedMcpNames;
-        userCodexConfig = "${config.home.homeDirectory}/.codex/config.toml";
-      in
-      {
-        imports = [ inputs.mcp-servers-nix.homeManagerModules.default ];
+      home = {
+        file = skillEntries;
+        packages = [
+          cuaDriver
+          pkgs.rtk
+        ];
+        sessionVariables = cuaEnvironment;
 
-        home = {
-          stateVersion = "26.05";
-          file = skillEntries;
-          packages = [
-            cuaDriver
-            pkgs.rtk
-          ];
-          sessionVariables = cuaEnvironment;
+        # A user-level entry wins over /etc/codex/config.toml. Remove only
+        # duplicate names owned by this module, while leaving ChatGPT's
+        # bundled node_repl/cua_repl entries and every unrelated preference
+        # untouched.
+        activation.removeUserMcpOverrides = lib.hm.dag.entryAfter [ "writeBoundary" ] ''
+          user_config=${lib.escapeShellArg userCodexConfig}
+          if [[ -f "$user_config" && -w "$user_config" ]]; then
+            for server_name in ${managedMcpNameArgs}; do
+              export NIX_MANAGED_MCP_SERVER="$server_name"
+              if ${lib.getExe pkgs.yq-go} -e -p=toml \
+                '.mcp_servers[strenv(NIX_MANAGED_MCP_SERVER)] != null' \
+                "$user_config" >/dev/null 2>&1; then
+                ${lib.getExe pkgs.yq-go} -i -p=toml -o=toml \
+                  'del(.mcp_servers[strenv(NIX_MANAGED_MCP_SERVER)])' \
+                  "$user_config"
+              fi
+            done
+            unset NIX_MANAGED_MCP_SERVER
+            chmod 0600 "$user_config"
+          fi
+        '';
+      };
 
-          # A user-level entry wins over /etc/codex/config.toml. Remove only
-          # duplicate names owned by this module, while leaving ChatGPT's
-          # bundled node_repl/cua_repl entries and every unrelated preference
-          # untouched.
-          activation.removeUserMcpOverrides = lib.hm.dag.entryAfter [ "writeBoundary" ] ''
-            user_config=${lib.escapeShellArg userCodexConfig}
-            if [[ -f "$user_config" && -w "$user_config" ]]; then
-              for server_name in ${managedMcpNameArgs}; do
-                export NIX_MANAGED_MCP_SERVER="$server_name"
-                if ${lib.getExe pkgs.yq-go} -e -p=toml \
-                  '.mcp_servers[strenv(NIX_MANAGED_MCP_SERVER)] != null' \
-                  "$user_config" >/dev/null 2>&1; then
-                  ${lib.getExe pkgs.yq-go} -i -p=toml -o=toml \
-                    'del(.mcp_servers[strenv(NIX_MANAGED_MCP_SERVER)])' \
-                    "$user_config"
-                fi
-              done
-              unset NIX_MANAGED_MCP_SERVER
-              chmod 0600 "$user_config"
-            fi
-          '';
+      programs.mcp.enable = true;
+
+      systemd.user.sessionVariables = cuaEnvironment;
+
+      mcp-servers = {
+        programs = {
+          context7.enable = true;
+
+          nixos = {
+            enable = true;
+            env = {
+              FASTMCP_CHECK_FOR_UPDATES = "off";
+              FASTMCP_SHOW_SERVER_BANNER = "false";
+            };
+          };
+
+          serena = {
+            enable = true;
+            context = "codex";
+            enableWebDashboard = false;
+            args = [ "--project-from-cwd" ];
+            extraPackages = [
+              pkgs.nixd
+              pkgs.nixfmt
+            ];
+            env = {
+              FASTMCP_ENV_FILE = "/dev/null";
+              SERENA_USAGE_REPORTING = "false";
+            };
+          };
         };
 
-        programs.mcp.enable = true;
-
-        systemd.user.sessionVariables = cuaEnvironment;
-
-        mcp-servers = {
-          programs = {
-            context7.enable = true;
-
-            nixos = {
-              enable = true;
-              env = {
-                FASTMCP_CHECK_FOR_UPDATES = "off";
-                FASTMCP_SHOW_SERVER_BANNER = "false";
-              };
-            };
-
-            serena = {
-              enable = true;
-              context = "codex";
-              enableWebDashboard = false;
-              args = [ "--project-from-cwd" ];
-              extraPackages = [
-                pkgs.nixd
-                pkgs.nixfmt
-              ];
-              env = {
-                FASTMCP_ENV_FILE = "/dev/null";
-                SERENA_USAGE_REPORTING = "false";
-              };
-            };
+        settings.servers = {
+          cua-driver = {
+            command = lib.getExe cuaMcp;
+            args = [ "mcp" ];
+            env = cuaEnvironment;
           };
 
-          settings.servers = {
-            cua-driver = {
-              command = lib.getExe cuaMcp;
-              args = [ "mcp" ];
-              env = cuaEnvironment;
-            };
-
-            openaiDeveloperDocs.url = "https://developers.openai.com/mcp";
-          };
+          openaiDeveloperDocs.url = "https://developers.openai.com/mcp";
         };
       };
-  };
+    };
 }

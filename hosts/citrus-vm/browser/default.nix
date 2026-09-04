@@ -37,8 +37,6 @@ let
     '';
   });
 
-  firefoxDesktop = "firefox.desktop";
-
   pywalfox = pkgs.pywalfox-native;
   pywalfoxManifest = pkgs.writeTextDir "lib/mozilla/native-messaging-hosts/pywalfox.json" (
     builtins.toJSON {
@@ -71,12 +69,12 @@ let
     lib.imap0 (index: color: lib.nameValuePair "color${toString index}" "#${color}") pywalfoxPalette
   );
   pywalfoxTheme = builtins.toJSON {
-    wallpaper = toString theme.wallpaper;
+    inherit (theme) wallpaper;
     alpha = "100";
     special = {
-      background = "#${theme.semantic.windowBackground}";
-      foreground = "#${theme.semantic.text}";
-      cursor = "#${theme.semantic.text}";
+      background = "#${theme.palette.background}";
+      foreground = "#${theme.palette.foreground}";
+      cursor = "#${theme.palette.foreground}";
     };
     colors = pywalfoxColors;
   };
@@ -135,15 +133,18 @@ in
 
     mimeApps = {
       enable = true;
-      defaultApplications = {
-        "application/xhtml+xml" = [ firefoxDesktop ];
-        "text/html" = [ firefoxDesktop ];
-        "x-scheme-handler/about" = [ firefoxDesktop ];
-        "x-scheme-handler/codex" = [ "chatgpt.desktop" ];
-        "x-scheme-handler/http" = [ firefoxDesktop ];
-        "x-scheme-handler/https" = [ firefoxDesktop ];
-        "x-scheme-handler/unknown" = [ firefoxDesktop ];
-      };
+      defaultApplications =
+        lib.genAttrs [
+          "application/xhtml+xml"
+          "text/html"
+          "x-scheme-handler/about"
+          "x-scheme-handler/http"
+          "x-scheme-handler/https"
+          "x-scheme-handler/unknown"
+        ] (_: [ "firefox.desktop" ])
+        // {
+          "x-scheme-handler/codex" = [ "chatgpt.desktop" ];
+        };
     };
   };
 }

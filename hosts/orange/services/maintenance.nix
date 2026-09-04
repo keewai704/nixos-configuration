@@ -15,6 +15,14 @@ let
     vaultwardenBackupRoot
     ;
 
+  mkScheduledTimer = description: timerConfig: {
+    inherit description;
+    wantedBy = [ "timers.target" ];
+    timerConfig = timerConfig // {
+      Persistent = false;
+    };
+  };
+
   localBackup = pkgs.writeShellApplication {
     name = "orange-local-backup";
     runtimeInputs = with pkgs; [
@@ -159,40 +167,20 @@ in
     };
 
     timers = {
-      orange-local-backup = {
-        description = "Run local service backups after 06:00";
-        wantedBy = [ "timers.target" ];
-        timerConfig = {
-          OnCalendar = "*-*-* 06:15:00";
-          Persistent = false;
-        };
+      orange-local-backup = mkScheduledTimer "Run local service backups after 06:00" {
+        OnCalendar = "*-*-* 06:15:00";
       };
 
-      orange-smart-short = {
-        description = "Run SMART short self-tests after 06:00 each week";
-        wantedBy = [ "timers.target" ];
-        timerConfig = {
-          OnCalendar = "Sun *-*-* 06:50:00";
-          Persistent = false;
-        };
+      orange-smart-short = mkScheduledTimer "Run SMART short self-tests after 06:00 each week" {
+        OnCalendar = "Sun *-*-* 06:50:00";
       };
 
-      orange-smart-long = {
-        description = "Run SMART long self-tests after 06:00 each month";
-        wantedBy = [ "timers.target" ];
-        timerConfig = {
-          OnCalendar = "*-*-01 07:30:00";
-          Persistent = false;
-        };
+      orange-smart-long = mkScheduledTimer "Run SMART long self-tests after 06:00 each month" {
+        OnCalendar = "*-*-01 07:30:00";
       };
 
-      orange-nix-store-verify = {
-        description = "Verify Nix Store after 06:00 each month";
-        wantedBy = [ "timers.target" ];
-        timerConfig = {
-          OnCalendar = "*-*-01 08:00:00";
-          Persistent = false;
-        };
+      orange-nix-store-verify = mkScheduledTimer "Verify Nix Store after 06:00 each month" {
+        OnCalendar = "*-*-01 08:00:00";
       };
 
       logrotate = {
@@ -202,14 +190,9 @@ in
         };
       };
 
-      orange-tmpfiles-clean = {
-        description = "Clean temporary directories after 06:00";
-        wantedBy = [ "timers.target" ];
-        timerConfig = {
-          OnCalendar = "*-*-* 06:30:00";
-          Persistent = false;
-          Unit = "systemd-tmpfiles-clean.service";
-        };
+      orange-tmpfiles-clean = mkScheduledTimer "Clean temporary directories after 06:00" {
+        OnCalendar = "*-*-* 06:30:00";
+        Unit = "systemd-tmpfiles-clean.service";
       };
 
       backup-vaultwarden.timerConfig.Persistent = lib.mkForce false;
