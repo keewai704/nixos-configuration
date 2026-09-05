@@ -156,6 +156,44 @@ end
 assert(bindings.Print.action:find("slurp", 1, true))
 assert(bindings["SUPER + Print"].action:match("^grim "))
 assert(not bindings.Delete and not bindings["SUPER + Delete"])
+
+local window, resized, moved
+hl.get_active_window = function() return window end
+hl.get_active_monitor = function() return {width = 1000, height = 800, x = -1000, y = 200} end
+hl.dsp.window = setmetatable({}, {__index = function(_, name)
+  return function(args) return {name = name, args = args} end
+end})
+hl.dispatch = function(command)
+  if not window then return end
+  local args = command.args
+  if command.name == "fullscreen_state" then
+    window.fullscreen, window.client_fullscreen = args.internal, args.client
+  elseif command.name == "float" then
+    window.floating = not window.floating
+  elseif command.name == "resize" then
+    assert(window.fullscreen == 0, "exit fullscreen before resizing")
+    resized = args
+  elseif command.name == "move" then
+    moved = args
+  end
+end
+for _, floating in ipairs({false, true}) do
+  for mode = 0, 2 do
+    window = {floating = floating, fullscreen = mode, client_fullscreen = mode}
+    resized, moved = nil, nil
+    bindings["SUPER + Space"].action()
+    assert(window.fullscreen == 0 and window.client_fullscreen == 0)
+    assert(window.floating ~= floating)
+    if window.floating then
+      assert(resized.x == 700 and resized.y == 560 and resized.relative == false)
+      assert(moved.x == -850 and moved.y == 320 and moved.relative == false)
+    else
+      assert(not resized and not moved, "do not resize a tiled window")
+    end
+  end
+end
+window = nil
+bindings["SUPER + Space"].action()
 """)
     subprocess.run(["lua", check, sys.argv[1]], env=env, check=True)
     print(

@@ -183,6 +183,7 @@ hl.bind("XF86MonBrightnessDown", hl.dsp.exec_cmd("43pr-display down"), {
 hl.bind(mainMod .. " + X", hl.dsp.exec_cmd("fcitx5-remote -t"))
 
 hl.bind(mainMod .. " + Space", function()
+	hl.dispatch(hl.dsp.window.fullscreen_state({ internal = 0, client = 0 }))
 	hl.dispatch(hl.dsp.window.float({ action = "toggle" }))
 
 	local window = hl.get_active_window()

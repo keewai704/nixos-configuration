@@ -114,6 +114,8 @@ app/session lifecycle, and Kitty uses the installed JetBrainsMono Nerd Font.
 `Print` captures a selected region and `Super+Print` captures the full desktop
 to `~/Pictures`; `Delete` remains available to applications. `Super+Ctrl+H/J/K/L`
 resizes the focused window by 40 pixels and repeats while held.
+`Super+Space` exits fullscreen or maximized mode and toggles floating/tiling;
+a floating window is centered at 70% of the monitor's width and height.
 
 Hazkey is the default Fcitx5 input method. Thunar is the directory handler and
 is paired with GVfs, Tumbler, and Xarchiver without installing a full desktop
