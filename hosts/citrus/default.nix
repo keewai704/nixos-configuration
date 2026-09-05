@@ -192,8 +192,8 @@ in
         "monitor.bluez.rules" = [
           {
             matches = [ { "device.name" = "bluez_card.88_92_CC_D0_86_D2"; } ];
-            # Keep LC3 at 48 kHz when the H9 II microphone is enabled.
-            actions.update-props."bluez5.bap.preset" = "48_5_1";
+            # Keep duplex LC3 at 48 kHz with aligned frames for the MT7925 receiver.
+            actions.update-props."bluez5.bap.preset" = "48_4_1";
           }
         ];
       };
