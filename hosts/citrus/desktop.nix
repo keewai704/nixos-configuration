@@ -19,7 +19,6 @@ let
     for name in btop cava gtk-3.0 gtk-4.0 hypr kitty neofetch nwg-look quickshell rofi waybar wlogout xed; do
       cp -R "${dotfiles43pr}/.config/$name" "$out/"
     done
-    ln -s '${dotfiles43pr}/Wallpapers/$.jpg' "$out/default-wallpaper.jpg"
     chmod -R u+w "$out"
 
     patchShebangs "$out"
@@ -47,6 +46,7 @@ let
   papirus43pr = pkgs.runCommandLocal "papirus-43pr" { } ''
     icon_theme="$out/share/icons/Papirus-43PR"
     mkdir -p "$icon_theme"
+    ln -s ${pkgs.papirus-icon-theme}/share/icons/* "$out/share/icons/"
     cp ${pkgs.papirus-icon-theme}/share/icons/Papirus-Dark/index.theme "$icon_theme/index.theme"
     substituteInPlace "$icon_theme/index.theme" \
       --replace-fail 'Name=Papirus-Dark' 'Name=Papirus-43PR' \
@@ -182,6 +182,16 @@ in
       "spotify"
     ];
 
+  stylix = {
+    image = "${dotfiles43pr}/Wallpapers/$.jpg";
+    icons = {
+      enable = true;
+      package = papirus43pr;
+      dark = "Papirus-43PR";
+      light = "Papirus-43PR";
+    };
+  };
+
   system.build.desktop43prCheck =
     pkgs.runCommandLocal "43pr-desktop-check"
       {
@@ -216,6 +226,9 @@ in
           exit 1
         fi
         grep -Fq "Couldn't connect to a wayland compositor" hypridle.log
+        # The white-folder overlay must retain the parent theme's application icons.
+        test -r ${papirus43pr}/share/icons/Papirus-43PR/32x32/places/folder.svg
+        test -r ${papirus43pr}/share/icons/Papirus-Dark/32x32/apps/firefox.svg
             touch "$out"
       '';
 
@@ -230,17 +243,20 @@ in
 
     dconf.settings."org/gnome/desktop/interface" = {
       gtk-theme = "Adwaita";
-      icon-theme = "Papirus-43PR";
-      font-name = "Adwaita Sans 11";
+      icon-theme = config.stylix.icons.dark;
+      font-name = "${config.stylix.fonts.sansSerif.name} ${toString config.stylix.fonts.sizes.applications}";
+      cursor-theme = config.stylix.cursor.name;
+      cursor-size = config.stylix.cursor.size;
       color-scheme = "prefer-dark";
     };
 
     home = {
       file."Pictures/Wallpapers/43PR".source = "${dotfiles43pr}/Wallpapers";
+      pointerCursor.x11.enable = true;
       packages = [
+        config.stylix.icons.package
         displayControl
         opacityPicker
-        papirus43pr
         screenRecorder
         spotify43pr
         pkgs.btop
@@ -401,7 +417,13 @@ in
     services = {
       awww.enable = true;
       cliphist.enable = true;
-      dunst.enable = true;
+      dunst = {
+        enable = true;
+        settings.global = {
+          enable_recursive_icon_lookup = true;
+          icon_theme = config.stylix.icons.dark;
+        };
+      };
       hypridle = {
         enable = true;
         settings = {
@@ -458,7 +480,7 @@ in
           Type = "oneshot";
           ExecCondition = "${pkgs.coreutils}/bin/test ! -e %h/.cache/awww/43pr-initialized-5354e7d";
           ExecStartPre = "${pkgs.coreutils}/bin/mkdir -p %h/.cache/awww";
-          ExecStart = "${lib.getExe pkgs.awww} img ${desktop43pr}/default-wallpaper.jpg --transition-type none";
+          ExecStart = "${lib.getExe pkgs.awww} img ${config.stylix.image} --transition-type none";
           ExecStartPost = "${pkgs.coreutils}/bin/touch %h/.cache/awww/43pr-initialized-5354e7d";
           RemainAfterExit = true;
           Restart = "on-failure";
@@ -488,6 +510,8 @@ in
     };
 
     stylix.targets = {
+      dunst.enable = true;
+      # Keep the explicit Fcitx5 panel and the upstream browser/43PR styling.
       fcitx5.enable = false;
       firefox.enable = false;
       gtk.enable = false;

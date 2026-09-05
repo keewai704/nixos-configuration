@@ -72,7 +72,7 @@ in
 
   home-manager.users.keewai.xdg = {
     cacheFile."wal/colors.json".text = builtins.toJSON {
-      wallpaper = ./assets/videoframe_150744_10240x4320_clean-faithful.png;
+      wallpaper = config.stylix.image;
       alpha = "100";
       special = with config.lib.stylix.colors; {
         background = "#${base00}";

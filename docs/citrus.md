@@ -120,15 +120,22 @@ Hazkey is the default Fcitx5 input method. Thunar is the directory handler and
 is paired with GVfs, Tumbler, and Xarchiver without installing a full desktop
 environment.
 The community-maintained [Stylix](https://github.com/nix-community/stylix)
-module applies the Tokyo Night Base16 palette to the remaining supported NixOS
-and Home Manager targets. The 43PR source owns GTK3/4 and Kitty; Qt5/6, the
-virtual console, Brave's browser theme color, and the system cursor remain
-Stylix-managed. GTK uses the rice's white-folder Papirus variant.
+module uses a 43PR Black Base16 palette: black/white surfaces with the Tokyo
+Night accents already used by Rofi. Targets are enabled explicitly. The 43PR
+source owns GTK3/4 and Kitty; Stylix themes Qt5/6, Dunst, the virtual console,
+and Brave's browser theme color. GTK, Qt, and notifications share the rice's
+white-folder Papirus variant, including its inherited application icons.
+Fontconfig and Stylix targets use Adwaita Sans 11 for applications, Noto Serif,
+and JetBrainsMono Nerd Font (10 for terminals), with Noto CJK JP fallbacks and
+Noto Color Emoji.
+The Colloid dark cursor is consistently set to 24 through Stylix, GTK dconf,
+and Xresources; Hyprland inherits the session setting.
 
-The host entry point declares the cursor, icon, Fcitx5, and tuigreet settings
-directly. `browser.nix` uses Stylix colors for Pywalfox. Fcitx5 keeps
-its Tokyo Night Storm panel, while Stylix's Firefox target stays disabled to
-leave Sine/Natsumi styling under the browser module's control.
+The host entry point declares the palette, fonts, cursor, Fcitx5, and tuigreet
+settings; `desktop.nix` supplies the shared icon package and initial wallpaper.
+`browser.nix` uses Stylix colors and the same initial wallpaper for Pywalfox.
+Fcitx5 keeps its Tokyo Night Storm panel. Stylix's Firefox target stays disabled
+to leave Sine/Natsumi styling under the browser module's control.
 
 GTK applications such as Thunar and Xarchiver inherit it directly, while
 Firefox, Brave, and ChatGPT receive the shared dark desktop preference.
@@ -161,7 +168,7 @@ Brave Origin is also installed for sites that require Chromium behavior.
 and deep links return to the desktop application.
 
 The Nix-managed Pywalfox native messenger is registered in the wrapped Firefox
-package, and Home Manager publishes the shared Tokyo Night palette at
+package, and Home Manager publishes the shared 43PR Black palette at
 `~/.cache/wal/colors.json`. The Pywalfox Firefox add-on, its settings, and its
 optional profile CSS remain user-managed; this configuration does not install
 or modify them.

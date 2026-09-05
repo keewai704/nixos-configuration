@@ -66,17 +66,18 @@ in
     enable = true;
     autoEnable = false;
     base16Scheme = {
-      scheme = "Tokyo Night";
-      slug = "tokyo-night";
-      author = "folke";
-      base00 = "1a1b26";
-      base01 = "292e42";
-      base02 = "3b4261";
-      base03 = "565f89";
-      base04 = "a9b1d6";
-      base05 = "c0caf5";
-      base06 = "89ddff";
-      base07 = "b4f9f8";
+      # Match 43PR's black/white surfaces and its Rofi Tokyo Night accents.
+      scheme = "43PR Black";
+      slug = "43pr-black";
+      author = "43PR / folke";
+      base00 = "000000";
+      base01 = "101010";
+      base02 = "242832";
+      base03 = "6f6f6f";
+      base04 = "8b93a7";
+      base05 = "ffffff";
+      base06 = "ffffff";
+      base07 = "ffffff";
       base08 = "f7768e";
       base09 = "ff9e64";
       base0A = "e0af68";
@@ -92,17 +93,25 @@ in
       name = "Colloid-dark-cursors";
       size = 24;
     };
-    fonts.sizes = {
-      applications = 10;
-      desktop = 10;
-      popups = 10;
-      terminal = 11;
-    };
-    icons = {
-      enable = true;
-      package = pkgs.colloid-icon-theme;
-      dark = "Colloid-Dark";
-      light = "Colloid-Dark";
+    fonts = {
+      sansSerif = {
+        package = pkgs.adwaita-fonts;
+        name = "Adwaita Sans";
+      };
+      serif = {
+        package = pkgs.noto-fonts;
+        name = "Noto Serif";
+      };
+      monospace = {
+        package = pkgs.nerd-fonts.jetbrains-mono;
+        name = "JetBrainsMono Nerd Font";
+      };
+      sizes = {
+        applications = 11;
+        desktop = 11;
+        popups = 11;
+        terminal = 10;
+      };
     };
     targets = {
       chromium.enable = true;
@@ -196,14 +205,18 @@ in
 
   security.rtkit.enable = true;
 
-  fonts.packages = [
-    pkgs.adwaita-fonts
-    pkgs.iosevka
-    pkgs.nerd-fonts.caskaydia-cove
-    pkgs.nerd-fonts.jetbrains-mono
-    pkgs.nerd-fonts.symbols-only
-    pkgs.noto-fonts
-  ];
+  fonts = {
+    packages = [
+      pkgs.iosevka
+      pkgs.nerd-fonts.caskaydia-cove
+      pkgs.nerd-fonts.symbols-only
+    ];
+    fontconfig.defaultFonts = {
+      sansSerif = [ "Noto Sans CJK JP" ];
+      serif = [ "Noto Serif CJK JP" ];
+      monospace = [ "Noto Sans Mono CJK JP" ];
+    };
+  };
 
   environment = {
     systemPackages = [ pkgs.gws ];
