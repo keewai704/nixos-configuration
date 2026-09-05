@@ -50,6 +50,8 @@ Xed, nwg-look, mpv, and HyprMod are installed. GTK settings and Xed shortcuts
 are initialized from upstream only when absent, then remain writable for their
 editors. GTK CSS remains Nix-managed. Neowofetch (from hyfetch) reads the
 upstream neofetch configuration; unmaintained neofetch is no longer in nixpkgs.
+Home Manager also initializes the matching GTK theme, font, and icon dconf
+keys, so settings left by the previous desktop do not override `settings.ini`.
 
 The VM has neither a physical GPU telemetry source nor a temperature sensor,
 so the matching Waybar slots remain visible as `GPU 0%` and `--°C` instead of

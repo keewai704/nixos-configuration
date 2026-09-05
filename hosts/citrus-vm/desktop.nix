@@ -210,6 +210,13 @@ in
   home-manager.users.keewai = { lib, ... }: {
     imports = [ inputs.nixcord.homeModules.nixcord ];
 
+    dconf.settings."org/gnome/desktop/interface" = {
+      gtk-theme = "Adwaita";
+      icon-theme = "Papirus-43PR";
+      font-name = "Adwaita Sans 11";
+      color-scheme = "prefer-dark";
+    };
+
     home = {
       file."Pictures/Wallpapers/43PR".source = "${dotfiles43pr}/Wallpapers";
       packages = [
