@@ -1,0 +1,22 @@
+Preserve held modifiers when an IME switches between keyboard interfaces.
+https://github.com/hyprwm/Hyprland/discussions/9954
+
+--- a/src/protocols/InputMethodV2.cpp
++++ b/src/protocols/InputMethodV2.cpp
+@@ -2,6 +2,7 @@
+ #include "../desktop/state/FocusState.hpp"
+ #include "../managers/SeatManager.hpp"
++#include "../managers/input/InputManager.hpp"
+ #include "../devices/IKeyboard.hpp"
+ #include "../helpers/MiscFunctions.hpp"
+ #include <sys/mman.h>
+ #include "core/Compositor.hpp"
+@@ -51,7 +52,7 @@
+ 
+     m_resource->sendKeymap(WL_KEYBOARD_KEYMAP_FORMAT_XKB_V1, keymapFD.get(), keyboard->m_xkbKeymapV1String.length() + 1);
+ 
+-    sendMods(keyboard->m_modifiersState.depressed, keyboard->m_modifiersState.latched, keyboard->m_modifiersState.locked, keyboard->m_modifiersState.group);
++    sendMods(g_pInputManager->getModsFromAllKBs(), keyboard->m_modifiersState.latched, keyboard->m_modifiersState.locked, keyboard->m_modifiersState.group);
+ 
+     m_resource->sendRepeatInfo(keyboard->m_repeatRate, keyboard->m_repeatDelay);
+ }

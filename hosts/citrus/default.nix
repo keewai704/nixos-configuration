@@ -9,6 +9,14 @@ let
   hyprlandSession = "${lib.getExe pkgs.uwsm} start -e -D Hyprland ${pkgs.hyprland}/bin/start-hyprland";
 in
 {
+  nixpkgs.overlays = [
+    (_final: prev: {
+      hyprland = prev.hyprland.overrideAttrs (old: {
+        patches = (old.patches or [ ]) ++ [ ./hyprland-ime-modifiers.patch ];
+      });
+    })
+  ];
+
   boot.kernelPackages = pkgs.linuxPackages_cachyos;
   boot.initrd.kernelModules = [
     "nvidia"
