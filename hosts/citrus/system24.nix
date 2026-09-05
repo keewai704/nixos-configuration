@@ -66,7 +66,7 @@
   #app-mount .trailing_c38106 {
     anchor-name: --system24-toolbar;
     margin-right: 0;
-    padding-right: calc(var(--legcord-controls-width) + var(--space-xs));
+    padding-right: calc(var(--legcord-controls-width) + 2 * var(--space-xs));
   }
 
   #app-mount .trailing_c38106 > a[href="https://support.discord.com"] {
@@ -78,14 +78,14 @@
   }
 
   #app-mount .base__5e434 {
-    --top-bar-right-margin: calc((32px + var(--space-xs)) * (var(--button-count, 1) + 1) + var(--legcord-controls-width) + var(--space-xs));
+    --top-bar-right-margin: calc((32px + var(--space-xs)) * (var(--button-count, 1) + 1) + var(--legcord-controls-width) + 2 * var(--space-xs));
   }
 
   #legcordNavControls #window-controls-container {
     position: fixed;
     position-anchor: --system24-toolbar;
     top: anchor(top);
-    right: anchor(right);
+    right: calc(anchor(right) + var(--space-xs));
     width: var(--legcord-controls-width);
     height: 32px;
     line-height: 32px;
