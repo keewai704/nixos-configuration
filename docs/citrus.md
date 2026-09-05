@@ -121,9 +121,10 @@ cancellation during initialization and scanning, and reopening the device.
 
 ## Steam, VRR, and HDR
 
-The AW3926QW runs at `5120x2160@165` with 10-bit HDR output (`cm = "hdr"`).
-Hyprland enables VRR for fullscreen applications (`vrr = 2`) and follows
-fullscreen content's HDR/SDR mode (`render.cm_auto_hdr = 1`).
+The AW3926QW runs at `5120x2160@165` with 10-bit SDR output (`cm = "srgb"`)
+during normal desktop use. Hyprland enables VRR for fullscreen applications
+(`vrr = 2`) and switches to HDR for fullscreen HDR content
+(`render.cm_auto_hdr = 1`).
 These settings follow the [Hyprland monitor configuration](https://wiki.hypr.land/Configuring/Basics/Monitors/).
 The display advertises a 48–165 Hz adaptive-sync range and HDR10 support.
 
@@ -140,14 +141,14 @@ native Wayland can be selected with:
 PROTON_ENABLE_WAYLAND=1 DXVK_HDR=1 %command%
 ```
 
-For games using XWayland, the Gamescope path is:
+For games using XWayland, the Gamescope path is shown below. With the installed
+Gamescope 3.16.25 Wayland backend, HDR detection at startup requires the desktop
+to already be in HDR mode. These options alone do not enable HDR from the normal
+SDR desktop; use native Wayland for automatic HDR switching.
 
 ```text
 gamescope --backend wayland --adaptive-sync --hdr-enabled -f -W 5120 -H 2160 -- env DXVK_HDR=1 %command%
 ```
-
-The desktop's HDR mode lets Gamescope detect HDR support at startup.
-Hyprland color-manages SDR applications on the HDR desktop.
 
 Use fullscreen mode for VRR. Check `hyprctl monitors`
 while the game is fullscreen: `currentFormat` should be a 10-bit format,
@@ -161,7 +162,8 @@ nix shell --inputs-from . nixpkgs#drm_info --command drm_info -j /dev/dri/nvidia
 
 The active connector's `HDR_OUTPUT_METADATA.data.eotf` should be `2` (PQ),
 and the active CRTC's `VRR_ENABLED.value` should be `1`. After exiting
-fullscreen content, VRR turns off and the desktop returns to its HDR preset.
+fullscreen content, VRR turns off and the desktop returns to SDR;
+`HDR_OUTPUT_METADATA.raw_value` returns to `0`.
 
 ## Browsers and URL handlers
 

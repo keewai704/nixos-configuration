@@ -21,7 +21,7 @@ hl.monitor({
     position = "auto",
     scale = 1,
     bitdepth = 10,
-    cm = "hdr",
+    cm = "srgb",
     vrr = 2, -- Enable adaptive sync for fullscreen applications.
 })
 
