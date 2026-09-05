@@ -142,13 +142,14 @@ for _, title in ipairs({ "^(Open File)$", "^(Save File)$" }) do
 end
 
 local home = os.getenv("HOME")
-local menu = "rofi -show drun"
+local menu = "pgrep -x rofi >/dev/null && pkill -x rofi || rofi -show drun"
 local clipboard =
 	"pgrep -x rofi >/dev/null && pkill -x rofi || cliphist list | rofi -dmenu -p '' | cliphist decode | wl-copy"
 local logout = "pgrep -x wlogout >/dev/null || wlogout -b 1 -c 20 -r 20 -L 1700 -R 1700 -T 325 -B 325"
 
 hl.bind(mainMod .. " + T", hl.dsp.exec_cmd(terminal))
-hl.bind(mainMod .. " + D", hl.dsp.exec_cmd("pgrep -x rofi >/dev/null && pkill -x rofi || " .. menu))
+hl.bind(mainMod .. " + D", hl.dsp.exec_cmd(menu))
+hl.bind(mainMod .. " + Space", hl.dsp.exec_cmd(menu))
 hl.bind(mainMod .. " + E", hl.dsp.exec_cmd(fileManager))
 hl.bind(mainMod .. " + B", hl.dsp.exec_cmd(browser))
 hl.bind(mainMod .. " + Q", hl.dsp.window.close())
@@ -181,25 +182,6 @@ hl.bind("XF86MonBrightnessDown", hl.dsp.exec_cmd("43pr-display down"), {
 	repeating = true,
 })
 hl.bind(mainMod .. " + X", hl.dsp.exec_cmd("fcitx5-remote -t"))
-
-hl.bind(mainMod .. " + Space", function()
-	hl.dispatch(hl.dsp.window.fullscreen_state({ internal = 0, client = 0 }))
-	hl.dispatch(hl.dsp.window.float({ action = "toggle" }))
-
-	local window = hl.get_active_window()
-	if window ~= nil and window.floating then
-		local monitor = hl.get_active_monitor()
-		if monitor ~= nil then
-			local width = math.floor(monitor.width * 0.7)
-			local height = math.floor(monitor.height * 0.7)
-			local x = (monitor.x or 0) + math.floor((monitor.width - width) / 2)
-			local y = (monitor.y or 0) + math.floor((monitor.height - height) / 2)
-
-			hl.dispatch(hl.dsp.window.resize({ x = width, y = height, relative = false }))
-			hl.dispatch(hl.dsp.window.move({ x = x, y = y, relative = false }))
-		end
-	end
-end)
 
 hl.bind(mainMod .. " + R", hl.dsp.exec_cmd("43pr-recorder"))
 
