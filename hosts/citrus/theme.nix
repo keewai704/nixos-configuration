@@ -65,14 +65,6 @@ in
     name = "Colloid-Dark";
   };
 
-  fcitx5 = {
-    addon = pkgs.fcitx5-tokyonight;
-    themeName = "Tokyonight-Storm";
-    font = "Noto Sans CJK JP 10";
-    menuFont = "Noto Sans CJK JP 11";
-    trayFont = "Noto Sans CJK JP Bold 10";
-  };
-
   noctaliaPalette.dark = {
     mPrimary = hex semantic.accent;
     mOnPrimary = hex semantic.desktopBackground;

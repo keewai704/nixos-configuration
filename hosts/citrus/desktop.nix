@@ -32,6 +32,15 @@ in
   home-manager.users.keewai = {
     imports = [ inputs.nixcord.homeModules.nixcord ];
 
+    # Reuse the system's Hazkey package and UWSM autostart; Stylix owns the UI.
+    i18n.inputMethod = {
+      inherit (config.i18n.inputMethod) enable type;
+      fcitx5 = {
+        inherit (config.i18n.inputMethod.fcitx5) addons waylandFrontend;
+        systemd.enable = false;
+      };
+    };
+
     # Steam reads user fontconfig; keep semibold Japanese text in the sans family.
     fonts.fontconfig = {
       enable = true;
@@ -45,6 +54,8 @@ in
       };
 
       configFile."user-dirs.dirs".force = true;
+      # Link only managed files so Fcitx5 can still save its other settings.
+      configFile.fcitx5.recursive = true;
     };
 
     programs.kitty.enable = true;
@@ -119,8 +130,8 @@ in
           panel.polkit_placement = "attached";
         };
         theme = {
-          mode = "dark";
-          source = "wallpaper";
+          mode = config.stylix.polarity;
+          source = "custom";
           custom_palette = "Stylix";
           pure_black_dark = false;
           templates = {
@@ -130,9 +141,9 @@ in
         };
         wallpaper = {
           enabled = true;
-          default.path = toString theme.wallpaper;
-          last.path = toString theme.wallpaper;
-          monitors.DP-1.path = toString theme.wallpaper;
+          default.path = toString config.stylix.image;
+          last.path = toString config.stylix.image;
+          monitors.DP-1.path = toString config.stylix.image;
         };
       };
       customPalettes.Stylix = theme.noctaliaPalette;
@@ -144,7 +155,7 @@ in
     };
 
     stylix.targets = {
-      fcitx5.enable = false;
+      fcitx5.enable = true;
       firefox.enable = false;
       gtk = {
         enable = true;

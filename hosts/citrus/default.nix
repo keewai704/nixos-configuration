@@ -100,11 +100,17 @@ in
     };
     polarity = "dark";
     inherit (theme) cursor;
-    fonts.sizes = {
-      applications = 10;
-      desktop = 10;
-      popups = 10;
-      terminal = 11;
+    fonts = {
+      sansSerif = {
+        package = pkgs.noto-fonts-cjk-sans;
+        name = "Noto Sans CJK JP";
+      };
+      sizes = {
+        applications = 10;
+        desktop = 10;
+        popups = 10;
+        terminal = 11;
+      };
     };
     icons = {
       enable = true;
@@ -127,20 +133,9 @@ in
     type = "fcitx5";
 
     fcitx5 = {
-      addons = [ theme.fcitx5.addon ];
       waylandFrontend = true;
 
       settings = {
-        addons.classicui.globalSection = {
-          DarkTheme = theme.fcitx5.themeName;
-          Font = theme.fcitx5.font;
-          MenuFont = theme.fcitx5.menuFont;
-          Theme = theme.fcitx5.themeName;
-          TrayFont = theme.fcitx5.trayFont;
-          UseAccentColor = false;
-          UseDarkTheme = false;
-        };
-
         inputMethod = {
           "Groups/0" = {
             Name = "Default";

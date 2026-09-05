@@ -12,7 +12,7 @@ hostname is `citrus` may run `nixos-rebuild test` or `switch` for this host.
 | Path | Responsibility |
 | --- | --- |
 | [`hosts/citrus/default.nix`](../hosts/citrus/default.nix) | Host imports, Hyprland session, Hazkey/Fcitx5, wallpaper, graphics, and state version |
-| [`hosts/citrus/theme.nix`](../hosts/citrus/theme.nix) | Stylix palette adapter for Hyprland, Noctalia, Fcitx5, and tuigreet |
+| [`hosts/citrus/theme.nix`](../hosts/citrus/theme.nix) | Stylix palette adapter for Hyprland, Noctalia, and tuigreet |
 | [`hosts/citrus/hardware-configuration.nix`](../hosts/citrus/hardware-configuration.nix) | Generated machine hardware, filesystems, and swap |
 | [`hosts/citrus/hyprland.lua`](../hosts/citrus/hyprland.lua) | Hyprland behavior and key bindings; Nix prepends the shared theme table |
 | [`hosts/citrus/desktop.nix`](../hosts/citrus/desktop.nix) | Thunar, GVfs, Tumbler, Xarchiver, and the ChatGPT application |
@@ -53,18 +53,26 @@ and cursors remain the system-wide choice.
 `hosts/citrus/theme.nix` adapts `config.lib.stylix.colors` for components
 outside the generic targets: the custom Hyprland Lua session, Noctalia's
 `Stylix` palette, and tuigreet. The immutable Noctalia baseline selects that
-palette, the Stylix font, and the repository wallpaper. All GUI changes are
-written separately to `~/.local/state/noctalia/settings.toml`, load after the
+palette with `theme.source = "custom"`, the Stylix font, and the Stylix
+wallpaper. Noctalia's app templates stay disabled so Stylix remains the source
+of application themes. All GUI changes are written separately to
+`~/.local/state/noctalia/settings.toml`, load after the
 baseline, and remain editable and persistent. Open Settings with `Super+Z`.
 GNOME Keyring supplies Secret Service for Noctalia's encrypted clipboard history.
-Fcitx5 keeps its Tokyo Night Storm panel because its active configuration is
-managed by the NixOS input-method module. Stylix's Firefox target stays disabled
-to leave the `my-firefox-nix` profile styling under the browser module's control.
+Fcitx5 uses [Stylix's Home Manager target](https://nix-community.github.io/stylix/options/modules/fcitx5.html)
+for its candidate panel, menu, and fonts. NixOS still provides Hazkey, the input
+method profile defaults, and UWSM's XDG autostart; Home Manager reuses that
+package with its extra daemon disabled. Only the managed Classic UI file is
+linked, leaving other Fcitx5 settings and dictionaries writable. Home Manager's
+Wayland input-method integration also supplies GTK's X11 fallback and the
+Kitty/SDL input-module variables without forcing a global GTK input module.
+Stylix's Firefox target stays disabled to leave the `my-firefox-nix` profile
+styling under the browser module's control.
 
 GTK applications such as Thunar and Xarchiver inherit it directly, while
 Firefox, Brave, and ChatGPT receive the shared dark desktop preference.
-Fcitx5's Classic UI keeps its rounded candidate panel and Noto Sans CJK JP
-fonts.
+Noctalia, GTK/Qt, and Fcitx5 share Stylix's Noto Sans CJK JP sans-serif font;
+Fcitx5's Classic UI uses the rounded panel generated from the same palette.
 
 The initial wallpaper is repository-owned under `hosts/citrus/assets/` and
 rendered by Noctalia; choosing another wallpaper in the GUI persists as a user
@@ -218,11 +226,15 @@ systemctl --user --no-pager --full status noctalia.service
 noctalia --version
 noctalia config validate
 noctalia msg status
+test "$(noctalia msg color-scheme-get)" = "custom Stylix"
 busctl --user list | rg org.freedesktop.secrets
 systemctl --user show-environment | rg 'WAYLAND_DISPLAY|DISPLAY|DBUS_SESSION_BUS_ADDRESS'
 test -r /etc/stylix/palette.html
 fcitx5-remote --check
 fcitx5-remote -n
+rg '^Theme=stylix$' ~/.config/fcitx5/conf/classicui.conf
+test -r ~/.local/share/fcitx5/themes/stylix/theme.conf
+test -d ~/.config/fcitx5 && test ! -L ~/.config/fcitx5
 xdg-mime query default x-scheme-handler/http
 xdg-mime query default x-scheme-handler/codex
 pywalfox --version
