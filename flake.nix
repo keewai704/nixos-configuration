@@ -39,10 +39,6 @@
 
     nixcord.url = "github:4evy/nixcord";
 
-    proton-cachyos = {
-      url = "github:Daaboulex/proton-cachyos-nix";
-      inputs.nixpkgs.follows = "nixpkgs";
-    };
   };
 
   outputs =

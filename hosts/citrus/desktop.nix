@@ -253,7 +253,7 @@ in
       enable = true;
       package = inputs.millennium.packages.${pkgs.stdenv.hostPlatform.system}.millennium-steam;
       extraPackages = [ pkgs.gamescope ];
-      extraCompatPackages = [ inputs.proton-cachyos.packages.${pkgs.stdenv.hostPlatform.system}.default ];
+      extraCompatPackages = [ pkgs.proton-ge-bin ];
     };
 
     thunar = {

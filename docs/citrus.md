@@ -144,9 +144,18 @@ Vulkan WSI layer is available for 64-bit and 32-bit games. The installed NVIDIA
 610 driver already exposes HDR10 and scRGB on native Wayland; no additional
 HDR Vulkan layer or global HDR environment variables are needed.
 
-Restart Steam after applying this configuration. Keep launch options per game
-and enable HDR in the game's own settings. For the installed Proton-CachyOS,
-native Wayland can be selected with:
+GE-Proton is provided by `pkgs.proton-ge-bin` from the locked nixpkgs revision.
+Its binary payload and Steam compatibility-tool package are available from the
+configured official cache, `https://cache.nixos.org/`; Wine is not built locally.
+To verify that the package can be obtained without local builds, run:
+
+```console
+nix build --no-link --max-jobs 0 --option fallback false --option substituters https://cache.nixos.org/ .#nixosConfigurations.citrus.pkgs.proton-ge-bin.steamcompattool
+```
+
+Restart Steam after applying this configuration and select `GE-Proton` in the
+game's compatibility settings. Keep launch options per game and enable HDR in
+the game's own settings. Native Wayland can be selected with:
 
 ```text
 PROTON_ENABLE_WAYLAND=1 DXVK_HDR=1 %command%
@@ -175,6 +184,17 @@ The active connector's `HDR_OUTPUT_METADATA.data.eotf` should be `2` (PQ),
 and the active CRTC's `VRR_ENABLED.value` should be `1`. After exiting
 fullscreen content, VRR turns off and the desktop returns to SDR;
 `HDR_OUTPUT_METADATA.raw_value` returns to `0`.
+
+For TBH: Task Bar Hero's transparent desktop overlay, use GE-Proton's XWayland
+and DXVK path with only these launch options:
+
+```text
+WINE_LAYERED_OVERLAY_ALPHA=1 %command%
+```
+
+Do not enable native Wine Wayland or WineD3D for this game: its
+[layered-overlay fix](https://github.com/GloriousEggroll/proton-ge-custom/pull/555)
+requires the X11 driver and DXVK.
 
 ## Browsers and URL handlers
 
