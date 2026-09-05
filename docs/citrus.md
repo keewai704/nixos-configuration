@@ -84,9 +84,10 @@ Stylix's monospace font with Noto Sans CJK JP as the Japanese fallback.
 Home Manager installs this in `~/.config/legcord/quickCss.css` with Quick CSS
 enabled. The generic Stylix Nixcord target stays disabled. System24 and its
 Midnight base stylesheet update through the upstream theme imports.
-The top toolbar keeps its 36px height and original button positions so
-Legcord's overlay window controls have room. Framed page headers retain all
-four borders, including the friends header.
+The inbox, help, and Legcord's minimize/maximize/close buttons share the right
+side of System24's framed page header, including the friends header. Legcord
+uses its CSS-positionable `default` window controls; CSS anchors keep them
+aligned with the toolbar. Framed page headers retain all four borders.
 Millennium loads
 `~/.config/millennium/quick.css`, generated from the same Stylix palette and
 font for the currently installed SpaceTheme for Steam. SpaceTheme's layout,

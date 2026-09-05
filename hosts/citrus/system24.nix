@@ -55,11 +55,49 @@
   html body {
     --font: "${fonts.monospace.name}", "${fonts.sansSerif.name}", monospace;
     --code-font: var(--font);
-    /* Keep Discord's toolbar clear of Legcord's 30px overlay controls. */
-    --top-bar-height: 36px;
-    --top-bar-button-position: off;
+    --top-bar-height: var(--gap);
+    --top-bar-button-position: titlebar;
+    --legcord-controls-width: calc(6 * var(--window-control-size));
     font-weight: 400;
     letter-spacing: normal;
+  }
+
+  /* Keep Legcord's HTML controls in the toolbar as System24 moves it. */
+  #app-mount .trailing_c38106 {
+    anchor-name: --system24-toolbar;
+    margin-right: 0;
+    padding-right: calc(var(--legcord-controls-width) + var(--space-xs));
+  }
+
+  #app-mount .trailing_c38106 > a[href="https://support.discord.com"] {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 32px;
+    height: 32px;
+  }
+
+  #app-mount .base__5e434 {
+    --top-bar-right-margin: calc((32px + var(--space-xs)) * (var(--button-count, 1) + 1) + var(--legcord-controls-width) + var(--space-xs));
+  }
+
+  #app-mount .inviteToolbar__133bf {
+    padding-right: var(--top-bar-right-margin);
+  }
+
+  #legcordNavControls #window-controls-container {
+    position: fixed;
+    position-anchor: --system24-toolbar;
+    top: anchor(top);
+    right: anchor(right);
+    width: var(--legcord-controls-width);
+    height: 32px;
+    line-height: 32px;
+    z-index: 1001;
+  }
+
+  #legcordNavControls [id$="-icon"] {
+    height: 100%;
   }
 
   /* Midnight removes the bottom border from these otherwise framed headers. */

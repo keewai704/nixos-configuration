@@ -103,7 +103,10 @@ in
       legcord = {
         enable = true;
         equicord.enable = true;
-        settings.quickCss = true;
+        settings = {
+          quickCss = true;
+          windowStyle = "default";
+        };
       };
     };
 
