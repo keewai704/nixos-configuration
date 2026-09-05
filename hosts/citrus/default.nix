@@ -17,6 +17,16 @@ in
     })
   ];
 
+  nix = {
+    # 8 cores / 16 threads and 32 GiB RAM: leave room for the desktop during builds.
+    settings = {
+      max-jobs = 2;
+      cores = 6;
+    };
+    daemonIOSchedClass = "idle";
+  };
+  systemd.services.nix-daemon.serviceConfig.Nice = 10;
+
   boot.kernelPackages = pkgs.linuxPackages_cachyos;
   boot.initrd.kernelModules = [
     "nvidia"

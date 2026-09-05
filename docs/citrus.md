@@ -41,6 +41,21 @@ NVIDIA modules. After boot, check `nvidia-smi`, `/dev/dri/nvidia`,
 below. Tailscale also requires an initial `sudo tailscale up` login on a new
 installation.
 
+## Build responsiveness
+
+For this 8-core / 16-thread workstation with 32 GiB RAM, Nix runs at most two
+builds concurrently and requests six threads per build. This replaces the
+automatic job count and all-CPU default, reducing oversubscription during
+source builds. The daemon and its builders use CPU nice level 10 and idle I/O
+priority so interactive work takes precedence under contention. Builds can
+take longer while the desktop is busy; the thread count is a builder hint,
+not a hard CPU or memory limit. See Nix's
+[cores and jobs guide](https://nix.dev/manual/nix/2.34/advanced-topics/cores-vs-jobs.html).
+
+Verify `/etc/nix/nix.conf` and
+`systemctl show nix-daemon -p Nice -p IOSchedulingClass` after activation;
+expect `max-jobs = 2`, `cores = 6`, `Nice=10`, and `IOSchedulingClass=3` (idle).
+
 ## Composition
 
 | Path | Responsibility |
