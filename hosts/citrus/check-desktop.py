@@ -26,7 +26,9 @@ with tempfile.TemporaryDirectory() as directory:
         "args = sys.argv[1:]\n"
         "with open(os.environ['CHECK_LOG'], 'a') as log:\n"
         "    log.write(json.dumps([name, *args]) + '\\n')\n"
-        "if name == 'hyprctl' and len(args) == 2:\n"
+        "if name == 'hyprctl' and args == ['-j', 'monitors']:\n"
+        "    print(os.environ.get('MONITORS', '[{\"name\":\"DP-1\",\"focused\":false},{\"name\":\"DP-2\",\"focused\":true}]'))\n"
+        "elif name == 'hyprctl' and len(args) == 2:\n"
         "    print(os.environ.get(args[1].upper(), '100'))\n"
         "elif name == 'pactl':\n"
         "    print('auto_null' if args == ['get-default-sink'] else os.environ.get('SOURCES', '[]'))\n"
@@ -109,7 +111,11 @@ with tempfile.TemporaryDirectory() as directory:
         recorder = calls[-1]
         assert recorder[: 1 + len(audio)] == ["wf-recorder", *audio], calls
         assert [arg for arg in recorder if arg.startswith("--audio")] == audio
-        assert "--no-dmabuf" in recorder and "Virtual-1" in recorder
+        assert recorder[recorder.index("--output") + 1] == "DP-2"
+    recorder = run("43pr-record-screen", MONITORS='[{"name":"HDMI-A-1"}]')[-1]
+    assert recorder[recorder.index("--output") + 1] == "HDMI-A-1"
+    calls = run("43pr-record-screen", MONITORS="[]", expected=1)
+    assert not any(call[0] == "wf-recorder" for call in calls)
 
     # Execute the real Lua config with a minimal Hyprland API recorder.
     (state / "hyprland-gui.lua").write_text("gui_loaded = true\n")

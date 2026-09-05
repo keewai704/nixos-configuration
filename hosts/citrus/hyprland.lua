@@ -1,5 +1,5 @@
--- 43PR/dotfiles Hyprland configuration, adapted only for citrus-vm's
--- Virtual-1 display, UWSM application scopes, and Fcitx5 input switching.
+-- 43PR/dotfiles Hyprland configuration, adapted for Citrus's physical
+-- displays, UWSM application scopes, and Fcitx5 input switching.
 
 mainMod = "SUPER"
 terminal = "uwsm app -- kitty"
@@ -7,9 +7,9 @@ fileManager = "uwsm app -- thunar"
 browser = "uwsm app -- firefox"
 
 hl.monitor({
-	output = display_output,
-	mode = "1920x1080@60",
-	position = "0x0",
+	output = "",
+	mode = "preferred",
+	position = "auto",
 	scale = 1,
 })
 

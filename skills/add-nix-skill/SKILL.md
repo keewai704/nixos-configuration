@@ -102,8 +102,8 @@ Then validate the Nix-managed publication and full system configuration:
 ```bash
 nix flake check --no-build --no-write-lock-file /home/keewai/nixos-configuration
 nix flake check --no-write-lock-file /home/keewai/nixos-configuration
-nix eval --json --no-write-lock-file /home/keewai/nixos-configuration#nixosConfigurations.citrus-vm.config.home-manager.users.keewai.home.file --apply 'files: builtins.attrNames files'
-nix build --no-link --no-write-lock-file /home/keewai/nixos-configuration#nixosConfigurations.citrus-vm.config.system.build.toplevel
+nix eval --json --no-write-lock-file /home/keewai/nixos-configuration#nixosConfigurations.citrus.config.home-manager.users.keewai.home.file --apply 'files: builtins.attrNames files'
+nix build --no-link --no-write-lock-file /home/keewai/nixos-configuration#nixosConfigurations.citrus.config.system.build.toplevel
 git -C /home/keewai/nixos-configuration diff --check
 ```
 
@@ -126,8 +126,8 @@ cmp /home/keewai/.agents/skills/<skill-name>/SKILL.md /home/keewai/nixos-configu
 ```
 
 The personal skills in this repository are currently deployed by the
-`citrus-vm` configuration. Run the live gates only when the confirmed runtime
-host is `citrus-vm`. On another runtime host, validate the `citrus-vm`
+`citrus` configuration. Run the live gates only when the confirmed runtime
+host is `citrus`. On another runtime host, validate the `citrus`
 configuration locally, do not contact either host or activate an unrelated
 local generation, and report that the skill was not activated on the desktop
 host.

@@ -132,12 +132,14 @@ let
     name = "43pr-record-screen";
     runtimeInputs = [
       pkgs.coreutils
+      pkgs.hyprland
       pkgs.jq
       pkgs.libnotify
       pkgs.pulseaudio
       pkgs.wf-recorder
     ];
     text = ''
+      output="$(hyprctl -j monitors | jq -er 'first(.[] | select(.focused)).name // .[0].name')"
       audio=()
       sink="$(pactl get-default-sink || true)"
       if pactl --format=json list sources | jq -e --arg source "$sink.monitor" 'any(.[]; .name == $source)' >/dev/null; then
@@ -146,7 +148,7 @@ let
         notify-send 'Screen recording' 'No output monitor found; recording video without audio.'
       fi
       install -d "$HOME/Videos"
-      exec wf-recorder "''${audio[@]}" --no-dmabuf -r 30 --output Virtual-1 \
+      exec wf-recorder "''${audio[@]}" -r 30 --output "$output" \
         --file "$HOME/Videos/$(date +%Y-%m-%d_%H-%M-%S_%N).mp4"
     '';
   };
@@ -174,6 +176,9 @@ in
     package:
     builtins.elem (lib.getName package) [
       "chatgpt-desktop"
+      "cuda_nvml_dev"
+      "nvidia-x11"
+      "nvidia-settings"
       "spotify"
     ];
 
@@ -236,7 +241,7 @@ in
         pkgs.kitty
         pkgs.lua
         pkgs.mpv
-        (pkgs.nvtopPackages.full.override { nvidia = false; })
+        pkgs.nvtopPackages.full
         pkgs.nwg-look
         pkgs.playerctl
         pkgs.pavucontrol
@@ -306,11 +311,11 @@ in
           format = "CPU {usage}%";
         };
         "custom/gpu" = {
-          exec = "${pkgs.coreutils}/bin/printf 0";
+          exec = "${config.hardware.nvidia.package.bin}/bin/nvidia-smi --query-gpu=utilization.gpu --format=csv,noheader,nounits";
           format = "GPU {}%";
           interval = 1;
           tooltip = true;
-          tooltip-format = "Virtual GPU: unavailable";
+          tooltip-format = "NVIDIA GeForce RTX 5070 Ti utilization";
         };
         memory = {
           interval = 1;
@@ -318,11 +323,11 @@ in
           tooltip-format = "{used} / {total}GiB";
         };
         "custom/temperature" = {
-          exec = "${pkgs.coreutils}/bin/printf -- --";
+          exec = "${lib.getExe pkgs.lm_sensors} -j | ${lib.getExe pkgs.jq} -r '[to_entries[] | select(.key | startswith(\"k10temp-\")) | .value.Tctl.temp1_input][0] | if . == null then \"--\" else round end'";
           format = " {}°C";
-          interval = 60;
+          interval = 5;
           tooltip = true;
-          tooltip-format = "CPU temperature sensor unavailable";
+          tooltip-format = "AMD Ryzen 7 9800X3D temperature";
           on-click = "${lib.getExe displayControl} night";
         };
         clock = {

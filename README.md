@@ -11,7 +11,7 @@ uses one shared module and keeps everything else beside the host that owns it.
 ├── modules/
 │   └── common.nix                 # settings used by every host
 ├── hosts/
-│   ├── citrus-vm/
+│   ├── citrus/
 │   │   ├── default.nix            # host entry point
 │   │   ├── hardware-configuration.nix
 │   │   ├── desktop.nix            # desktop environment
@@ -58,7 +58,7 @@ the `browser-config` flake input, whose commit is pinned in `flake.lock`.
 
 | Host | Role | Entry point | Guide |
 | --- | --- | --- | --- |
-| `citrus-vm` | Hyprland desktop and local ChatGPT/Codex client | [`hosts/citrus-vm/default.nix`](hosts/citrus-vm/default.nix) | [Citrus](docs/citrus-vm.md) |
+| `citrus` | Hyprland desktop and local ChatGPT/Codex client | [`hosts/citrus/default.nix`](hosts/citrus/default.nix) | [Citrus](docs/citrus.md) |
 | `orange` | Tailnet server, storage, media, password manager, and Minecraft | [`hosts/orange/default.nix`](hosts/orange/default.nix) | [Orange](docs/orange.md) |
 
 ## Non-activating quick start

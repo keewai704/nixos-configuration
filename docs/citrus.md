@@ -1,22 +1,54 @@
-# citrus-vm
+# citrus
 
-`citrus-vm` is the local graphical workstation. It runs a small Hyprland
-session and the locally packaged ChatGPT desktop application used by Codex.
+`citrus` is the physical graphical workstation with an AMD Ryzen 7 9800X3D,
+an NVIDIA GeForce RTX 5070 Ti, and an ASUS ROG STRIX B850-I motherboard. It runs
+Hyprland and the locally packaged ChatGPT desktop application used by Codex.
 
 For the mandatory validation and activation sequence, use the
 [development workflow](development.md). Only a machine whose confirmed runtime
-hostname is `citrus-vm` may run `nixos-rebuild test` or `switch` for this host.
+hostname is `citrus` may run `nixos-rebuild test` or `switch` for this host.
+
+## Installed hardware
+
+The hardware module is based on this PC's installer-generated configuration.
+It preserves the ext4 root filesystem, EFI system partition, XFS `/data`
+filesystem, swap UUIDs, and `system.stateVersion = "26.05"`. The CachyOS kernel
+is retained from the workstation configuration; the Hyper-V-specific kernel
+extension is removed. NVIDIA modules are included in the initrd, and NVIDIA
+suspend/resume support is enabled. PipeWire supplies desktop and 32-bit game
+audio, and Blueman manages the onboard Bluetooth adapter.
+
+An initial setup explicitly requested for this PC may start with the installer
+hostname `nixos`. Confirm the local hardware and mounted filesystem UUIDs before
+applying `.#citrus`; this is a hostname migration of this machine. Subsequent
+work follows the normal runtime-host checks with `citrus`.
+
+The Chaotic module enables its binary cache for subsequent rebuilds. During
+initial setup, the installer configuration only trusts the official NixOS
+cache, so pass Chaotic's cache and signing key explicitly as root:
+
+```console
+sudo nixos-rebuild boot --flake .#citrus --no-write-lock-file \
+  --option extra-substituters https://nyx-cache.chaotic.cx/ \
+  --option extra-trusted-public-keys 'nyx-cache.chaotic.cx:dJxTrgMC3V3cFfyIiBQDQorG6k1LsqurH/srpMSq7qk='
+```
+
+The first boot into this configuration is needed to load the new kernel and
+NVIDIA modules. After boot, check `nvidia-smi`, `/dev/dri/nvidia`,
+`/sys/module/nvidia_drm/parameters/modeset` (expected `Y`), and the desktop checks
+below. Tailscale also requires an initial `sudo tailscale up` login on a new
+installation.
 
 ## Composition
 
 | Path | Responsibility |
 | --- | --- |
-| [`hosts/citrus-vm/default.nix`](../hosts/citrus-vm/default.nix) | Host imports, Home Manager setup, Hyprland session, Hazkey/Fcitx5, graphics, and state versions |
-| [`hosts/citrus-vm/hardware-configuration.nix`](../hosts/citrus-vm/hardware-configuration.nix) | Generated machine hardware, filesystems, and swap |
-| [`hosts/citrus-vm/hyprland.lua`](../hosts/citrus-vm/hyprland.lua) | 43PR Hyprland behavior and key bindings with Citrus hardware adaptations |
-| [`hosts/citrus-vm/desktop.nix`](../hosts/citrus-vm/desktop.nix) | 43PR desktop components, Thunar, and the ChatGPT application |
-| [`hosts/citrus-vm/browser.nix`](../hosts/citrus-vm/browser.nix) | Firefox, Brave Origin, Pywalfox, default handlers, and vendor-scoped WebHID access |
-| [`hosts/citrus-vm/codex.nix`](../hosts/citrus-vm/codex.nix) | System MCP configuration, personal skills, Ponytail hooks, and CUA |
+| [`hosts/citrus/default.nix`](../hosts/citrus/default.nix) | Host imports, Home Manager setup, Hyprland session, Hazkey/Fcitx5, graphics, and state versions |
+| [`hosts/citrus/hardware-configuration.nix`](../hosts/citrus/hardware-configuration.nix) | Generated machine hardware, filesystems, and swap |
+| [`hosts/citrus/hyprland.lua`](../hosts/citrus/hyprland.lua) | 43PR Hyprland behavior and key bindings with Citrus hardware adaptations |
+| [`hosts/citrus/desktop.nix`](../hosts/citrus/desktop.nix) | 43PR desktop components, Thunar, and the ChatGPT application |
+| [`hosts/citrus/browser.nix`](../hosts/citrus/browser.nix) | Firefox, Brave Origin, Pywalfox, default handlers, and vendor-scoped WebHID access |
+| [`hosts/citrus/codex.nix`](../hosts/citrus/codex.nix) | System MCP configuration, personal skills, Ponytail hooks, and CUA |
 | [`pkgs/chatgpt-desktop/default.nix`](../pkgs/chatgpt-desktop/default.nix) | ChatGPT desktop package and launcher |
 | [`pkgs/cua-driver/default.nix`](../pkgs/cua-driver/default.nix) | CUA driver package |
 
@@ -53,18 +85,21 @@ upstream neofetch configuration; unmaintained neofetch is no longer in nixpkgs.
 Home Manager also initializes the matching GTK theme, font, and icon dconf
 keys, so settings left by the previous desktop do not override `settings.ini`.
 
-The VM has neither a physical GPU telemetry source nor a temperature sensor,
-so the matching Waybar slots remain visible as `GPU 0%` and `--°C` instead of
-being removed. Recording uses CPU-compatible `wf-recorder` at 30 fps on
-`Virtual-1`. `Super+R` starts/stops a systemd user service, which sends SIGINT
-on stop to finalize the MP4 in `~/Videos`. Audio comes from the default output's
-monitor, not the VM's nonexistent default microphone; missing monitors produce
-a notification and video-only recording. Hyprsunset provides software
-brightness (20–100%) on the brightness keys and a 3000 K toggle on Waybar's
-temperature slot because this VM has no backlight or hardware gamma control.
-The browser shortcut opens the configured Firefox, and `Super+X` toggles
-Fcitx5 rather than a second XKB layout. UWSM owns app/session lifecycle, and
-Kitty uses the installed JetBrainsMono Nerd Font instead of Consolas.
+Waybar reports NVIDIA GPU utilization through `nvidia-smi` and the AMD CPU's
+Tctl temperature through `lm_sensors`. Hyprland uses the NVIDIA GPU via the
+stable `/dev/dri/nvidia` udev link and selects each monitor's preferred mode.
+The NVIDIA driver uses the [open kernel modules](https://download.nvidia.com/XFree86/Linux-x86_64/580.82.09/README/kernel_open.html)
+required by the RTX 5070 Ti. Rendering runs on the GPU, and the host uses
+physical-device drivers.
+
+`Super+R` records the focused monitor at 30 fps, falling back to the first
+connected monitor when none is focused. It starts/stops a systemd user service,
+which sends SIGINT on stop to finalize the MP4 in `~/Videos`. Audio comes from
+the default output's monitor; missing monitors produce a notification and
+video-only recording. Hyprsunset provides software brightness (20–100%) on the
+brightness keys and a 3000 K toggle on Waybar's temperature slot. The browser
+shortcut opens the configured Firefox, and `Super+X` toggles Fcitx5. UWSM owns
+app/session lifecycle, and Kitty uses the installed JetBrainsMono Nerd Font.
 
 Hazkey is the default Fcitx5 input method. Thunar is the directory handler and
 is paired with GVfs, Tumbler, and Xarchiver without installing a full desktop
@@ -89,7 +124,7 @@ The complete upstream wallpaper set is linked into
 `~/Pictures/Wallpapers/43PR` and rendered by awww. The initial background is the
 mountain image used by the showcase; the hyprquickpaper picker at `Super+W`
 changes it and awww restores its cached selection on later sessions. Keep
-machine-specific display and software-rendering settings in the host entry
+machine-specific display and GPU settings in the host entry
 point, not in a module used by Orange.
 
 ## Browsers and URL handlers
@@ -230,7 +265,11 @@ After both `test` and `switch`, run the common checks from
 change. Typical checks are:
 
 ```console
-systemctl is-active greetd
+systemctl is-active greetd bluetooth
+nvidia-smi
+readlink -f /dev/dri/nvidia
+test "$(cat /sys/module/nvidia_drm/parameters/modeset)" = Y
+systemctl --user is-active pipewire pipewire-pulse wireplumber
 systemctl --user --no-pager --full status waybar.service awww.service
 systemctl --user --no-pager --full status cliphist.service cliphist-images.service
 systemctl --user --no-pager --full status quickshell-volume-osd.service hyprpolkitagent.service
@@ -265,7 +304,7 @@ running Hyprland session directly as well as the corresponding service status.
 The offline control regression check runs without changing the live desktop:
 
 ```console
-nix build .#nixosConfigurations.citrus-vm.config.system.build.desktop43prCheck --no-link
+nix build .#nixosConfigurations.citrus.config.system.build.desktop43prCheck --no-link
 ```
 
 Also exercise Rofi, opacity, brightness/night mode, the wallpaper picker,

@@ -6,19 +6,30 @@
 }:
 
 let
-  displayOutput = "Virtual-1";
-  hyprlandConfig = pkgs.writeText "hyprland.lua" (
-    "local display_output = ${builtins.toJSON displayOutput}\n" + builtins.readFile ./hyprland.lua
-  );
-
   hyprlandSession = "${lib.getExe pkgs.uwsm} start -e -D Hyprland ${pkgs.hyprland}/bin/start-hyprland";
 in
 {
-  boot.kernelPackages = pkgs.linuxPackages_cachyos.extend (
-    _: _: {
-      inherit (pkgs.linuxPackages_latest) hyperv-daemons;
-    }
-  );
+  boot.kernelPackages = pkgs.linuxPackages_cachyos;
+  boot.initrd.kernelModules = [
+    "nvidia"
+    "nvidia_modeset"
+    "nvidia_uvm"
+    "nvidia_drm"
+  ];
+
+  hardware.nvidia = {
+    open = true;
+    modesetting.enable = true;
+    powerManagement.enable = true;
+  };
+
+  hardware.bluetooth.enable = true;
+
+  services.xserver.videoDrivers = [ "nvidia" ];
+  services.udev.extraRules = ''
+    # Keep the discrete GPU path stable across DRM device enumeration changes.
+    SUBSYSTEM=="drm", KERNEL=="card[0-9]*", KERNELS=="0000:01:00.0", SYMLINK+="dri/nvidia"
+  '';
 
   imports = [
     inputs.home-manager.nixosModules.home-manager
@@ -34,12 +45,12 @@ in
     useUserPackages = true;
     users.keewai = {
       home.stateVersion = "26.05";
-      xdg.configFile."hypr/hyprland.lua".source = hyprlandConfig;
+      xdg.configFile."hypr/hyprland.lua".source = ./hyprland.lua;
       systemd.user.tmpfiles.rules = [ "f %h/.config/hypr/hyprland-gui.lua 0644 - - -" ];
     };
   };
 
-  networking.hostName = "citrus-vm";
+  networking.hostName = "citrus";
 
   stylix = {
     enable = true;
@@ -145,7 +156,15 @@ in
   programs.hyprlock.enable = true;
 
   services = {
+    blueman.enable = true;
     hazkey.enable = true;
+
+    pipewire = {
+      enable = true;
+      alsa.enable = true;
+      alsa.support32Bit = true;
+      pulse.enable = true;
+    };
 
     greetd = {
       enable = true;
@@ -180,8 +199,9 @@ in
     systemPackages = [ pkgs.gws ];
 
     sessionVariables = {
-      AQ_DRM_DEVICES = "/dev/dri/card1";
-      LIBGL_ALWAYS_SOFTWARE = "1";
+      AQ_DRM_DEVICES = "/dev/dri/nvidia";
+      LIBVA_DRIVER_NAME = "nvidia";
+      __GLX_VENDOR_LIBRARY_NAME = "nvidia";
       NIXOS_OZONE_WL = "1";
     };
   };
