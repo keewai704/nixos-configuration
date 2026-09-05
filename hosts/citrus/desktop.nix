@@ -57,6 +57,7 @@ in
       systemd.enable = true;
       settings = {
         bar.default.background_opacity = 0.68999998457729816;
+        bar.default.margin_ends = 1200;
         calendar = {
           enabled = true;
           account.personal_google.type = "google";
