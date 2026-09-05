@@ -110,9 +110,9 @@ cancellation during initialization and scanning, and reopening the device.
 
 ## Steam, VRR, and HDR
 
-The AW3926QW runs at `5120x2160@165` with 10-bit output. Hyprland enables
-VRR for fullscreen applications (`vrr = 2`) and switches to HDR when a
-fullscreen application supplies HDR content (`render.cm_auto_hdr = 1`).
+The AW3926QW runs at `5120x2160@165` with 10-bit HDR output (`cm = "hdr"`).
+Hyprland enables VRR for fullscreen applications (`vrr = 2`) and follows
+fullscreen content's HDR/SDR mode (`render.cm_auto_hdr = 1`).
 These settings follow the [Hyprland monitor configuration](https://wiki.hypr.land/Configuring/Basics/Monitors/).
 The display advertises a 48–165 Hz adaptive-sync range and HDR10 support.
 
@@ -135,10 +135,22 @@ For games using XWayland, the Gamescope path is:
 gamescope --backend wayland --adaptive-sync --hdr-enabled -f -W 5120 -H 2160 -- env DXVK_HDR=1 %command%
 ```
 
-Use fullscreen mode for automatic VRR/HDR switching. Check `hyprctl monitors`
+The desktop's HDR mode lets Gamescope detect HDR support at startup.
+Hyprland color-manages SDR applications on the HDR desktop.
+
+Use fullscreen mode for VRR. Check `hyprctl monitors`
 while the game is fullscreen: `currentFormat` should be a 10-bit format,
-`vrr` should be enabled, and `colorManagementPreset` should become `hdr` for
-HDR content. After exiting fullscreen HDR content, the desktop returns to SDR.
+and `vrr` should be enabled. On Hyprland 0.56.2, `colorManagementPreset` shows
+the configured preset rather than the current HDR/SDR output mode. Check the
+monitor's HDR indicator, or inspect the GPU's actual output state with:
+
+```console
+nix shell --inputs-from . nixpkgs#drm_info --command drm_info -j /dev/dri/nvidia
+```
+
+The active connector's `HDR_OUTPUT_METADATA.data.eotf` should be `2` (PQ),
+and the active CRTC's `VRR_ENABLED.value` should be `1`. After exiting
+fullscreen content, VRR turns off and the desktop returns to its HDR preset.
 
 ## Browsers and URL handlers
 
