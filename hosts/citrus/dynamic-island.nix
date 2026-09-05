@@ -178,11 +178,18 @@ in
         Description = "Restore the selected Dynamic Island wallpaper";
         After = [ "hyprpaper.service" ];
         Wants = [ "hyprpaper.service" ];
-        PartOf = [ "graphical-session.target" ];
+        PartOf = [
+          "graphical-session.target"
+          "hyprpaper.service"
+        ];
       };
       Service = {
         Type = "oneshot";
         ExecStart = "${lib.getExe islandAction} wallpaper-restore";
+        RemainAfterExit = true;
+        # Hyprpaper's simple service starts before its IPC socket is ready.
+        Restart = "on-failure";
+        RestartSec = 1;
       };
       Install.WantedBy = [ "graphical-session.target" ];
     };
