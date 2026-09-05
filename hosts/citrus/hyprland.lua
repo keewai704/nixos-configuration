@@ -169,8 +169,8 @@ hl.bind(
 )
 hl.bind(mainMod .. " + V", hl.dsp.exec_cmd(clipboard))
 
-hl.bind(mainMod .. " + Delete", hl.dsp.exec_cmd("grim " .. home .. "/Pictures/$(date +%s).png"))
-hl.bind("Delete", hl.dsp.exec_cmd('grim -g "$(slurp)" ' .. home .. "/Pictures/$(date +%s).png"))
+hl.bind(mainMod .. " + Print", hl.dsp.exec_cmd("grim " .. home .. "/Pictures/$(date +%s).png"))
+hl.bind("Print", hl.dsp.exec_cmd('grim -g "$(slurp)" ' .. home .. "/Pictures/$(date +%s).png"))
 
 hl.bind("XF86MonBrightnessUp", hl.dsp.exec_cmd("43pr-display up"), {
 	locked = true,
@@ -241,6 +241,7 @@ for key, direction in pairs(directions) do
 		hl.dsp.window.resize({
 			x = direction.x,
 			y = direction.y,
+			relative = true,
 		}),
 		{ repeating = true }
 	)

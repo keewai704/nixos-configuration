@@ -124,12 +124,15 @@ with tempfile.TemporaryDirectory() as directory:
     check.write_text("""
 local rules, bindings, decoration = {}, {}, {}
 local noop = function() end
-local dispatcher = setmetatable({}, {__index = function(self) return self end, __call = function() return noop end})
+local dispatcher = setmetatable({}, {__index = function(self) return self end, __call = function(_, args) return args or noop end})
 hl = setmetatable({
   dsp = dispatcher,
   config = function(t) if t.decoration then decoration = t.decoration end end,
   window_rule = function(t) if t.name then rules[t.name] = t end end,
-  bind = function(key) bindings[key] = true end,
+  bind = function(key, action, options)
+    assert(not bindings[key], "duplicate bind: " .. key)
+    bindings[key] = {action = action, options = options or {}}
+  end,
 }, {__index = function() return noop end})
 package.path = os.getenv("XDG_STATE_HOME") .. "/?.lua;" .. package.path
 dofile(arg[1])
@@ -144,8 +147,17 @@ assert(rules["43pr-fullscreen-opacity"].opacity == "1.0 override")
 for _, key in ipairs({"SUPER + O", "SUPER + R", "SUPER + W", "XF86MonBrightnessDown", "XF86MonBrightnessUp"}) do
   assert(bindings[key], key)
 end
+for key, delta in pairs({H = {-40, 0}, J = {0, 40}, K = {0, -40}, L = {40, 0}}) do
+  local bind = bindings["SUPER + CTRL + " .. key]
+  assert(bind.action.relative == true, key .. " must resize relatively")
+  assert(bind.action.x == delta[1] and bind.action.y == delta[2], key)
+  assert(bind.options.repeating, key)
+end
+assert(bindings.Print.action:find("slurp", 1, true))
+assert(bindings["SUPER + Print"].action:match("^grim "))
+assert(not bindings.Delete and not bindings["SUPER + Delete"])
 """)
     subprocess.run(["lua", check, sys.argv[1]], env=env, check=True)
     print(
-        "43PR controls: opacity, brightness bounds, night mode, recorder audio/toggle, Lua overrides passed"
+        "43PR controls: opacity, brightness bounds, night mode, recorder audio/toggle, Lua overrides, keybindings passed"
     )
