@@ -139,8 +139,18 @@ let
     );
 
   codexSystemConfig = (pkgs.formats.toml { }).generate "chatgpt-desktop-mcp.toml" {
+    model = "gpt-6-astra";
+    model_reasoning_effort = "ultra";
+    plan_mode_reasoning_effort = "max";
+    agents = {
+      default_subagent_model = "gpt-5.6-luna";
+      default_subagent_reasoning_effort = "max";
+    };
+
     developer_instructions = ''
-      Codexクレジットの消費を抑えること。品質、安全性、検証の十分性を損なわない範囲で、単純・定型的な作業や、長時間でも独立して委任できる作業には、GPT-5.6 Lunaをreasoning effort=maxで優先的に活用すること。難しい設計判断、行き詰まりの解消、最終レビューなど、追加の高品質な推論が実質的に有益な場合に限り、use-chatgpt-5-6-proスキルでChatGPTのGPT-5.6 Sol Proを活用すること。
+      GPT-6 Astraの推論能力を活かし、主担当が問題の理解、難しい設計判断、結果の統合、最終レビューまで責任を持つこと。クレジット節約のために明示された要件、品質、安全性、必要な検証を省略しないこと。
+
+      並列化が時間短縮や品質向上に役立つ場合は、独立した具体的な作業をサブエージェントへ委任すること。単純・定型的な作業にはGPT-5.6 Lunaをreasoning effort=maxで優先し、高度な推論が必要な委任にはGPT-6 Astraをreasoning effort=maxで明示指定すること。委任先には必要な背景と完了条件を渡し、主担当は独立した作業を続けること。use-chatgpt-5-6-proスキルはユーザーの明示指定、または行き詰まりの解消に独立した見解が必要な場合に使うこと。
 
       シェル出力によるトークン消費を抑えるため、RTKが対応するコマンドは原則として `rtk <command>` で実行すること。未加工の出力が必要な場合は `rtk proxy <command>` を使うこと。
 

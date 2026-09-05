@@ -251,7 +251,7 @@ env -u NIXOS_OZONE_WL chatgpt
 
 | Path | Owner and purpose |
 | --- | --- |
-| `/etc/codex/config.toml` | Nix-generated system MCP and developer-instruction layer shared by ChatGPT Desktop, Codex CLI, and the IDE extension; immutable at runtime |
+| `/etc/codex/config.toml` | Nix-generated model defaults, MCP, and developer instructions shared by ChatGPT Desktop, Codex CLI, and the IDE extension; immutable at runtime |
 | `~/.codex/config.toml` | Writable application/user layer for bundled helpers, plugin state, project trust, UI settings, and unrelated preferences |
 | `skills/<name>/` | Repository source for personal skills |
 | `~/.agents/skills/<name>` | Home Manager links to repository-owned personal skills |
@@ -264,6 +264,20 @@ untouched.
 
 After changing an MCP server or personal skill, rebuild through the development
 workflow and restart ChatGPT Desktop or begin a new local session.
+
+The default model is `gpt-6-astra` with `model_reasoning_effort = "ultra"`;
+Plan mode uses `max`. [Ultra](https://learn.chatgpt.com/docs/models) combines
+maximum reasoning with proactive delegation of suitable independent work.
+Subagents default to `gpt-5.6-luna` / `max` to limit usage; demanding work can
+explicitly select Astra / `max`. Astra owns design, integration, and final review,
+following the [official Astra guidance](https://developers.openai.com/api/docs/guides/latest-model?model=gpt-6-astra).
+Context size, compaction, and processing speed use the model/client defaults.
+The experimental context-management feature remains opt-in.
+
+These are defaults, not enforced requirements. User settings and explicit
+thread choices take precedence, so an existing task retains its selected model
+and effort. See the [configuration reference](https://learn.chatgpt.com/docs/config-file/config-reference)
+for Plan mode and subagent settings.
 
 ## MCP and CUA
 
