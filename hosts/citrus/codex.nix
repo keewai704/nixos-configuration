@@ -142,7 +142,13 @@ let
     model = "gpt-6-astra";
     model_reasoning_effort = "high";
     plan_mode_reasoning_effort = "high";
-    features.context_management.experimental_mode = true;
+    features = {
+      context_management = {
+        experimental_mode = true;
+      };
+      token_budget.enabled = true;
+      token_budget.use_history_notes_extension = true;
+    };
     agents = {
       default_subagent_model = "gpt-5.6-luna";
       default_subagent_reasoning_effort = "max";

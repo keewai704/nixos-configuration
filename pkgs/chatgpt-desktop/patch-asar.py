@@ -4,7 +4,7 @@
 The bundled @parcel/watcher native module crashes during worker startup on
 NixOS. The worker already contains an fs.watch implementation for the other
 platforms, and Node's native recursive watcher is suitable for local Git
-working trees here. Keep the replacement byte-for-byte the same size so the
+working trees here. Keep each replacement byte-for-byte the same size so the
 ASAR offsets remain valid and update the corresponding integrity entries.
 """
 
@@ -16,13 +16,15 @@ import sys
 from pathlib import Path
 
 
-NEEDLE = (
-    b"process.platform===`linux`?vbe(n,{ignoredPaths:[E.posix.join(n.path,`.git`)]}):"
-    b"e.startFileWatch(n)"
-)
-REPLACEMENT = (
-    b"process.platform===`linux`?e.startFileWatch(n):e.startFileWatch(n)"
-    b"/* NixOS fs.watch fallback */   "
+WATCHER_PATCHES = tuple(
+    (needle, needle.replace(b"`linux`", b"`nixos`"))
+    for needle in (
+        b"startMetadataWatch:(t,n)=>t.isLocal?process.platform===`linux`&&n.recursive!==!1?"
+        b"F9(n,{ignoredPaths:[]}):e.startFileWatch(n):t.startFileWatch(n)",
+        b"startWorkingTreeWatch:(t,n,r)=>t.isLocal?process.platform===`linux`?"
+        b"F9(n,{ignoredPaths:[E.posix.join(n.path,`.git`),...r]}):e.startFileWatch(n):"
+        b"t.startFileWatch(n)",
+    )
 )
 
 
@@ -87,10 +89,11 @@ def check_archive(archive: Path) -> str:
         _header, worker, worker_start, worker_end = worker_metadata(mapping)
         worker_bytes = bytes(mapping[worker_start:worker_end])
         worker_hash = verify_worker_integrity(worker_bytes, worker)
-        if worker_bytes.count(NEEDLE) != 0:
-            raise RuntimeError("unpatched Linux @parcel/watcher call remains")
-        if worker_bytes.count(REPLACEMENT) != 1:
-            raise RuntimeError("expected exactly one NixOS fs.watch fallback")
+        for needle, replacement in WATCHER_PATCHES:
+            if worker_bytes.count(needle) != 0:
+                raise RuntimeError("unpatched Linux @parcel/watcher call remains")
+            if worker_bytes.count(replacement) != 1:
+                raise RuntimeError("expected exactly one NixOS fs.watch fallback")
         return worker_hash
 
 
@@ -102,7 +105,7 @@ def main() -> None:
     if len(sys.argv) != 2:
         raise SystemExit(f"usage: {sys.argv[0]} [--check] APP.ASAR")
 
-    if len(NEEDLE) != len(REPLACEMENT):
+    if any(len(needle) != len(replacement) for needle, replacement in WATCHER_PATCHES):
         raise RuntimeError("watcher replacement must preserve its byte length")
 
     archive = Path(sys.argv[1])
@@ -111,12 +114,15 @@ def main() -> None:
 
         worker_bytes = bytes(mapping[worker_start:worker_end])
         verify_worker_integrity(worker_bytes, worker)
-        if worker_bytes.count(NEEDLE) != 1:
-            raise RuntimeError("expected exactly one Linux @parcel/watcher call")
+        for needle, _replacement in WATCHER_PATCHES:
+            if worker_bytes.count(needle) != 1:
+                raise RuntimeError("expected exactly one Linux @parcel/watcher call")
 
         header_size = len(header)
-        mapping[worker_start:worker_end] = worker_bytes.replace(NEEDLE, REPLACEMENT)
-        patched_worker = bytes(mapping[worker_start:worker_end])
+        patched_worker = worker_bytes
+        for needle, replacement in WATCHER_PATCHES:
+            patched_worker = patched_worker.replace(needle, replacement)
+        mapping[worker_start:worker_end] = patched_worker
         block_size = int(worker["integrity"]["blockSize"])
         patched_integrity = {
             **worker["integrity"],
@@ -141,8 +147,10 @@ def main() -> None:
         if final_start != worker_start or final_end != worker_end:
             raise RuntimeError("worker.js metadata changed its ASAR byte range")
         verify_worker_integrity(bytes(mapping[final_start:final_end]), final_worker)
-        if bytes(mapping[final_start:final_end]).count(REPLACEMENT) != 1:
-            raise RuntimeError("patched worker.js marker is missing or duplicated")
+        final_worker_bytes = bytes(mapping[final_start:final_end])
+        for _needle, replacement in WATCHER_PATCHES:
+            if final_worker_bytes.count(replacement) != 1:
+                raise RuntimeError("patched worker.js marker is missing or duplicated")
 
     print(f"patched {archive} (worker sha256 {new_hash.decode()})")
 
