@@ -119,9 +119,11 @@ hl.config({
 
 hl.window_rule({ match = { class = "firefox" }, opacity = "1.0 override" })
 
--- Proton identifies Steam game windows by their app ID.
+-- XWayland uses Steam app IDs; native Wayland Proton windows expose an xdg tag.
+hl.window_rule({ match = { class = "^steam_app_[0-9]+$" }, tag = "+proton-game" })
+hl.window_rule({ match = { xdg_tag = "^proton-game$" }, tag = "+proton-game" })
 hl.window_rule({
-    match = { class = "^steam_app_[0-9]+$" },
+    match = { tag = "proton-game" },
     opacity = "1.0 override 1.0 override 1.0 override",
     border_size = 0,
     rounding = 0,
