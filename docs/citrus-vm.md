@@ -32,15 +32,37 @@ The session starts Hyprland through UWSM and greetd. Home Manager pins
 `5354e7d42cc3d76e63ba749cbc878f3f989939d5`. The desktop reproduces its
 Hyprland spacing, blur, opacity, animations, complete key map, wallpapers,
 Waybar, Rofi, Hyprlock, Wlogout, hyprquickpaper, Quickshell volume OSD, GTK,
-Kitty, btop, and cava styling. Home Manager's native services run Waybar,
-Dunst, awww, cliphist, and the Hyprland polkit agent for the graphical session.
+Kitty, btop, cava, and Spotify's Spicetify text/Monochrome styling (including
+Marketplace). Spicetify patches Spotify at build time, not the read-only Nix
+store at runtime. Home Manager's native services run Waybar, Dunst, awww,
+cliphist, hyprsunset, the network applet, and the Hyprland polkit agent.
+
+Hyprland reads the stable `~/.config/hypr/hyprland.lua` Home Manager link rather
+than a generation-specific command-line path. It includes the writable
+`hyprland-gui.lua` used by HyprMod; the base file remains Nix-managed. `Super+O`
+updates named opacity rules immediately and saves the selection under
+`$XDG_STATE_HOME/43pr-opacity` (default `~/.local/state/43pr-opacity`).
+Migrating an already running session from an old `--config /nix/store/...`
+launch requires restarting greetd/the graphical session; a reload cannot
+change the compositor's startup path. Restarting greetd closes graphical apps.
+
+Xed, nwg-look, mpv, and HyprMod are installed. GTK settings and Xed shortcuts
+are initialized from upstream only when absent, then remain writable for their
+editors. GTK CSS remains Nix-managed. Neowofetch (from hyfetch) reads the
+upstream neofetch configuration; unmaintained neofetch is no longer in nixpkgs.
 
 The VM has neither a physical GPU telemetry source nor a temperature sensor,
 so the matching Waybar slots remain visible as `GPU 0%` and `--°C` instead of
-being removed. Recording uses CPU-compatible `wf-recorder` on `Virtual-1`, the
-browser shortcut opens the configured Firefox, and `Super+X` toggles Fcitx5
-rather than a second XKB layout. Those are the only host-specific behavioral
-substitutions.
+being removed. Recording uses CPU-compatible `wf-recorder` at 30 fps on
+`Virtual-1`. `Super+R` starts/stops a systemd user service, which sends SIGINT
+on stop to finalize the MP4 in `~/Videos`. Audio comes from the default output's
+monitor, not the VM's nonexistent default microphone; missing monitors produce
+a notification and video-only recording. Hyprsunset provides software
+brightness (20–100%) on the brightness keys and a 3000 K toggle on Waybar's
+temperature slot because this VM has no backlight or hardware gamma control.
+The browser shortcut opens the configured Firefox, and `Super+X` toggles
+Fcitx5 rather than a second XKB layout. UWSM owns app/session lifecycle, and
+Kitty uses the installed JetBrainsMono Nerd Font instead of Consolas.
 
 Hazkey is the default Fcitx5 input method. Thunar is the directory handler and
 is paired with GVfs, Tumbler, and Xarchiver without installing a full desktop
@@ -210,6 +232,12 @@ systemctl is-active greetd
 systemctl --user --no-pager --full status waybar.service awww.service
 systemctl --user --no-pager --full status cliphist.service cliphist-images.service
 systemctl --user --no-pager --full status quickshell-volume-osd.service hyprpolkitagent.service
+systemctl --user is-active hyprsunset.service network-manager-applet.service
+hyprctl hyprsunset gamma
+hyprctl hyprsunset temperature
+hyprctl configerrors
+test -w ~/.config/hypr/hyprland-gui.lua
+test -w ~/.config/gtk-3.0/settings.ini
 waybar --version
 quickshell --version
 awww query
@@ -232,3 +260,14 @@ codex mcp list
 
 For theme, input-method, wallpaper, or window-manager changes, verify the
 running Hyprland session directly as well as the corresponding service status.
+The offline control regression check runs without changing the live desktop:
+
+```console
+nix build .#nixosConfigurations.citrus-vm.config.system.build.desktop43prCheck --no-link
+```
+
+Also exercise Rofi, opacity, brightness/night mode, the wallpaper picker,
+HyprMod, and a short start/stop recording in the live session. Use `ffprobe` to
+check the resulting video/audio streams. Do not test power-off, logout, or
+locking by interrupting unsaved work; Spotify playback additionally needs a
+user login.

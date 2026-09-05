@@ -11,9 +11,7 @@ let
     "local display_output = ${builtins.toJSON displayOutput}\n" + builtins.readFile ./hyprland.lua
   );
 
-  hyprlandSession =
-    "${lib.getExe pkgs.uwsm} start -e -D Hyprland ${pkgs.hyprland}/bin/start-hyprland"
-    + " -- -- --config ${hyprlandConfig}";
+  hyprlandSession = "${lib.getExe pkgs.uwsm} start -e -D Hyprland ${pkgs.hyprland}/bin/start-hyprland";
 in
 {
   boot.kernelPackages = pkgs.linuxPackages_cachyos.extend (
@@ -34,7 +32,11 @@ in
   home-manager = {
     useGlobalPkgs = true;
     useUserPackages = true;
-    users.keewai.home.stateVersion = "26.05";
+    users.keewai = {
+      home.stateVersion = "26.05";
+      xdg.configFile."hypr/hyprland.lua".source = hyprlandConfig;
+      systemd.user.tmpfiles.rules = [ "f %h/.config/hypr/hyprland-gui.lua 0644 - - -" ];
+    };
   };
 
   networking.hostName = "citrus-vm";

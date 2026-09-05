@@ -1,4 +1,5 @@
 {
+  config,
   inputs,
   lib,
   pkgs,
@@ -15,7 +16,7 @@ let
   };
   desktop43pr = pkgs.runCommandLocal "43pr-desktop-config" { } ''
     mkdir -p "$out"
-    for name in btop cava gtk-3.0 gtk-4.0 hypr kitty quickshell rofi waybar wlogout; do
+    for name in btop cava gtk-3.0 gtk-4.0 hypr kitty neofetch nwg-look quickshell rofi waybar wlogout xed; do
       cp -R "${dotfiles43pr}/.config/$name" "$out/"
     done
     ln -s '${dotfiles43pr}/Wallpapers/$.jpg' "$out/default-wallpaper.jpg"
@@ -71,7 +72,7 @@ let
       pkgs.rofi
     ];
     text = ''
-      choice="$(printf '100%%\n90%%\n80%%\n70%%\n60%%\n50%%\n40%%\n' | rofi -dmenu -p "")"
+      choice="$(printf '100%%\n90%%\n80%%\n70%%\n60%%\n50%%\n40%%\n' | rofi -dmenu -p "")" || exit 0
       case "$choice" in
         100%) opacity=1.0 ;;
         90%) opacity=0.9 ;;
@@ -84,38 +85,119 @@ let
       esac
 
       state_dir="''${XDG_STATE_HOME:-$HOME/.local/state}"
+      hyprctl eval "apply_43pr_opacity($opacity)"
       install -d -m 700 "$state_dir"
       printf '%s\n' "$opacity" > "$state_dir/43pr-opacity"
-      hyprctl reload
+    '';
+  };
+  displayControl = pkgs.writeShellApplication {
+    name = "43pr-display";
+    runtimeInputs = [ pkgs.hyprland ];
+    text = ''
+      case "''${1:-}" in
+        night)
+          if [[ "$(hyprctl hyprsunset temperature)" == 3000 ]]; then
+            hyprctl hyprsunset identity
+          else
+            hyprctl hyprsunset temperature 3000
+          fi
+          ;;
+        up|down)
+          gamma="$(hyprctl hyprsunset gamma)"
+          [[ "$gamma" =~ ^[0-9]+([.][0-9]+)?$ ]]
+          gamma="''${gamma%.*}"
+          if [[ "$1" == up ]]; then gamma=$((gamma + 5)); else gamma=$((gamma - 5)); fi
+          if ((gamma < 20)); then gamma=20; fi
+          if ((gamma > 100)); then gamma=100; fi
+          hyprctl hyprsunset gamma "$gamma"
+          ;;
+        *) printf 'Usage: 43pr-display night|up|down\n' >&2; exit 2 ;;
+      esac
     '';
   };
   screenRecorder = pkgs.writeShellApplication {
     name = "43pr-recorder";
+    runtimeInputs = [ pkgs.systemd ];
+    text = ''
+      if systemctl --user --quiet is-active 43pr-recorder.service; then
+        systemctl --user stop 43pr-recorder.service
+      else
+        systemctl --user start 43pr-recorder.service
+      fi
+    '';
+  };
+  recordScreen = pkgs.writeShellApplication {
+    name = "43pr-record-screen";
     runtimeInputs = [
       pkgs.coreutils
+      pkgs.jq
+      pkgs.libnotify
+      pkgs.pulseaudio
       pkgs.wf-recorder
     ];
     text = ''
-      state_file="''${XDG_RUNTIME_DIR:?}/43pr-recorder.pid"
-      if [[ -s "$state_file" ]]; then
-        recorder_pid="$(<"$state_file")"
-        if kill -0 "$recorder_pid" 2>/dev/null; then
-          kill -INT "$recorder_pid"
-          rm -f "$state_file"
-          exit 0
-        fi
-        rm -f "$state_file"
+      audio=()
+      sink="$(pactl get-default-sink || true)"
+      if pactl --format=json list sources | jq -e --arg source "$sink.monitor" 'any(.[]; .name == $source)' >/dev/null; then
+        audio=("--audio=$sink.monitor")
+      else
+        notify-send 'Screen recording' 'No output monitor found; recording video without audio.'
       fi
-
       install -d "$HOME/Videos"
-      wf-recorder --audio --no-dmabuf --output Virtual-1 \
-        --file "$HOME/Videos/$(date +%Y-%m-%d_%H-%M-%S).mp4" &
-      printf '%s\n' "$!" > "$state_file"
+      exec wf-recorder "''${audio[@]}" --no-dmabuf -r 30 --output Virtual-1 \
+        --file "$HOME/Videos/$(date +%Y-%m-%d_%H-%M-%S_%N).mp4"
     '';
   };
+  spotify43pr = pkgs.spotify.overrideAttrs (old: {
+    nativeBuildInputs = old.nativeBuildInputs ++ [ pkgs.spicetify-cli ];
+    postInstall = (old.postInstall or "") + ''
+      export SPICETIFY_CONFIG="$TMPDIR/spicetify"
+      export XDG_STATE_HOME="$TMPDIR/spicetify-state"
+      mkdir -p "$SPICETIFY_CONFIG"
+      cp -R ${dotfiles43pr}/.config/spicetify/{Themes,CustomApps,config-xpui.ini} "$SPICETIFY_CONFIG/"
+      chmod -R u+w "$SPICETIFY_CONFIG" "$out/share/spotify/Apps"
+      printf 'app.last-launched-version="%s"\n' '${pkgs.spotify.version}' > "$TMPDIR/spotify-prefs"
+      substituteInPlace "$SPICETIFY_CONFIG/config-xpui.ini" \
+        --replace-fail '/opt/spotify/' "$out/share/spotify/" \
+        --replace-fail '/home/rp34/.config/spotify/prefs' "$TMPDIR/spotify-prefs" \
+        --replace-fail 'check_spicetify_update = 1' 'check_spicetify_update = 0'
+      spicetify --no-restart backup apply
+      test -s "$out/share/spotify/Apps/xpui/user.css"
+      test -s "$out/share/spotify/Apps/xpui/spicetify-routes-marketplace.js"
+    '';
+  });
 in
 {
-  nixpkgs.config.allowUnfreePredicate = package: lib.getName package == "chatgpt-desktop";
+  nixpkgs.config.allowUnfreePredicate =
+    package:
+    builtins.elem (lib.getName package) [
+      "chatgpt-desktop"
+      "spotify"
+    ];
+
+  system.build.desktop43prCheck =
+    pkgs.runCommandLocal "43pr-desktop-check"
+      {
+        nativeBuildInputs = [
+          pkgs.jq
+          pkgs.python3
+          pkgs.lua
+        ];
+      }
+      ''
+            python3 ${./check-desktop.py} ${./hyprland.lua} \
+              ${lib.getExe displayControl} ${lib.getExe opacityPicker} \
+              ${lib.getExe screenRecorder} ${lib.getExe recordScreen}
+        mkdir -m 700 runtime
+        mkdir -p config/hypr
+        ln -s ${
+          config.home-manager.users.keewai.xdg.configFile."hypr/hyprland.lua".source
+        } config/hypr/hyprland.lua
+        touch config/hypr/hyprland-gui.lua
+        XDG_RUNTIME_DIR="$PWD/runtime" XDG_CONFIG_HOME="$PWD/config" \
+          ${pkgs.hyprland}/bin/Hyprland --verify-config
+            touch "$out"
+      '';
 
   environment.systemPackages = [
     chatgptDesktop
@@ -123,32 +205,48 @@ in
     pkgs.xarchiver
   ];
 
-  home-manager.users.keewai = {
+  home-manager.users.keewai = { lib, ... }: {
     imports = [ inputs.nixcord.homeModules.nixcord ];
 
     home = {
       file."Pictures/Wallpapers/43PR".source = "${dotfiles43pr}/Wallpapers";
       packages = [
+        displayControl
         opacityPicker
         papirus43pr
         screenRecorder
+        spotify43pr
         pkgs.btop
-        pkgs.brightnessctl
         pkgs.cava
         pkgs.ffmpegthumbnailer
-        pkgs.gammastep
         pkgs.grim
+        pkgs.hyfetch
+        pkgs.hyprmod
         pkgs.imagemagick
         pkgs.jq
         pkgs.kitty
+        pkgs.lua
+        pkgs.mpv
+        (pkgs.nvtopPackages.full.override { nvidia = false; })
+        pkgs.nwg-look
         pkgs.playerctl
         pkgs.pavucontrol
         pkgs.quickshell
         pkgs.rofi
         pkgs.slurp
+        pkgs.spicetify-cli
         pkgs.wl-clipboard
         pkgs.wlogout
+        pkgs.xed-editor
       ];
+
+      activation.initialize43prEditableSettings = lib.hm.dag.entryAfter [ "linkGeneration" ] ''
+        for name in gtk-3.0/settings.ini gtk-4.0/settings.ini nwg-look/config xed/accels; do
+          if [ ! -e "$HOME/.config/$name" ]; then
+            run install -Dm644 "${desktop43pr}/$name" "$HOME/.config/$name"
+          fi
+        done
+      '';
     };
 
     xdg = {
@@ -161,13 +259,12 @@ in
         "btop/btop.conf".source = "${desktop43pr}/btop/btop.conf";
         "cava".source = "${desktop43pr}/cava";
         "gtk-3.0/gtk.css".source = "${desktop43pr}/gtk-3.0/gtk.css";
-        "gtk-3.0/settings.ini".source = "${desktop43pr}/gtk-3.0/settings.ini";
         "gtk-4.0/gtk.css".source = "${desktop43pr}/gtk-4.0/gtk.css";
-        "gtk-4.0/settings.ini".source = "${desktop43pr}/gtk-4.0/settings.ini";
         "hypr/hyprlock.conf".source = "${desktop43pr}/hypr/hyprlock.conf";
         "hypr/scripts/now-playing.sh".source = "${desktop43pr}/hypr/scripts/now-playing.sh";
         "hypr/scripts/password-cursor.sh".source = "${desktop43pr}/hypr/scripts/password-cursor.sh";
         "kitty/kitty.conf".source = "${desktop43pr}/kitty/kitty.conf";
+        "neofetch".source = "${desktop43pr}/neofetch";
         "quickshell".source = "${desktop43pr}/quickshell";
         "rofi".source = "${desktop43pr}/rofi";
         "user-dirs.dirs".force = true;
@@ -217,7 +314,7 @@ in
           interval = 60;
           tooltip = true;
           tooltip-format = "CPU temperature sensor unavailable";
-          on-click = "${desktop43pr}/waybar/scripts/toggle-gammastep";
+          on-click = "${lib.getExe displayControl} night";
         };
         clock = {
           format = "{:%H:%M}";
@@ -274,10 +371,29 @@ in
       cliphist.enable = true;
       dunst.enable = true;
       hyprpolkitagent.enable = true;
+      hyprsunset = {
+        enable = true;
+        extraArgs = [ "--identity" ];
+      };
+      network-manager-applet.enable = true;
     };
 
     systemd.user.services = {
       dunst.Install.WantedBy = [ "graphical-session.target" ];
+
+      "43pr-recorder" = {
+        Unit = {
+          Description = "43PR screen and output-audio recorder";
+          PartOf = [ "graphical-session.target" ];
+          ConditionEnvironment = "WAYLAND_DISPLAY";
+        };
+        Service = {
+          Type = "exec";
+          ExecStart = lib.getExe recordScreen;
+          KillSignal = "SIGINT";
+          TimeoutStopSec = 10;
+        };
+      };
 
       awww-43pr-wallpaper = {
         Unit = {

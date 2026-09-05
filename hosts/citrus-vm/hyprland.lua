@@ -40,6 +40,9 @@ hl.config({
 		layout = "dwindle",
 	},
 	decoration = {
+		active_opacity = 1.0,
+		inactive_opacity = 1.0,
+		fullscreen_opacity = 1.0,
 		rounding = 8,
 		blur = {
 			enabled = true,
@@ -98,15 +101,20 @@ if opacity_file then
 	opacity_file:close()
 end
 
-hl.window_rule({
-	match = { class = ".*" },
-	opacity = tostring(opacity) .. " override",
-})
-
-hl.window_rule({
-	match = { class = ".*", fullscreen = true },
-	opacity = "1.0 override",
-})
+function apply_43pr_opacity(value)
+	value = math.max(0.4, math.min(1.0, tonumber(value) or 0.9))
+	hl.window_rule({
+		name = "43pr-opacity",
+		match = { class = ".*" },
+		opacity = tostring(value) .. " override",
+	})
+	hl.window_rule({
+		name = "43pr-fullscreen-opacity",
+		match = { class = ".*", fullscreen = true },
+		opacity = "1.0 override",
+	})
+end
+apply_43pr_opacity(opacity)
 
 for _, class in ipairs({
 	"^(pavucontrol)$",
@@ -157,11 +165,11 @@ hl.bind(mainMod .. " + V", hl.dsp.exec_cmd(clipboard))
 hl.bind(mainMod .. " + Delete", hl.dsp.exec_cmd("grim " .. home .. "/Pictures/$(date +%s).png"))
 hl.bind("Delete", hl.dsp.exec_cmd('grim -g "$(slurp)" ' .. home .. "/Pictures/$(date +%s).png"))
 
-hl.bind("XF86MonBrightnessUp", hl.dsp.exec_cmd("brightnessctl set 5%+"), {
+hl.bind("XF86MonBrightnessUp", hl.dsp.exec_cmd("43pr-display up"), {
 	locked = true,
 	repeating = true,
 })
-hl.bind("XF86MonBrightnessDown", hl.dsp.exec_cmd("brightnessctl set 5%-"), {
+hl.bind("XF86MonBrightnessDown", hl.dsp.exec_cmd("43pr-display down"), {
 	locked = true,
 	repeating = true,
 })
@@ -251,3 +259,6 @@ hl.bind("XF86AudioMute", hl.dsp.exec_cmd("wpctl set-mute @DEFAULT_AUDIO_SINK@ to
 hl.bind("XF86AudioPlay", hl.dsp.exec_cmd("playerctl play-pause"), { locked = true })
 hl.bind("XF86AudioNext", hl.dsp.exec_cmd("playerctl next"), { locked = true })
 hl.bind("XF86AudioPrev", hl.dsp.exec_cmd("playerctl previous"), { locked = true })
+
+-- HyprMod owns this writable override; Nix owns the base configuration above.
+require("hyprland-gui")
