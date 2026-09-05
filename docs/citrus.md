@@ -77,11 +77,13 @@ Firefox is the default browser for HTTP, HTTPS, HTML, and unknown URL schemes.
 
 The `my-firefox-nix` flake input supplies its Sine/Natsumi customization, six
 marketplace mods, and Japanese localization. Their source and update
-instructions live in the independent repository at
-`/home/keewai/my-firefox-nix`. Commit changes there, then run
+instructions live in
+[`keewai704/my-firefox-nix`](https://github.com/keewai704/my-firefox-nix).
+The flake fetches it from `git+https://github.com/keewai704/my-firefox-nix.git`.
+Commit and push changes to that repository's `main` branch, then run
 `nix flake update my-firefox-nix` here before following the normal validation
-and activation workflow. Evaluation requires that local Git repository at the
-configured path.
+and activation workflow. Fetching the private repository requires Git
+authentication with an account that has read access.
 
 Home Manager deploys the module's managed files into the default profile's
 `chrome/` directory. Bookmarks, history, extensions, and `prefs.js` remain

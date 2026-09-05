@@ -51,9 +51,11 @@ Each host entry point imports only files from its own directory. Orange modules
 read `settings.nix` directly, so there is no hidden host-specific argument
 injection from `flake.nix`.
 
-Firefox's Sine/Natsumi configuration lives in the separate Git repository at
-`/home/keewai/my-firefox-nix`. Citrus imports its `nixosModules.default` through
-the `my-firefox-nix` flake input, whose commit is pinned in `flake.lock`.
+Firefox's Sine/Natsumi configuration lives in
+[`keewai704/my-firefox-nix`](https://github.com/keewai704/my-firefox-nix).
+Citrus fetches its `nixosModules.default` through the `my-firefox-nix` Git URL
+input, whose commit is pinned in `flake.lock`. Fetching this private repository
+requires Git authentication with an account that has read access.
 
 ## Hosts
 
