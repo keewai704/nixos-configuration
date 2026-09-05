@@ -139,8 +139,18 @@ let
     );
 
   codexSystemConfig = (pkgs.formats.toml { }).generate "chatgpt-desktop-mcp.toml" {
+    model = "gpt-6-astra";
+    model_reasoning_effort = "max";
+    plan_mode_reasoning_effort = "max";
+    agents = {
+      default_subagent_model = "gpt-5.6-luna";
+      default_subagent_reasoning_effort = "max";
+    };
+
     developer_instructions = ''
-      Codexクレジットの消費を抑えること。品質、安全性、検証の十分性を損なわない範囲で、単純・定型的な作業や、長時間でも独立して委任できる作業には、GPT-5.6 Lunaをreasoning effort=maxで優先的に活用すること。難しい設計判断、行き詰まりの解消、最終レビューなど、追加の高品質な推論が実質的に有益な場合に限り、use-chatgpt-5-6-proスキルでChatGPTのGPT-5.6 Sol Proを活用すること。
+      通常会話とPlanモードの推論設定は常にmaxを使うこと。主担当のGPT-6 Astraが問題の理解、難しい設計判断、結果の統合、最終レビューまで責任を持つこと。クレジット節約のために明示された要件、品質、安全性、必要な検証を省略しないこと。
+
+      大量の検索・読み取り、ログ整理、定型編集、検証など独立して切り出せる作業にはluna-delegationスキルを使い、GPT-5.6 Lunaをreasoning effort=maxで明示指定して実際に委任すること。具体的な対象と委任手順は同スキルに従い、主担当は独立した作業を進めて根拠と差分を確認すること。use-chatgpt-5-6-proは明示指定、または行き詰まりに独立した見解が必要な場合に使い、通常のレビューはサブエージェントで行うこと。
 
       シェル出力によるトークン消費を抑えるため、RTKが対応するコマンドは原則として `rtk <command>` で実行すること。未加工の出力が必要な場合は `rtk proxy <command>` を使うこと。
 
@@ -245,12 +255,14 @@ in
           sessionVariables = cuaEnvironment;
 
           # A user-level entry wins over /etc/codex/config.toml. Remove only
-          # duplicate names owned by this module, while leaving ChatGPT's
-          # bundled node_repl/cua_repl entries and every unrelated preference
-          # untouched.
-          activation.removeUserMcpOverrides = lib.hm.dag.entryAfter [ "writeBoundary" ] ''
+          # reasoning overrides and duplicate MCP names owned by this module,
+          # while preserving bundled helpers and unrelated preferences.
+          activation.removeUserCodexOverrides = lib.hm.dag.entryAfter [ "writeBoundary" ] ''
             user_config=${lib.escapeShellArg userCodexConfig}
             if [[ -f "$user_config" && -w "$user_config" ]]; then
+              ${lib.getExe pkgs.yq-go} -i -p=toml -o=toml \
+                'del(.model_reasoning_effort, .plan_mode_reasoning_effort)' \
+                "$user_config"
               for server_name in ${managedMcpNameArgs}; do
                 export NIX_MANAGED_MCP_SERVER="$server_name"
                 if ${lib.getExe pkgs.yq-go} -e -p=toml \
