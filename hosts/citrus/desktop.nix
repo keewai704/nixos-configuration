@@ -173,9 +173,15 @@ in
   programs = {
     dconf.enable = true;
 
+    gamescope = {
+      enable = true;
+      enableWsi = true;
+    };
+
     steam = {
       enable = true;
       package = inputs.millennium.packages.${pkgs.stdenv.hostPlatform.system}.millennium-steam;
+      extraPackages = [ pkgs.gamescope ];
       extraCompatPackages = [ inputs.proton-cachyos.packages.${pkgs.stdenv.hostPlatform.system}.default ];
     };
 

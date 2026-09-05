@@ -20,6 +20,8 @@ hl.monitor({
     mode = "5120x2160@165",
     position = "auto",
     scale = 1,
+    bitdepth = 10,
+    vrr = 2, -- Enable adaptive sync for fullscreen applications.
 })
 
 hl.env("XCURSOR_SIZE", tostring(theme.cursor.size))
@@ -28,6 +30,10 @@ hl.env("QT_QPA_PLATFORM", "wayland")
 hl.env("MOZ_ENABLE_WAYLAND", "1")
 
 hl.config({
+    render = {
+        cm_auto_hdr = 1, -- Switch to HDR for fullscreen HDR content.
+    },
+
     general = {
         gaps_in = 6,
         gaps_out = 12,

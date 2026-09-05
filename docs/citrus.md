@@ -108,6 +108,38 @@ After changing the driver, run `bash hosts/citrus/check-fingerprint.sh` locally
 with the screen unlocked and no finger on the sensor. It checks recognition,
 cancellation during initialization and scanning, and reopening the device.
 
+## Steam, VRR, and HDR
+
+The AW3926QW runs at `5120x2160@165` with 10-bit output. Hyprland enables
+VRR for fullscreen applications (`vrr = 2`) and switches to HDR when a
+fullscreen application supplies HDR content (`render.cm_auto_hdr = 1`).
+These settings follow the [Hyprland monitor configuration](https://wiki.hypr.land/Configuring/Basics/Monitors/).
+The display advertises a 48–165 Hz adaptive-sync range and HDR10 support.
+
+Gamescope is installed both on the host and inside Steam's environment. Its
+Vulkan WSI layer is available for 64-bit and 32-bit games. The installed NVIDIA
+610 driver already exposes HDR10 and scRGB on native Wayland; no additional
+HDR Vulkan layer or global HDR environment variables are needed.
+
+Restart Steam after applying this configuration. Keep launch options per game
+and enable HDR in the game's own settings. For the installed Proton-CachyOS,
+native Wayland can be selected with:
+
+```text
+PROTON_ENABLE_WAYLAND=1 DXVK_HDR=1 %command%
+```
+
+For games using XWayland, the Gamescope path is:
+
+```text
+gamescope --backend wayland --adaptive-sync --hdr-enabled -f -W 5120 -H 2160 -- env DXVK_HDR=1 %command%
+```
+
+Use fullscreen mode for automatic VRR/HDR switching. Check `hyprctl monitors`
+while the game is fullscreen: `currentFormat` should be a 10-bit format,
+`vrr` should be enabled, and `colorManagementPreset` should become `hdr` for
+HDR content. After exiting fullscreen HDR content, the desktop returns to SDR.
+
 ## Browsers and URL handlers
 
 Firefox is the default browser for HTTP, HTTPS, HTML, and unknown URL schemes.
