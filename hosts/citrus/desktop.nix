@@ -58,12 +58,10 @@ in
         # Link only managed files so Fcitx5 can still save its other settings.
         fcitx5.recursive = true;
 
-        # Stylix's Nixcord target does not yet write Legcord's native Quick CSS.
-        "legcord/quickCss.css".text =
-          let
-            target = config.home-manager.users.keewai.stylix.targets.nixcord;
-          in
-          target.themeBody + target.extraCss;
+        "legcord/quickCss.css".text = import ./system24.nix {
+          colors = config.lib.stylix.colors;
+          fonts = config.stylix.fonts;
+        };
 
         # SpaceTheme uses comma-separated RGB channels; keep its layout and plugins.
         "millennium/quick.css".source = config.lib.stylix.colors {
@@ -203,15 +201,8 @@ in
       };
       hyprland.enable = false;
       kitty.enable = true;
-      nixcord = {
-        enable = true;
-        # The color theme resolves Discord's display fonts through --font.
-        extraCss = ''
-          :root {
-            --font: "${config.stylix.fonts.sansSerif.name}", sans-serif;
-          }
-        '';
-      };
+      # System24 maps its own palette to Discord's component colors.
+      nixcord.enable = false;
       qt = {
         enable = true;
         standardDialogs = "xdgdesktopportal";
