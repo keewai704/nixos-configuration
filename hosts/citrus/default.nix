@@ -18,7 +18,9 @@ let
       + "local theme = ${lib.generators.toLua { } theme.hyprland}\n"
       + builtins.readFile ./hyprland.lua;
     checkPhase = ''
-      HOME="$TMPDIR" XDG_RUNTIME_DIR="$TMPDIR" ${lib.getExe pkgs.hyprland} --verify-config -c "$target"
+      cp "$target" "$TMPDIR/check.lua"
+      echo 'assert(hl.get_config("decoration:blur:variant") == 8, "acrylic blur must be enabled")' >> "$TMPDIR/check.lua"
+      HOME="$TMPDIR" XDG_RUNTIME_DIR="$TMPDIR" ${lib.getExe pkgs.hyprland} --verify-config -c "$TMPDIR/check.lua"
     '';
   };
 
