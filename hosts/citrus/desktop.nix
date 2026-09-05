@@ -91,8 +91,9 @@ in
               font-family: "${config.stylix.fonts.sansSerif.name}", sans-serif !important;
             }
 
-            /* Steam now places controls beside FieldLeftColumn, outside FieldLabelRow. */
-            :root body .DialogBody .Panel.eKmEXJCm_lgme24Fp_HWt {
+            /* Give settings rows one card; Steam places controls outside FieldLabelRow. */
+            :root body .DialogBody > .Panel,
+            :root body .DialogBody .DialogControlsSection > .Panel {
               padding: 12px !important;
               margin-bottom: 12px !important;
               border-radius: var(--st-border-radius);
