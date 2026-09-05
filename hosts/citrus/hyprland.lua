@@ -13,6 +13,13 @@ hl.monitor({
 	scale = 1,
 })
 
+hl.monitor({
+	output = "desc:Dell Inc. AW3926QW",
+	mode = "5120x2160@165",
+	position = "auto",
+	scale = 1,
+})
+
 hl.env("XCURSOR_SIZE", "14")
 hl.env("QT_QPA_PLATFORM", "wayland")
 hl.env("MOZ_ENABLE_WAYLAND", "1")

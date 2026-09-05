@@ -203,6 +203,19 @@ in
         touch config/hypr/hyprland-gui.lua
         XDG_RUNTIME_DIR="$PWD/runtime" XDG_CONFIG_HOME="$PWD/config" \
           ${pkgs.hyprland}/bin/Hyprland --verify-config
+        # Parse the deployed idle config without connecting to or locking a desktop.
+        ln -s ${
+          config.home-manager.users.keewai.xdg.configFile."hypr/hypridle.conf".source
+        } config/hypr/hypridle.conf
+        if XDG_RUNTIME_DIR="$PWD/runtime" XDG_CONFIG_HOME="$PWD/config" WAYLAND_DISPLAY=missing \
+          ${lib.getExe pkgs.hypridle} >hypridle.log 2>&1; then
+          exit 1
+        fi
+        cat hypridle.log
+        if grep -Fq 'Config has errors' hypridle.log; then
+          exit 1
+        fi
+        grep -Fq "Couldn't connect to a wayland compositor" hypridle.log
             touch "$out"
       '';
 
@@ -270,6 +283,11 @@ in
       };
 
       configFile = {
+        "git/config".text = ''
+          [user]
+            name = KY
+            email = 249657796+keewai704@users.noreply.github.com
+        '';
         "btop/btop.conf".source = "${desktop43pr}/btop/btop.conf";
         "cava".source = "${desktop43pr}/cava";
         "gtk-3.0/gtk.css".source = "${desktop43pr}/gtk-3.0/gtk.css";
@@ -384,6 +402,22 @@ in
       awww.enable = true;
       cliphist.enable = true;
       dunst.enable = true;
+      hypridle = {
+        enable = true;
+        settings = {
+          general = {
+            lock_cmd = "${pkgs.procps}/bin/pidof hyprlock || ${lib.getExe config.programs.hyprlock.package}";
+            before_sleep_cmd = "${pkgs.systemd}/bin/loginctl lock-session";
+            after_sleep_cmd = "${pkgs.hyprland}/bin/hyprctl dispatch 'hl.dsp.dpms({action = \"on\"})'";
+          };
+          listener = [
+            {
+              timeout = 600;
+              on-timeout = "${pkgs.systemd}/bin/loginctl lock-session";
+            }
+          ];
+        };
+      };
       hyprpolkitagent.enable = true;
       hyprsunset = {
         enable = true;
@@ -485,6 +519,8 @@ in
   };
 
   services = {
+    # Home Manager owns hypridle's per-user configuration and service.
+    hypridle.enable = lib.mkForce false;
     gnome.at-spi2-core.enable = true;
     gnome.gnome-keyring.enable = true;
     gvfs.enable = true;

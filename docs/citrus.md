@@ -58,6 +58,8 @@ The host entry point imports Home Manager and the browser, Codex, desktop, and
 hardware modules explicitly. It owns the shared Home Manager settings and
 state version; `codex.nix` imports only the application-specific
 `mcp-servers-nix` Home Manager module.
+Home Manager also sets Git's author identity to the existing repository
+identity (`KY` and the `keewai704` GitHub noreply address).
 
 ## Desktop
 
@@ -89,7 +91,13 @@ keys, so settings left by the previous desktop do not override `settings.ini`.
 
 Waybar reports NVIDIA GPU utilization through `nvidia-smi` and the AMD CPU's
 Tctl temperature through `lm_sensors`. Hyprland uses the NVIDIA GPU via the
-stable `/dev/dri/nvidia` udev link and selects each monitor's preferred mode.
+stable `/dev/dri/nvidia` udev link.
+The Dell AW3926QW uses 5120×2160 at 165 Hz with 100% scaling; other monitors
+retain their preferred mode. Home Manager configures and runs Hypridle to lock
+after ten minutes of inactivity and before sleep, and restore the display on
+resume. Application idle inhibitors remain respected; automatic suspend is
+not enabled. The NixOS Hyprlock module still supplies PAM authentication.
+
 The NVIDIA driver uses the [open kernel modules](https://download.nvidia.com/XFree86/Linux-x86_64/580.82.09/README/kernel_open.html)
 required by the RTX 5070 Ti. Rendering runs on the GPU, and the host uses
 physical-device drivers.
@@ -276,6 +284,9 @@ systemctl --user --no-pager --full status waybar.service awww.service
 systemctl --user --no-pager --full status cliphist.service cliphist-images.service
 systemctl --user --no-pager --full status quickshell-volume-osd.service hyprpolkitagent.service
 systemctl --user is-active hyprsunset.service network-manager-applet.service
+systemctl --user is-active hypridle.service
+journalctl --user -b -u hypridle.service --no-pager -n 30
+hyprctl -j monitors
 hyprctl hyprsunset gamma
 hyprctl hyprsunset temperature
 hyprctl configerrors
