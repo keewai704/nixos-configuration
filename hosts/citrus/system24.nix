@@ -92,8 +92,17 @@
     z-index: 1001;
   }
 
-  #legcordNavControls [id$="-icon"] {
-    height: 100%;
+  #legcordNavControls #window-controls-container > :is(#minimize, #maximize, #quit) {
+    display: grid;
+    place-items: center;
+    width: calc(2 * var(--window-control-size));
+
+    > div {
+      display: block;
+      width: var(--window-control-size);
+      height: var(--window-control-size);
+      mask-size: 100% 100%;
+    }
   }
 
   /* Midnight removes the bottom border from these otherwise framed headers. */
