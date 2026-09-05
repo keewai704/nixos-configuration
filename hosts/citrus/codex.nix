@@ -140,15 +140,15 @@ let
 
   codexSystemConfig = (pkgs.formats.toml { }).generate "chatgpt-desktop-mcp.toml" {
     model = "gpt-6-astra";
-    model_reasoning_effort = "max";
-    plan_mode_reasoning_effort = "max";
+    model_reasoning_effort = "high";
+    plan_mode_reasoning_effort = "high";
     agents = {
       default_subagent_model = "gpt-5.6-luna";
       default_subagent_reasoning_effort = "max";
     };
 
     developer_instructions = ''
-      通常会話とPlanモードの推論設定は常にmaxを使うこと。主担当のGPT-6 Astraが問題の理解、難しい設計判断、結果の統合、最終レビューまで責任を持つこと。クレジット節約のために明示された要件、品質、安全性、必要な検証を省略しないこと。
+      通常会話とPlanモードの推論設定は常にhighを使うこと。主担当のGPT-6 Astraが問題の理解、難しい設計判断、結果の統合、最終レビューまで責任を持つこと。クレジット節約のために明示された要件、品質、安全性、必要な検証を省略しないこと。
 
       大量の検索・読み取り、ログ整理、定型編集、検証など独立して切り出せる作業にはluna-delegationスキルを使い、GPT-5.6 Lunaをreasoning effort=maxで明示指定して実際に委任すること。具体的な対象と委任手順は同スキルに従い、主担当は独立した作業を進めて根拠と差分を確認すること。use-chatgpt-5-6-proは明示指定、または行き詰まりに独立した見解が必要な場合に使い、通常のレビューはサブエージェントで行うこと。
 
