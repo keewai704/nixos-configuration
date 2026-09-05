@@ -53,9 +53,48 @@ in
         createDirectories = true;
       };
 
-      configFile."user-dirs.dirs".force = true;
-      # Link only managed files so Fcitx5 can still save its other settings.
-      configFile.fcitx5.recursive = true;
+      configFile = {
+        "user-dirs.dirs".force = true;
+        # Link only managed files so Fcitx5 can still save its other settings.
+        fcitx5.recursive = true;
+
+        # Stylix's Nixcord target does not yet write Legcord's native Quick CSS.
+        "legcord/quickCss.css".text =
+          let
+            target = config.home-manager.users.keewai.stylix.targets.nixcord;
+          in
+          target.themeBody + target.extraCss;
+
+        # SpaceTheme uses comma-separated RGB channels; keep its layout and plugins.
+        "millennium/quick.css".source = config.lib.stylix.colors {
+          template = pkgs.writeText "millennium.css.mustache" ''
+            /* Managed by Stylix for SpaceTheme for Steam. */
+            :root {
+              --st-accent-1: {{base0D-rgb-r}}, {{base0D-rgb-g}}, {{base0D-rgb-b}} !important;
+              --st-accent-2: {{base0E-rgb-r}}, {{base0E-rgb-g}}, {{base0E-rgb-b}} !important;
+              --st-background: {{base00-rgb-r}}, {{base00-rgb-g}}, {{base00-rgb-b}} !important;
+              --st-color-1: {{base00-rgb-r}}, {{base00-rgb-g}}, {{base00-rgb-b}} !important;
+              --st-color-2: {{base01-rgb-r}}, {{base01-rgb-g}}, {{base01-rgb-b}} !important;
+              --st-color-3: {{base00-rgb-r}}, {{base00-rgb-g}}, {{base00-rgb-b}} !important;
+              --st-color-4: {{base01-rgb-r}}, {{base01-rgb-g}}, {{base01-rgb-b}} !important;
+              --st-color-5: {{base02-rgb-r}}, {{base02-rgb-g}}, {{base02-rgb-b}} !important;
+              --st-color-6: {{base03-rgb-r}}, {{base03-rgb-g}}, {{base03-rgb-b}} !important;
+              --st-blue: {{base0D-rgb-r}}, {{base0D-rgb-g}}, {{base0D-rgb-b}} !important;
+              --st-blue-hover: var(--st-blue) !important;
+              --st-green: {{base0B-rgb-r}}, {{base0B-rgb-g}}, {{base0B-rgb-b}} !important;
+              --st-green-hover: var(--st-green) !important;
+              --st-red: {{base08-rgb-r}}, {{base08-rgb-g}}, {{base08-rgb-b}} !important;
+              --st-red-hover: var(--st-red) !important;
+              --st-yellow: {{base0A-rgb-r}}, {{base0A-rgb-g}}, {{base0A-rgb-b}} !important;
+              --st-yellow-hover: var(--st-yellow) !important;
+            }
+            :root * {
+              font-family: "${config.stylix.fonts.sansSerif.name}", sans-serif !important;
+            }
+          '';
+          extension = ".css";
+        };
+      };
     };
 
     programs.kitty.enable = true;
@@ -66,6 +105,7 @@ in
       legcord = {
         enable = true;
         equicord.enable = true;
+        settings.quickCss = true;
       };
     };
 
@@ -163,6 +203,15 @@ in
       };
       hyprland.enable = false;
       kitty.enable = true;
+      nixcord = {
+        enable = true;
+        # The color theme resolves Discord's display fonts through --font.
+        extraCss = ''
+          :root {
+            --font: "${config.stylix.fonts.sansSerif.name}", sans-serif;
+          }
+        '';
+      };
       qt = {
         enable = true;
         standardDialogs = "xdgdesktopportal";

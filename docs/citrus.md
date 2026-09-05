@@ -75,6 +75,17 @@ Firefox, Brave, and ChatGPT receive the shared dark desktop preference.
 Noctalia, GTK/Qt, and Fcitx5 share Stylix's Noto Sans CJK JP sans-serif font;
 Fcitx5's Classic UI uses the rounded panel generated from the same palette.
 
+Discord runs in Legcord with Equicord. Stylix's Nixcord target generates its
+theme, which Home Manager installs in Legcord's native
+`~/.config/legcord/quickCss.css` with Quick CSS enabled. Millennium loads
+`~/.config/millennium/quick.css`, generated from the same Stylix palette and
+font for the currently installed SpaceTheme for Steam. SpaceTheme's layout,
+plugins, and other settings remain in Millennium's own configuration. Its
+color overrides require SpaceTheme; select that theme to use them.
+These two Quick CSS files are Nix-managed; edit the Stylix settings or
+`hosts/citrus/desktop.nix` instead of the apps' CSS editors. Reload Legcord and
+restart Steam after rebuilding to reload their generated styles.
+
 The initial wallpaper is repository-owned under `hosts/citrus/assets/` and
 rendered by Noctalia; choosing another wallpaper in the GUI persists as a user
 override. Keep machine-specific display and GPU settings in the
@@ -308,6 +319,12 @@ fcitx5-remote -n
 rg '^Theme=stylix$' ~/.config/fcitx5/conf/classicui.conf
 test -r ~/.local/share/fcitx5/themes/stylix/theme.conf
 test -d ~/.config/fcitx5 && test ! -L ~/.config/fcitx5
+test -L ~/.config/legcord/quickCss.css
+rg -- '--background-primary: var\(--base00\)' ~/.config/legcord/quickCss.css
+jq -e '.quickCss' ~/.config/legcord/storage/settings.json
+test -L ~/.config/millennium/quick.css
+rg -- '--st-background:' ~/.config/millennium/quick.css
+jq -e '.general.injectCSS and .themes.activeTheme == "Steam"' ~/.config/millennium/config.json
 xdg-mime query default x-scheme-handler/http
 xdg-mime query default x-scheme-handler/codex
 pywalfox --version
