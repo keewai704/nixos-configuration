@@ -4,6 +4,8 @@
   inputs = {
     nixpkgs.url = "github:NixOS/nixpkgs/nixos-unstable";
 
+    browser-config.url = "git+file:///home/keewai/browser-config";
+
     agenix = {
       url = "github:ryantm/agenix";
       inputs.home-manager.follows = "home-manager";

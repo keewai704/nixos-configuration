@@ -1,5 +1,6 @@
 {
   config,
+  inputs,
   lib,
   pkgs,
   ...
@@ -58,21 +59,14 @@ let
   };
 in
 {
+  imports = [ inputs.browser-config.nixosModules.default ];
+
   environment.systemPackages = [
     braveOrigin
     pkgs.pywalfox-native
   ];
 
-  programs.firefox = {
-    enable = true;
-    languagePacks = [ "ja" ];
-    nativeMessagingHosts.packages = [ pywalfoxManifest ];
-    preferences = {
-      "intl.accept_languages" = "ja-JP,ja,en-US,en";
-      "intl.locale.requested" = "ja";
-      "intl.regional_prefs.use_os_locales" = false;
-    };
-  };
+  programs.firefox.nativeMessagingHosts.packages = [ pywalfoxManifest ];
 
   services.udev.packages = [ webhidUdevRules ];
 

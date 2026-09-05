@@ -54,7 +54,7 @@ Stylix-managed. GTK uses the rice's white-folder Papirus variant.
 The host entry point declares the cursor, icon, Fcitx5, and tuigreet settings
 directly. `browser.nix` uses Stylix colors for Pywalfox. Fcitx5 keeps
 its Tokyo Night Storm panel, while Stylix's Firefox target stays disabled to
-leave browser appearance under user control.
+leave Sine/Natsumi styling under the browser module's control.
 
 GTK applications such as Thunar and Xarchiver inherit it directly, while
 Firefox, Brave, and ChatGPT receive the shared dark desktop preference.
@@ -71,9 +71,17 @@ point, not in a module used by Orange.
 ## Browsers and URL handlers
 
 Firefox is the default browser for HTTP, HTTPS, HTML, and unknown URL schemes.
-It uses the standard Firefox package with the Japanese language pack and
-locale preferences. Browser profiles, bookmarks, history, and extensions remain
-user-managed.
+The `browser-config` flake input supplies its Sine/Natsumi customization,
+six marketplace mods, and Japanese localization. Their source and update
+instructions live in the independent repository at `/home/keewai/browser-config`.
+Commit changes there, then run `nix flake update browser-config` here before
+following the normal validation and activation workflow. Evaluation requires
+that local Git repository at the configured path.
+
+Home Manager deploys the module's managed files into the default profile's
+`chrome/` directory. Bookmarks, history, extensions, and `prefs.js` remain
+user-managed. Restart Firefox after applying browser-module changes.
+
 Brave Origin is also installed for sites that require Chromium behavior.
 `x-scheme-handler/codex` remains mapped to `chatgpt.desktop` so authentication
 and deep links return to the desktop application.

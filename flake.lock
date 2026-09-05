@@ -93,6 +93,21 @@
         "type": "github"
       }
     },
+    "browser-config": {
+      "locked": {
+        "lastModified": 1788569263,
+        "narHash": "sha256-elZ02sw/aj9w5UOBOuAzpKKb0FO9z7C7MTa/opnJCVs=",
+        "ref": "refs/heads/main",
+        "rev": "4e8d286b5958eac74d164494dc442e74957ef18d",
+        "revCount": 1,
+        "type": "git",
+        "url": "file:///home/keewai/browser-config"
+      },
+      "original": {
+        "type": "git",
+        "url": "file:///home/keewai/browser-config"
+      }
+    },
     "chaotic": {
       "inputs": {
         "flake-schemas": "flake-schemas",
@@ -634,6 +649,7 @@
     "root": {
       "inputs": {
         "agenix": "agenix",
+        "browser-config": "browser-config",
         "chaotic": "chaotic",
         "home-manager": "home-manager_2",
         "mcp-servers-nix": "mcp-servers-nix",
