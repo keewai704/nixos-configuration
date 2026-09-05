@@ -412,7 +412,10 @@ in
       awww-43pr-wallpaper = {
         Unit = {
           Description = "Set the initial 43PR wallpaper";
-          After = [ "awww.service" ];
+          After = [
+            "graphical-session.target"
+            "awww.service"
+          ];
           Requires = [ "awww.service" ];
           PartOf = [ "graphical-session.target" ];
           ConditionEnvironment = "WAYLAND_DISPLAY";
