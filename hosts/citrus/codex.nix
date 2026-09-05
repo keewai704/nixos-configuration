@@ -142,6 +142,7 @@ let
     model = "gpt-6-astra";
     model_reasoning_effort = "high";
     plan_mode_reasoning_effort = "high";
+    features.context_management.experimental_mode = true;
     agents = {
       default_subagent_model = "gpt-5.6-luna";
       default_subagent_reasoning_effort = "max";
