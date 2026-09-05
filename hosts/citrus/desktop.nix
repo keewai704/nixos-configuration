@@ -196,6 +196,7 @@ in
           launch_apps_as_systemd_services = true;
           panel_anchor_bar = "default";
           polkit_agent = true;
+          launcher.categories = false;
           launcher.compact = true;
           panel.polkit_placement = "attached";
         };
