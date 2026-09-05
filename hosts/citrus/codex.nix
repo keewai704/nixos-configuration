@@ -35,18 +35,24 @@ let
           node --check "$out/hooks/$script"
         done
 
-        sed '/^argument-hint:/d' \
-          "${ponytailSource}/skills/ponytail/SKILL.md" \
-          > "$TMPDIR/ponytail-SKILL.md"
-        cmp \
-          "$TMPDIR/ponytail-SKILL.md" \
-          "${skillRoot}/ponytail/SKILL.md"
+        # Keep upstream hook mechanics, but inject the locally maintained skill.
         install -Dm644 \
           "${skillRoot}/ponytail/SKILL.md" \
           "$out/skills/ponytail/SKILL.md"
         install -Dm644 "${ponytailSource}/LICENSE" "$out/LICENSE"
 
         node --test "${ponytailSource}/tests/hooks.test.js"
+        node - "$out" <<'NODE'
+        const assert = require('node:assert/strict');
+        const fs = require('node:fs');
+        const root = process.argv[2];
+        const { getPonytailInstructions } = require(root + '/hooks/ponytail-instructions.js');
+        const body = fs.readFileSync(root + '/skills/ponytail/SKILL.md', 'utf8')
+          .replace(/^---[\s\S]*?---\s*/, "");
+        for (const mode of ['lite', 'full', 'ultra']) {
+          assert.equal(getPonytailInstructions(mode), 'PONYTAIL MODE ACTIVE — level: ' + mode + '\n\n' + body);
+        }
+        NODE
       '';
 
   mkPonytailHook =
@@ -147,10 +153,20 @@ let
       default_subagent_reasoning_effort = "max";
     };
 
+    # Reviewed against the official Astra prompting guide on 2026-09-05:
+    # https://developers.openai.com/api/docs/guides/latest-model#prompting-best-practices
     developer_instructions = ''
       GPT-6 Astraの推論能力を活かし、主担当が問題の理解、難しい設計判断、結果の統合、最終レビューまで責任を持つこと。クレジット節約のために明示された要件、品質、安全性、必要な検証を省略しないこと。
 
-      並列化が時間短縮や品質向上に役立つ場合は、独立した具体的な作業をサブエージェントへ委任すること。単純・定型的な作業にはGPT-5.6 Lunaをreasoning effort=maxで優先し、高度な推論が必要な委任にはGPT-6 Astraをreasoning effort=maxで明示指定すること。委任先には必要な背景と完了条件を渡し、主担当は独立した作業を続けること。use-chatgpt-5-6-proスキルはユーザーの明示指定、または行き詰まりの解消に独立した見解が必要な場合に使うこと。
+      作業依頼は実行の指示として扱い、既に許可された範囲を検証まで完了すること。通常の実装判断は文脈と既存パターンから決め、同じ許可を取り直さないこと。結果・範囲・権限を左右する情報が不足するときだけ簡潔に質問し、その回答に依存しない作業を進めること。追加承認が本当に必要な操作は、許可済みの準備を終えて具体的な成果物を示してから確認すること。途中の質問や修正は進行中の依頼に取り込み、明確な中止・置換がなければ元の目的も完了すること。
+
+      スキルの一般的な推奨よりユーザーの明示指示を優先し、タスクに合うスキルと必要な参照だけを読むこと。スキルを理由に停止・確認・範囲縮小する場合は、該当するSKILL.mdのリンクと指示を示し、必須条件と自分の解釈を区別すること。ホスト境界、安全要件、実行権限を越えて進めないこと。
+
+      並列化が時間短縮や品質向上に役立つ場合は、独立した具体的な作業をサブエージェントへ委任すること。単純・定型的な作業にはGPT-5.6 Lunaをreasoning effort=maxで優先し、高度な推論が必要な委任にはGPT-6 Astraをreasoning effort=maxで明示指定すること。委任先には目的、必要な背景、担当ファイル、許可範囲、完了条件を渡し、同じファイルの同時編集を避けること。主担当は独立した作業を続け、返された根拠と差分を確認して統合すること。use-chatgpt-5-6-proは明示指定、または行き詰まりに独立した見解が必要な場合に使い、通常のレビューはサブエージェントで行うこと。
+
+      変更の振る舞いとリスクに合う検証を行い、リポジトリで必須のチェックは完了すること。既存テストを再利用し、実装の言い換えや軽微な文言変更だけのためにテストを増やさないこと。検証が通ったら、変更・失敗・未解決の懸念がない限り検証を繰り返したり広げたりしないこと。
+
+      回答はユーザーの言語で、結果を先に、簡潔で具体的に書くこと。説明量は依頼に合わせ、必要な根拠、検証結果、未解決事項を残すこと。定型句や不要な見出しを避け、箇条書きや表は比較・手順が読みやすくなる場合に使うこと。
 
       シェル出力によるトークン消費を抑えるため、RTKが対応するコマンドは原則として `rtk <command>` で実行すること。未加工の出力が必要な場合は `rtk proxy <command>` を使うこと。
 

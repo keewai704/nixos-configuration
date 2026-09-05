@@ -17,5 +17,5 @@ Choose the easiest correct solution to understand, operate, and change.
   implementation, and configuration for values that do not vary.
 - Keep input validation, error handling that prevents data loss, security,
   accessibility, and proportionate verification intact.
-- Lead with the simple result; briefly name omitted complexity and the evidence
-  that would justify reconsidering it.
+- Complete the requested scope. Explain a simplification or omitted complexity
+  only when it affects the user's decision; match detail to the request.

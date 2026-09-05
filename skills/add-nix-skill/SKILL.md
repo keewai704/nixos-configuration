@@ -6,45 +6,25 @@ description: Create or update a personal ChatGPT Desktop and Codex skill as a Ni
 # Add a Nix-managed skill
 
 Author personal skills in `/home/keewai/nixos-configuration/skills`; Home
-Manager publishes them to `/home/keewai/.agents/skills`. The workflow must work
-from any current directory. Use absolute paths, run Git as
+Manager publishes them to `/home/keewai/.agents/skills`, except Ponytail,
+which the managed hooks publish to `/etc/codex/skills/ponytail`. The workflow
+must work from any current directory. Use absolute paths, run Git as
 `git -C /home/keewai/nixos-configuration`, and use flake references beginning
 with `/home/keewai/nixos-configuration#`. Never rely on `.` or a prior `cd`.
 
 ## Establish the local boundary
 
-1. Read `/home/keewai/nixos-configuration/AGENTS.md` completely.
-2. Resolve the runtime host with the required fallback and compare it with
-   `/etc/hostname`. Stop on any mismatch:
+Before reading repository files, confirm `hostnamectl --static` (fallback
+`hostname`) matches `/etc/hostname`. Then read and follow
+[/home/keewai/nixos-configuration/AGENTS.md](/home/keewai/nixos-configuration/AGENTS.md),
+including the matching flake-host check and preservation of unrelated changes.
+That file owns the shared preparation, commit, test, health, and switch gates;
+reuse checks already completed for unchanged inputs in this task.
 
-   ```bash
-   runtime_host="$(hostnamectl --static 2>/dev/null || hostname)"
-   etc_host="$(tr -d '\r\n' < /etc/hostname)"
-   test "$runtime_host" = "$etc_host"
-   ```
-3. Confirm the exact runtime host exists in the flake:
-
-   ```bash
-   flake_host="$(nix eval --raw --no-write-lock-file \
-     "/home/keewai/nixos-configuration#nixosConfigurations.${runtime_host}.config.networking.hostName")"
-   test "$runtime_host" = "$flake_host"
-   ```
-
-4. Record the existing worktree before editing:
-
-   ```bash
-   git -C /home/keewai/nixos-configuration status --short --branch
-   git -C /home/keewai/nixos-configuration diff
-   git -C /home/keewai/nixos-configuration diff --cached
-   ```
-
-   Preserve every unrelated change. Do not format, stage, stash, reset, or
-   delete it. If an unrelated tracked change can affect evaluation or
-   activation, isolate the task safely or stop; do not claim that the mixed
-   worktree validates only this task. If `git diff --cached --quiet` fails,
-   isolate the task in a separate worktree or stop before editing; never share
-   an existing index with this workflow. Never contact another host unless the
-   current user request explicitly authorizes that exact remote operation.
+If isolation is needed, use the actual isolated checkout's absolute paths in
+place of `/home/keewai/nixos-configuration` throughout this procedure.
+Never substitute a different runtime host or contact another host without the
+specific remote authorization required by AGENTS.md.
 
 ## Author the skill
 
@@ -64,8 +44,9 @@ before creating or substantially changing a skill.
   materially improve repeatability.
 - Add `/home/keewai/nixos-configuration/skills/<skill-name>/agents/openai.yaml`
   only when UI metadata, invocation policy, or tool dependencies are requested.
-- Within the authored skill, express every repository or local-machine path as
-  an absolute path. For commands that operate on this repository, use
+- Use absolute paths for machine-specific repository commands; use linked
+  relative paths for a skill's own portable supporting resources. For commands
+  that operate on this repository, use
   `git -C /home/keewai/nixos-configuration` and absolute flake references so
   the skill remains correct from any current directory.
 - Do not write directly under `/home/keewai/.agents/skills`,
@@ -94,13 +75,12 @@ Before the flake-based checks, stage every task path explicitly with
 `git -C /home/keewai/nixos-configuration add -- <absolute-task-path>...` and
 inspect `git -C /home/keewai/nixos-configuration diff --cached`. Git flakes
 omit untracked files, so evaluation before this task-only staging step does not
-validate a new skill or supporting resource. The initial clean-index gate
-ensures the staged diff contains only this task.
+validate a new skill or supporting resource. Verify that the staged diff
+contains only this task, using isolation when required by AGENTS.md.
 
 Then validate the Nix-managed publication and full system configuration:
 
 ```bash
-nix flake check --no-build --no-write-lock-file /home/keewai/nixos-configuration
 nix flake check --no-write-lock-file /home/keewai/nixos-configuration
 nix eval --json --no-write-lock-file /home/keewai/nixos-configuration#nixosConfigurations.citrus.config.home-manager.users.keewai.home.file --apply 'files: builtins.attrNames files'
 nix build --no-link --no-write-lock-file /home/keewai/nixos-configuration#nixosConfigurations.citrus.config.system.build.toplevel
@@ -109,6 +89,11 @@ git -C /home/keewai/nixos-configuration diff --check
 
 Confirm that the evaluated Home Manager file set contains
 `.agents/skills/<skill-name>` and that deleted or renamed task skills are absent.
+For Ponytail, inspect the evaluated `environment.etc."codex/skills/ponytail"`
+source instead; its build checks the upstream hooks and local instruction
+loading. When changing a skill's workflow or trigger substantially, exercise
+representative requests and likely non-matches in an isolated, read-only
+review. Check decisions and preserved boundaries, not exact wording.
 
 ## Commit and deploy
 
@@ -124,6 +109,11 @@ systemctl show home-manager-keewai.service -p Result -p ActiveState --no-pager
 readlink -f /home/keewai/.agents/skills/<skill-name>
 cmp /home/keewai/.agents/skills/<skill-name>/SKILL.md /home/keewai/nixos-configuration/skills/<skill-name>/SKILL.md
 ```
+
+For Ponytail, compare `/etc/codex/skills/ponytail/SKILL.md` with
+`/home/keewai/nixos-configuration/skills/ponytail/SKILL.md` instead of the
+Home Manager path above. Exercise hook activation, subagent propagation, and
+mode changes with temporary state so the active session is not modified.
 
 The personal skills in this repository are currently deployed by the
 `citrus` configuration. Run the live gates only when the confirmed runtime
