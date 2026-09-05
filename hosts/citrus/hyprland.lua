@@ -119,6 +119,19 @@ hl.config({
 
 hl.window_rule({ match = { class = "firefox" }, opacity = "1.0 override" })
 
+-- Proton identifies Steam game windows by their app ID.
+hl.window_rule({
+    match = { class = "^steam_app_[0-9]+$" },
+    opacity = "1.0 override 1.0 override 1.0 override",
+    border_size = 0,
+    rounding = 0,
+    decorate = false,
+    no_shadow = true,
+    no_blur = true,
+    no_dim = true,
+    no_anim = true,
+})
+
 hl.window_rule({
     match = { class = "dev.noctalia.Noctalia" },
     float = true,
