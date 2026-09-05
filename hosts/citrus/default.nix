@@ -11,20 +11,27 @@ let
     inherit pkgs;
     colors = config.lib.stylix.colors;
   };
-  hyprlandConfig = pkgs.writeText "hyprland.lua" (
-    "local noctalia_ipc = ${builtins.toJSON "${lib.getExe pkgs.noctalia} msg "}\n"
-    + "local theme = ${lib.generators.toLua { } theme.hyprland}\n"
-    + builtins.readFile ./hyprland.lua
-  );
+  hyprlandConfig = pkgs.writeTextFile {
+    name = "hyprland.lua";
+    text =
+      "local noctalia_ipc = ${builtins.toJSON "${lib.getExe pkgs.noctalia} msg "}\n"
+      + "local theme = ${lib.generators.toLua { } theme.hyprland}\n"
+      + builtins.readFile ./hyprland.lua;
+    checkPhase = ''
+      HOME="$TMPDIR" XDG_RUNTIME_DIR="$TMPDIR" ${lib.getExe pkgs.hyprland} --verify-config -c "$target"
+    '';
+  };
 
   hyprlandSession = "${lib.getExe pkgs.uwsm} start -e -D Hyprland ${pkgs.hyprland}/bin/start-hyprland";
 in
 {
   nixpkgs.overlays = [
     (_final: previous: {
-      hyprland = previous.hyprland.overrideAttrs (old: {
-        patches = (old.patches or [ ]) ++ [ ./hyprland-ime-modifiers.patch ];
-      });
+      hyprland =
+        inputs.hyprland.packages.${pkgs.stdenv.hostPlatform.system}.hyprland.overrideAttrs
+          (old: {
+            patches = (old.patches or [ ]) ++ [ ./hyprland-ime-modifiers.patch ];
+          });
       noctalia = previous.noctalia.overrideAttrs (old: {
         patches = (old.patches or [ ]) ++ [ ./assets/noctalia-settings-ja.patch ];
         postPatch = (old.postPatch or "") + ''
@@ -172,6 +179,8 @@ in
   programs.hyprland = {
     enable = true;
     withUWSM = true;
+    portalPackage =
+      inputs.hyprland.packages.${pkgs.stdenv.hostPlatform.system}.xdg-desktop-portal-hyprland;
   };
 
   services = {

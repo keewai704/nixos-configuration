@@ -57,8 +57,8 @@ hl.config({
     decoration = {
         rounding = 12,
         rounding_power = 2,
-        active_opacity = 1.0,
-        inactive_opacity = 0.96,
+        active_opacity = 0.92,
+        inactive_opacity = 0.88,
         fullscreen_opacity = 1.0,
         dim_inactive = true,
         dim_strength = 0.03,
@@ -72,13 +72,15 @@ hl.config({
         },
         blur = {
             enabled = true,
-            size = 3,
-            passes = 1,
+            -- Keep reloads valid on the old compositor until the next login.
+            type = hl.get_config("decoration:blur:type") and "acrylic" or nil,
+            size = 8,
+            passes = 2,
             new_optimizations = true,
             ignore_opacity = true,
-            noise = 0.01,
+            noise = 0.005,
             contrast = 0.92,
-            brightness = 0.95,
+            brightness = 1.0,
             vibrancy = 0.15,
             popups = true,
             popups_ignorealpha = 0.2,
@@ -117,8 +119,6 @@ hl.config({
     },
 })
 
-hl.window_rule({ match = { class = "firefox" }, opacity = "1.0 override" })
-
 -- XWayland uses Steam app IDs; native Wayland Proton windows expose an xdg tag.
 hl.window_rule({ match = { class = "^steam_app_[0-9]+$" }, tag = "+proton-game" })
 hl.window_rule({ match = { xdg_tag = "^proton-game$" }, tag = "+proton-game" })
@@ -146,7 +146,7 @@ hl.layer_rule({
         namespace = "^noctalia-(bar-.+|notification|dock|panel|attached-panel|osd|window-switcher)$",
     },
     no_anim = true,
-    ignore_alpha = 0.5,
+    ignore_alpha = 0.1,
     blur = true,
     blur_popups = true,
 })

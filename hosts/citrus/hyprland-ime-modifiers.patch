@@ -16,7 +16,7 @@ https://github.com/hyprwm/Hyprland/discussions/9954
      m_resource->sendKeymap(WL_KEYBOARD_KEYMAP_FORMAT_XKB_V1, keymapFD.get(), keyboard->m_xkbKeymapV1String.length() + 1);
  
 -    sendMods(keyboard->m_modifiersState.depressed, keyboard->m_modifiersState.latched, keyboard->m_modifiersState.locked, keyboard->m_modifiersState.group);
-+    sendMods(g_pInputManager->getModsFromAllKBs(), keyboard->m_modifiersState.latched, keyboard->m_modifiersState.locked, keyboard->m_modifiersState.group);
++    sendMods(g_pInputManager->hyprlandModsToXkb(keyboard, g_pInputManager->getModsFromAllKBs()), keyboard->m_modifiersState.latched, keyboard->m_modifiersState.locked, keyboard->m_modifiersState.group);
  
      m_resource->sendRepeatInfo(keyboard->m_repeatRate, keyboard->m_repeatDelay);
  }
