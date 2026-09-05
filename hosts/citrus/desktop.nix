@@ -32,6 +32,12 @@ in
   home-manager.users.keewai = {
     imports = [ inputs.nixcord.homeModules.nixcord ];
 
+    # Steam reads user fontconfig; keep semibold Japanese text in the sans family.
+    fonts.fontconfig = {
+      enable = true;
+      defaultFonts.sansSerif = config.fonts.fontconfig.defaultFonts.sansSerif ++ [ "Noto Sans CJK JP" ];
+    };
+
     xdg = {
       userDirs = {
         enable = true;
