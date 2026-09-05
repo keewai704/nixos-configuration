@@ -76,10 +76,9 @@ with tempfile.TemporaryDirectory() as directory:
             "gamma",
             expected,
         ]
-    assert run("43pr-display", "night", TEMPERATURE="3000")[-1] == [
-        "hyprctl",
-        "hyprsunset",
-        "identity",
+    assert run("43pr-display", "night", TEMPERATURE="3000")[-2:] == [
+        ["hyprctl", "hyprsunset", "temperature", "6500"],
+        ["hyprctl", "hyprsunset", "identity"],
     ]
     assert run("43pr-display", "night", TEMPERATURE="6000")[-1] == [
         "hyprctl",

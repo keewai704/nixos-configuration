@@ -97,6 +97,8 @@ let
       case "''${1:-}" in
         night)
           if [[ "$(hyprctl hyprsunset temperature)" == 3000 ]]; then
+            # identity does not reset the remembered temperature used by this toggle.
+            hyprctl hyprsunset temperature 6500
             hyprctl hyprsunset identity
           else
             hyprctl hyprsunset temperature 3000
