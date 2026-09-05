@@ -89,6 +89,26 @@ in
             :root * {
               font-family: "${config.stylix.fonts.sansSerif.name}", sans-serif !important;
             }
+
+            /* Steam now places controls beside FieldLeftColumn, outside FieldLabelRow. */
+            :root body .DialogBody .eKmEXJCm_lgme24Fp_HWt {
+              padding: 12px !important;
+              margin-bottom: 12px !important;
+              border-radius: var(--st-border-radius);
+              background-color: rgb(var(--st-color-2));
+            }
+            body .DialogBody .eKmEXJCm_lgme24Fp_HWt ._2tALpM7z8naXJ35Pp5fNAG > :is(._2VcTlXFC64Jtg9gvtT6cmY, ._1W1to_azoBRG95oNAFpf9Q) {
+              padding: 0 !important;
+              background: none !important;
+            }
+            body .DialogBody .eKmEXJCm_lgme24Fp_HWt ._1W1to_azoBRG95oNAFpf9Q {
+              margin-top: 6px;
+            }
+            /* Section headings also precede help text and inputs without a Panel wrapper. */
+            body .DialogBody :is(.DialogSubHeader, .SettingsDialogSubHeader) {
+              padding: 12px 0 6px;
+              background: none;
+            }
           '';
           extension = ".css";
         };
