@@ -110,6 +110,13 @@ in
               padding: 12px 0 6px;
               background: none;
             }
+            /* Disabled switch tracks and thumbs must remain visible on the shared palette. */
+            :root ._9Ql-oVe_j8E-vsDdyVdWo.aIeh3X5T2M074RLW1qn6_ ._2bl0iQ9xigbq4Zd1NI6NZl {
+              background-color: rgb(var(--st-color-5)) !important;
+            }
+            :root ._9Ql-oVe_j8E-vsDdyVdWo.aIeh3X5T2M074RLW1qn6_ ._1PQppcgkuXQAiFPar9AGi- {
+              background-color: rgb(var(--st-color-6));
+            }
           '';
           extension = ".css";
         };
