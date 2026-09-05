@@ -176,12 +176,14 @@ end
 bind(main_mod .. " + Return", hl.dsp.exec_cmd(terminal), "Open terminal")
 bind(main_mod .. " + E", hl.dsp.exec_cmd(file_manager), "Open file manager")
 bind(main_mod .. " + Q", hl.dsp.window.close(), "Close window")
+bind(main_mod .. " + D", hl.dsp.exec_cmd("islandctl toggle"), "Toggle Dynamic Island")
+bind(main_mod .. " + SHIFT + Z", hl.dsp.exec_cmd("islandctl settings"), "Open Island settings")
 bind("Print", hl.dsp.exec_cmd(noctalia("screenshot-region")), "Take region screenshot")
 bind("SHIFT + Print", hl.dsp.exec_cmd(noctalia("screenshot-fullscreen all")), "Take full-screen screenshot")
 bind("CTRL + Print", hl.dsp.exec_cmd("grimblast --notify copysave active"), "Take active window screenshot")
 bind(
     main_mod .. " + Space",
-    hl.dsp.exec_cmd(noctalia("panel-toggle launcher")),
+    hl.dsp.exec_cmd("islandctl launcher"),
     "Open application launcher"
 )
 bind(
@@ -191,12 +193,12 @@ bind(
 )
 bind(
     main_mod .. " + I",
-    hl.dsp.exec_cmd(noctalia("panel-toggle control-center")),
-    "Open Noctalia Control Center"
+    hl.dsp.exec_cmd("islandctl controls"),
+    "Open Island Control Center"
 )
 bind(
     main_mod .. " + N",
-    hl.dsp.exec_cmd(noctalia("panel-toggle control-center notifications")),
+    hl.dsp.exec_cmd("islandctl notifications"),
     "Open notification history"
 )
 bind(
@@ -211,7 +213,7 @@ bind(
 )
 bind(
     main_mod .. " + ALT + C",
-    hl.dsp.exec_cmd(noctalia("panel-toggle session")),
+    hl.dsp.exec_cmd("islandctl session"),
     "Open session menu"
 )
 bind(
@@ -371,6 +373,7 @@ bind(main_mod .. " + F1", function()
             "Super+N: notifications    Super+V: clipboard",
             "Print: region    Shift+Print: all screens    Ctrl+Print: active window",
             "Super+Z: Noctalia settings",
+            "Super+D: Dynamic Island    Super+Shift+Z: Island settings",
             "Super+Alt+C: session    Super+Alt+L: lock",
             "Super+F: fullscreen",
             "Super+S: scratchpad    Alt+Tab: cycle windows",

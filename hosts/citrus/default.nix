@@ -82,6 +82,7 @@ in
     ./browser.nix
     ./codex.nix
     ./desktop.nix
+    ./dynamic-island.nix
     ./fingerprint.nix
     ./hardware-configuration.nix
   ];
