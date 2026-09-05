@@ -1,5 +1,4 @@
 {
-  config,
   inputs,
   lib,
   pkgs,
@@ -7,10 +6,6 @@
 }:
 
 let
-  theme = import ./theme.nix {
-    inherit pkgs;
-    colors = config.lib.stylix.colors;
-  };
   displayOutput = "Virtual-1";
   hyprlandConfig = pkgs.writeText "hyprland.lua" (
     "local display_output = ${builtins.toJSON displayOutput}\n" + builtins.readFile ./hyprland.lua
@@ -30,7 +25,7 @@ in
   imports = [
     inputs.home-manager.nixosModules.home-manager
     inputs.nix-hazkey.nixosModules.hazkey
-    ./browser
+    ./browser.nix
     ./codex.nix
     ./desktop.nix
     ./hardware-configuration.nix
@@ -69,7 +64,11 @@ in
       base0F = "db4b4b";
     };
     polarity = "dark";
-    inherit (theme) cursor;
+    cursor = {
+      package = pkgs.colloid-cursors;
+      name = "Colloid-dark-cursors";
+      size = 24;
+    };
     fonts.sizes = {
       applications = 10;
       desktop = 10;
@@ -78,9 +77,9 @@ in
     };
     icons = {
       enable = true;
-      inherit (theme.icon) package;
-      dark = theme.icon.name;
-      light = theme.icon.name;
+      package = pkgs.colloid-icon-theme;
+      dark = "Colloid-Dark";
+      light = "Colloid-Dark";
     };
     targets = {
       chromium.enable = true;
@@ -97,16 +96,16 @@ in
     type = "fcitx5";
 
     fcitx5 = {
-      addons = [ theme.fcitx5.addon ];
+      addons = [ pkgs.fcitx5-tokyonight ];
       waylandFrontend = true;
 
       settings = {
         addons.classicui.globalSection = {
-          DarkTheme = theme.fcitx5.themeName;
-          Font = theme.fcitx5.font;
-          MenuFont = theme.fcitx5.menuFont;
-          Theme = theme.fcitx5.themeName;
-          TrayFont = theme.fcitx5.trayFont;
+          DarkTheme = "Tokyonight-Storm";
+          Font = "Noto Sans CJK JP 10";
+          MenuFont = "Noto Sans CJK JP 11";
+          Theme = "Tokyonight-Storm";
+          TrayFont = "Noto Sans CJK JP Bold 10";
           UseAccentColor = false;
           UseDarkTheme = false;
         };
@@ -157,7 +156,7 @@ in
         default_session = {
           command =
             "${lib.getExe pkgs.tuigreet} --time --remember --remember-user-session"
-            + " --theme ${lib.escapeShellArg theme.tuigreetTheme}"
+            + " --theme 'border=blue;title=magenta;text=white;time=cyan;container=black;greet=white;prompt=blue;input=white;action=blue;button=magenta'"
             + " --cmd ${lib.escapeShellArg hyprlandSession}";
         };
       };

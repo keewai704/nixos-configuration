@@ -12,12 +12,10 @@ hostname is `citrus-vm` may run `nixos-rebuild test` or `switch` for this host.
 | Path | Responsibility |
 | --- | --- |
 | [`hosts/citrus-vm/default.nix`](../hosts/citrus-vm/default.nix) | Host imports, Home Manager setup, Hyprland session, Hazkey/Fcitx5, graphics, and state versions |
-| [`hosts/citrus-vm/theme.nix`](../hosts/citrus-vm/theme.nix) | Pywalfox palette, wallpaper, cursor, icon, Fcitx5, and tuigreet settings |
 | [`hosts/citrus-vm/hardware-configuration.nix`](../hosts/citrus-vm/hardware-configuration.nix) | Generated machine hardware, filesystems, and swap |
 | [`hosts/citrus-vm/hyprland.lua`](../hosts/citrus-vm/hyprland.lua) | 43PR Hyprland behavior and key bindings with Citrus hardware adaptations |
 | [`hosts/citrus-vm/desktop.nix`](../hosts/citrus-vm/desktop.nix) | 43PR desktop components, Thunar, and the ChatGPT application |
-| [`hosts/citrus-vm/browser/default.nix`](../hosts/citrus-vm/browser/default.nix) | Pywalfox, Brave Origin, default handlers, and vendor-scoped WebHID access |
-| [`hosts/citrus-vm/browser/sine.nix`](../hosts/citrus-vm/browser/sine.nix) | Firefox, pinned Sine assembly, locale validation, and profile activation |
+| [`hosts/citrus-vm/browser.nix`](../hosts/citrus-vm/browser.nix) | Firefox, Brave Origin, Pywalfox, default handlers, and vendor-scoped WebHID access |
 | [`hosts/citrus-vm/codex.nix`](../hosts/citrus-vm/codex.nix) | System MCP configuration, personal skills, Ponytail hooks, and CUA |
 | [`pkgs/chatgpt-desktop/default.nix`](../pkgs/chatgpt-desktop/default.nix) | ChatGPT desktop package and launcher |
 | [`pkgs/cua-driver/default.nix`](../pkgs/cua-driver/default.nix) | CUA driver package |
@@ -53,11 +51,10 @@ and Home Manager targets. The 43PR source owns GTK3/4 and Kitty; Qt5/6, the
 virtual console, Brave's browser theme color, and the system cursor remain
 Stylix-managed. GTK uses the rice's white-folder Papirus variant.
 
-`hosts/citrus-vm/theme.nix` adapts `config.lib.stylix.colors` for Pywalfox and
-holds the cursor, icon, Fcitx5, and tuigreet choices. Fcitx5 keeps its Tokyo
-Night Storm panel because its active configuration is managed by the NixOS
-input-method module. Stylix's Firefox target stays disabled to avoid replacing
-Sine and Natsumi profile styling.
+The host entry point declares the cursor, icon, Fcitx5, and tuigreet settings
+directly. `browser.nix` uses Stylix colors for Pywalfox. Fcitx5 keeps
+its Tokyo Night Storm panel, while Stylix's Firefox target stays disabled to
+leave browser appearance under user control.
 
 GTK applications such as Thunar and Xarchiver inherit it directly, while
 Firefox, Brave, and ChatGPT receive the shared dark desktop preference.
@@ -74,6 +71,9 @@ point, not in a module used by Orange.
 ## Browsers and URL handlers
 
 Firefox is the default browser for HTTP, HTTPS, HTML, and unknown URL schemes.
+It uses the standard Firefox package with the Japanese language pack and
+locale preferences. Browser profiles, bookmarks, history, and extensions remain
+user-managed.
 Brave Origin is also installed for sites that require Chromium behavior.
 `x-scheme-handler/codex` remains mapped to `chatgpt.desktop` so authentication
 and deep links return to the desktop application.
@@ -87,53 +87,6 @@ or modify them.
 WebHID access is granted through vendor-scoped udev rules for the configured
 SparkLink keyboard and OpenMouse-compatible device vendors. The rules do not
 grant blanket access to every `hidraw` device.
-
-### Firefox Sine mods
-
-Firefox loads Sine through the Nix-generated AutoConfig file. Home Manager
-resolves the current default profile from `profiles.ini` and copies Sine's
-writable engine, bootloader utilities, and pinned marketplace mods into that
-profile's `chrome/` directory. It does not replace the profile or manage
-`prefs.js`, extensions, history, or other browser data.
-
-Nix-owned Sine trees are replaced atomically rather than overlaid. A managed-ID
-manifest removes only mods installed by earlier generations, while preserving
-unmanaged profile content. On a fresh account, activation waits until Firefox
-has created its first profile instead of failing the system deployment.
-
-Sine `2.3.3` uses bootloader `0.1.4`. The following marketplace mods are
-installed and enabled:
-
-| Mod | Version |
-| --- | --- |
-| Better Music Bar | `1.0.4` |
-| Context Menu Icons | `2.7.4.3` |
-| Natsumi Browser | `6.12.1` |
-| Tidy Popup & Extension | `2.9.1` |
-| Zen Compact Transparent Mode | `2.0.0` |
-| Zen Custom URL Bar | `2.0.3` |
-
-The Sine engine and mods are pinned in `browser/sine.nix`, and their mutable
-update checks are disabled. Update the release, marketplace revision,
-fixed-output hashes, and documented versions together. Sine requires
-privileged profile scripts, so the Firefox AutoConfig sandbox is disabled only
-as part of this explicit browser configuration.
-
-Firefox's Japanese language pack and requested locale cover the native browser
-UI. Sine `2.3.3` has no upstream Japanese locale, so the profile adds matching
-Japanese Fluent resources for its settings, toasts, and command palette.
-Natsumi `6.12.1` hard-codes its UI in English and exposes no localization API;
-a Japanese-only translation layer, restricted to Natsumi/Sine-owned UI in the
-pinned release, covers its onboarding, preferences, shortcuts, notifications,
-Picture-in-Picture indicator, and the installed mods' preference labels while
-leaving preference values and behavior unchanged.
-
-Context Menu Icons is set to its Firefox branch and receives its required SVG
-preference. The marketplace lists every mod above as Firefox-compatible, but
-Better Music Bar and Zen Compact Transparent Mode target controls that exist
-only in Zen Browser, so they have no visible effect in stock Firefox. Zen
-Custom URL Bar has only partial Firefox coverage and can overlap Natsumi's URL
-bar styling; the requested mods remain installed so Sine can manage them.
 
 ## ChatGPT desktop package
 

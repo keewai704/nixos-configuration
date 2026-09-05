@@ -55,11 +55,6 @@
         inherit system;
         config.allowUnfreePredicate = package: nixpkgs.lib.getName package == "chatgpt-desktop";
       };
-      localPackages = {
-        chatgpt-desktop = packagePkgs.callPackage ./pkgs/chatgpt-desktop { };
-        cua-driver = packagePkgs.callPackage ./pkgs/cua-driver { };
-      };
-
       mkHost =
         modules:
         nixpkgs.lib.nixosSystem {
@@ -82,7 +77,10 @@
         ./hosts/citrus-vm
       ];
 
-      packages.${system} = localPackages;
+      packages.${system} = {
+        chatgpt-desktop = packagePkgs.callPackage ./pkgs/chatgpt-desktop { };
+        cua-driver = packagePkgs.callPackage ./pkgs/cua-driver { };
+      };
 
       checks.${system}.orange-health-monitor =
         inputs.self.nixosConfigurations.orange.config.system.build.orangeHealthMonitorCheck;

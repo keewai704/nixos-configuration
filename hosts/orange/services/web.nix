@@ -8,16 +8,14 @@ let
     tailnetOrigin
     vaultwardenPort
     ;
-  forwardedProxyHeaders = ''
+  nginxProxyHeaders = ''
+    proxy_set_header Host $host;
     proxy_set_header X-Real-IP $tailscale_client_ip;
     proxy_set_header X-Forwarded-For $tailscale_client_ip;
     proxy_set_header X-Forwarded-Proto https;
     proxy_set_header X-Forwarded-Host $host;
     proxy_set_header X-Forwarded-Server $hostname;
-  '';
-  nginxProxyHeaders = ''
-    proxy_set_header Host $host;
-    ${forwardedProxyHeaders}
+
   '';
 in
 {

@@ -157,29 +157,22 @@ in
         createDirectories = true;
       };
 
-      configFile =
-        lib.genAttrs
-          [
-            "btop/btop.conf"
-            "cava"
-            "gtk-3.0/gtk.css"
-            "gtk-3.0/settings.ini"
-            "gtk-4.0/gtk.css"
-            "gtk-4.0/settings.ini"
-            "hypr/hyprlock.conf"
-            "hypr/scripts/now-playing.sh"
-            "hypr/scripts/password-cursor.sh"
-            "kitty/kitty.conf"
-            "quickshell"
-            "rofi"
-            "wlogout"
-          ]
-          (name: {
-            source = "${desktop43pr}/${name}";
-          })
-        // {
-          "user-dirs.dirs".force = true;
-        };
+      configFile = {
+        "btop/btop.conf".source = "${desktop43pr}/btop/btop.conf";
+        "cava".source = "${desktop43pr}/cava";
+        "gtk-3.0/gtk.css".source = "${desktop43pr}/gtk-3.0/gtk.css";
+        "gtk-3.0/settings.ini".source = "${desktop43pr}/gtk-3.0/settings.ini";
+        "gtk-4.0/gtk.css".source = "${desktop43pr}/gtk-4.0/gtk.css";
+        "gtk-4.0/settings.ini".source = "${desktop43pr}/gtk-4.0/settings.ini";
+        "hypr/hyprlock.conf".source = "${desktop43pr}/hypr/hyprlock.conf";
+        "hypr/scripts/now-playing.sh".source = "${desktop43pr}/hypr/scripts/now-playing.sh";
+        "hypr/scripts/password-cursor.sh".source = "${desktop43pr}/hypr/scripts/password-cursor.sh";
+        "kitty/kitty.conf".source = "${desktop43pr}/kitty/kitty.conf";
+        "quickshell".source = "${desktop43pr}/quickshell";
+        "rofi".source = "${desktop43pr}/rofi";
+        "user-dirs.dirs".force = true;
+        "wlogout".source = "${desktop43pr}/wlogout";
+      };
     };
 
     programs.waybar = {

@@ -15,13 +15,10 @@ uses one shared module and keeps everything else beside the host that owns it.
 │   │   ├── default.nix            # host entry point
 │   │   ├── hardware-configuration.nix
 │   │   ├── desktop.nix            # desktop environment
-│   │   ├── browser/
-│   │   │   ├── default.nix        # Brave Origin, Pywalfox, WebHID, and browser composition
-│   │   │   └── sine.nix           # Firefox, Sine assembly, and profile activation
+│   │   ├── browser.nix            # Firefox, Brave Origin, Pywalfox, and WebHID
 │   │   ├── codex.nix              # ChatGPT, MCP, CUA, and skills
-│   │   ├── theme.nix              # shared desktop palette and assets
 │   │   ├── hyprland.lua           # Hyprland behavior and key bindings
-│   │   └── assets/                # wallpaper and browser localization files
+│   │   └── assets/                # wallpaper
 │   └── orange/
 │       ├── default.nix            # host entry point
 │       ├── hardware-configuration.nix

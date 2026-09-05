@@ -6,11 +6,6 @@
 }:
 
 let
-  theme = import ../theme.nix {
-    inherit pkgs;
-    colors = config.lib.stylix.colors;
-  };
-
   # Use the current official binary until the pinned nixpkgs package catches up.
   # This only repackages the binary for NixOS; Chromium is not compiled locally.
   braveOriginVersion = "1.94.117";
@@ -37,48 +32,15 @@ let
     '';
   });
 
-  pywalfox = pkgs.pywalfox-native;
   pywalfoxManifest = pkgs.writeTextDir "lib/mozilla/native-messaging-hosts/pywalfox.json" (
     builtins.toJSON {
       name = "pywalfox";
       description = "Automatically theme Firefox using the Nix-managed Pywal palette";
-      path = lib.getExe pywalfox;
+      path = lib.getExe pkgs.pywalfox-native;
       type = "stdio";
       allowed_extensions = [ "pywalfox@frewacom.org" ];
     }
   );
-  pywalfoxPalette = with theme.palette; [
-    background
-    red
-    green
-    yellow
-    blue
-    magenta
-    cyan
-    foreground
-    comment
-    red
-    green
-    yellow
-    blue
-    magenta
-    cyan
-    config.lib.stylix.colors.base07
-  ];
-  pywalfoxColors = builtins.listToAttrs (
-    lib.imap0 (index: color: lib.nameValuePair "color${toString index}" "#${color}") pywalfoxPalette
-  );
-  pywalfoxTheme = builtins.toJSON {
-    inherit (theme) wallpaper;
-    alpha = "100";
-    special = {
-      background = "#${theme.palette.background}";
-      foreground = "#${theme.palette.foreground}";
-      cursor = "#${theme.palette.foreground}";
-    };
-    colors = pywalfoxColors;
-  };
-
   webhidUdevRules = pkgs.writeTextFile {
     name = "webhid-udev-rules";
     destination = "/lib/udev/rules.d/70-webhid.rules";
@@ -96,19 +58,57 @@ let
   };
 in
 {
-  imports = [ ./sine.nix ];
-
   environment.systemPackages = [
     braveOrigin
-    pywalfox
+    pkgs.pywalfox-native
   ];
 
-  programs.firefox.nativeMessagingHosts.packages = [ pywalfoxManifest ];
+  programs.firefox = {
+    enable = true;
+    languagePacks = [ "ja" ];
+    nativeMessagingHosts.packages = [ pywalfoxManifest ];
+    preferences = {
+      "intl.accept_languages" = "ja-JP,ja,en-US,en";
+      "intl.locale.requested" = "ja";
+      "intl.regional_prefs.use_os_locales" = false;
+    };
+  };
 
   services.udev.packages = [ webhidUdevRules ];
 
   home-manager.users.keewai.xdg = {
-    cacheFile."wal/colors.json".text = pywalfoxTheme;
+    cacheFile."wal/colors.json".text = builtins.toJSON {
+      wallpaper = ./assets/videoframe_150744_10240x4320_clean-faithful.png;
+      alpha = "100";
+      special = with config.lib.stylix.colors; {
+        background = "#${base00}";
+        foreground = "#${base05}";
+        cursor = "#${base05}";
+      };
+      colors = builtins.listToAttrs (
+        lib.imap0 (index: color: lib.nameValuePair "color${toString index}" "#${color}") (
+          with config.lib.stylix.colors;
+          [
+            base00
+            base08
+            base0B
+            base0A
+            base0D
+            base0E
+            base0C
+            base05
+            base03
+            base08
+            base0B
+            base0A
+            base0D
+            base0E
+            base0C
+            base07
+          ]
+        )
+      );
+    };
     configFile."mimeapps.list".force = true;
 
     desktopEntries = {
@@ -133,18 +133,15 @@ in
 
     mimeApps = {
       enable = true;
-      defaultApplications =
-        lib.genAttrs [
-          "application/xhtml+xml"
-          "text/html"
-          "x-scheme-handler/about"
-          "x-scheme-handler/http"
-          "x-scheme-handler/https"
-          "x-scheme-handler/unknown"
-        ] (_: [ "firefox.desktop" ])
-        // {
-          "x-scheme-handler/codex" = [ "chatgpt.desktop" ];
-        };
+      defaultApplications = {
+        "application/xhtml+xml" = [ "firefox.desktop" ];
+        "text/html" = [ "firefox.desktop" ];
+        "x-scheme-handler/about" = [ "firefox.desktop" ];
+        "x-scheme-handler/http" = [ "firefox.desktop" ];
+        "x-scheme-handler/https" = [ "firefox.desktop" ];
+        "x-scheme-handler/unknown" = [ "firefox.desktop" ];
+        "x-scheme-handler/codex" = [ "chatgpt.desktop" ];
+      };
     };
   };
 }

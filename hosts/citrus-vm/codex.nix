@@ -76,17 +76,6 @@ let
     ];
   };
 
-  mkPonytailHookGroup = name: statusMessage: {
-    hooks = [
-      {
-        type = "command";
-        command = "${ponytailManagedHooks}/bin/ponytail-${name}";
-        timeout = 5;
-        inherit statusMessage;
-      }
-    ];
-  };
-
   cuaDriver = pkgs.callPackage ../../pkgs/cua-driver { };
   cuaEnvironment = {
     CUA_DRIVER_PERMISSION_MODE = "standard";
@@ -166,20 +155,43 @@ let
       managed_dir = "${ponytailManagedHooks}/bin";
 
       SessionStart = [
-        (
-          (mkPonytailHookGroup "activate" "Loading ponytail mode...")
-          // {
-            matcher = "startup|resume|clear|compact";
-          }
-        )
+        {
+          matcher = "startup|resume|clear|compact";
+          hooks = [
+            {
+              type = "command";
+              command = "${ponytailManagedHooks}/bin/ponytail-activate";
+              timeout = 5;
+              statusMessage = "Loading ponytail mode...";
+            }
+          ];
+        }
       ];
 
       SubagentStart = [
-        (mkPonytailHookGroup "subagent" "Loading ponytail mode...")
+        {
+          hooks = [
+            {
+              type = "command";
+              command = "${ponytailManagedHooks}/bin/ponytail-subagent";
+              timeout = 5;
+              statusMessage = "Loading ponytail mode...";
+            }
+          ];
+        }
       ];
 
       UserPromptSubmit = [
-        (mkPonytailHookGroup "mode-tracker" "Tracking ponytail mode...")
+        {
+          hooks = [
+            {
+              type = "command";
+              command = "${ponytailManagedHooks}/bin/ponytail-mode-tracker";
+              timeout = 5;
+              statusMessage = "Tracking ponytail mode...";
+            }
+          ];
+        }
       ];
     };
   };

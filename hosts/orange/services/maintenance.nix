@@ -15,14 +15,6 @@ let
     vaultwardenBackupRoot
     ;
 
-  mkScheduledTimer = description: timerConfig: {
-    inherit description;
-    wantedBy = [ "timers.target" ];
-    timerConfig = timerConfig // {
-      Persistent = false;
-    };
-  };
-
   localBackup = pkgs.writeShellApplication {
     name = "orange-local-backup";
     runtimeInputs = with pkgs; [
@@ -99,13 +91,6 @@ let
       '';
     };
 
-  nixStoreVerify = pkgs.writeShellApplication {
-    name = "orange-nix-store-verify";
-    runtimeInputs = [ config.nix.package ];
-    text = ''
-      nix-store --verify --check-contents
-    '';
-  };
 in
 {
   services.fstrim.interval = "Mon *-*-* 06:50:00";
@@ -121,6 +106,7 @@ in
     services = {
       orange-local-backup = {
         description = "Create versioned local backups of orange service state";
+        startAt = "*-*-* 06:15:00";
         requires = [ storageMountUnit ];
         after = [
           "backup-vaultwarden.service"
@@ -141,6 +127,7 @@ in
 
       orange-smart-short = {
         description = "Start weekly SMART short self-tests";
+        startAt = "Sun *-*-* 06:50:00";
         serviceConfig = {
           Type = "oneshot";
           ExecStart = lib.getExe (smartSelfTest "short");
@@ -149,6 +136,7 @@ in
 
       orange-smart-long = {
         description = "Start monthly SMART long self-tests";
+        startAt = "*-*-01 07:30:00";
         serviceConfig = {
           Type = "oneshot";
           ExecStart = lib.getExe (smartSelfTest "long");
@@ -157,9 +145,10 @@ in
 
       orange-nix-store-verify = {
         description = "Verify Nix Store contents monthly";
+        startAt = "*-*-01 08:00:00";
         serviceConfig = {
           Type = "oneshot";
-          ExecStart = lib.getExe nixStoreVerify;
+          ExecStart = "${config.nix.package}/bin/nix-store --verify --check-contents";
           Nice = 10;
           IOSchedulingClass = "idle";
         };
@@ -167,22 +156,6 @@ in
     };
 
     timers = {
-      orange-local-backup = mkScheduledTimer "Run local service backups after 06:00" {
-        OnCalendar = "*-*-* 06:15:00";
-      };
-
-      orange-smart-short = mkScheduledTimer "Run SMART short self-tests after 06:00 each week" {
-        OnCalendar = "Sun *-*-* 06:50:00";
-      };
-
-      orange-smart-long = mkScheduledTimer "Run SMART long self-tests after 06:00 each month" {
-        OnCalendar = "*-*-01 07:30:00";
-      };
-
-      orange-nix-store-verify = mkScheduledTimer "Verify Nix Store after 06:00 each month" {
-        OnCalendar = "*-*-01 08:00:00";
-      };
-
       logrotate = {
         timerConfig = {
           OnCalendar = lib.mkForce "*-*-* 06:20:00";
@@ -190,9 +163,12 @@ in
         };
       };
 
-      orange-tmpfiles-clean = mkScheduledTimer "Clean temporary directories after 06:00" {
-        OnCalendar = "*-*-* 06:30:00";
-        Unit = "systemd-tmpfiles-clean.service";
+      orange-tmpfiles-clean = {
+        wantedBy = [ "timers.target" ];
+        timerConfig = {
+          OnCalendar = "*-*-* 06:30:00";
+          Unit = "systemd-tmpfiles-clean.service";
+        };
       };
 
       backup-vaultwarden.timerConfig.Persistent = lib.mkForce false;
