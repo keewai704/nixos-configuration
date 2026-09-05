@@ -81,10 +81,6 @@
     --top-bar-right-margin: calc((32px + var(--space-xs)) * (var(--button-count, 1) + 1) + var(--legcord-controls-width) + var(--space-xs));
   }
 
-  #app-mount .inviteToolbar__133bf {
-    padding-right: var(--top-bar-right-margin);
-  }
-
   #legcordNavControls #window-controls-container {
     position: fixed;
     position-anchor: --system24-toolbar;
