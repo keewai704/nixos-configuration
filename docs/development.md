@@ -88,7 +88,7 @@ Evaluate and build every affected host explicitly. A change to `flake.nix`,
 builds:
 
 ```console
-for target_host in citrus-vm orange; do
+for target_host in citrus orange; do
   nix eval --no-write-lock-file \
     ".#nixosConfigurations.$target_host.config.system.build.toplevel.drvPath"
   nix build ".#nixosConfigurations.$target_host.config.system.build.toplevel" \
@@ -107,8 +107,8 @@ nix build .#cua-driver --no-link --no-write-lock-file
 
 | Change scope | Minimum explicit builds |
 | --- | --- |
-| `flake.nix`, `modules/common.nix`, or a module used by both hosts | `citrus-vm` and `orange` |
-| Citrus host, desktop, ChatGPT, MCP, CUA, or skills | `citrus-vm` and any changed package output |
+| `flake.nix`, `modules/common.nix`, or a module used by both hosts | `citrus` and `orange` |
+| Citrus host, desktop, ChatGPT, MCP, CUA, or skills | `citrus` and any changed package output |
 | Orange host, service, monitoring, or maintenance | `orange` and any changed package |
 | Configuration used only by another host | That host; do not activate it or an unrelated local host |
 | Documentation only | Formatting and link checks appropriate to the files; no live activation |
@@ -167,7 +167,7 @@ systemctl is-active NetworkManager tailscaled sshd
 tailscale status
 ```
 
-Use the host-specific checks in the [Citrus guide](citrus-vm.md#verification)
+Use the host-specific checks in the [Citrus guide](citrus.md#verification)
 or [Orange guide](orange.md#verification). If any build, activation, networking,
 or service check fails, fix it and repeat the workflow. Do not run `switch`.
 

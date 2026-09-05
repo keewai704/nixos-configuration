@@ -14,7 +14,14 @@ let
   chatgptDesktop = pkgs.callPackage ../../pkgs/chatgpt-desktop { };
 in
 {
-  nixpkgs.config.allowUnfreePredicate = package: lib.getName package == "chatgpt-desktop";
+  nixpkgs.config.allowUnfreePredicate =
+    package:
+    builtins.elem (lib.getName package) [
+      "chatgpt-desktop"
+      "cuda_nvml_dev"
+      "nvidia-x11"
+      "nvidia-settings"
+    ];
 
   environment.systemPackages = [
     chatgptDesktop
@@ -61,18 +68,18 @@ in
         lockscreen_widgets = {
           enabled = false;
           schema_version = 2;
-          widget_order = [ "lockscreen-login-box@Virtual-1" ];
+          widget_order = [ "lockscreen-login-box@DP-1" ];
           grid = {
             cell_size = 16;
             major_interval = 4;
             visible = true;
           };
-          widget."lockscreen-login-box@Virtual-1" = {
+          widget."lockscreen-login-box@DP-1" = {
             box_height = 196.0;
             box_width = 810.0;
             cx = 960.0;
             cy = 898.0;
-            output = "Virtual-1";
+            output = "DP-1";
             placement_height = 1080.0;
             placement_width = 1920.0;
             rotation = 0.0;
@@ -118,7 +125,7 @@ in
           enabled = true;
           default.path = toString theme.wallpaper;
           last.path = toString theme.wallpaper;
-          monitors.Virtual-1.path = toString theme.wallpaper;
+          monitors.DP-1.path = toString theme.wallpaper;
         };
       };
       customPalettes.Stylix = theme.noctaliaPalette;

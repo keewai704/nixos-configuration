@@ -11,21 +11,20 @@ let
     inherit pkgs;
     colors = config.lib.stylix.colors;
   };
-  displayOutput = "Virtual-1";
   hyprlandConfig = pkgs.writeText "hyprland.lua" (
-    "local display_output = ${builtins.toJSON displayOutput}\n"
-    + "local noctalia_ipc = ${builtins.toJSON "${lib.getExe pkgs.noctalia} msg "}\n"
+    "local noctalia_ipc = ${builtins.toJSON "${lib.getExe pkgs.noctalia} msg "}\n"
     + "local theme = ${lib.generators.toLua { } theme.hyprland}\n"
     + builtins.readFile ./hyprland.lua
   );
 
-  hyprlandSession =
-    "${lib.getExe pkgs.uwsm} start -e -D Hyprland ${pkgs.hyprland}/bin/start-hyprland"
-    + " -- -- --config ${hyprlandConfig}";
+  hyprlandSession = "${lib.getExe pkgs.uwsm} start -e -D Hyprland ${pkgs.hyprland}/bin/start-hyprland";
 in
 {
   nixpkgs.overlays = [
     (_final: previous: {
+      hyprland = previous.hyprland.overrideAttrs (old: {
+        patches = (old.patches or [ ]) ++ [ ./hyprland-ime-modifiers.patch ];
+      });
       noctalia = previous.noctalia.overrideAttrs (old: {
         patches = (old.patches or [ ]) ++ [ ./assets/noctalia-settings-ja.patch ];
         postPatch = (old.postPatch or "") + ''
@@ -35,25 +34,49 @@ in
     })
   ];
 
-  boot.kernelPackages = pkgs.linuxPackages_cachyos.extend (
-    _: _: {
-      inherit (pkgs.linuxPackages_latest) hyperv-daemons;
-    }
-  );
+  nix = {
+    # Leave room for the physical desktop during builds.
+    settings = {
+      max-jobs = 2;
+      cores = 6;
+    };
+    daemonIOSchedClass = "idle";
+  };
+  systemd.services.nix-daemon.serviceConfig.Nice = 10;
+
+  boot.kernelPackages = pkgs.linuxPackages_cachyos;
+  boot.initrd.kernelModules = [
+    "nvidia"
+    "nvidia_modeset"
+    "nvidia_uvm"
+    "nvidia_drm"
+  ];
+
+  hardware.nvidia = {
+    # Keep the driver cached for the physical workstation's CachyOS kernel.
+    package = pkgs.nvidia_cachyos;
+    open = true;
+    modesetting.enable = true;
+    powerManagement.enable = true;
+  };
+  hardware.bluetooth.enable = true;
 
   imports = [
     inputs.nix-hazkey.nixosModules.hazkey
-    ./browser
+    ./browser.nix
     ./codex.nix
     ./desktop.nix
     ./hardware-configuration.nix
   ];
 
-  networking.hostName = "citrus-vm";
+  networking.hostName = "citrus";
+
+  home-manager.users.keewai.xdg.configFile."hypr/hyprland.lua".source = hyprlandConfig;
 
   stylix = {
     enable = true;
     autoEnable = false;
+    image = theme.wallpaper;
     base16Scheme = {
       scheme = "Tokyo Night";
       slug = "tokyo-night";
@@ -149,7 +172,20 @@ in
   };
 
   services = {
+    xserver.videoDrivers = [ "nvidia" ];
+    udev.extraRules = ''
+      # Keep the discrete GPU path stable across DRM device enumeration changes.
+      SUBSYSTEM=="drm", KERNEL=="card[0-9]*", KERNELS=="0000:01:00.0", SYMLINK+="dri/nvidia"
+    '';
+    blueman.enable = true;
     hazkey.enable = true;
+
+    pipewire = {
+      enable = true;
+      alsa.enable = true;
+      alsa.support32Bit = true;
+      pulse.enable = true;
+    };
 
     greetd = {
       enable = true;
@@ -177,8 +213,9 @@ in
     systemPackages = [ pkgs.gws ];
 
     sessionVariables = {
-      AQ_DRM_DEVICES = "/dev/dri/card1";
-      LIBGL_ALWAYS_SOFTWARE = "1";
+      AQ_DRM_DEVICES = "/dev/dri/nvidia";
+      LIBVA_DRIVER_NAME = "nvidia";
+      __GLX_VENDOR_LIBRARY_NAME = "nvidia";
       NIXOS_OZONE_WL = "1";
     };
   };

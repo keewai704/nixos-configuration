@@ -1,8 +1,10 @@
 {
-  description = "NixOS configurations for orange and citrus-vm";
+  description = "NixOS configurations for orange and citrus";
 
   inputs = {
     nixpkgs.url = "github:NixOS/nixpkgs/nixos-unstable";
+
+    my-firefox-nix.url = "git+file:///home/keewai/my-firefox-nix";
 
     agenix = {
       url = "github:ryantm/agenix";
@@ -76,10 +78,10 @@
         ./hosts/orange
       ];
 
-      nixosConfigurations.citrus-vm = mkHost [
+      nixosConfigurations.citrus = mkHost [
         inputs.chaotic.nixosModules.default
         inputs.stylix.nixosModules.stylix
-        ./hosts/citrus-vm
+        ./hosts/citrus
       ];
 
       packages.${system} = localPackages;

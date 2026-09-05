@@ -11,17 +11,15 @@ uses one shared module and keeps everything else beside the host that owns it.
 ├── modules/
 │   └── common.nix                 # settings used by every host
 ├── hosts/
-│   ├── citrus-vm/
+│   ├── citrus/
 │   │   ├── default.nix            # host entry point
 │   │   ├── hardware-configuration.nix
 │   │   ├── desktop.nix            # desktop environment
-│   │   ├── browser/
-│   │   │   ├── default.nix        # Brave Origin, Pywalfox, WebHID, and browser composition
-│   │   │   └── sine.nix           # Firefox, Sine assembly, and profile activation
+│   │   ├── browser.nix            # Firefox, Brave Origin, Pywalfox, WebHID, and browser composition
 │   │   ├── codex.nix              # ChatGPT, MCP, CUA, and skills
 │   │   ├── theme.nix              # shared desktop palette and assets
 │   │   ├── hyprland.lua           # Hyprland behavior and key bindings
-│   │   └── assets/                # wallpaper and browser localization files
+│   │   └── assets/                # wallpaper and Noctalia localization files
 │   └── orange/
 │       ├── default.nix            # host entry point
 │       ├── hardware-configuration.nix
@@ -53,11 +51,15 @@ Each host entry point imports only files from its own directory. Orange modules
 read `settings.nix` directly, so there is no hidden host-specific argument
 injection from `flake.nix`.
 
+Firefox's Sine/Natsumi configuration lives in the separate Git repository at
+`/home/keewai/my-firefox-nix`. Citrus imports its `nixosModules.default` through
+the `my-firefox-nix` flake input, whose commit is pinned in `flake.lock`.
+
 ## Hosts
 
 | Host | Role | Entry point | Guide |
 | --- | --- | --- | --- |
-| `citrus-vm` | Hyprland desktop and local ChatGPT/Codex client | [`hosts/citrus-vm/default.nix`](hosts/citrus-vm/default.nix) | [Citrus](docs/citrus-vm.md) |
+| `citrus` | Hyprland desktop and local ChatGPT/Codex client | [`hosts/citrus/default.nix`](hosts/citrus/default.nix) | [Citrus](docs/citrus.md) |
 | `orange` | Tailnet server, storage, media, password manager, and Minecraft | [`hosts/orange/default.nix`](hosts/orange/default.nix) | [Orange](docs/orange.md) |
 
 ## Non-activating quick start

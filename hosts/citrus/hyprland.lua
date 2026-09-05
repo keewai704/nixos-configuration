@@ -1,5 +1,5 @@
--- Hyprland behavior for citrus-vm. The generated configuration prepends the
--- Nix-managed display output, Noctalia IPC, and shared theme table.
+-- Hyprland behavior for citrus. The generated configuration prepends
+-- Noctalia IPC and the shared theme table.
 
 local main_mod = "SUPER"
 local terminal = "uwsm app -- kitty"
@@ -9,14 +9,23 @@ local function noctalia(action)
 end
 
 hl.monitor({
-    output = display_output,
-    mode = "1920x1080@60",
-    position = "0x0",
+    output = "",
+    mode = "preferred",
+    position = "auto",
+    scale = 1,
+})
+
+hl.monitor({
+    output = "desc:Dell Inc. AW3926QW",
+    mode = "5120x2160@165",
+    position = "auto",
     scale = 1,
 })
 
 hl.env("XCURSOR_SIZE", tostring(theme.cursor.size))
 hl.env("XCURSOR_THEME", theme.cursor.name)
+hl.env("QT_QPA_PLATFORM", "wayland")
+hl.env("MOZ_ENABLE_WAYLAND", "1")
 
 hl.config({
     general = {
@@ -55,7 +64,6 @@ hl.config({
             offset = { 0, 2 },
         },
         blur = {
-            -- Keep this deliberately light: citrus-vm uses software rendering.
             enabled = true,
             size = 3,
             passes = 1,

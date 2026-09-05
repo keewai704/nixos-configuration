@@ -414,6 +414,21 @@
         "type": "github"
       }
     },
+    "my-firefox-nix": {
+      "locked": {
+        "lastModified": 1788598465,
+        "narHash": "sha256-5HC3u7LtCcmXmSvBTFxLvdBiG/Ppg26Av1JWU7WEc+I=",
+        "ref": "refs/heads/main",
+        "rev": "886153c55193712f308ae5e1a985b52ee5cd4480",
+        "revCount": 2,
+        "type": "git",
+        "url": "file:///home/keewai/my-firefox-nix"
+      },
+      "original": {
+        "type": "git",
+        "url": "file:///home/keewai/my-firefox-nix"
+      }
+    },
     "nix-hazkey": {
       "inputs": {
         "home-manager": [
@@ -638,6 +653,7 @@
         "home-manager": "home-manager_2",
         "mcp-servers-nix": "mcp-servers-nix",
         "millennium": "millennium",
+        "my-firefox-nix": "my-firefox-nix",
         "nix-hazkey": "nix-hazkey",
         "nixcord": "nixcord",
         "nixpkgs": "nixpkgs_4",
