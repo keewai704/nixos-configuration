@@ -167,10 +167,10 @@ point, not in a module used by Orange.
 ## Browsers and URL handlers
 
 Firefox is the default browser for HTTP, HTTPS, HTML, and unknown URL schemes.
-The `browser-config` flake input supplies its Sine/Natsumi customization,
+The `my-firefox-nix` flake input supplies its Sine/Natsumi customization,
 six marketplace mods, and Japanese localization. Their source and update
-instructions live in the independent repository at `/home/keewai/browser-config`.
-Commit changes there, then run `nix flake update browser-config` here before
+instructions live in the independent repository at `/home/keewai/my-firefox-nix`.
+Commit changes there, then run `nix flake update my-firefox-nix` here before
 following the normal validation and activation workflow. Evaluation requires
 that local Git repository at the configured path.
 

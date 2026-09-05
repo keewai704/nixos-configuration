@@ -51,8 +51,8 @@ read `settings.nix` directly, so there is no hidden host-specific argument
 injection from `flake.nix`.
 
 Firefox's Sine/Natsumi configuration lives in the separate Git repository at
-`/home/keewai/browser-config`. Citrus imports its `nixosModules.default` through
-the `browser-config` flake input, whose commit is pinned in `flake.lock`.
+`/home/keewai/my-firefox-nix`. Citrus imports its `nixosModules.default` through
+the `my-firefox-nix` flake input, whose commit is pinned in `flake.lock`.
 
 ## Hosts
 

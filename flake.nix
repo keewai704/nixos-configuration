@@ -4,7 +4,7 @@
   inputs = {
     nixpkgs.url = "github:NixOS/nixpkgs/nixos-unstable";
 
-    browser-config.url = "git+file:///home/keewai/browser-config";
+    my-firefox-nix.url = "git+file:///home/keewai/my-firefox-nix";
 
     agenix = {
       url = "github:ryantm/agenix";

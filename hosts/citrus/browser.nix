@@ -62,7 +62,7 @@ let
   };
 in
 {
-  imports = [ inputs.browser-config.nixosModules.default ];
+  imports = [ inputs.my-firefox-nix.nixosModules.default ];
 
   environment.systemPackages = [
     braveOrigin
