@@ -117,6 +117,8 @@ hl.config({
     },
 })
 
+hl.window_rule({ match = { class = "firefox" }, opacity = "1.0 override" })
+
 hl.window_rule({
     match = { class = "dev.noctalia.Noctalia" },
     float = true,
