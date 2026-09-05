@@ -46,12 +46,15 @@ let
     name = "webhid-udev-rules";
     destination = "/lib/udev/rules.d/70-webhid.rules";
     text = ''
-      # Everglide SU75 Pro WebHID interface from the current SparkLink catalog.
+      # Everglide SU75 Pro and the connected SU75 Ultra (TwinStar).
       SUBSYSTEM=="hidraw", KERNEL=="hidraw*", ATTRS{idVendor}=="1ca6", ATTRS{idProduct}=="3002", TAG+="uaccess"
+      SUBSYSTEM=="hidraw", KERNEL=="hidraw*", ATTRS{idVendor}=="1ca6", ATTRS{idProduct}=="3007", TAG+="uaccess"
 
       # Devices supported by the OpenMouse WebHID control panel. The remaining
       # vendor-wide matches mirror its protocol-based device discovery.
+      # Logitech LIGHTSPEED receiver (including PRO X 2c) and wired SUPERLIGHT 2c.
       SUBSYSTEM=="hidraw", KERNEL=="hidraw*", ATTRS{idVendor}=="046d", ATTRS{idProduct}=="c54d", TAG+="uaccess"
+      SUBSYSTEM=="hidraw", KERNEL=="hidraw*", ATTRS{idVendor}=="046d", ATTRS{idProduct}=="c094", TAG+="uaccess"
       SUBSYSTEM=="hidraw", KERNEL=="hidraw*", ATTRS{idVendor}=="3367", TAG+="uaccess"
       SUBSYSTEM=="hidraw", KERNEL=="hidraw*", ATTRS{idVendor}=="36a7", TAG+="uaccess"
       SUBSYSTEM=="hidraw", KERNEL=="hidraw*", ATTRS{idVendor}=="3710", TAG+="uaccess"
@@ -107,9 +110,9 @@ in
 
     desktopEntries = {
       everglide-web-driver = {
-        name = "Everglide SU75 Pro Webドライバー";
-        comment = "Everglide SU75 ProをWebHIDで設定";
-        exec = "${lib.getExe braveOrigin} --new-window https://www.xsyd.top/connect";
+        name = "TwinStar Webドライバー";
+        comment = "EverglideキーボードをTwinStar WebHIDで設定";
+        exec = "${lib.getExe braveOrigin} --app=https://v2-dev.xsyd.top/";
         icon = "input-keyboard";
         categories = [ "Settings" ];
         terminal = false;
@@ -117,8 +120,8 @@ in
 
       openmouse = {
         name = "OpenMouse コントロールパネル";
-        comment = "対応マウスをWebHIDで設定";
-        exec = "${lib.getExe braveOrigin} --new-window https://keewai704.github.io/openmouse/";
+        comment = "G PRO X SUPERLIGHT 2cなどの対応マウスをWebHIDで設定";
+        exec = "${lib.getExe braveOrigin} --app=https://control.openmouse.app/";
         icon = "input-mouse";
         categories = [ "Settings" ];
         terminal = false;
