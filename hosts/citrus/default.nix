@@ -188,6 +188,15 @@ in
       alsa.enable = true;
       alsa.support32Bit = true;
       pulse.enable = true;
+      wireplumber.extraConfig."51-inzone-le-audio" = {
+        "monitor.bluez.rules" = [
+          {
+            matches = [ { "device.name" = "bluez_card.88_92_CC_D0_86_D2"; } ];
+            # Keep LC3 at 48 kHz when the H9 II microphone is enabled.
+            actions.update-props."bluez5.bap.preset" = "48_5_1";
+          }
+        ];
+      };
     };
 
     greetd = {
