@@ -59,7 +59,14 @@ in
     modesetting.enable = true;
     powerManagement.enable = true;
   };
-  hardware.bluetooth.enable = true;
+  hardware.bluetooth = {
+    enable = true;
+    settings.General = {
+      Experimental = true;
+      # LE Audio requires the kernel's ISO sockets.
+      KernelExperimental = "6fbaf188-05e0-496a-9885-d6ddfdb4e03e";
+    };
+  };
 
   imports = [
     inputs.nix-hazkey.nixosModules.hazkey
