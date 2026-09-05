@@ -92,7 +92,7 @@ in
             }
 
             /* Steam now places controls beside FieldLeftColumn, outside FieldLabelRow. */
-            :root body .DialogBody .eKmEXJCm_lgme24Fp_HWt {
+            :root body .DialogBody .Panel.eKmEXJCm_lgme24Fp_HWt {
               padding: 12px !important;
               margin-bottom: 12px !important;
               border-radius: var(--st-border-radius);
