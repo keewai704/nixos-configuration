@@ -1,0 +1,17 @@
+Normalize byte-valued GError messages from PyGObject 3.56 in the test helper.
+Keep checking both the exception type and the expected D-Bus error name.
+
+--- a/tests/fprintd.py
++++ b/tests/fprintd.py
+@@ -22,0 +23 @@
++from contextlib import contextmanager
+@@ -375,0 +377 @@
++    @contextmanager
+@@ -383 +385,6 @@
+-        return self.assertRaisesRegex(GLib.Error,
++        with self.assertRaises(GLib.Error) as raised:
++            yield
++        message = raised.exception.message
++        if isinstance(message, bytes):
++            message = message.decode('utf-8')
++        self.assertRegex(message,

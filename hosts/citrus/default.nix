@@ -73,6 +73,7 @@ in
     ./browser.nix
     ./codex.nix
     ./desktop.nix
+    ./fingerprint.nix
     ./hardware-configuration.nix
   ];
 

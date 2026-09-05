@@ -16,6 +16,7 @@ hostname is `citrus` may run `nixos-rebuild test` or `switch` for this host.
 | [`hosts/citrus/hardware-configuration.nix`](../hosts/citrus/hardware-configuration.nix) | Generated machine hardware, filesystems, and swap |
 | [`hosts/citrus/hyprland.lua`](../hosts/citrus/hyprland.lua) | Hyprland behavior and key bindings; Nix prepends the shared theme table |
 | [`hosts/citrus/desktop.nix`](../hosts/citrus/desktop.nix) | Thunar, GVfs, Tumbler, Xarchiver, and the ChatGPT application |
+| [`hosts/citrus/fingerprint.nix`](../hosts/citrus/fingerprint.nix) | CS9711 fingerprint driver, fprintd, and local PAM authentication |
 | [`hosts/citrus/browser.nix`](../hosts/citrus/browser.nix) | Firefox via `my-firefox-nix`, Brave Origin, Pywalfox, default handlers, and vendor-scoped WebHID access |
 | [`hosts/citrus/codex.nix`](../hosts/citrus/codex.nix) | Home Manager, system MCP configuration, personal skills, and CUA |
 | [`pkgs/chatgpt-desktop/default.nix`](../pkgs/chatgpt-desktop/default.nix) | ChatGPT desktop package and launcher |
@@ -78,6 +79,34 @@ The initial wallpaper is repository-owned under `hosts/citrus/assets/` and
 rendered by Noctalia; choosing another wallpaper in the GUI persists as a user
 override. Keep machine-specific display and GPU settings in the
 host entry point, not in a module used by Orange.
+
+## Fingerprint authentication
+
+The USB Chipsailing CS9711 (`2541:0236`) uses `fprintd` with the pinned
+[community CS9711 driver](https://github.com/archeYR/libfprint-CS9711).
+Upstream libfprint does not support this reader. The driver and its SIGFM
+matcher are experimental; successful enrollment and matching do not establish
+their false-acceptance rate or security.
+
+Enroll and verify a finger as the desktop user:
+
+```console
+fprintd-enroll -f right-index-finger
+fprintd-verify -f right-index-finger
+fprintd-list "$USER"
+```
+
+Enrollment takes 15 scans; lift and reposition the same finger between scans.
+The system stores templates under `/var/lib/fprint`, outside the Nix store and
+Git. Local PAM services support fingerprint authentication with password
+fallback, and Noctalia's lock screen uses fprintd directly. SSH fingerprint
+authentication is disabled. Existing automatic login and passwordless wheel
+sudo settings remain in effect; fingerprint login does not unlock GNOME
+Keyring's password-encrypted secrets.
+
+After changing the driver, run `bash hosts/citrus/check-fingerprint.sh` locally
+with the screen unlocked and no finger on the sensor. It checks recognition,
+cancellation during initialization and scanning, and reopening the device.
 
 ## Browsers and URL handlers
 

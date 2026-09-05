@@ -1,0 +1,175 @@
+Keep USB callbacks alive until their scan state machine finishes, and reset queued replies before reopening.
+
+--- a/libfprint/drivers/cs9711/cs9711.c
++++ b/libfprint/drivers/cs9711/cs9711.c
+@@ -95,0 +96 @@
++             GCancellable *cancellable,
+@@ -113 +114 @@
+-  fpi_usb_transfer_submit (transfer, timeout_in_ms, NULL, callback, user_data);
++  fpi_usb_transfer_submit (transfer, timeout_in_ms, cancellable, callback, user_data);
+@@ -131 +132 @@
+-      fp_err ("Read failed: %s, aborting", error->message);
++      fp_dbg ("Read failed: %s, aborting", error->message);
+@@ -195 +196,2 @@
+-      usb_read_in (_dev, ssm, CS9711_FP_CMD_LEN_1, FALSE, CS9711_DEFAULT_WAIT_TIMEOUT, m_init_read_cb_check_expected, NULL);
++      usb_read_in (_dev, ssm, CS9711_FP_CMD_LEN_1, FALSE, CS9711_DEFAULT_WAIT_TIMEOUT,
++                   fpi_device_get_cancellable (_dev), m_init_read_cb_check_expected, NULL);
+@@ -205 +207,2 @@
+-      usb_read_in (_dev, ssm, CS9711_FP_CMD_LEN_1, FALSE, CS9711_DEFAULT_WAIT_TIMEOUT, m_init_read_cb_check_expected, self);
++      usb_read_in (_dev, ssm, CS9711_FP_CMD_LEN_1, FALSE, CS9711_DEFAULT_WAIT_TIMEOUT,
++                   fpi_device_get_cancellable (_dev), m_init_read_cb_check_expected, self);
+@@ -214 +217,2 @@
+-      usb_read_in (_dev, ssm, CS9711_FP_CMD_LEN_1, TRUE, CS9711_DEFAULT_WAIT_TIMEOUT, m_init_read_cb_check_expected, NULL);
++      usb_read_in (_dev, ssm, CS9711_FP_CMD_LEN_1, TRUE, CS9711_DEFAULT_WAIT_TIMEOUT,
++                   fpi_device_get_cancellable (_dev), m_init_read_cb_check_expected, NULL);
+@@ -256,0 +261 @@
++  self->scan_transfer_pending = FALSE;
+@@ -278,0 +284,16 @@
++  /* A completed read can win the race against cancellation after a write error. */
++  if (self->scan_error)
++    {
++      g_clear_error (&error);
++      error = g_steal_pointer (&self->scan_error);
++    }
++
++  if (self->deactivating)
++    {
++      if (error)
++        fpi_ssm_mark_failed (transfer->ssm, error);
++      else
++        fpi_ssm_mark_completed (transfer->ssm);
++      return;
++    }
++
+@@ -281 +302 @@
+-      fp_err ("Read failed: %s, aborting", error->message);
++      fp_dbg ("Read failed: %s, aborting", error->message);
+@@ -327,0 +349 @@
++  FpDeviceCs9711 *self = FPI_DEVICE_CS9711 (_dev);
+@@ -338 +360,4 @@
+-      usb_read_in (_dev, ssm, CS9711_FP_RECV_LEN_1, FALSE, 0, m_scan_read_cb_bulk, M_SCAN_READ_CB_BULK_UD_FIRST_BLOCK);
++      self->scan_transfer_pending = TRUE;
++      usb_read_in (_dev, ssm, CS9711_FP_RECV_LEN_1, FALSE, 0,
++                   self->scan_cancellable, m_scan_read_cb_bulk,
++                   M_SCAN_READ_CB_BULK_UD_FIRST_BLOCK);
+@@ -340,2 +365,11 @@
+-      fpi_image_device_report_finger_status (image_device, TRUE);
+-      m_util_fail_if_error_or_next (ssm, error);
++      if (error)
++        {
++          /* The read owns the SSM until its cancellation callback runs. */
++          self->scan_error = g_steal_pointer (&error);
++          g_cancellable_cancel (self->scan_cancellable);
++        }
++      else
++        {
++          fpi_image_device_report_finger_status (image_device, TRUE);
++          fpi_ssm_next_state (ssm);
++        }
+@@ -349 +383,4 @@
+-      usb_read_in (_dev, ssm, CS9711_FP_RECV_LEN_2, TRUE, CS9711_DEFAULT_WAIT_TIMEOUT, m_scan_read_cb_bulk, M_SCAN_READ_CB_BULK_UD_SECOND_BLOCK);
++      self->scan_transfer_pending = TRUE;
++      usb_read_in (_dev, ssm, CS9711_FP_RECV_LEN_2, TRUE,
++                   CS9711_DEFAULT_WAIT_TIMEOUT, self->scan_cancellable,
++                   m_scan_read_cb_bulk, M_SCAN_READ_CB_BULK_UD_SECOND_BLOCK);
+@@ -358 +395,9 @@
+-      m_scan_submit_image (ssm, image_device);
++      if (m_scan_submit_image (ssm, image_device) != 0)
++        {
++          fpi_ssm_mark_failed (ssm, fpi_device_error_new (FP_DEVICE_ERROR_GENERAL));
++          break;
++        }
++
++      /* Complete the SSM before report_finger_status() can synchronously
++       * request deactivation. */
++      fpi_ssm_mark_completed (ssm);
+@@ -360 +404,0 @@
+-      fpi_ssm_mark_completed (ssm);
+@@ -367,0 +412,29 @@
++static void
++m_scan_complete (FpiSsm *ssm, FpDevice *_dev, GError *error)
++{
++  FpImageDevice *dev = FP_IMAGE_DEVICE (_dev);
++  FpDeviceCs9711 *self = FPI_DEVICE_CS9711 (_dev);
++
++  g_assert (self->scan_ssm == ssm);
++  g_assert (!self->scan_transfer_pending);
++
++  self->scan_ssm = NULL;
++  g_clear_object (&self->scan_cancellable);
++  g_clear_error (&self->scan_error);
++
++  if (error || self->deactivating)
++    {
++      GError *reset_error = NULL;
++
++      /* Stop any frame that the device may still have queued before the
++       * interface is released and a later activation reads its init reply. */
++      usb_send_out_sync (_dev, CS9711_FP_CMD_TYPE_RESET, &reset_error);
++      g_clear_error (&reset_error);
++    }
++
++  if (self->deactivating)
++    fpi_image_device_deactivate_complete (dev, error);
++  else if (error)
++    fpi_image_device_session_error (dev, error);
++}
++
+@@ -373,0 +447 @@
++  FpDeviceCs9711 *self = FPI_DEVICE_CS9711 (dev);
+@@ -374,0 +449,6 @@
++
++  g_assert (self->scan_ssm == NULL);
++  g_assert (!self->scan_transfer_pending);
++  g_clear_object (&self->scan_cancellable);
++  g_clear_error (&self->scan_error);
++  self->deactivating = FALSE;
+@@ -385 +465,20 @@
+-  fpi_image_device_deactivate_complete (dev, NULL);
++  FpDeviceCs9711 *self = FPI_DEVICE_CS9711 (dev);
++
++  self->deactivating = TRUE;
++
++  if (self->scan_ssm == NULL)
++    {
++      fpi_image_device_deactivate_complete (dev, NULL);
++      return;
++    }
++
++  if (self->scan_transfer_pending)
++    {
++      g_assert (self->scan_cancellable != NULL);
++      g_cancellable_cancel (self->scan_cancellable);
++      return;
++    }
++
++  /* The capture loop can be waiting in M_SCAN_INIT_SLEEP. */
++  fpi_ssm_cancel_delayed_state_change (self->scan_ssm);
++  fpi_ssm_mark_completed (self->scan_ssm);
+@@ -390,0 +490 @@
++  FpDeviceCs9711 *self = FPI_DEVICE_CS9711 (dev);
+@@ -396,0 +497,4 @@
++  g_assert (self->scan_ssm == NULL);
++  g_assert (!self->scan_transfer_pending);
++  g_clear_object (&self->scan_cancellable);
++  self->scan_cancellable = g_cancellable_new ();
+@@ -398 +502,2 @@
+-  fpi_ssm_start (ssm_loop, NULL);
++  self->scan_ssm = ssm_loop;
++  fpi_ssm_start (ssm_loop, m_scan_complete);
+@@ -405,0 +511,7 @@
++
++  /* A cancelled scan can leave a reply queued on the USB endpoint. */
++  if (!g_usb_device_reset (fpi_device_get_usb_device (FP_DEVICE (dev)), &error))
++    {
++      fpi_image_device_open_complete (dev, error);
++      return;
++    }
+--- a/libfprint/drivers/cs9711/cs9711.h
++++ b/libfprint/drivers/cs9711/cs9711.h
+@@ -37,0 +38,5 @@
++  FpiSsm       *scan_ssm;
++  GCancellable *scan_cancellable;
++  gboolean      scan_transfer_pending;
++  gboolean      deactivating;
++  GError       *scan_error;
