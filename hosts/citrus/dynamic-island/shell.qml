@@ -19,10 +19,19 @@ ShellRoot {
     readonly property var source: Pipewire.defaultAudioSource
     property var notice: null
     property string osd: ""
+    property real osdValue: -1
     property bool ready: false
     property alias preferences: preferences
     property alias history: history
     property alias clock: clock
+    property alias desktop: desktop
+
+    Desktop {
+        id: desktop
+        testing: root.testing
+        onFeedback: (message, value) => root.showOsd(message, value)
+    }
+    onPageChanged: desktop.refresh(page)
 
     Core.Settings {
         id: preferences
@@ -80,19 +89,20 @@ ShellRoot {
         page = "";
         pinned = false;
     }
-    function showOsd(label) {
+    function showOsd(label, value) {
         if (!ready)
             return;
         osd = label;
+        osdValue = value === undefined ? (sink?.audio?.volume || 0) : value;
         osdTimer.restart();
     }
     function volume(value) {
         if (sink?.audio)
             sink.audio.volume = Math.max(0, Math.min(1, value));
     }
-    function noctalia(args) {
+    function launch(action) {
         close();
-        Quickshell.execDetached([Quickshell.env("ISLAND_NOCTALIA") || "noctalia", "msg"].concat(args));
+        desktop.run([action]);
     }
     Connections {
         target: root.sink?.audio || null
@@ -106,7 +116,7 @@ ShellRoot {
     Connections {
         target: root.source?.audio || null
         function onMutedChanged() {
-            root.showOsd(root.source.audio.muted ? "Mic muted" : "Mic on");
+            root.showOsd(root.source.audio.muted ? "Mic muted" : "Mic on", root.source.audio.volume);
         }
     }
     Connections {
@@ -180,6 +190,50 @@ ShellRoot {
         function session(): void {
             root.showPage("session");
         }
+        function wallpaper(): void {
+            root.showPage("wallpaper");
+        }
+        function clipboard(): void {
+            root.showPage("clipboard");
+        }
+        function windows(): void {
+            root.showPage("windows");
+        }
+        function lock(): void {
+            root.launch("lock");
+        }
+        function brightnessUp(): void {
+            desktop.run(["brightness-up"]);
+        }
+        function brightnessDown(): void {
+            desktop.run(["brightness-down"]);
+        }
+        function volumeUp(): void {
+            root.volume((root.sink?.audio?.volume || 0) + 0.05);
+        }
+        function volumeDown(): void {
+            root.volume((root.sink?.audio?.volume || 0) - 0.05);
+        }
+        function mute(): void {
+            if (root.sink?.audio)
+                root.sink.audio.muted = !root.sink.audio.muted;
+        }
+        function micMute(): void {
+            if (root.source?.audio)
+                root.source.audio.muted = !root.source.audio.muted;
+        }
+        function playPause(): void {
+            if (root.player?.canTogglePlaying)
+                root.player.togglePlaying();
+        }
+        function next(): void {
+            if (root.player?.canGoNext)
+                root.player.next();
+        }
+        function previous(): void {
+            if (root.player?.canGoPrevious)
+                root.player.previous();
+        }
         function close(): void {
             root.close();
             root.dismissNotice();
@@ -195,7 +249,14 @@ ShellRoot {
                 player: root.player?.identity || "",
                 notice: root.notice?.summary || "",
                 notifications: history.count,
-                audio: !!root.sink?.audio
+                audio: !!root.sink?.audio,
+                desktopBusy: desktop.busy,
+                desktopError: desktop.error,
+                brightness: desktop.brightness,
+                brightnessAvailable: desktop.brightnessAvailable,
+                clipboardCount: desktop.clipboard.length,
+                windowCount: desktop.windows.length,
+                wallpaperCount: desktop.wallpapers.length
             });
         }
     }

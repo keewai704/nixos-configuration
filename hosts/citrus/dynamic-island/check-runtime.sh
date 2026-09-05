@@ -22,9 +22,30 @@ XML
     exit
 fi
 island_temp=$(mktemp -d /tmp/island-check.XXXXXX)
-cp "$island_source"/{shell.qml,Island.qml,Geometry.js} "$island_temp/"
+cp "$island_source"/{shell.qml,Island.qml,Geometry.js,Desktop.qml,DesktopPages.qml} "$island_temp/"
 export ISLAND_TEST=1 ISLAND_TEST_NOTIFICATIONS=1
 export ISLAND_TEST_SETTINGS="$island_temp/settings.ini" QT_QPA_PLATFORM=wayland
+cat > "$island_temp/actions" <<'PY'
+#!/usr/bin/env python3
+import json, sys
+action = sys.argv[1]
+result = {"ok": True, "action": action}
+if action.startswith('brightness-'):
+    result.update(available=True, percent=30 if action == 'brightness-up' else 25)
+elif action.startswith('nightlight-'):
+    result['enabled'] = False
+elif action.startswith('power-'):
+    result.update(profile='balanced', profiles=['power-saver', 'balanced'])
+elif action == 'clipboard-list':
+    result['items'] = [{'id': '1', 'text': 'Plain text clipboard preview'}]
+elif action == 'windows-list':
+    result['windows'] = [{'address': '0x123', 'title': 'Example window', 'app': 'example', 'workspace': '1'}]
+elif action == 'wallpaper-list':
+    result['wallpapers'] = []
+print(json.dumps(result))
+PY
+chmod +x "$island_temp/actions"
+export ISLAND_TEST_ACTION="$island_temp/actions"
 qs -p "$island_temp" --no-color > "$island_temp/runtime.log" 2>&1 &
 island_pid=$!
 trap 'qs -p "$island_temp" kill >/dev/null 2>&1 || true; kill "$island_pid" 2>/dev/null || true; wait "$island_pid" 2>/dev/null || true' EXIT
@@ -38,9 +59,12 @@ import json, sys
 state = json.load(open(sys.argv[1]))
 assert state['page'] == '' and not state['pinned'], state
 PY
-for page in launcher calendar controls notifications settings session; do
+for page in launcher calendar controls notifications settings session wallpaper clipboard windows; do
     island_ipc "$page"
     sleep 0.5
+    if [[ -n ${ISLAND_CAPTURE_SCREEN:-} ]]; then
+        qs -p "$island_temp" ipc call "island-view-$ISLAND_CAPTURE_SCREEN" capture "$island_temp/$page.png"
+    fi
     island_ipc status > "$island_temp/status.json"
     python3 - "$island_temp/status.json" "$page" <<'PY'
 import json, sys
@@ -48,6 +72,16 @@ state = json.load(open(sys.argv[1]))
 assert state['page'] == sys.argv[2] and state['pinned'], state
 PY
 done
+island_ipc brightnessUp
+sleep 0.4
+island_ipc status > "$island_temp/status.json"
+python3 - "$island_temp/status.json" <<'PY'
+import json, sys
+state = json.load(open(sys.argv[1]))
+assert state['brightnessAvailable'] and state['brightness'] == 30, state
+assert state['clipboardCount'] == 1 and state['windowCount'] == 1, state
+assert not state['desktopBusy'] and not state['desktopError'], state
+PY
 island_ipc close
 notify-send --app-name='Island check' --expire-time=1000 'Notification test' 'Plain text <b>stays plain</b>'
 sleep 0.2

@@ -7,11 +7,15 @@
 }:
 
 let
-  theme = import ./theme.nix {
-    inherit pkgs;
-    colors = config.lib.stylix.colors;
-  };
   chatgptDesktop = pkgs.callPackage ../../pkgs/chatgpt-desktop { };
+  islandI2cRules = pkgs.writeTextFile {
+    name = "island-i2c-udev-rules";
+    destination = "/lib/udev/rules.d/70-island-i2c.rules";
+    text = ''
+      # Apply the seat ACL before systemd's late seat rule runs.
+      KERNEL=="i2c-[0-9]*", TAG+="uaccess"
+    '';
+  };
 in
 {
   nixpkgs.config.allowUnfreePredicate =
@@ -25,10 +29,20 @@ in
 
   environment.systemPackages = [
     chatgptDesktop
+    pkgs.brightnessctl
+    pkgs.blueman
     pkgs.ddcutil
     pkgs.grimblast
+    pkgs.networkmanagerapplet
+    pkgs.pavucontrol
     pkgs.xarchiver
   ];
+
+  hardware.i2c.enable = true;
+  services.udev.packages = [ islandI2cRules ];
+  programs.hyprlock.enable = true;
+  security.pam.services.hyprlock = { };
+  services.power-profiles-daemon.enable = true;
 
   home-manager.users.keewai = {
     imports = [ inputs.nixcord.homeModules.nixcord ];
@@ -137,87 +151,6 @@ in
           windowStyle = "default";
         };
       };
-    };
-
-    programs.noctalia = {
-      enable = true;
-      systemd.enable = true;
-      settings = {
-        bar.default.background_opacity = 0.4;
-        bar.default.margin_ends = 1200;
-        calendar = {
-          enabled = true;
-          account.personal_google.type = "google";
-        };
-        control_center.calendar.event_date_format = "%m/%d (%a)";
-        desktop_widgets.enabled = false;
-        location.auto_locate = true;
-        lockscreen.blurred_desktop = true;
-        lockscreen_widgets = {
-          enabled = false;
-          schema_version = 2;
-          widget_order = [ "lockscreen-login-box@DP-1" ];
-          grid = {
-            cell_size = 16;
-            major_interval = 4;
-            visible = true;
-          };
-          widget."lockscreen-login-box@DP-1" = {
-            box_height = 196.0;
-            box_width = 810.0;
-            cx = 960.0;
-            cy = 898.0;
-            output = "DP-1";
-            placement_height = 1080.0;
-            placement_width = 1920.0;
-            rotation = 0.0;
-            type = "login_box";
-            settings = {
-              background_color = "surface_variant";
-              background_opacity = 0.88;
-              background_radius = 12.0;
-              center_password_text = false;
-              input_opacity = 1.0;
-              input_radius = 6.0;
-              layout = "regular";
-              show_caps_lock = true;
-              show_keyboard_layout = true;
-              show_login_button = true;
-              show_media = true;
-              show_session_buttons = true;
-              show_unlock_hint = true;
-              show_weather = true;
-            };
-          };
-        };
-        notification.position = "top_center";
-        shell = {
-          font_family = config.stylix.fonts.sansSerif.name;
-          launch_apps_as_systemd_services = true;
-          panel_anchor_bar = "default";
-          polkit_agent = true;
-          launcher.categories = false;
-          launcher.compact = true;
-          panel.polkit_placement = "attached";
-        };
-        theme = {
-          mode = config.stylix.polarity;
-          source = "custom";
-          custom_palette = "Stylix";
-          pure_black_dark = false;
-          templates = {
-            enable_builtin_templates = false;
-            enable_community_templates = false;
-          };
-        };
-        wallpaper = {
-          enabled = true;
-          default.path = toString config.stylix.image;
-          last.path = toString config.stylix.image;
-          monitors.DP-1.path = toString config.stylix.image;
-        };
-      };
-      customPalettes.Stylix = theme.noctaliaPalette;
     };
 
     gtk = {

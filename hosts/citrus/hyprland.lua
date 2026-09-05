@@ -1,12 +1,9 @@
 -- Hyprland behavior for citrus. The generated configuration prepends
--- Noctalia IPC and the shared theme table.
+-- the shared theme table.
 
 local main_mod = "SUPER"
 local terminal = "uwsm app -- kitty"
 local file_manager = "uwsm app -- thunar"
-local function noctalia(action)
-    return noctalia_ipc .. action
-end
 
 hl.monitor({
     output = "",
@@ -134,23 +131,6 @@ hl.window_rule({
     no_anim = true,
 })
 
-hl.window_rule({
-    match = { class = "dev.noctalia.Noctalia" },
-    float = true,
-    size = { 1080, 920 },
-})
-
-hl.layer_rule({
-    name = "noctalia",
-    match = {
-        namespace = "^noctalia-(bar-.+|notification|dock|panel|attached-panel|osd|window-switcher)$",
-    },
-    no_anim = true,
-    ignore_alpha = 0.1,
-    blur = true,
-    blur_popups = true,
-})
-
 hl.curve("quick", {
     type = "bezier",
     points = { { 0.2, 0.9 }, { 0.3, 1.0 } },
@@ -178,9 +158,9 @@ bind(main_mod .. " + E", hl.dsp.exec_cmd(file_manager), "Open file manager")
 bind(main_mod .. " + Q", hl.dsp.window.close(), "Close window")
 bind(main_mod .. " + D", hl.dsp.exec_cmd("islandctl toggle"), "Toggle Dynamic Island")
 bind(main_mod .. " + SHIFT + Z", hl.dsp.exec_cmd("islandctl settings"), "Open Island settings")
-bind("Print", hl.dsp.exec_cmd(noctalia("screenshot-region")), "Take region screenshot")
-bind("SHIFT + Print", hl.dsp.exec_cmd(noctalia("screenshot-fullscreen all")), "Take full-screen screenshot")
-bind("CTRL + Print", hl.dsp.exec_cmd("grimblast --notify copysave active"), "Take active window screenshot")
+bind("Print", hl.dsp.exec_cmd("island-action screenshot-region"), "Take region screenshot")
+bind("SHIFT + Print", hl.dsp.exec_cmd("island-action screenshot-all"), "Take full-screen screenshot")
+bind("CTRL + Print", hl.dsp.exec_cmd("island-action screenshot-active"), "Take active window screenshot")
 bind(
     main_mod .. " + Space",
     hl.dsp.exec_cmd("islandctl launcher"),
@@ -188,7 +168,7 @@ bind(
 )
 bind(
     main_mod .. " + SHIFT + Space",
-    hl.dsp.exec_cmd(noctalia("panel-toggle wallpaper")),
+    hl.dsp.exec_cmd("islandctl wallpaper"),
     "Open wallpaper picker"
 )
 bind(
@@ -203,13 +183,13 @@ bind(
 )
 bind(
     main_mod .. " + V",
-    hl.dsp.exec_cmd(noctalia("panel-toggle clipboard")),
+    hl.dsp.exec_cmd("islandctl clipboard"),
     "Open clipboard history"
 )
 bind(
     main_mod .. " + Z",
-    hl.dsp.exec_cmd(noctalia("settings-toggle")),
-    "Open Noctalia settings"
+    hl.dsp.exec_cmd("islandctl settings"),
+    "Open Island settings"
 )
 bind(
     main_mod .. " + ALT + C",
@@ -218,7 +198,7 @@ bind(
 )
 bind(
     main_mod .. " + ALT + L",
-    hl.dsp.exec_cmd(noctalia("session lock")),
+    hl.dsp.exec_cmd("islandctl lock"),
     "Lock session"
 )
 bind(
@@ -285,7 +265,7 @@ bind(
     hl.dsp.focus({ workspace = "previous_per_monitor" }),
     "Previous workspace"
 )
-bind("ALT + Tab", hl.dsp.exec_cmd(noctalia("window-switcher")), "Switch windows")
+bind("ALT + Tab", hl.dsp.exec_cmd("islandctl windows"), "Switch windows")
 
 for workspace = 1, 10 do
     local key = workspace % 10
@@ -315,51 +295,76 @@ bind(main_mod .. " + mouse:273", hl.dsp.window.resize(), "Resize window", { mous
 
 bind(
     "XF86AudioRaiseVolume",
-    hl.dsp.exec_cmd(noctalia("volume-up")),
+    hl.dsp.exec_cmd("islandctl volumeUp"),
     "Raise volume",
     { locked = true, repeating = true }
 )
 bind(
     "XF86AudioLowerVolume",
-    hl.dsp.exec_cmd(noctalia("volume-down")),
+    hl.dsp.exec_cmd("islandctl volumeDown"),
     "Lower volume",
     { locked = true, repeating = true }
 )
 bind(
     "XF86AudioMute",
-    hl.dsp.exec_cmd(noctalia("volume-mute")),
+    hl.dsp.exec_cmd("islandctl mute"),
     "Toggle audio mute",
     { locked = true }
 )
 bind(
     "XF86AudioMicMute",
-    hl.dsp.exec_cmd(noctalia("mic-mute")),
+    hl.dsp.exec_cmd("islandctl micMute"),
     "Toggle microphone mute",
     { locked = true }
 )
 bind(
     "XF86AudioPlay",
-    hl.dsp.exec_cmd(noctalia("media toggle")),
+    hl.dsp.exec_cmd("islandctl playPause"),
     "Toggle media playback",
     { locked = true }
 )
 bind(
     "XF86AudioPause",
-    hl.dsp.exec_cmd(noctalia("media toggle")),
+    hl.dsp.exec_cmd("islandctl playPause"),
     "Toggle media playback",
     { locked = true }
 )
 bind(
     "XF86AudioNext",
-    hl.dsp.exec_cmd(noctalia("media next")),
+    hl.dsp.exec_cmd("islandctl next"),
     "Play next track",
     { locked = true }
 )
 bind(
     "XF86AudioPrev",
-    hl.dsp.exec_cmd(noctalia("media previous")),
+    hl.dsp.exec_cmd("islandctl previous"),
     "Play previous track",
     { locked = true }
+)
+
+bind(
+    "ALT + bracketleft",
+    hl.dsp.exec_cmd("islandctl brightnessDown"),
+    "Lower brightness",
+    { locked = true, repeating = true }
+)
+bind(
+    "ALT + bracketright",
+    hl.dsp.exec_cmd("islandctl brightnessUp"),
+    "Raise brightness",
+    { locked = true, repeating = true }
+)
+bind(
+    "XF86MonBrightnessDown",
+    hl.dsp.exec_cmd("islandctl brightnessDown"),
+    "Lower brightness",
+    { locked = true, repeating = true }
+)
+bind(
+    "XF86MonBrightnessUp",
+    hl.dsp.exec_cmd("islandctl brightnessUp"),
+    "Raise brightness",
+    { locked = true, repeating = true }
 )
 
 bind(main_mod .. " + F1", function()
@@ -370,11 +375,11 @@ bind(main_mod .. " + F1", function()
             "Super+H/J/K/L: focus    +Shift: move    +Ctrl: resize",
             "Super+1..0: workspace    +Shift: move window",
             "Super+Space: launcher    +Shift: wallpapers    Super+I: controls",
-            "Super+N: notifications    Super+V: clipboard",
+            "Super+N: notifications    Super+V: clipboard    Super+Z: settings",
             "Print: region    Shift+Print: all screens    Ctrl+Print: active window",
-            "Super+Z: Noctalia settings",
             "Super+D: Dynamic Island    Super+Shift+Z: Island settings",
             "Super+Alt+C: session    Super+Alt+L: lock",
+            "Alt+[: brightness down    Alt+]: brightness up",
             "Super+F: fullscreen",
             "Super+S: scratchpad    Alt+Tab: cycle windows",
             "Hold Super+Shift+E: log out",

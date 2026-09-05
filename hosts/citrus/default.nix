@@ -14,9 +14,7 @@ let
   hyprlandConfig = pkgs.writeTextFile {
     name = "hyprland.lua";
     text =
-      "local noctalia_ipc = ${builtins.toJSON "${lib.getExe pkgs.noctalia} msg "}\n"
-      + "local theme = ${lib.generators.toLua { } theme.hyprland}\n"
-      + builtins.readFile ./hyprland.lua;
+      "local theme = ${lib.generators.toLua { } theme.hyprland}\n" + builtins.readFile ./hyprland.lua;
     checkPhase = ''
       cp "$target" "$TMPDIR/check.lua"
       echo 'assert(hl.get_config("decoration:blur:variant") == 8, "acrylic blur must be enabled")' >> "$TMPDIR/check.lua"
@@ -28,18 +26,12 @@ let
 in
 {
   nixpkgs.overlays = [
-    (_final: previous: {
+    (_final: _previous: {
       hyprland =
         inputs.hyprland.packages.${pkgs.stdenv.hostPlatform.system}.hyprland.overrideAttrs
           (old: {
             patches = (old.patches or [ ]) ++ [ ./hyprland-ime-modifiers.patch ];
           });
-      noctalia = previous.noctalia.overrideAttrs (old: {
-        patches = (old.patches or [ ]) ++ [ ./assets/noctalia-settings-ja.patch ];
-        postPatch = (old.postPatch or "") + ''
-          install -m0644 ${./assets/noctalia-settings-ja.json} assets/translations/ja.json
-        '';
-      });
     })
   ];
 
@@ -176,6 +168,7 @@ in
 
   users.users.keewai.extraGroups = [
     "audio"
+    "i2c"
     "video"
   ];
 

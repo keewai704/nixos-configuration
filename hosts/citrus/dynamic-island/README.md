@@ -24,19 +24,39 @@ honors each player's supported operations. Notification text is always plain tex
 History retains the most recent 50 notifications for the current session.
 The four animated bars indicate playback; they are not a measured audio spectrum.
 
-Noctalia's bar, notification daemon and OSD are disabled to avoid duplicates.
-Its existing wallpaper, lock screen, Polkit agent, clipboard, window switcher and
-hardware detail panels remain available. Hardware detail buttons open those panels.
-The video's separate full settings app, custom lock screen and whole-screen corner
-masks are outside this Island implementation.
+Noctalia is no longer installed or started by the Citrus configuration. The Island
+provides the bar, notifications, OSD, app launcher, wallpaper picker, searchable
+clipboard history, window switcher, calendar and desktop controls.
+
+| Function | Implementation |
+| --- | --- |
+| Display brightness | DDC/CI on external monitors; `brightnessctl` for laptop backlights. The slider and keys adjust real hardware brightness in 5% steps. |
+| Wallpaper | Image previews, local file picker and Hyprpaper; the selected path survives login. Add images to `~/Pictures/Wallpapers`. |
+| Lock and idle | Hyprlock with PAM authentication, clock and blurred background. Hypridle locks after 10 minutes, turns displays off after 11 minutes, and waits for the lock notification before sleep. |
+| Clipboard | Cliphist stores text and images; search, copy, delete one item or clear history from the Island. |
+| Window switching | Search open windows by title or application, then press Enter to focus one. |
+| Network and Bluetooth | Native NetworkManager/Blueman applets provide connection and pairing agents; detailed settings open from Controls. |
+| Audio and media | PipeWire output/microphone sliders and mute; MPRIS transport; Pavucontrol for routing and devices. |
+| Capture | Region, active window and all-screen captures through Grimblast. |
+| Night light and power | Hyprsunset toggle, available power profiles, lock/suspend/restart/power-off actions. |
+| Authentication | Hyprpolkitagent provides permission prompts independently of the Island process. |
+
+The lock timing uses [Hypridle's lock-notification mode](https://wiki.hypr.land/Hypr-Ecosystem/hypridle/).
+The video's separate full settings app and whole-screen corner masks are outside
+this Island implementation.
 
 ## Controls
 
 - Hover to expand; click empty space to pin/unpin. Right-click or Escape to close.
 - Scroll over the pill for volume; click the clock/date for the calendar.
 - `Super+D`: media; `Super+Space`: apps; `Super+I`: controls; `Super+N`: history.
-- `Super+Shift+Z`: Island settings; `Super+Alt+C`: session menu.
-- `islandctl [toggle|launcher|calendar|controls|notifications|settings|session|close|notch|status]`.
+- `Super+Z` / `Super+Shift+Z`: Island settings; `Super+Alt+C`: session menu.
+- `Alt+[` / `Alt+]`: lower/raise brightness; hardware brightness keys also work.
+- `Super+Shift+Space`: wallpapers; `Super+V`: clipboard; `Alt+Tab`: windows.
+- `Super+Alt+L`: lock; `Print`: region; `Ctrl+Print`: active window; `Shift+Print`: all screens.
+- Media and volume hardware keys route to the Island, including while locked.
+- `islandctl [toggle|launcher|calendar|controls|notifications|settings|session|wallpaper|clipboard|windows|lock|close|notch|status]`.
+- `island-action help` lists native actions; brightness commands accept `--bus`, `--display` and `--step` for explicit hardware selection or calibration.
 - Settings persist in `~/.local/state/dynamic-island.ini`.
 - The native notification server honors explicit no-expiry and critical urgency;
   other notifications expire after the application's timeout (6s by default).
@@ -45,9 +65,14 @@ masks are outside this Island implementation.
 
 ```sh
 nix shell nixpkgs#nodejs -c node hosts/citrus/dynamic-island/check-geometry.js
+nix shell nixpkgs#python3 -c python3 -B hosts/citrus/dynamic-island/check-actions.py
 nix shell nixpkgs#quickshell nixpkgs#dbus nixpkgs#libnotify nixpkgs#python3 -c bash hosts/citrus/dynamic-island/check-runtime.sh
+nix shell nixpkgs#sway nixpkgs#hyprlock -c bash hosts/citrus/dynamic-island/check-lock.sh ~/.config/hypr/hyprlock.conf
 ```
 
 The runtime check requires a local Wayland session. It uses an isolated D-Bus
 session, temporary settings and a copied configuration; it never replaces the
 running desktop's notification server. Test logs remain under `/tmp/island-check.*`.
+The lock check uses a separate headless compositor and private Wayland socket;
+it verifies configuration and lock acquisition without locking the real desktop
+or attempting password authentication. Logs remain under `/tmp/island-lock.*`.

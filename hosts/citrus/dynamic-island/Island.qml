@@ -45,7 +45,7 @@ PanelWindow {
     exclusiveZone: 0
     WlrLayershell.namespace: "dynamic-island"
     WlrLayershell.layer: WlrLayer.Top
-    WlrLayershell.keyboardFocus: selected && shell.pinned ? WlrKeyboardFocus.OnDemand : WlrKeyboardFocus.None
+    WlrLayershell.keyboardFocus: selected && shell.pinned ? (page === "wallpaper" ? WlrKeyboardFocus.OnDemand : WlrKeyboardFocus.Exclusive) : WlrKeyboardFocus.None
     mask: Region {
         item: surface
     }
@@ -142,7 +142,7 @@ PanelWindow {
         x: (window.width - width) / 2
         y: 11 * (1 - window.morph) - 4 * window.morph
         width: Math.min(window.width - 32, window.large ? 619 : shell.osd ? 260 : 150)
-        height: window.large ? (window.stateName === "media" ? 135 : window.stateName === "notice" ? 180 : window.stateName === "osd" ? 135 : 410) : 38
+        height: window.large ? (window.stateName === "media" ? 135 : window.stateName === "notice" ? 180 : window.stateName === "osd" ? 135 : window.stateName === "controls" ? 560 : 410) : 38
         focus: true
         Keys.onEscapePressed: {
             shell.close();
@@ -446,6 +446,7 @@ PanelWindow {
                     }
                 }
                 StackLayout {
+                    visible: currentIndex >= 0
                     Layout.fillWidth: true
                     Layout.fillHeight: true
                     currentIndex: ["launcher", "calendar", "controls", "notifications", "settings", "session"].indexOf(window.page)
@@ -587,6 +588,30 @@ PanelWindow {
                             font.pixelSize: 22
                             font.bold: true
                         }
+                        RowLayout {
+                            Label {
+                                text: "Brightness"
+                                Layout.preferredWidth: 100
+                            }
+                            Level {
+                                Layout.fillWidth: true
+                                enabled: shell.desktop.brightnessAvailable
+                                value: shell.desktop.brightness / 100
+                                Accessible.name: "Display brightness"
+                                onMoved: shell.desktop.run(["brightness-set", Math.round(value * 100)])
+                            }
+                            Label {
+                                text: shell.desktop.brightnessAvailable ? Math.round(shell.desktop.brightness) + "%" : "Unavailable"
+                            }
+                        }
+                        Label {
+                            visible: !!shell.desktop.brightnessError
+                            text: shell.desktop.brightnessError
+                            color: window.accent
+                            Layout.fillWidth: true
+                            maximumLineCount: 2
+                            wrapMode: Text.Wrap
+                        }
                         Label {
                             text: shell.sink?.description || "No audio output"
                             color: window.muted
@@ -627,20 +652,92 @@ PanelWindow {
                         RowLayout {
                             Action {
                                 text: "Network"
-                                onClicked: shell.noctalia(["panel-toggle", "control-center", "network"])
+                                onClicked: {
+                                    shell.launch("network");
+                                    window.hovered = false;
+                                }
                             }
                             Action {
                                 text: "Bluetooth"
-                                onClicked: shell.noctalia(["panel-toggle", "control-center", "bluetooth"])
+                                onClicked: {
+                                    shell.launch("bluetooth");
+                                    window.hovered = false;
+                                }
                             }
                             Action {
-                                text: "Display & brightness"
-                                onClicked: shell.noctalia(["panel-toggle", "control-center", "monitor"])
+                                text: "Audio devices"
+                                onClicked: {
+                                    shell.launch("audio");
+                                    window.hovered = false;
+                                }
                             }
                             Action {
                                 text: "Wallpaper"
-                                onClicked: shell.noctalia(["panel-toggle", "wallpaper"])
+                                onClicked: shell.showPage("wallpaper")
                             }
+                        }
+                        RowLayout {
+                            Action {
+                                text: "Clipboard"
+                                onClicked: shell.showPage("clipboard")
+                            }
+                            Action {
+                                text: "Windows"
+                                onClicked: shell.showPage("windows")
+                            }
+                            Action {
+                                text: shell.desktop.nightlight ? "Night light: On" : "Night light: Off"
+                                active: shell.desktop.nightlight
+                                onClicked: shell.desktop.run(["nightlight-toggle"])
+                            }
+                            Action {
+                                text: "Lock"
+                                onClicked: {
+                                    shell.launch("lock");
+                                    window.hovered = false;
+                                }
+                            }
+                        }
+                        RowLayout {
+                            Label {
+                                text: "Capture"
+                                color: window.muted
+                            }
+                            Repeater {
+                                model: ["region", "active", "all"]
+                                Action {
+                                    required property string modelData
+                                    text: modelData === "region" ? "Region" : modelData === "active" ? "Window" : "All screens"
+                                    onClicked: {
+                                        shell.launch("screenshot-" + modelData);
+                                        window.hovered = false;
+                                    }
+                                }
+                            }
+                        }
+                        RowLayout {
+                            visible: shell.desktop.powerProfiles.length > 0
+                            Label {
+                                text: "Power"
+                                color: window.muted
+                            }
+                            Repeater {
+                                model: shell.desktop.powerProfiles
+                                Action {
+                                    required property string modelData
+                                    text: modelData
+                                    active: shell.desktop.powerProfile === modelData
+                                    onClicked: shell.desktop.run(["power-set", modelData])
+                                }
+                            }
+                        }
+                        Label {
+                            visible: !!shell.desktop.error && !shell.desktop.brightnessError
+                            text: shell.desktop.error
+                            color: window.accent
+                            Layout.fillWidth: true
+                            maximumLineCount: 2
+                            wrapMode: Text.Wrap
                         }
                         RowLayout {
                             Action {
@@ -816,7 +913,8 @@ PanelWindow {
                             text: "Lock"
                             onClicked: {
                                 shell.close();
-                                shell.noctalia(["session", "lock"]);
+                                shell.launch("lock");
+                                window.hovered = false;
                             }
                         }
                         Repeater {
@@ -851,6 +949,18 @@ PanelWindow {
                         Item {
                             Layout.fillHeight: true
                         }
+                    }
+                }
+                DesktopPages {
+                    Layout.fillWidth: true
+                    Layout.fillHeight: true
+                    visible: ["wallpaper", "clipboard", "windows"].includes(window.page)
+                    shell: window.shell
+                    page: window.page
+                    accent: window.accent
+                    onDone: {
+                        shell.close();
+                        window.hovered = false;
                     }
                 }
             }
@@ -903,21 +1013,24 @@ PanelWindow {
             Label {
                 text: shell.osd
                 color: window.accent
+                Layout.fillWidth: shell.osdValue < 0
             }
             Rectangle {
+                visible: shell.osdValue >= 0
                 Layout.fillWidth: true
                 height: 5
                 radius: 3
                 color: "#29262e"
                 Rectangle {
-                    width: parent.width * Math.min(1, shell.sink?.audio?.volume || 0)
+                    width: parent.width * Math.min(1, Math.max(0, shell.osdValue))
                     height: 5
                     radius: 3
                     color: window.ink
                 }
             }
             Label {
-                text: Math.round((shell.sink?.audio?.volume || 0) * 100) + "%"
+                visible: shell.osdValue >= 0
+                text: Math.round(shell.osdValue * 100) + "%"
             }
         }
     }
