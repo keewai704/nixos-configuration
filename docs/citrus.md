@@ -14,9 +14,11 @@ The hardware module is based on this PC's installer-generated configuration.
 It preserves the ext4 root filesystem, EFI system partition, XFS `/data`
 filesystem, swap UUIDs, and `system.stateVersion = "26.05"`. The CachyOS kernel
 is retained from the workstation configuration; the Hyper-V-specific kernel
-extension is removed. NVIDIA modules are included in the initrd, and NVIDIA
-suspend/resume support is enabled. PipeWire supplies desktop and 32-bit game
-audio, and Blueman manages the onboard Bluetooth adapter.
+extension is removed. `nvidia_cachyos` selects Chaotic's matching, cached NVIDIA
+driver instead of the generic kernel package's driver. NVIDIA modules are
+included in the initrd, and NVIDIA suspend/resume support is enabled. PipeWire
+supplies desktop and 32-bit game audio, and Blueman manages the onboard
+Bluetooth adapter.
 
 An initial setup explicitly requested for this PC may start with the installer
 hostname `nixos`. Confirm the local hardware and mounted filesystem UUIDs before

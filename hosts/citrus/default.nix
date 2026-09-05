@@ -18,6 +18,8 @@ in
   ];
 
   hardware.nvidia = {
+    # Use Chaotic's driver built and cached for the CachyOS kernel.
+    package = pkgs.nvidia_cachyos;
     open = true;
     modesetting.enable = true;
     powerManagement.enable = true;
