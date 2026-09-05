@@ -26,6 +26,7 @@ in
   environment.systemPackages = [
     chatgptDesktop
     pkgs.ddcutil
+    pkgs.grimblast
     pkgs.xarchiver
   ];
 

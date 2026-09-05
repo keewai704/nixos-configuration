@@ -162,6 +162,8 @@ bind(main_mod .. " + Return", hl.dsp.exec_cmd(terminal), "Open terminal")
 bind(main_mod .. " + E", hl.dsp.exec_cmd(file_manager), "Open file manager")
 bind(main_mod .. " + Q", hl.dsp.window.close(), "Close window")
 bind("Print", hl.dsp.exec_cmd(noctalia("screenshot-region")), "Take region screenshot")
+bind("SHIFT + Print", hl.dsp.exec_cmd(noctalia("screenshot-fullscreen all")), "Take full-screen screenshot")
+bind("CTRL + Print", hl.dsp.exec_cmd("grimblast --notify copysave active"), "Take active window screenshot")
 bind(
     main_mod .. " + Space",
     hl.dsp.exec_cmd(noctalia("panel-toggle launcher")),
@@ -352,7 +354,7 @@ bind(main_mod .. " + F1", function()
             "Super+1..0: workspace    +Shift: move window",
             "Super+Space: launcher    +Shift: wallpapers    Super+I: controls",
             "Super+N: notifications    Super+V: clipboard",
-            "Print: region screenshot",
+            "Print: region    Shift+Print: all screens    Ctrl+Print: active window",
             "Super+Z: Noctalia settings",
             "Super+Alt+C: session    Super+Alt+L: lock",
             "Super+F: fullscreen",
