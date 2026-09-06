@@ -122,6 +122,7 @@ let
       token_budget.use_history_notes_extension = true;
     };
     agents = {
+      max_concurrent_threads_per_session = 64;
       default_subagent_model = "gpt-5.6-luna";
       default_subagent_reasoning_effort = "max";
     };
