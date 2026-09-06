@@ -76,9 +76,13 @@ hl.config({
             enabled = true,
             -- Keep reloads valid on the old compositor until the next login.
             variant = hl.get_config("decoration:blur:variant") and "acrylic" or nil,
-            acrylic = { clarity = 0.3 },
-            size = 8,
-            passes = 2,
+            acrylic = {
+                clarity = 0.1,
+                refraction = 32,
+                bulb = 64,
+            },
+            size = 10,
+            passes = 3,
             new_optimizations = true,
             ignore_opacity = true,
             noise = 0.005,
