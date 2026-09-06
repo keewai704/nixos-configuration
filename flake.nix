@@ -4,6 +4,8 @@
   inputs = {
     nixpkgs.url = "github:NixOS/nixpkgs/nixos-unstable";
 
+    apple-music-client.url = "git+https://github.com/keewai704/apple-music-client.git";
+
     dynamic-island = {
       url = "git+file:///home/keewai/dynamic-island";
       inputs.nixpkgs.follows = "nixpkgs";
@@ -61,6 +63,10 @@
         config.allowUnfreePredicate = package: nixpkgs.lib.getName package == "chatgpt-desktop";
       };
       localPackages = {
+        apple-music-client = packagePkgs.callPackage ./pkgs/apple-music-client {
+          src = inputs.apple-music-client;
+          authService = inputs.apple-music-client.packages.${system}.auth-service;
+        };
         chatgpt-desktop = packagePkgs.callPackage ./pkgs/chatgpt-desktop { };
         cua-driver = packagePkgs.callPackage ./pkgs/cua-driver { };
       };
