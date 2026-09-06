@@ -6,6 +6,21 @@
 }:
 let
   inherit (config.lib.stylix) colors;
+  stylixTheme = import ./theme.nix {
+    inherit pkgs;
+    colors = config.lib.stylix.colors;
+  };
+  islandTheme = {
+    surface = "#${stylixTheme.semantic.surface}";
+    hover = "#${stylixTheme.semantic.surfaceHigh}";
+    border = "#${stylixTheme.semantic.border}";
+    text = "#${stylixTheme.semantic.text}";
+    muted = "#${stylixTheme.semantic.muted}";
+    accent = "#${stylixTheme.semantic.accent}";
+    onAccent = "#${stylixTheme.semantic.desktopBackground}";
+    fontFamily = config.stylix.fonts.sansSerif.name;
+    fontSize = config.stylix.fonts.sizes.desktop * 96.0 / 72.0;
+  };
   rgb = color: "rgb(${color})";
   rgba = color: alpha: "rgba(${color}${alpha})";
 
@@ -34,8 +49,6 @@ let
   };
 in
 {
-  fonts.packages = [ pkgs.inter ];
-
   home-manager.users.keewai = {
     programs.quickshell = {
       enable = true;
@@ -168,6 +181,7 @@ in
         Environment = [
           "ISLAND_ACTION=${lib.getExe islandAction}"
           "ISLAND_DEFAULT_WALLPAPER=${toString config.stylix.image}"
+          "ISLAND_THEME=${builtins.toJSON islandTheme}"
         ];
         RestartSec = 2;
       };

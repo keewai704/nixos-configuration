@@ -18,6 +18,7 @@ ShellRoot {
     readonly property var sink: Pipewire.defaultAudioSink
     readonly property var source: Pipewire.defaultAudioSource
     property var notice: null
+    property bool noticeCollapsed: false
     property string osd: ""
     property real osdValue: -1
     property bool ready: false
@@ -25,6 +26,11 @@ ShellRoot {
     property alias history: history
     property alias clock: clock
     property alias desktop: desktop
+    property alias theme: theme
+
+    Theme {
+        id: theme
+    }
 
     function selectPlayer(players) {
         return players.find(p => p.isPlaying) || players.find(p => p.playbackState === MprisPlaybackState.Paused && p.trackTitle?.trim()) || null;
@@ -44,7 +50,6 @@ ShellRoot {
         property bool hover: true
         property bool dnd: false
         property bool reducedMotion: false
-        property string accent: "#ebbcba"
     }
     SystemClock {
         id: clock
@@ -92,6 +97,10 @@ ShellRoot {
     function close() {
         page = "";
         pinned = false;
+    }
+    function collapse() {
+        close();
+        noticeCollapsed = true;
     }
     function showOsd(label, value) {
         if (!ready)
@@ -162,6 +171,7 @@ ShellRoot {
                     if (root.notice && root.notice !== n)
                         root.expireNotice();
                     root.notice = n;
+                    root.noticeCollapsed = false;
                     noticeTimer.stop();
                     if (n.expireTimeout !== 0 && n.urgency !== NotificationUrgency.Critical) {
                         noticeTimer.interval = n.expireTimeout < 0 ? 6000 : Math.max(1000, n.expireTimeout);
@@ -260,7 +270,13 @@ ShellRoot {
                 brightnessAvailable: desktop.brightnessAvailable,
                 clipboardCount: desktop.clipboard.length,
                 windowCount: desktop.windows.length,
-                wallpaperCount: desktop.wallpapers.length
+                wallpaperCount: desktop.wallpapers.length,
+                theme: {
+                    background: theme.background.toString(),
+                    accent: theme.accent.toString(),
+                    fontFamily: theme.fontFamily,
+                    fontSize: theme.fontSize
+                }
             });
         }
     }

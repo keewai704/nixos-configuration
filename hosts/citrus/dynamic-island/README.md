@@ -10,9 +10,9 @@ The video was inspected through its full English transcript and extracted frames
 | --- | --- |
 | 3:03–4:29 | Black 150 × 38 resting pill, clock, four playback bars; 11px floating gap; switchable notch with concave 14px shoulders. |
 | 4:56–7:25 | One continuous outline; rounded top corners flatten before the notch shoulders grow; 4px top overshoot. |
-| 7:29–10:10 | Hover to expand, click to pin, left media card with 88px artwork and transport, clock moving right, seven-day date carousel. |
+| 7:29–10:10 | Hover to expand, pointer leave to collapse; centered artwork and transport, clock moving right, seven-day date carousel. |
 | 10:12–11:08 | 400ms damped spring (ratio 0.8) for geometry; critically damped opacity. |
-| 11:15–14:26 | Live, persistent appearance controls; font uses the creator's suggested Inter alternative. |
+| 11:15–14:26 | Persistent appearance controls; text, accents, surfaces and font follow the system's Stylix theme. The shell background stays pure black. |
 
 [The September update](https://www.youtube.com/watch?v=rLFFjT6kAkA&t=613s) was also checked:
 it identifies the original shell as Dynamite and describes its dotfiles as a paid-course bonus.
@@ -47,7 +47,10 @@ this Island implementation.
 
 ## Controls
 
-- Hover to expand; click empty space to pin/unpin. Right-click or Escape to close.
+- Hover to expand; leaving for 160 ms collapses the panel, including pages opened
+  by clicking or shortcuts. A shortcut stays open for keyboard use until the
+  pointer enters and leaves. File pickers and tray menus keep the panel open
+  while they are in use. Right-click or Escape closes immediately.
 - Scroll over the pill for volume; click the clock/date for the calendar.
 - `Super+D`: media; `Super+Space`: apps; `Super+I`: controls; `Super+N`: history.
 - `Super+Z` / `Super+Shift+Z`: Island settings; `Super+Alt+C`: session menu.
@@ -61,6 +64,10 @@ this Island implementation.
 - `islandctl [toggle|launcher|calendar|controls|notifications|settings|session|wallpaper|clipboard|windows|lock|close|notch|status]`.
 - `island-action help` lists native actions; brightness commands accept `--bus`, `--display` and `--step` for explicit hardware selection or calibration.
 - Settings persist in `~/.local/state/dynamic-island.ini`.
+- The background is fixed at `#000000`. Other colors and typography come from
+  Stylix through the Quickshell service's `ISLAND_THEME` environment. Local accent
+  overrides are no longer used. Icons use centered vector paths; expanded panels have
+  20 px content margins and controls use symmetric padding.
 - The native notification server honors explicit no-expiry and critical urgency;
   other notifications expire after the application's timeout (6s by default).
 
@@ -76,6 +83,8 @@ nix shell nixpkgs#sway nixpkgs#hyprlock -c bash hosts/citrus/dynamic-island/chec
 The runtime check requires a local Wayland session. It uses an isolated D-Bus
 session, temporary settings and a copied configuration; it never replaces the
 running desktop's notification server. Test logs remain under `/tmp/island-check.*`.
+It checks hover exit/re-entry, popup handling, equal panel margins and list bounds.
+Set `ISLAND_CAPTURE_SCREEN=DP-1` to save screenshots of each page and media state.
 The lock check uses a separate headless compositor and private Wayland socket;
 it verifies configuration and lock acquisition without locking the real desktop
 or attempting password authentication. Logs remain under `/tmp/island-lock.*`.
