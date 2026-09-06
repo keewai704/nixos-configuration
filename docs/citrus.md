@@ -80,7 +80,7 @@ palette with `theme.source = "custom"`, the Stylix font, and the Stylix
 wallpaper. Noctalia's app templates stay disabled so Stylix remains the source
 of application themes. All GUI changes are written separately to
 `~/.local/state/noctalia/settings.toml`, load after the
-baseline, and remain editable and persistent. Open Settings with `Super+Z`.
+baseline, and remain editable and persistent. The Island uses `Super+I` for Controls.
 GNOME Keyring supplies Secret Service for Noctalia's encrypted clipboard history.
 Fcitx5 uses [Stylix's Home Manager target](https://nix-community.github.io/stylix/options/modules/fcitx5.html)
 for its candidate panel, menu, and fonts. NixOS still provides Hazkey, the input

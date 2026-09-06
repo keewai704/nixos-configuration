@@ -162,7 +162,6 @@ bind(main_mod .. " + Return", hl.dsp.exec_cmd(terminal), "Open terminal")
 bind(main_mod .. " + E", hl.dsp.exec_cmd(file_manager), "Open file manager")
 bind(main_mod .. " + Q", hl.dsp.window.close(), "Close window")
 bind(main_mod .. " + D", hl.dsp.exec_cmd("islandctl toggle"), "Toggle Dynamic Island")
-bind(main_mod .. " + SHIFT + Z", hl.dsp.exec_cmd("islandctl settings"), "Open Island settings")
 bind("Print", hl.dsp.exec_cmd("island-action screenshot-region"), "Take region screenshot")
 bind("SHIFT + Print", hl.dsp.exec_cmd("island-action screenshot-all"), "Take full-screen screenshot")
 bind("CTRL + Print", hl.dsp.exec_cmd("island-action screenshot-active"), "Take active window screenshot")
@@ -190,11 +189,6 @@ bind(
     main_mod .. " + V",
     hl.dsp.exec_cmd("islandctl clipboard"),
     "Open clipboard history"
-)
-bind(
-    main_mod .. " + Z",
-    hl.dsp.exec_cmd("islandctl settings"),
-    "Open Island settings"
 )
 bind(
     main_mod .. " + ALT + C",
@@ -380,9 +374,9 @@ bind(main_mod .. " + F1", function()
             "Super+H/J/K/L: focus    +Shift: move    +Ctrl: resize",
             "Super+1..0: workspace    +Shift: move window",
             "Super+Space: launcher    +Shift: wallpapers    Super+I: controls",
-            "Super+N: notifications    Super+V: clipboard    Super+Z: settings",
+            "Super+N: notifications    Super+V: clipboard",
             "Print: region    Shift+Print: all screens    Ctrl+Print: active window",
-            "Super+D: Dynamic Island    Super+Shift+Z: Island settings",
+            "Super+D: Dynamic Island",
             "Super+Alt+C: session    Super+Alt+L: lock",
             "Alt+[: brightness down    Alt+]: brightness up",
             "Super+F: fullscreen",

@@ -7,7 +7,7 @@
     apple-music-client.url = "git+https://github.com/keewai704/apple-music-client.git?ref=main";
 
     dynamic-island = {
-      url = "git+file:///home/keewai/dynamic-island";
+      url = "git+file:///home/keewai/dynamic-island?ref=main";
       inputs.nixpkgs.follows = "nixpkgs";
     };
 
