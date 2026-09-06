@@ -8,17 +8,24 @@ let
     tailnetOrigin
     vaultwardenPort
     ;
-  forwardedProxyHeaders = ''
+  nginxProxyHeaders = ''
+    proxy_set_header Host $host;
     proxy_set_header X-Real-IP $tailscale_client_ip;
     proxy_set_header X-Forwarded-For $tailscale_client_ip;
     proxy_set_header X-Forwarded-Proto https;
     proxy_set_header X-Forwarded-Host $host;
     proxy_set_header X-Forwarded-Server $hostname;
+
   '';
-  nginxProxyHeaders = ''
-    proxy_set_header Host $host;
-    ${forwardedProxyHeaders}
-  '';
+  mkProxyLocation = port: extraConfig: {
+    proxyPass = "http://127.0.0.1:${toString port}";
+    proxyWebsockets = true;
+    recommendedProxySettings = false;
+    extraConfig = extraConfig + ''
+      proxy_buffering off;
+      ${nginxProxyHeaders}
+    '';
+  };
 in
 {
   services.nginx = {
@@ -53,26 +60,11 @@ in
       locations = {
         "= /vault".return = "308 ${tailnetOrigin}/vault/";
 
-        "^~ /vault/" = {
-          proxyPass = "http://127.0.0.1:${toString vaultwardenPort}";
-          proxyWebsockets = true;
-          recommendedProxySettings = false;
-          extraConfig = ''
-            proxy_buffering off;
-            ${nginxProxyHeaders}
-          '';
-        };
+        "^~ /vault/" = mkProxyLocation vaultwardenPort "";
 
-        "/" = {
-          proxyPass = "http://127.0.0.1:${toString immichPort}";
-          proxyWebsockets = true;
-          recommendedProxySettings = false;
-          extraConfig = ''
-            proxy_request_buffering off;
-            proxy_buffering off;
-            ${nginxProxyHeaders}
-          '';
-        };
+        "/" = mkProxyLocation immichPort ''
+          proxy_request_buffering off;
+        '';
       };
     };
   };

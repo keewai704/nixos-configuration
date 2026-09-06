@@ -83,6 +83,9 @@ nix flake check --no-build --no-write-lock-file
 nix flake check --no-write-lock-file
 ```
 
+The flake check includes Orange's existing backup-freshness and alert-state
+regression tests. These run locally with temporary data and send no alerts.
+
 Evaluate and build every affected host explicitly. A change to `flake.nix`,
 `modules/common.nix`, or another module shared by both hosts requires both
 builds:

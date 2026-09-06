@@ -89,15 +89,31 @@ activation workflow. Do not claim that these changes make deployment rootless.
 
 # Repository workflow
 
+Use this file for repository operations; keep reusable model preferences in
+`hosts/citrus/codex.nix` and task-specific procedures in `skills/`. Change the
+Nix-managed sources rather than generated files under `/etc/codex` or
+`/home/keewai/.agents/skills`.
+
 For every task that changes this repository, complete the applicable part of
 this workflow before ending the work or reporting it as complete:
 
 1. Record the locally confirmed runtime hostname and verify that the flake has a
    matching `nixosConfigurations.<runtime-host>` output. If it does not, stop
    instead of substituting another host.
+   Inspect Git status, the worktree diff, and the staged diff before editing.
+   Preserve unrelated changes without formatting, staging, stashing, resetting,
+   or deleting them. If the index is occupied or unrelated edits can affect
+   evaluation or activation, use an isolated worktree. If isolation is not
+   possible, report the concrete blocker.
 2. Run the formatting, static-analysis, evaluation, and build checks appropriate
    to the change. Configuration-only checks for another host may be run locally,
    but do not treat that host as the live system.
+   Format only task files. Stage new task files before flake checks so Git
+   flakes include them, and inspect the task-only staged diff. Use
+   `--no-write-lock-file` unless updating inputs is part of the request.
+   Reuse passing results for unchanged inputs; repeat or broaden checks when
+   edits, failures, or unresolved concerns justify it. The separate activation
+   and health gates below remain mandatory when applicable.
 3. Commit every intended change for the task. Do not include unrelated user
    changes, and confirm that no task-related change remains uncommitted.
 4. Determine whether the committed change affects the confirmed runtime host's
@@ -131,6 +147,10 @@ For packages sourced from GitHub repositories owned by `keewai704`, explicitly
 select the `main` branch (for Git flake inputs, use `?ref=main`). Keep revisions
 and hashes pinned for reproducibility; refresh them from `main` when updating
 the package. Do not rely on the repository's default branch.
+When working outside the repository root, use `git -C` and absolute flake
+references for the actual checkout. For the default checkout these are
+`git -C /home/keewai/nixos-configuration` and
+`/home/keewai/nixos-configuration#<runtime-host>`.
 
 ## Publishing web services on `orange`
 

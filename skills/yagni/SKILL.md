@@ -15,5 +15,5 @@ Implement only requirements with a current, concrete use case.
   cannot be ruled out safely, report the uncertainty instead of deleting it.
 - Never defer validation at trust boundaries, data-loss prevention, security,
   accessibility, compatibility, or anything the user explicitly requested.
-- State what was deferred and the concrete requirement that would justify adding
-  it later.
+- Explain a deferral when it affects the user's decision, including the concrete
+  requirement that would justify it. Do not turn explicit scope into future work.

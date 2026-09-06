@@ -12,38 +12,17 @@ with `/home/keewai/nixos-configuration#`. Never rely on `.` or a prior `cd`.
 
 ## Establish the local boundary
 
-1. Read `/home/keewai/nixos-configuration/AGENTS.md` completely.
-2. Resolve the runtime host with the required fallback and compare it with
-   `/etc/hostname`. Stop on any mismatch:
+Before reading repository files, confirm `hostnamectl --static` (fallback
+`hostname`) matches `/etc/hostname`. Then read and follow
+[/home/keewai/nixos-configuration/AGENTS.md](/home/keewai/nixos-configuration/AGENTS.md),
+including the matching flake-host check and preservation of unrelated changes.
+That file owns the shared preparation, commit, test, health, and switch gates;
+reuse checks already completed for unchanged inputs in this task.
 
-   ```bash
-   runtime_host="$(hostnamectl --static 2>/dev/null || hostname)"
-   etc_host="$(tr -d '\r\n' < /etc/hostname)"
-   test "$runtime_host" = "$etc_host"
-   ```
-3. Confirm the exact runtime host exists in the flake:
-
-   ```bash
-   flake_host="$(nix eval --raw --no-write-lock-file \
-     "/home/keewai/nixos-configuration#nixosConfigurations.${runtime_host}.config.networking.hostName")"
-   test "$runtime_host" = "$flake_host"
-   ```
-
-4. Record the existing worktree before editing:
-
-   ```bash
-   git -C /home/keewai/nixos-configuration status --short --branch
-   git -C /home/keewai/nixos-configuration diff
-   git -C /home/keewai/nixos-configuration diff --cached
-   ```
-
-   Preserve every unrelated change. Do not format, stage, stash, reset, or
-   delete it. If an unrelated tracked change can affect evaluation or
-   activation, isolate the task safely or stop; do not claim that the mixed
-   worktree validates only this task. If `git diff --cached --quiet` fails,
-   isolate the task in a separate worktree or stop before editing; never share
-   an existing index with this workflow. Never contact another host unless the
-   current user request explicitly authorizes that exact remote operation.
+If isolation is needed, use the actual isolated checkout's absolute paths in
+place of `/home/keewai/nixos-configuration` throughout this procedure.
+Never substitute a different runtime host or contact another host without the
+specific remote authorization required by AGENTS.md.
 
 ## Choose the declaration route
 
@@ -57,7 +36,7 @@ Resolve and inspect the pinned `mcp-servers-nix` source before using an option:
 
 ```bash
 mcp_servers_source="$(nix eval --impure --raw --expr '(builtins.getFlake "/home/keewai/nixos-configuration").inputs."mcp-servers-nix".outPath')"
-find "$mcp_servers_source/modules/servers" -maxdepth 1 -type f -name '*.nix' -print
+rg --files "$mcp_servers_source/modules/servers" -g '*.nix'
 ```
 
 - If the resolved absolute file
@@ -100,13 +79,12 @@ Before any flake-based check, stage every task path explicitly with
 `git -C /home/keewai/nixos-configuration add -- <absolute-task-path>...` and
 inspect `git -C /home/keewai/nixos-configuration diff --cached`. Git flakes
 omit untracked files, so evaluation before this task-only staging step does not
-validate a new package or module. The initial clean-index gate ensures the
-staged diff contains only this task.
+validate a new package or module. Verify that the staged diff contains
+only this task, using isolation when required by AGENTS.md.
 
 Then run every check against the absolute flake path:
 
 ```bash
-nix flake check --no-build --no-write-lock-file /home/keewai/nixos-configuration
 nix flake check --no-write-lock-file /home/keewai/nixos-configuration
 nix eval --json --no-write-lock-file /home/keewai/nixos-configuration#nixosConfigurations.citrus.config.home-manager.users.keewai.programs.mcp.servers
 nix build --no-link --no-write-lock-file /home/keewai/nixos-configuration#nixosConfigurations.citrus.config.system.build.toplevel
@@ -121,7 +99,7 @@ nix build --no-link --no-write-lock-file --print-out-paths '/home/keewai/nixos-c
 
 Verify that the new server has the intended command or URL and that no secret
 was copied into the result. Perform a bounded MCP initialize or representative
-tool call against the built server before deployment.
+read-only tool call against the built server before deployment.
 
 ## Commit and deploy
 

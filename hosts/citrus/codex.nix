@@ -34,22 +34,28 @@ let
           node --check "$out/hooks/$script"
         done
 
-        sed '/^argument-hint:/d' \
-          "${ponytailSource}/skills/ponytail/SKILL.md" \
-          > "$TMPDIR/ponytail-SKILL.md"
-        cmp \
-          "$TMPDIR/ponytail-SKILL.md" \
-          "${skillRoot}/ponytail/SKILL.md"
+        # Keep upstream hook mechanics, but inject the locally maintained skill.
         install -Dm644 \
           "${skillRoot}/ponytail/SKILL.md" \
           "$out/skills/ponytail/SKILL.md"
         install -Dm644 "${ponytailSource}/LICENSE" "$out/LICENSE"
 
         node --test "${ponytailSource}/tests/hooks.test.js"
+        node - "$out" <<'NODE'
+        const assert = require('node:assert/strict');
+        const fs = require('node:fs');
+        const root = process.argv[2];
+        const { getPonytailInstructions } = require(root + '/hooks/ponytail-instructions.js');
+        const body = fs.readFileSync(root + '/skills/ponytail/SKILL.md', 'utf8')
+          .replace(/^---[\s\S]*?---\s*/, "");
+        for (const mode of ['lite', 'full', 'ultra']) {
+          assert.equal(getPonytailInstructions(mode), 'PONYTAIL MODE ACTIVE — level: ' + mode + '\n\n' + body);
+        }
+        NODE
       '';
 
   mkPonytailHook =
-    name: script:
+    name:
     pkgs.writeShellApplication {
       name = "ponytail-${name}";
       runtimeInputs = [ pkgs.coreutils ];
@@ -62,16 +68,16 @@ let
         export PLUGIN_DATA="$pluginData"
         export CLAUDE_PLUGIN_DATA="$pluginData"
 
-        exec ${lib.getExe pkgs.nodejs} ${lib.escapeShellArg "${ponytailHookRoot}/hooks/${script}"}
+        exec ${lib.getExe pkgs.nodejs} ${lib.escapeShellArg "${ponytailHookRoot}/hooks/ponytail-${name}.js"}
       '';
     };
 
   ponytailManagedHooks = pkgs.symlinkJoin {
     name = "ponytail-managed-hooks-${ponytailVersion}";
-    paths = [
-      (mkPonytailHook "activate" "ponytail-activate.js")
-      (mkPonytailHook "mode-tracker" "ponytail-mode-tracker.js")
-      (mkPonytailHook "subagent" "ponytail-subagent.js")
+    paths = map mkPonytailHook [
+      "activate"
+      "mode-tracker"
+      "subagent"
     ];
   };
 

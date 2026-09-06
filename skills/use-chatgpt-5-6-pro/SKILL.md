@@ -1,6 +1,6 @@
 ---
 name: use-chatgpt-5-6-pro
-description: Send one prompt to ChatGPT's GPT-5.6 Sol Pro in a Temporary Chat through the Codex in-app browser. Use when the user asks to consult ChatGPT 5.6 Pro or explicitly invokes this skill; do not use for ordinary Codex model selection or API calls.
+description: Consult GPT-5.6 Sol Pro once in a Temporary Chat through the Codex in-app browser. Use for an explicit Pro consultation or when a blocked task needs an independent view; not for routine review, model selection, or API calls.
 ---
 
 # Use ChatGPT 5.6 Pro
@@ -10,11 +10,13 @@ a fresh Temporary Chat and at most one accepted Pro submission per invocation.
 
 ## Browser boundary
 
-Before any browser action, load and follow the complete
-`browser:control-in-app-browser` skill. Use only the Codex in-app browser and
-do not substitute Chrome, another browser, the OpenAI API, or a different
-model. Reuse an existing in-app-browser binding and ChatGPT tab when available,
-but never reuse its conversation; otherwise open `https://chatgpt.com/`.
+Use the available Codex in-app browser tool and follow its initialization and
+returned API documentation before interacting. Load a browser skill if that
+tool requires one; do not depend on a particular skill name being installed.
+If in-app browser control is unavailable, report that limitation. Use only the
+in-app browser and the requested model. Reuse an existing binding and ChatGPT
+tab when available, but start a fresh Temporary Chat; otherwise open
+`https://chatgpt.com/`.
 
 If ChatGPT requires authentication, ask the user to sign in in the in-app
 browser and tell you when it is ready. Do not inspect cookies, storage,
@@ -22,9 +24,11 @@ passwords, profiles, or other session data.
 
 ## One-message run
 
-1. Before opening ChatGPT, ensure the prompt and every requested attachment are
-   available. If a missing input would predictably require clarification, ask
-   the user first and spend no Pro submission.
+1. Prepare the single prompt and requested attachments before opening ChatGPT.
+   For a blocked task, include the concrete question, relevant findings, and
+   minimum context needed for an independent view. Ask first only if a missing
+   input materially changes the answer or authorization; spend no submission
+   until that input is available.
 2. Inspect the current interactive page instead of relying on fixed selectors.
    Start a new Temporary Chat with the current UI and confirm that it is marked
    temporary before composing. Stop without sending if this cannot be confirmed.
@@ -36,7 +40,7 @@ passwords, profiles, or other session data.
    workspace, or cannot be confirmed, stop and report the visible condition.
    Do not silently use Instant, Thinking, Extra High, another GPT-5.6 variant,
    or another model.
-5. Submit the user's prompt faithfully as one message. Include files or context
+5. Submit the prepared prompt faithfully as one message. Include attachments
    only when requested. Do not send setup, model-check, prompt-refinement, or
    separate context messages, and never add secrets or unrelated private data.
 6. Submit once and wait until generation finishes. If ChatGPT asks a material
@@ -48,6 +52,7 @@ passwords, profiles, or other session data.
    independently verified facts, and perform separate verification only when
    the user's task requires it.
 
-After the first response, stop. Do not continue the conversation, provide
-feedback, share it, or send another Pro message unless the user explicitly asks
+After the first response, end the Pro consultation and continue any remaining
+authorized work in the original task. Do not continue the Pro conversation,
+provide feedback, share it, or send another Pro message unless the user explicitly asks
 after being told that another submission may consume additional usage or credits.

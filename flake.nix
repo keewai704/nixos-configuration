@@ -96,11 +96,17 @@
 
       packages.${system} = localPackages;
 
-      checks.${system}.package-ownership = import ./checks/package-ownership.nix {
-        inherit (nixpkgs) lib;
-        pkgs = packagePkgs;
-        citrus = inputs.self.nixosConfigurations.citrus.config;
-        orange = inputs.self.nixosConfigurations.orange.config;
+      checks.${system} = {
+        orange-health-monitor =
+          inputs.self.nixosConfigurations.orange.config.system.build.orangeHealthMonitorCheck;
+
+        package-ownership = import ./checks/package-ownership.nix {
+          inherit (nixpkgs) lib;
+          pkgs = packagePkgs;
+          citrus = inputs.self.nixosConfigurations.citrus.config;
+          orange = inputs.self.nixosConfigurations.orange.config;
+        };
+
       };
 
       formatter.${system} = nixpkgs.legacyPackages.${system}.nixfmt-tree;
