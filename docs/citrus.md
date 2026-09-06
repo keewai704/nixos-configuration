@@ -56,9 +56,10 @@ and `programs.zsh.plugins` with a `pkgs` source and plugin `file` for others.
 `zsh-nix-shell` keeps interactive, impure `nix-shell` sessions in Zsh. Plugin versions
 come from the pinned nixpkgs input. See the
 [Home Manager Zsh options](https://nix-community.github.io/home-manager/options/home-manager/programs/zsh.html).
-Starship uses its packaged [Tokyo Night preset](https://starship.rs/presets/tokyo-night)
-via `programs.starship.presets`; Stylix supplies JetBrainsMono Nerd Font to
-Kitty for the preset's symbols. Restart Kitty after changing the font.
+Starship uses [KnightChaser's Tokyo Night Neo preset](https://github.com/KnightChaser/starship-tokyonight-neo).
+`shell.nix` fetches the upstream TOML at a pinned commit and hash and deploys it
+unchanged as `starship.toml`. Stylix supplies JetBrainsMono Nerd Font to Kitty
+for the preset's symbols. Restart Kitty after changing the font.
 
 The session starts Hyprland through UWSM and greetd. Home Manager installs
 Noctalia v5 from the pinned nixpkgs input and runs it as a systemd user service
