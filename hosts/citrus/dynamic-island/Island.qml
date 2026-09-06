@@ -209,8 +209,15 @@ PanelWindow {
         }
     }
 
-    Item {
+    MouseArea {
         id: surface
+        acceptedButtons: Qt.LeftButton
+        hoverEnabled: !shell.testing
+        onContainsMouseChanged: if (!shell.testing)
+            window.updateHover(containsMouse)
+        onClicked: if (window.stateName === "media")
+            shell.showPage("media")
+        onWheel: wheel => shell.volume((shell.sink?.audio?.volume || 0) + (wheel.angleDelta.y > 0 ? 0.05 : -0.05))
         x: (window.width - width) / 2
         y: 11 * (1 - window.morph) - 4 * window.morph
         width: Math.min(window.width - 32, window.large ? 640 : shell.osd ? 260 : 150)
@@ -234,17 +241,6 @@ PanelWindow {
                 easing.type: Easing.BezierSpline
                 easing.bezierCurve: window.spring
             }
-        }
-        HoverHandler {
-            enabled: !shell.testing
-            onHoveredChanged: window.updateHover(hovered)
-        }
-        MouseArea {
-            anchors.fill: parent
-            acceptedButtons: Qt.LeftButton
-            onClicked: if (window.stateName === "media")
-                shell.showPage("media")
-            onWheel: wheel => shell.volume((shell.sink?.audio?.volume || 0) + (wheel.angleDelta.y > 0 ? 0.05 : -0.05))
         }
         TapHandler {
             acceptedButtons: Qt.RightButton

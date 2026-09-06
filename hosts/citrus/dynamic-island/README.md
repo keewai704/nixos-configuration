@@ -85,6 +85,9 @@ session, temporary settings and a copied configuration; it never replaces the
 running desktop's notification server. Test logs remain under `/tmp/island-check.*`.
 It checks hover exit/re-entry, popup handling, equal panel margins and list bounds.
 Set `ISLAND_CAPTURE_SCREEN=DP-1` to save screenshots of each page and media state.
+Run `python3 hosts/citrus/dynamic-island/check-native-hover.py` against the running
+island to check real pointer entry and exit. It briefly moves the pointer and
+opens Controls, then restores the pointer position.
 The lock check uses a separate headless compositor and private Wayland socket;
 it verifies configuration and lock acquisition without locking the real desktop
 or attempting password authentication. Logs remain under `/tmp/island-lock.*`.
