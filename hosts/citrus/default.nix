@@ -157,6 +157,10 @@ in
     polarity = "dark";
     inherit (theme) cursor;
     fonts = {
+      monospace = {
+        package = pkgs.nerd-fonts.jetbrains-mono;
+        name = "JetBrainsMono Nerd Font";
+      };
       sansSerif = {
         package = pkgs.noto-fonts-cjk-sans;
         name = "Noto Sans CJK JP";

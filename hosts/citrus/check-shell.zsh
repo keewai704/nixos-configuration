@@ -6,6 +6,13 @@ setopt errexit
 [[ ${_comps[pymobiledevice3]} == _pymobiledevice3 ]]
 (( $+functions[_zsh_autosuggest_start] ))
 (( $+functions[_zsh_highlight] ))
+(( $+functions[history-substring-search-up] ))
+(( $+functions[nix-shell] ))
+(( $+functions[starship_precmd] ))
+[[ $(bindkey '^[[A') == *history-substring-search-up* ]]
+[[ $(bindkey '^[[B') == *history-substring-search-down* ]]
+[[ -s ${STARSHIP_CONFIG:-${XDG_CONFIG_HOME:-$HOME/.config}/starship.toml} ]]
+starship prompt --path /tmp >/dev/null
 (( $+widgets[fzf-history-widget] ))
 (( $+functions[z] && $+functions[zi] ))
 

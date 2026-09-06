@@ -6,6 +6,7 @@
     enable = true;
     # Home Manager initializes completion after adding the user's packages.
     enableGlobalCompInit = false;
+    promptInit = ""; # Starship owns the interactive prompt.
   };
 
   home-manager.users.keewai = {
@@ -23,6 +24,14 @@
         enableCompletion = true;
         autosuggestion.enable = true;
         syntaxHighlighting.enable = true;
+        historySubstringSearch.enable = true;
+        plugins = [
+          {
+            name = "zsh-nix-shell";
+            src = pkgs.zsh-nix-shell;
+            file = "share/zsh-nix-shell/nix-shell.plugin.zsh";
+          }
+        ];
         defaultKeymap = "emacs";
         shellAliases = {
           cat = "bat --paging=never";
@@ -43,6 +52,11 @@
       };
 
       bat.enable = true;
+      starship = {
+        enable = true;
+        enableZshIntegration = true;
+        presets = [ "tokyo-night" ];
+      };
       eza = {
         enable = true;
         enableZshIntegration = true; # ls, ll, la, lla, lt
