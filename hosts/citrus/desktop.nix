@@ -11,6 +11,8 @@ let
 
 in
 {
+  imports = [ ./bitwarden.nix ];
+
   nixpkgs.config.allowUnfreePredicate =
     package:
     builtins.elem (lib.getName package) [
@@ -27,7 +29,6 @@ in
     })
     inputs.apple-music-client.packages.${pkgs.stdenv.hostPlatform.system}.auth-service
     chatgptDesktop
-    pkgs.bitwarden-desktop
     pkgs.brightnessctl
     pkgs.blueman
     pkgs.ddcutil
