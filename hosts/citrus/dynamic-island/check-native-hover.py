@@ -29,6 +29,10 @@ def move(x, y):
     command(
         "hyprctl", "dispatch", f"hl.dsp.cursor.move({{x={round(x)}, y={round(y)}}})"
     )
+    # Hyprland's synthetic warp omits wl_pointer.frame under an exclusive layer.
+    # A virtual pointer emits a complete motion frame; return to the target pixel.
+    command("wlrctl", "pointer", "move", "1", "0")
+    command("wlrctl", "pointer", "move", "-1", "0")
     print(
         "Pointer position:", command("hyprctl", "-j", "cursorpos").strip(), flush=True
     )

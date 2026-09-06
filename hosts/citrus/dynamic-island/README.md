@@ -113,7 +113,7 @@ badges, player selection, seek guards, artwork crossfades and the compact idle v
 Fake actions also verify that locking bypasses a slow capture
 and reports failures without disturbing the ordinary action queue.
 Set `ISLAND_CAPTURE_SCREEN=DP-1` to save screenshots of each page and media state.
-Run `python3 hosts/citrus/dynamic-island/check-native-hover.py` against the running
+Run `nix shell nixpkgs#python3 nixpkgs#wlrctl -c python3 hosts/citrus/dynamic-island/check-native-hover.py` against the running
 island to check real pointer entry and exit. It briefly moves the pointer and
 opens Controls, then restores the pointer position.
 The lock check uses a separate headless compositor and private Wayland socket;
