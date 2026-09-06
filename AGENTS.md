@@ -52,6 +52,41 @@ applies to configuration, scripts, documentation, and agent instructions.
    briefly explain any non-obvious placement in the final response. Treat
    newly introduced responsibility mismatches as findings in code reviews too.
 
+# Package ownership: Home Manager first
+
+Prefer Home Manager for personal applications, command-line tools, shell
+configuration, user services, and user files. Use an existing Home Manager
+`programs.*` or `services.*` module when it preserves the required behavior;
+otherwise use `home.packages`. Put these declarations in
+`home/<user>/common.nix` or `home/<user>/<host>/`, not inside `hosts/`.
+Host modules may select Home Manager imports; `modules/home-manager.nix` owns
+the NixOS/Home Manager integration.
+
+Before choosing the system scope, inspect the pinned NixOS and Home Manager
+modules and the package's upstream requirements. Check boot/login availability,
+system daemons, kernel/driver support, udev, PAM, polkit, D-Bus activation,
+capability/setuid wrappers, graphics layers, and system font consumers. Keep
+required machine integration under `hosts/<host>/` (or a genuinely shared
+system module). A client may still belong in Home Manager while its daemon or
+hardware rules remain in NixOS. Do not disable an integration module or force
+its package list away merely to move its executables. Replacing a system
+module is appropriate only after explicitly preserving every required
+integration (for example, user-managed hyprlock still needs NixOS PAM).
+
+Document the concrete feature that requires each system-scoped application in
+`docs/package-audit.md`, and update that audit when package ownership changes.
+Check evaluated package lists and launching/session integration after a move;
+preserve profiles, plugins, native messaging, MIME handlers, autostart, and
+hardware access. Build-only dependencies and private service runtime inputs
+are not interactive package installations and stay with their consumer.
+
+Home Manager controls ownership and availability, not application sandboxing.
+`environment.systemPackages` does not run applications as root, and moving a
+package to `home.packages` does not remove its runtime permissions. This repo
+uses NixOS-integrated Home Manager with `useUserPackages = true`; packages live
+under `/etc/profiles/per-user/<user>` and deployment still uses the NixOS
+activation workflow. Do not claim that these changes make deployment rootless.
+
 # Repository workflow
 
 For every task that changes this repository, complete the applicable part of

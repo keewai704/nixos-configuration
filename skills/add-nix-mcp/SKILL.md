@@ -47,7 +47,7 @@ with `/home/keewai/nixos-configuration#`. Never rely on `.` or a prior `cd`.
 
 ## Choose the declaration route
 
-Edit `/home/keewai/nixos-configuration/hosts/citrus/codex.nix`.
+Edit `/home/keewai/nixos-configuration/home/keewai/citrus/codex.nix`.
 Do not edit `/etc/codex/config.toml`,
 `/home/keewai/.codex/config.toml`, or
 `/home/keewai/.config/mcp/mcp.json`; those are generated output or application
@@ -65,7 +65,7 @@ find "$mcp_servers_source/modules/servers" -maxdepth 1 -type f -name '*.nix' -pr
   file and configure its actual options under `mcp-servers.programs`.
 - For a remote endpoint or an unsupported server, declare it under
   `mcp-servers.settings.servers` using the shape supported by
-  `/home/keewai/nixos-configuration/hosts/citrus/codex.nix`.
+  `/home/keewai/nixos-configuration/home/keewai/citrus/codex.nix`.
 - For an unsupported local stdio server, package the executable in Nix under
   `/home/keewai/nixos-configuration/pkgs/` and reference its store executable.
   Do not depend on `npx -y`, mutable language-package caches, or a command found
@@ -78,7 +78,8 @@ find "$mcp_servers_source/modules/servers" -maxdepth 1 -type f -name '*.nix' -pr
 
 Preserve the requested server name, transport, arguments, environment, working
 directory semantics, and authentication behavior. Change the Codex conversion
-logic only when the new server requires a field it currently drops, and inspect
+logic in `/home/keewai/nixos-configuration/hosts/citrus/codex.nix` only when
+the new server requires a field it currently drops, and inspect
 the generated TOML when doing so.
 
 ## Validate before committing
@@ -89,7 +90,7 @@ never pass the repository root as the formatting target:
 
 ```bash
 task_nix_files=(
-  /home/keewai/nixos-configuration/hosts/citrus/codex.nix
+  /home/keewai/nixos-configuration/home/keewai/citrus/codex.nix
 )
 nix run --no-write-lock-file /home/keewai/nixos-configuration#formatter.x86_64-linux -- \
   --tree-root /home/keewai/nixos-configuration "${task_nix_files[@]}"

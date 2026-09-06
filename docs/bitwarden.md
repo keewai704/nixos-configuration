@@ -1,5 +1,9 @@
 # Bitwarden on citrus
 
+Personal packages, SSH settings, and writable initialization live in
+[`home/keewai/citrus/bitwarden.nix`](../home/keewai/citrus/bitwarden.nix).
+Only the competing system SSH agent is disabled in the host module.
+
 The desktop app uses the existing GNOME Secret Service and polkit agent for
 system authentication. Enable **Unlock with system authentication** in the
 Bitwarden settings after signing in. Linux requires the first vault unlock

@@ -77,6 +77,7 @@
           specialArgs = { inherit inputs; };
           modules = [
             ./modules/common.nix
+            ./modules/home-manager.nix
           ]
           ++ modules;
         };
@@ -94,6 +95,13 @@
       ];
 
       packages.${system} = localPackages;
+
+      checks.${system}.package-ownership = import ./checks/package-ownership.nix {
+        inherit (nixpkgs) lib;
+        pkgs = packagePkgs;
+        citrus = inputs.self.nixosConfigurations.citrus.config;
+        orange = inputs.self.nixosConfigurations.orange.config;
+      };
 
       formatter.${system} = nixpkgs.legacyPackages.${system}.nixfmt-tree;
     };

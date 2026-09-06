@@ -1,7 +1,7 @@
 # nixos-configuration
 
 Flake-based NixOS configurations for two `x86_64-linux` machines. The layout
-uses one shared module and keeps everything else beside the host that owns it.
+separates machine integration from user applications and settings.
 
 ## Layout
 
@@ -9,14 +9,19 @@ uses one shared module and keeps everything else beside the host that owns it.
 .
 ├── flake.nix
 ├── modules/
-│   └── common.nix                 # settings used by every host
+│   ├── common.nix                 # system settings used by every host
+│   └── home-manager.nix           # shared NixOS/Home Manager integration
+├── home/
+│   └── keewai/
+│       ├── common.nix             # personal CLI packages on both hosts
+│       └── citrus/                # desktop apps, shell, IME, MCP, and user files
 ├── hosts/
 │   ├── citrus/
 │   │   ├── default.nix            # host entry point
 │   │   ├── hardware-configuration.nix
 │   │   ├── desktop.nix            # desktop environment
-│   │   ├── browser.nix            # Firefox, Brave Origin, Pywalfox, WebHID, and browser composition
-│   │   ├── codex.nix              # ChatGPT, MCP, CUA, and skills
+│   │   ├── browser.nix            # WebHID hardware access rules
+│   │   ├── codex.nix              # system Codex instructions and managed hooks
 │   │   ├── theme.nix              # shared desktop palette and assets
 │   │   ├── hyprland.lua           # Hyprland behavior and key bindings
 │   │   └── assets/                # wallpaper and Noctalia localization files
@@ -36,6 +41,7 @@ uses one shared module and keeps everything else beside the host that owns it.
 │   ├── chatgpt-desktop/
 │   └── cua-driver/
 ├── skills/                         # personal Codex skills
+├── checks/                         # package ownership and integration regression check
 ├── secrets/                        # Agenix declarations and ciphertext
 └── docs/                           # operational detail
 ```
@@ -43,7 +49,8 @@ uses one shared module and keeps everything else beside the host that owns it.
 The ownership rules are intentionally small:
 
 1. Put a setting in `modules/common.nix` only when every host uses it.
-2. Put machine-specific code under `hosts/<name>/`.
+2. Put system integration under `hosts/<name>/`, and user applications and
+   configuration under `home/<user>/<host>/` (shared user tools in `common.nix`).
 3. Put build recipes, skills, and encrypted secrets in their matching top-level
    directory.
 
@@ -51,10 +58,16 @@ Each host entry point imports only files from its own directory. Orange modules
 read `settings.nix` directly, so there is no hidden host-specific argument
 injection from `flake.nix`.
 
+Prefer Home Manager for personal packages. Keep system scope only for a
+concrete integration requirement; see the complete [package audit](docs/package-audit.md).
+`nix flake check` also checks the migrated package boundaries and user launch
+integration.
+
 Firefox's Sine/Natsumi configuration lives in
 [`keewai704/my-firefox-nix`](https://github.com/keewai704/my-firefox-nix).
-Citrus fetches its `nixosModules.default` through the `my-firefox-nix` Git URL
-input, whose commit is pinned in `flake.lock`. Fetching this private repository
+Citrus adapts its pinned `nixosModules.default` package settings and profile
+activation into Home Manager in `home/keewai/citrus/browser.nix`. The Git URL
+input remains pinned in `flake.lock`. Fetching this private repository
 requires Git authentication with an account that has read access.
 
 ## Hosts

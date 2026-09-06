@@ -11,17 +11,6 @@ let
     inherit pkgs;
     colors = config.lib.stylix.colors;
   };
-  hyprlandConfig = pkgs.writeTextFile {
-    name = "hyprland.lua";
-    text =
-      "local theme = ${lib.generators.toLua { } theme.hyprland}\n" + builtins.readFile ./hyprland.lua;
-    checkPhase = ''
-      cp "$target" "$TMPDIR/check.lua"
-      echo 'assert(hl.get_config("decoration:blur:variant") == 8, "acrylic blur must be enabled")' >> "$TMPDIR/check.lua"
-      HOME="$TMPDIR" XDG_RUNTIME_DIR="$TMPDIR" ${lib.getExe pkgs.hyprland} --verify-config -c "$TMPDIR/check.lua"
-    '';
-  };
-
   hyprlandSession = "${lib.getExe pkgs.uwsm} start -e -D Hyprland ${pkgs.hyprland}/bin/start-hyprland";
 in
 {
@@ -90,7 +79,6 @@ in
   };
 
   imports = [
-    inputs.nix-hazkey.nixosModules.hazkey
     ./browser.nix
     ./codex.nix
     ./desktop.nix
@@ -102,32 +90,7 @@ in
   ];
 
   networking.hostName = "citrus";
-
-  home-manager.users.keewai.xdg.configFile."hypr/hyprland.lua".source = hyprlandConfig;
-
-  home-manager.users.keewai.xdg.configFile."alac-room/theme.json".text = builtins.toJSON {
-    colors = lib.getAttrs [
-      "base00"
-      "base01"
-      "base02"
-      "base03"
-      "base04"
-      "base05"
-      "base06"
-      "base07"
-      "base08"
-      "base09"
-      "base0A"
-      "base0B"
-      "base0C"
-      "base0D"
-      "base0E"
-      "base0F"
-    ] config.lib.stylix.colors;
-    fontFamily = config.stylix.fonts.sansSerif.name;
-    fontSize = config.stylix.fonts.sizes.applications * 4.0 / 3.0;
-    polarity = config.stylix.polarity;
-  };
+  home-manager.users.keewai.imports = [ ../../home/keewai/citrus ];
 
   stylix = {
     enable = true;
@@ -181,38 +144,11 @@ in
     targets = {
       chromium.enable = true;
       console.enable = true;
-      font-packages.enable = true;
+      font-packages.enable = false;
       fontconfig.enable = true;
       gtk.enable = true;
-      qt.enable = true;
-    };
-  };
-
-  i18n.inputMethod = {
-    enable = true;
-    type = "fcitx5";
-
-    fcitx5 = {
-      waylandFrontend = true;
-
-      settings = {
-        inputMethod = {
-          "Groups/0" = {
-            Name = "Default";
-            "Default Layout" = "us";
-            DefaultIM = "hazkey";
-          };
-          "Groups/0/Items/0" = {
-            Name = "keyboard-us";
-            Layout = "";
-          };
-          "Groups/0/Items/1" = {
-            Name = "hazkey";
-            Layout = "";
-          };
-          GroupOrder."0" = "Default";
-        };
-      };
+      # Personal Qt tools and themes are provided by Home Manager.
+      qt.enable = false;
     };
   };
 
@@ -236,7 +172,6 @@ in
       SUBSYSTEM=="drm", KERNEL=="card[0-9]*", KERNELS=="0000:01:00.0", SYMLINK+="dri/nvidia"
     '';
     blueman.enable = true;
-    hazkey.enable = true;
 
     pipewire = {
       enable = true;
@@ -274,11 +209,7 @@ in
 
   security.rtkit.enable = true;
 
-  fonts.packages = [ pkgs.noto-fonts ];
-
   environment = {
-    systemPackages = [ pkgs.gws ];
-
     sessionVariables = {
       AQ_DRM_DEVICES = "/dev/dri/nvidia";
       LIBVA_DRIVER_NAME = "nvidia";

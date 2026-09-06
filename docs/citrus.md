@@ -11,21 +11,24 @@ hostname is `citrus` may run `nixos-rebuild test` or `switch` for this host.
 
 | Path | Responsibility |
 | --- | --- |
-| [`hosts/citrus/default.nix`](../hosts/citrus/default.nix) | Host imports, Hyprland session, Hazkey/Fcitx5, wallpaper, graphics, and state version |
+| [`hosts/citrus/default.nix`](../hosts/citrus/default.nix) | Host imports, Hyprland login session, system theme, graphics, and state version |
 | [`hosts/citrus/theme.nix`](../hosts/citrus/theme.nix) | Stylix palette adapter for Hyprland, Noctalia, and tuigreet |
 | [`hosts/citrus/hardware-configuration.nix`](../hosts/citrus/hardware-configuration.nix) | Generated machine hardware, filesystems, and swap |
 | [`hosts/citrus/hyprland.lua`](../hosts/citrus/hyprland.lua) | Hyprland behavior and key bindings; Nix prepends the shared theme table |
-| [`hosts/citrus/desktop.nix`](../hosts/citrus/desktop.nix) | Thunar, GVfs, Tumbler, Xarchiver, and the ChatGPT application |
+| [`hosts/citrus/desktop.nix`](../hosts/citrus/desktop.nix) | Steam/Gamescope, GVfs, Tumbler, and desktop system services |
 | [`hosts/citrus/fingerprint.nix`](../hosts/citrus/fingerprint.nix) | CS9711 fingerprint driver, fprintd, and local PAM authentication |
-| [`hosts/citrus/browser.nix`](../hosts/citrus/browser.nix) | Firefox via `my-firefox-nix`, Brave Origin, Pywalfox, default handlers, and vendor-scoped WebHID access |
-| [`hosts/citrus/codex.nix`](../hosts/citrus/codex.nix) | Home Manager, system MCP configuration, personal skills, and CUA |
+| [`hosts/citrus/browser.nix`](../hosts/citrus/browser.nix) | Vendor-scoped WebHID access |
+| [`hosts/citrus/codex.nix`](../hosts/citrus/codex.nix) | System Codex configuration, developer instructions, and managed hooks |
+| [`home/keewai/citrus/`](../home/keewai/citrus/) | Personal apps, browser, shell, input method, Dynamic Island, MCP, and skills |
+| [`modules/home-manager.nix`](../modules/home-manager.nix) | Shared Home Manager integration for both hosts |
 | [`pkgs/chatgpt-desktop/default.nix`](../pkgs/chatgpt-desktop/default.nix) | ChatGPT desktop package and launcher |
 | [`pkgs/cua-driver/default.nix`](../pkgs/cua-driver/default.nix) | CUA driver package |
 
 The host entry point imports the browser, Codex, desktop, and hardware modules
-explicitly. `codex.nix` imports Home Manager and `mcp-servers-nix`; the complete
-desktop stack therefore stays inside the Citrus host directory without hidden
-cross-module imports.
+explicitly. `home/keewai/citrus/default.nix` selects the user modules.
+The shared Home Manager integration also installs Git and ripgrep for `keewai`
+on Orange. See the [package ownership audit](package-audit.md) for all packages
+and the features requiring system integration.
 
 ## Physical hardware
 
@@ -58,8 +61,8 @@ come from the pinned nixpkgs input. See the
 [Home Manager Zsh options](https://nix-community.github.io/home-manager/options/home-manager/programs/zsh.html).
 Starship uses [KnightChaser's Tokyo Night Neo preset](https://github.com/KnightChaser/starship-tokyonight-neo).
 The preset is copied from upstream commit `843de4a9bcc43a64a355e6a1af50ada2324d77c2`
-into `hosts/citrus/starship.toml`; edit this local file to customize the prompt.
-`shell.nix` deploys it directly. Kitty uses HackGen Console NF for Japanese text
+into `home/keewai/citrus/starship.toml`; edit this local file to customize the prompt.
+`home/keewai/citrus/shell.nix` deploys it directly. Kitty uses HackGen Console NF for Japanese text
 and the preset's symbols. Restart Kitty after changing the font.
 
 The session starts Hyprland through UWSM and greetd. Home Manager installs
@@ -83,10 +86,10 @@ of application themes. All GUI changes are written separately to
 baseline, and remain editable and persistent. The Island uses `Super+I` for Controls.
 GNOME Keyring supplies Secret Service for Noctalia's encrypted clipboard history.
 Fcitx5 uses [Stylix's Home Manager target](https://nix-community.github.io/stylix/options/modules/fcitx5.html)
-for its candidate panel, menu, and fonts. NixOS still provides Hazkey, the input
-method profile defaults, and UWSM's XDG autostart; Home Manager reuses that
-package with its extra daemon disabled. Only the managed Classic UI file is
-linked, leaving other Fcitx5 settings and dictionaries writable. Home Manager's
+for its candidate panel, menu, and fonts. Home Manager provides Hazkey, the input method profile defaults, and an XDG
+autostart entry consumed by UWSM; the extra Fcitx5 systemd daemon stays disabled.
+Only managed configuration files are linked, leaving dictionaries and other
+Fcitx5 settings writable. Home Manager's
 Wayland input-method integration also supplies GTK's X11 fallback and the
 Kitty/SDL input-module variables without forcing a global GTK input module.
 Stylix's Firefox target stays disabled to leave the `my-firefox-nix` profile
@@ -99,7 +102,7 @@ Fcitx5's Classic UI uses the rounded panel generated from the same palette.
 
 Discord runs in Legcord with Equicord and the
 [System24 theme](https://github.com/refact0r/system24).
-`hosts/citrus/system24.nix` imports System24's official stylesheet and maps
+`home/keewai/citrus/system24.nix` imports System24's official stylesheet and maps
 Stylix's palette to its text, background, accent, and status variables. Its
 terminal-style panels, labels, and square corners remain active; text uses
 Stylix's monospace font with Noto Sans CJK JP as the Japanese fallback.
@@ -116,7 +119,7 @@ font for the currently installed SpaceTheme for Steam. SpaceTheme's layout,
 plugins, and other settings remain in Millennium's own configuration. Its
 color overrides require SpaceTheme; select that theme to use them.
 These two Quick CSS files are Nix-managed; edit the Stylix settings or
-`hosts/citrus/system24.nix` / `hosts/citrus/desktop.nix` instead of the apps'
+`home/keewai/citrus/system24.nix` / `home/keewai/citrus/desktop.nix` instead of the apps'
 CSS editors. Restart Legcord or Steam after rebuilding its generated styles.
 
 The initial wallpaper is repository-owned under `hosts/citrus/assets/` and
@@ -240,11 +243,12 @@ Brave Origin is also installed for sites that require Chromium behavior.
 `x-scheme-handler/codex` remains mapped to `chatgpt.desktop` so authentication
 and deep links return to the desktop application.
 
-Bitwarden Desktop is installed system-wide. Its browser extensions and settings
+Bitwarden Desktop is installed through Home Manager. Its browser extensions and settings
 are user-managed; this configuration does not install or configure them.
 
-The Nix-managed Pywalfox native messenger is registered in the wrapped Firefox
-package, and Home Manager publishes the shared Tokyo Night palette at
+Home Manager registers the Pywalfox native messenger under
+`~/.mozilla/native-messaging-hosts/`, the supported Firefox user location,
+and publishes the shared Tokyo Night palette at
 `~/.cache/wal/colors.json`. The Pywalfox Firefox add-on, its settings, and its
 optional profile CSS remain user-managed; this configuration does not install
 or modify them.
@@ -388,8 +392,7 @@ xdg-mime query default x-scheme-handler/http
 xdg-mime query default x-scheme-handler/codex
 pywalfox --version
 jq -e '.colors | length == 16' ~/.cache/wal/colors.json
-firefox_root="$(dirname "$(dirname "$(readlink -f "$(command -v firefox)")")")"
-jq -e '.name == "pywalfox"' "$firefox_root/lib/mozilla/native-messaging-hosts/pywalfox.json"
+jq -e '.name == "pywalfox"' ~/.mozilla/native-messaging-hosts/pywalfox.json
 chatgpt --version
 cua-driver doctor
 codex mcp list

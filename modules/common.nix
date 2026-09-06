@@ -1,6 +1,5 @@
 {
   config,
-  pkgs,
   ...
 }:
 
@@ -12,11 +11,6 @@
     };
     efi.canTouchEfiVariables = true;
   };
-
-  environment.systemPackages = with pkgs; [
-    git
-    ripgrep
-  ];
 
   i18n.defaultLocale = "ja_JP.UTF-8";
   time.timeZone = "Asia/Tokyo";
