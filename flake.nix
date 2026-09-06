@@ -4,14 +4,14 @@
   inputs = {
     nixpkgs.url = "github:NixOS/nixpkgs/nixos-unstable";
 
-    apple-music-client.url = "git+https://github.com/keewai704/apple-music-client.git";
+    apple-music-client.url = "git+https://github.com/keewai704/apple-music-client.git?ref=main";
 
     dynamic-island = {
       url = "git+file:///home/keewai/dynamic-island";
       inputs.nixpkgs.follows = "nixpkgs";
     };
 
-    my-firefox-nix.url = "git+https://github.com/keewai704/my-firefox-nix.git";
+    my-firefox-nix.url = "git+https://github.com/keewai704/my-firefox-nix.git?ref=main";
 
     agenix = {
       url = "github:ryantm/agenix";

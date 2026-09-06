@@ -39,6 +39,7 @@
         "url": "https://github.com/keewai704/apple-music-client.git"
       },
       "original": {
+        "ref": "main",
         "type": "git",
         "url": "https://github.com/keewai704/apple-music-client.git"
       }
@@ -758,6 +759,7 @@
         "url": "https://github.com/keewai704/my-firefox-nix.git"
       },
       "original": {
+        "ref": "main",
         "type": "git",
         "url": "https://github.com/keewai704/my-firefox-nix.git"
       }

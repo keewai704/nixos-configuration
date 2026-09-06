@@ -61,6 +61,13 @@ complete; fix the problem and repeat the workflow, or report the work as
 blocked. Always report whether the change was committed and, when applicable,
 whether it was applied to the running system and persisted as the boot default.
 
+## Package sources owned by `keewai704`
+
+For packages sourced from GitHub repositories owned by `keewai704`, explicitly
+select the `main` branch (for Git flake inputs, use `?ref=main`). Keep revisions
+and hashes pinned for reproducibility; refresh them from `main` when updating
+the package. Do not rely on the repository's default branch.
+
 ## Publishing web services on `orange`
 
 For every HTTP, HTTPS, or WebSocket service that should be reachable by a user,
