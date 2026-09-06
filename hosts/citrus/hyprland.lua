@@ -5,6 +5,11 @@ local main_mod = "SUPER"
 local terminal = "uwsm app -- kitty"
 local file_manager = "uwsm app -- thunar"
 
+-- Lock once after login, including greetd's automatic initial session.
+hl.on("hyprland.start", function()
+    hl.exec_cmd("island-action lock")
+end)
+
 hl.monitor({
     output = "",
     mode = "preferred",
