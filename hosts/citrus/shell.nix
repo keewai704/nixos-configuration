@@ -10,6 +10,10 @@
 
   home-manager.users.keewai = {
     home.packages = [
+      pkgs.btop
+      pkgs.duf
+      pkgs.dust
+      pkgs.fd
       pkgs.yt-dlp
       pkgs.zsh-completions
     ];
@@ -21,6 +25,14 @@
         autosuggestion.enable = true;
         syntaxHighlighting.enable = true;
         defaultKeymap = "emacs";
+        shellAliases = {
+          cat = "bat --paging=never";
+          tree = "eza --tree";
+          du = "dust";
+          df = "duf";
+          top = "btop";
+          ff = "fd";
+        };
         history = {
           size = 50000;
           ignoreAllDups = true;
@@ -29,6 +41,13 @@
           zstyle ':completion:*' menu select
           zstyle ':completion:*' matcher-list 'm:{a-z}={A-Z}'
         '';
+      };
+
+      bat.enable = true;
+      eza = {
+        enable = true;
+        enableZshIntegration = true; # ls, ll, la, lla, lt
+        extraOptions = [ "--group-directories-first" ];
       };
 
       fzf = {

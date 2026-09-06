@@ -9,6 +9,17 @@ setopt errexit
 (( $+widgets[fzf-history-widget] ))
 (( $+functions[z] && $+functions[zi] ))
 
+[[ $aliases[ls] == eza && $aliases[cat] == 'bat --paging=never' ]]
+[[ $aliases[tree] == 'eza --tree' && $aliases[ff] == fd ]]
+[[ $aliases[du] == dust && $aliases[df] == duf && $aliases[top] == btop ]]
+# Replacing cat must preserve plain text when output is piped.
+[[ $(printf 'modern CLI\n' | cat) == 'modern CLI' ]]
+eza --version >/dev/null
+fd --version >/dev/null
+dust --version >/dev/null
+duf --version >/dev/null
+btop --version >/dev/null
+
 # Capture candidates without requiring an interactive ZLE completion widget.
 _arguments() { candidates="$*"; }
 typeset candidates
@@ -26,4 +37,4 @@ CURRENT=3
 _pymobiledevice3
 [[ $candidates == *core-device* ]]
 
-print 'zsh plugins and yt-dlp/pymobiledevice3 completion passed'
+print 'zsh plugins, CLI aliases and yt-dlp/pymobiledevice3 completion passed'
