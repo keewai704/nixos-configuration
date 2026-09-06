@@ -27,6 +27,7 @@ in
     })
     inputs.apple-music-client.packages.${pkgs.stdenv.hostPlatform.system}.auth-service
     chatgptDesktop
+    pkgs.bitwarden-desktop
     pkgs.brightnessctl
     pkgs.blueman
     pkgs.ddcutil
