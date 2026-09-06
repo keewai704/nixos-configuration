@@ -23,6 +23,35 @@ current local checkout when the task requires it. In that case, restrict work
 for that other host to local formatting, evaluation, and builds; do not contact
 the host or apply the result there.
 
+# File names and responsibilities
+
+Keep each file's contents predictable from its name and directory. This rule
+applies to configuration, scripts, documentation, and agent instructions.
+
+1. Before editing, read the repository layout in `README.md`, the target file,
+   and related files and imports. Identify the responsibility of the target
+   file and check that the proposed content belongs there.
+2. Reuse an existing file only when its responsibility matches. Do not append
+   unrelated settings merely because the file is already imported, has access
+   to a needed value, or produces a smaller diff. Existing misplaced content
+   is not a precedent for adding more.
+3. If no existing file fits, create a clearly named file in the owning
+   directory and wire up its imports or references. Split distinct concerns;
+   rename a file when its cohesive responsibility has changed. Do not hide a
+   mismatch with a broader, vague name such as `misc` or `utils`.
+4. Keep `hosts/<host>/default.nix` focused on imports and small host-wide
+   settings, and `modules/common.nix` on settings used by every host. Put
+   substantial feature or service configuration in a file named for it.
+   Keep tightly coupled implementation details together; do not split files
+   solely to satisfy a line-count limit or one-setting-per-file rule.
+5. Limit moves and renames to what the current task needs, update all affected
+   references, and preserve behavior when relocating existing content. Leave
+   unrelated cleanup for a separate task.
+6. Before committing, review every changed file: would someone looking only at
+   its name and directory expect the added content there? Fix mismatches and
+   briefly explain any non-obvious placement in the final response. Treat
+   newly introduced responsibility mismatches as findings in code reviews too.
+
 # Repository workflow
 
 For every task that changes this repository, complete the applicable part of
