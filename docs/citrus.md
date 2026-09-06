@@ -57,8 +57,9 @@ and `programs.zsh.plugins` with a `pkgs` source and plugin `file` for others.
 come from the pinned nixpkgs input. See the
 [Home Manager Zsh options](https://nix-community.github.io/home-manager/options/home-manager/programs/zsh.html).
 Starship uses [KnightChaser's Tokyo Night Neo preset](https://github.com/KnightChaser/starship-tokyonight-neo).
-`shell.nix` fetches the upstream TOML at a pinned commit and hash and deploys it
-unchanged as `starship.toml`. Kitty uses HackGen Console NF for Japanese text
+The preset is copied from upstream commit `843de4a9bcc43a64a355e6a1af50ada2324d77c2`
+into `hosts/citrus/starship.toml`; edit this local file to customize the prompt.
+`shell.nix` deploys it directly. Kitty uses HackGen Console NF for Japanese text
 and the preset's symbols. Restart Kitty after changing the font.
 
 The session starts Hyprland through UWSM and greetd. Home Manager installs

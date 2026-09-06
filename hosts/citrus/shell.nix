@@ -10,10 +10,7 @@
   };
 
   home-manager.users.keewai = {
-    xdg.configFile."starship.toml".source = pkgs.fetchurl {
-      url = "https://raw.githubusercontent.com/KnightChaser/starship-tokyonight-neo/843de4a9bcc43a64a355e6a1af50ada2324d77c2/theme/tokyonight-neo.toml";
-      hash = "sha256-t4lG3FaIQJMFkzBFxSq4G1lgMqwa+dBJy+z8BWiXLF8=";
-    };
+    xdg.configFile."starship.toml".source = ./starship.toml;
 
     home.packages = [
       pkgs.btop
