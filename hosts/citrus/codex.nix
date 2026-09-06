@@ -109,6 +109,9 @@ let
 
   codexSystemConfig = (pkgs.formats.toml { }).generate "chatgpt-desktop-mcp.toml" {
     model = "gpt-6-astra";
+    # Maximum advertised by the Desktop/Codex model catalog (2026-09-06).
+    # Keep the model's safety margin and automatic compaction defaults.
+    model_context_window = 872000;
     model_reasoning_effort = "medium";
     plan_mode_reasoning_effort = "medium";
     features = {

@@ -333,6 +333,19 @@ untouched.
 After changing an MCP server or personal skill, rebuild through the development
 workflow and restart ChatGPT Desktop or begin a new local session.
 
+The shared Codex configuration selects Astra with `model_context_window =
+872000`, the maximum advertised by the Desktop/Codex model catalog on
+2026-09-06, instead of its 272,000-token default. The catalog's 95% effective
+context margin and model-default automatic compaction remain enabled. The
+API's published 1,050,000-token model specification is not the Desktop
+catalog's configurable maximum. Recheck `codex debug models` when updating
+the client or model; do not edit `~/.codex/models_cache.json` to raise limits.
+These defaults live beside the existing model selection in
+`hosts/citrus/codex.nix`, while the application-owned user configuration stays
+writable. Restart Desktop or start a new local session to load the setting.
+See the [official configuration reference](https://learn.chatgpt.com/ja-JP/docs/config-file/config-reference)
+for `model_context_window` and `model_auto_compact_token_limit`.
+
 ## MCP and CUA
 
 The declarative MCP registry enables Context7, the NixOS server, Serena, the
