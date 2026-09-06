@@ -13,6 +13,7 @@
   makeWrapper,
   makeDesktopItem,
   copyDesktopItems,
+  makeFontsConf,
   fontconfig,
   libxkbcommon,
   libx11,
@@ -92,8 +93,14 @@ rustPlatform.buildRustPackage {
     libxcb
     wayland
   ];
-  nativeCheckInputs = [ ffmpeg ];
+  nativeCheckInputs = [
+    ffmpeg
+    fontconfig
+  ];
   cargoTestFlags = [ "--lib" ];
+  preCheck = ''
+    export FONTCONFIG_FILE=${makeFontsConf { fontDirectories = [ noto-fonts-cjk-sans-static ]; }}
+  '';
 
   desktopItems = [
     (makeDesktopItem {
