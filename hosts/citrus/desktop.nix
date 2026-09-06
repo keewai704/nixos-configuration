@@ -133,7 +133,13 @@ in
       };
     };
 
-    programs.kitty.enable = true;
+    programs.kitty = {
+      enable = true;
+      font = {
+        package = lib.mkForce pkgs.hackgen-nf-font;
+        name = lib.mkForce "HackGen Console NF";
+      };
+    };
 
     programs.nixcord = {
       enable = true;
