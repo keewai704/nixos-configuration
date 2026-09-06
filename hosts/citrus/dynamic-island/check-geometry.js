@@ -76,4 +76,10 @@ var dstAfter = context.dateOffset(dstBefore, 1);
 assert.strictEqual(dateKey(dstAfter), "2024/2/10");
 assert.strictEqual(dstAfter.getHours(), dstBefore.getHours());
 
+assert.strictEqual(context.formatDuration(0), "0:00");
+assert.strictEqual(context.formatDuration(65.9), "1:05");
+assert.strictEqual(context.formatDuration(3601), "60:01");
+assert.strictEqual(context.formatDuration(-3), "0:00");
+assert.strictEqual(context.formatDuration(NaN), "0:00");
+
 console.log("geometry checks passed");

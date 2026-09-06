@@ -21,9 +21,15 @@ PanelWindow {
     readonly property string page: selected ? shell.page : ""
     property bool hovered: false
     readonly property bool expanded: (selected && shell.pinned) || (prefs.hover && hovered)
-    readonly property bool noticeVisible: !!shell.notice && !shell.noticeCollapsed
+    readonly property bool noticeVisible: !!shell.notice
     readonly property string stateName: page || (noticeVisible ? "notice" : shell.osd ? "osd" : "media")
-    readonly property bool large: (expanded && stateName !== "osd") || page !== "" || noticeVisible
+    readonly property bool large: (expanded && stateName !== "osd") || page !== "" || (noticeVisible && shell.criticalNotice && !shell.noticeCollapsed)
+    readonly property bool readingNotice: stateName === "notice" && hovered
+    onReadingNoticeChanged: shell.noticeReaders += readingNotice ? 1 : -1
+    Component.onDestruction: if (readingNotice)
+        shell.noticeReaders--
+    readonly property bool micMuted: !!shell.source?.audio?.muted
+    readonly property real statusWidth: micMuted || shell.unreadCount > 0 || player?.isPlaying ? compactStatus.implicitWidth + 12 : 0
     property int openMenus: 0
     readonly property bool popupOpen: desktopPages.dialogOpen || openMenus > 0
     onPopupOpenChanged: if (!popupOpen && !hovered)
@@ -95,6 +101,13 @@ PanelWindow {
                 shell.collapse();
         }
     }
+    Timer {
+        id: positionTimer
+        interval: 1000
+        repeat: true
+        running: window.large && window.stateName === "media" && !!window.player?.isPlaying && !!window.player?.positionSupported
+        onTriggered: window.player.positionChanged()
+    }
 
     component Label: Text {
         color: window.ink
@@ -113,11 +126,14 @@ PanelWindow {
                 close: "M6 6L18 18M18 6L6 18",
                 left: "M16 5L8 12L16 19",
                 right: "M8 5L16 12L8 19",
+                down: "M5 8L12 15L19 8",
                 previous: "M6 5V19M18 5L8 12L18 19Z",
                 next: "M18 5V19M6 5L16 12L6 19Z",
                 play: "M8 5L19 12L8 19Z",
                 pause: "M8 5V19M16 5V19",
                 music: "M10 17.5V6L20 4V15.5M10 9L20 7M10 17.5A3 2.5 0 1 1 4 17.5A3 2.5 0 1 1 10 17.5M20 15.5A3 2.5 0 1 1 14 15.5A3 2.5 0 1 1 20 15.5",
+                micOff: "M9 9V5A3 3 0 0 1 15 5V11M5 10V12A7 7 0 0 0 16 18M12 19V22M8 22H16M3 3L21 21",
+                bell: "M6 10A6 6 0 0 1 18 10V15L20 18H4L6 15ZM10 21H14",
                 more: "M5 12H5.1M12 12H12.1M19 12H19.1"
             })
         Shape {
@@ -217,11 +233,13 @@ PanelWindow {
             window.updateHover(containsMouse)
         onClicked: if (window.stateName === "media")
             shell.showPage("media")
+        else if (window.stateName === "notice")
+            shell.showPage("notice")
         onWheel: wheel => shell.volume((shell.sink?.audio?.volume || 0) + (wheel.angleDelta.y > 0 ? 0.05 : -0.05))
         x: (window.width - width) / 2
         y: 11 * (1 - window.morph) - 4 * window.morph
-        width: Math.min(window.width - 32, window.large ? 640 : shell.osd ? 260 : 150)
-        height: window.large ? (window.stateName === "media" ? Math.max(152, mediaDetails.implicitHeight + 40) : window.stateName === "notice" ? noticeContent.implicitHeight + 40 : window.stateName === "controls" ? Math.min(window.height - 32, controlsPage.implicitHeight + navigation.implicitHeight + 52) : 410) : 38
+        width: Math.min(window.width - 32, window.large ? (window.stateName === "media" && !window.player ? 320 : 640) : window.stateName === "notice" ? 360 : shell.osd ? 260 : 150 + window.statusWidth)
+        height: window.large ? (window.stateName === "media" ? (window.player ? Math.max(196, mediaDetails.implicitHeight + 40) : 104) : window.stateName === "notice" ? noticeContent.implicitHeight + 40 : window.stateName === "controls" ? Math.min(window.height - 32, controlsPage.implicitHeight + navigation.implicitHeight + 52) : 410) : 38
         focus: true
         Keys.onEscapePressed: {
             shell.close();
@@ -273,8 +291,8 @@ PanelWindow {
         // A single clock travels from the pill centre to the expanded right column.
         Label {
             id: time
-            x: (surface.width - width) / 2 + window.expansion * (surface.width / 2 - 118)
-            y: 3 + window.expansion * ((surface.height - 84) / 2 - 3)
+            x: (surface.width - width - window.statusWidth * (1 - window.expansion)) / 2 + window.expansion * (window.player ? surface.width / 2 - 118 : -18)
+            y: 3 + window.expansion * ((window.player ? (surface.height - 84) / 2 : 20) - 3)
             width: 100
             height: 32
             text: Qt.formatDateTime(window.today, "HH:mm")
@@ -296,33 +314,95 @@ PanelWindow {
             }
         }
         Row {
-            x: surface.width - 35
+            id: compactStatus
+            x: surface.width - width - 16
             y: 11
-            spacing: 2
-            visible: !window.large && !shell.osd && !!window.player?.isPlaying
-            Repeater {
-                model: 4
-                Rectangle {
-                    required property int index
-                    width: 3
-                    height: 5
-                    radius: 1.5
+            spacing: 8
+            visible: !window.large && window.stateName === "media"
+            Row {
+                visible: shell.unreadCount > 0
+                spacing: 3
+                Accessible.name: shell.unreadCount + " unread notifications"
+                Icon {
+                    name: "bell"
+                    width: 14
+                    height: 16
                     color: window.accent
-                    y: (16 - height) / 2
-                    // Playback indicator, matching the video's four bars; not a spectrum analyser.
-                    SequentialAnimation on height {
-                        running: !!window.player?.isPlaying && !window.large && !prefs.reducedMotion
-                        loops: Animation.Infinite
-                        NumberAnimation {
-                            to: 6 + index * 3
-                            duration: 180 + index * 50
-                        }
-                        NumberAnimation {
-                            to: 3
-                            duration: 260 - index * 35
+                }
+                Label {
+                    text: shell.unreadCount
+                    height: 16
+                    font.pixelSize: 11
+                    color: window.accent
+                }
+                TapHandler {
+                    onTapped: shell.showPage("notifications")
+                }
+            }
+            Icon {
+                visible: window.micMuted
+                name: "micOff"
+                color: window.accent
+                width: 16
+                height: 16
+                Accessible.name: "Microphone muted"
+            }
+            Row {
+                spacing: 2
+                visible: !!window.player?.isPlaying
+                Repeater {
+                    model: 4
+                    Rectangle {
+                        required property int index
+                        width: 3
+                        height: 5
+                        radius: 1.5
+                        color: window.accent
+                        y: (16 - height) / 2
+                        // Playback indicator, not a spectrum analyser.
+                        SequentialAnimation on height {
+                            running: compactStatus.visible && !!window.player?.isPlaying && !prefs.reducedMotion
+                            loops: Animation.Infinite
+                            NumberAnimation {
+                                to: 6 + index * 3
+                                duration: 180 + index * 50
+                            }
+                            NumberAnimation {
+                                to: 3
+                                duration: 260 - index * 35
+                            }
                         }
                     }
                 }
+            }
+        }
+        RowLayout {
+            id: compactNotice
+            anchors.fill: parent
+            anchors.leftMargin: 18
+            anchors.rightMargin: 8
+            spacing: 10
+            visible: window.stateName === "notice" && !window.large
+            IconImage {
+                Layout.preferredWidth: 20
+                Layout.preferredHeight: 20
+                source: Quickshell.iconPath(shell.notice?.appIcon || "dialog-information", "dialog-information")
+                implicitSize: 20
+            }
+            Label {
+                Layout.fillWidth: true
+                text: shell.notice?.summary || shell.notice?.appName || "Notification"
+                Accessible.name: (shell.notice?.appName || "") + ": " + text
+            }
+            Label {
+                visible: shell.notices.length > 1
+                text: "+" + (shell.notices.length - 1)
+                color: window.accent
+            }
+            Action {
+                glyph: "close"
+                Accessible.name: "Dismiss notification"
+                onClicked: shell.dismissNotice()
             }
         }
         Item {
@@ -337,28 +417,24 @@ PanelWindow {
                 id: mediaContent
                 anchors.fill: parent
                 spacing: 20
-                visible: window.stateName === "media"
-                ClippingRectangle {
+                visible: window.stateName === "media" && !!window.player
+                AlbumArt {
                     id: artwork
                     Layout.preferredWidth: 112
                     Layout.preferredHeight: 112
                     Layout.alignment: Qt.AlignVCenter
                     radius: 14
                     color: window.theme.surface
-                    Image {
-                        id: cover
-                        anchors.fill: parent
-                        source: window.player?.trackArtUrl || ""
-                        fillMode: Image.PreserveAspectCrop
-                        asynchronous: true
-                    }
+                    source: window.player?.trackArtUrl || ""
+                    duration: prefs.reducedMotion ? 0 : 200
+                    pixelRatio: window.screen.devicePixelRatio
                     Icon {
                         anchors.centerIn: parent
                         width: 36
                         height: 36
                         name: "music"
                         color: window.accent
-                        visible: cover.status !== Image.Ready
+                        visible: !artwork.available
                     }
                 }
                 ColumnLayout {
@@ -366,6 +442,74 @@ PanelWindow {
                     Layout.fillWidth: true
                     Layout.alignment: Qt.AlignVCenter
                     spacing: 4
+                    ComboBox {
+                        id: playerPicker
+                        Layout.fillWidth: true
+                        implicitHeight: 30
+                        model: shell.playerOptions
+                        textRole: "name"
+                        currentIndex: Math.max(0, shell.playerOptions.findIndex(p => p.key === shell.preferredPlayer))
+                        displayText: (shell.preferredPlayer ? "" : "Auto · ") + (window.player?.identity || "Player")
+                        Accessible.name: "Media player"
+                        font.family: window.theme.fontFamily
+                        font.pixelSize: Math.max(11, window.theme.fontSize - 2)
+                        onActivated: index => shell.preferredPlayer = model[index].key
+                        contentItem: Label {
+                            text: playerPicker.displayText
+                            color: window.accent
+                            verticalAlignment: Text.AlignVCenter
+                            rightPadding: 20
+                        }
+                        indicator: Icon {
+                            name: "down"
+                            color: window.accent
+                            width: 14
+                            height: 14
+                            x: playerPicker.width - width - 4
+                            y: (playerPicker.height - height) / 2
+                        }
+                        background: Rectangle {
+                            color: playerPicker.hovered || playerPicker.visualFocus ? window.theme.hover : "transparent"
+                            radius: 6
+                        }
+                        popup: Popup {
+                            parent: surface
+                            x: 152
+                            y: 20
+                            width: Math.min(280, surface.width - x - 20)
+                            height: Math.min(contentItem.implicitHeight + 12, surface.height - 40)
+                            padding: 6
+                            onOpened: window.openMenus++
+                            onClosed: window.openMenus--
+                            background: Rectangle {
+                                color: window.theme.surface
+                                radius: 10
+                                border.color: window.theme.border
+                            }
+                            contentItem: ListView {
+                                clip: true
+                                implicitHeight: contentHeight
+                                model: playerPicker.delegateModel
+                                currentIndex: playerPicker.highlightedIndex
+                            }
+                        }
+                        delegate: ItemDelegate {
+                            id: playerOption
+                            required property var modelData
+                            required property int index
+                            width: playerPicker.popup.width - 12
+                            height: 36
+                            highlighted: playerPicker.highlightedIndex === index
+                            contentItem: Label {
+                                text: modelData.name
+                                verticalAlignment: Text.AlignVCenter
+                            }
+                            background: Rectangle {
+                                color: playerOption.highlighted ? window.theme.hover : "transparent"
+                                radius: 6
+                            }
+                        }
+                    }
                     Label {
                         text: window.player?.trackTitle || (window.player?.isPlaying ? "Playing" : "Not playing")
                         font.weight: Font.DemiBold
@@ -385,6 +529,37 @@ PanelWindow {
                         color: window.muted
                         Layout.fillWidth: true
                         font.pixelSize: Math.max(11, window.theme.fontSize - 2)
+                    }
+                    ColumnLayout {
+                        Layout.fillWidth: true
+                        spacing: 0
+                        visible: !!window.player?.lengthSupported && !!window.player?.positionSupported && window.player.length > 0
+                        Level {
+                            id: seekBar
+                            Layout.fillWidth: true
+                            implicitHeight: 24
+                            to: Math.max(1, window.player?.length || 0)
+                            value: window.player?.position || 0
+                            enabled: !!window.player?.canSeek
+                            Accessible.name: "Playback position"
+                            onMoved: shell.seekTo(value)
+                        }
+                        RowLayout {
+                            Layout.fillWidth: true
+                            Label {
+                                text: Geometry.formatDuration(window.player?.position)
+                                color: window.muted
+                                font.pixelSize: 10
+                            }
+                            Item {
+                                Layout.fillWidth: true
+                            }
+                            Label {
+                                text: "−" + Geometry.formatDuration((window.player?.length || 0) - (window.player?.position || 0))
+                                color: window.muted
+                                font.pixelSize: 10
+                            }
+                        }
                     }
                     RowLayout {
                         Layout.fillWidth: true
@@ -457,6 +632,25 @@ PanelWindow {
                         onClicked: shell.showPage("calendar")
                         onWheel: w => window.carouselOffset += w.angleDelta.y > 0 ? -1 : 1
                     }
+                }
+            }
+
+            Item {
+                anchors.fill: parent
+                visible: window.stateName === "media" && !window.player
+                Label {
+                    width: parent.width - 36
+                    y: 40
+                    text: Qt.formatDateTime(window.today, "ddd, MMM d")
+                    horizontalAlignment: Text.AlignHCenter
+                    color: window.muted
+                }
+                Action {
+                    anchors.right: parent.right
+                    anchors.verticalCenter: parent.verticalCenter
+                    glyph: "more"
+                    Accessible.name: "Island menu"
+                    onClicked: shell.showPage("controls")
                 }
             }
 
@@ -959,6 +1153,7 @@ PanelWindow {
                             spacing: 8
                             model: shell.history
                             delegate: Rectangle {
+                                id: historyEntry
                                 required property string app
                                 required property string title
                                 required property string message
@@ -974,18 +1169,18 @@ PanelWindow {
                                     width: parent.width - 24
                                     spacing: 5
                                     Label {
-                                        text: parent.parent.app + "  ·  " + parent.parent.time
+                                        text: historyEntry.app + "  ·  " + historyEntry.time
                                         color: window.muted
                                         font.pixelSize: Math.max(10, window.theme.fontSize - 3)
                                         width: parent.width
                                     }
                                     Label {
-                                        text: parent.parent.title
+                                        text: historyEntry.title
                                         font.weight: Font.Medium
                                         width: parent.width
                                     }
                                     Label {
-                                        text: parent.parent.message
+                                        text: historyEntry.message
                                         color: window.muted
                                         wrapMode: Text.Wrap
                                         maximumLineCount: 3
@@ -1108,7 +1303,7 @@ PanelWindow {
                 visible: window.stateName === "notice"
                 RowLayout {
                     Label {
-                        text: shell.notice?.appName || "Notification"
+                        text: (shell.notice?.appName || "Notification") + (shell.notices.length > 1 ? " · " + (shell.notices.length - 1) + " queued" : "")
                         color: window.accent
                         Layout.fillWidth: true
                     }
@@ -1157,7 +1352,7 @@ PanelWindow {
             Rectangle {
                 visible: shell.osdValue >= 0
                 Layout.fillWidth: true
-                height: 5
+                implicitHeight: 5
                 radius: 3
                 color: window.theme.border
                 Rectangle {

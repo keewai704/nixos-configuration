@@ -14,11 +14,38 @@ ShellRoot {
     property string page: ""
     property bool pinned: false
     property string targetScreen: ""
-    property var player: selectPlayer(Mpris.players.values)
+    property var players: Mpris.players.values
+    property string preferredPlayer: ""
+    property var player: selectPlayer(players, preferredPlayer)
+    readonly property var playerOptions: [
+        {
+            name: "Automatic",
+            key: ""
+        }
+    ].concat(players.filter(p => p.canPlay || p.isPlaying || p.trackTitle?.trim()).map(p => ({
+                name: p.identity,
+                key: p.dbusName
+            })))
+    onPlayersChanged: if (preferredPlayer && !players.some(p => p.dbusName === preferredPlayer))
+        preferredPlayer = ""
     readonly property var sink: Pipewire.defaultAudioSink
     readonly property var source: Pipewire.defaultAudioSource
-    property var notice: null
+    property var notices: []
+    // Keep arrival order in the queue while giving critical notifications the display.
+    readonly property var notice: notices.find(n => n.urgency === NotificationUrgency.Critical) || notices[0] || null
+    readonly property bool criticalNotice: notice?.urgency === NotificationUrgency.Critical
+    onCriticalNoticeChanged: if (criticalNotice)
+        noticeCollapsed = false
     property bool noticeCollapsed: false
+    property int noticeReaders: 0
+    property int unreadCount: 0
+    function recountUnread() {
+        let count = 0;
+        for (let i = 0; i < history.count; ++i)
+            if (history.get(i).unread)
+                count++;
+        unreadCount = count;
+    }
     property string osd: ""
     property real osdValue: -1
     property bool ready: false
@@ -32,8 +59,17 @@ ShellRoot {
         id: theme
     }
 
-    function selectPlayer(players) {
-        return players.find(p => p.isPlaying) || players.find(p => p.playbackState === MprisPlaybackState.Paused && p.trackTitle?.trim()) || null;
+    function selectPlayer(players, preferred) {
+        return players.find(p => preferred && p.dbusName === preferred) || players.find(p => p.isPlaying) || players.find(p => p.playbackState === MprisPlaybackState.Paused && p.trackTitle?.trim()) || null;
+    }
+    function seekTo(position) {
+        if (player?.canSeek && player.positionSupported && player.lengthSupported && player.length > 0 && Number.isFinite(position))
+            player.position = Math.max(0, Math.min(player.length, position));
+    }
+    function markHistoryRead() {
+        for (let i = 0; i < history.count; ++i)
+            history.setProperty(i, "unread", false);
+        recountUnread();
     }
 
     Desktop {
@@ -41,7 +77,12 @@ ShellRoot {
         testing: root.testing
         onFeedback: (message, value) => root.showOsd(message, value)
     }
-    onPageChanged: desktop.refresh(page)
+    onPageChanged: {
+        desktop.refresh(page);
+        if (page === "notifications")
+            markHistoryRead();
+        updateNoticeTimer();
+    }
 
     Core.Settings {
         id: preferences
@@ -53,13 +94,14 @@ ShellRoot {
     }
     SystemClock {
         id: clock
-        precision: SystemClock.Seconds
+        precision: SystemClock.Minutes
     }
     PwObjectTracker {
         objects: [root.sink, root.source]
     }
     ListModel {
         id: history
+        onCountChanged: root.recountUnread()
     }
     Timer {
         interval: 1500
@@ -75,19 +117,77 @@ ShellRoot {
         id: noticeTimer
         onTriggered: root.expireNotice()
     }
-    function expireNotice() {
-        const n = notice;
-        notice = null;
+    function updateNoticeTimer() {
         noticeTimer.stop();
-        if (n && n.tracked)
-            n.expire();
+        if (notice && notice.urgency !== NotificationUrgency.Critical && notice.expireTimeout !== 0 && !page && noticeReaders === 0) {
+            noticeTimer.interval = notice.expireTimeout > 0 ? Math.max(1000, notice.expireTimeout) : 6000;
+            noticeTimer.start();
+        }
+    }
+    onNoticeReadersChanged: updateNoticeTimer()
+    onNoticeChanged: {
+        noticeCollapsed = false;
+        // Reset the full viewing time when a queued notification reaches the front.
+        updateNoticeTimer();
+    }
+    function expireNotice() {
+        if (notice?.tracked)
+            notice.expire();
     }
     function dismissNotice() {
-        const n = notice;
-        notice = null;
-        noticeTimer.stop();
-        if (n && n.tracked)
-            n.dismiss();
+        if (notice?.tracked)
+            notice.dismiss();
+    }
+    function recordNotice(n) {
+        for (let i = history.count - 1; i >= 0; --i)
+            if (history.get(i).notificationId === n.id)
+                history.remove(i);
+        if (!n.transient) {
+            history.insert(0, {
+                notificationId: n.id,
+                app: n.appName,
+                title: n.summary,
+                message: n.body,
+                time: Qt.formatDateTime(clock.date, "HH:mm"),
+                unread: page !== "notifications"
+            });
+            if (history.count > 50)
+                history.remove(50, history.count - 50);
+        }
+        recountUnread();
+    }
+    function enqueueNotice(n) {
+        recordNotice(n);
+        n.tracked = true;
+        if (preferences.dnd && n.urgency !== NotificationUrgency.Critical) {
+            n.expire();
+            return;
+        }
+        if (notices.includes(n)) {
+            updateNoticeTimer();
+            return;
+        }
+        n.closed.connect(() => {
+            root.notices = root.notices.filter(item => item !== n);
+            if (!root.notice && root.page === "notice")
+                root.close();
+        });
+        // Quickshell updates replacements in place without emitting onNotification.
+        // Coalesce their property signals so history and priority see the whole update.
+        const refresh = () => {
+            if (!root.notices.includes(n))
+                return;
+            root.recordNotice(n);
+            if (preferences.dnd && n.urgency !== NotificationUrgency.Critical) {
+                n.expire();
+                return;
+            }
+            if (root.notice === n)
+                root.updateNoticeTimer();
+        };
+        for (const signal of [n.summaryChanged, n.bodyChanged, n.appNameChanged, n.transientChanged, n.urgencyChanged, n.expireTimeoutChanged])
+            signal.connect(() => Qt.callLater(refresh));
+        root.notices = notices.concat([n]);
     }
     function showPage(next) {
         targetScreen = Hyprland.focusedMonitor?.name || Quickshell.screens[0]?.name || "";
@@ -132,15 +232,6 @@ ShellRoot {
             root.showOsd(root.source.audio.muted ? "Mic muted" : "Mic on", root.source.audio.volume);
         }
     }
-    Connections {
-        target: root.notice
-        function onTrackedChanged() {
-            if (root.notice && !root.notice.tracked) {
-                root.notice = null;
-                noticeTimer.stop();
-            }
-        }
-    }
     // Test instances never compete with the desktop notification owner.
     Loader {
         active: !root.testing || Quickshell.env("ISLAND_TEST_NOTIFICATIONS") === "1"
@@ -150,34 +241,7 @@ ShellRoot {
                 actionsSupported: true
                 bodySupported: true
                 bodyMarkupSupported: false
-                onNotification: n => {
-                    n.tracked = true;
-                    for (let i = history.count - 1; i >= 0; --i)
-                        if (history.get(i).notificationId === n.id)
-                            history.remove(i);
-                    history.insert(0, {
-                        notificationId: n.id,
-                        app: n.appName,
-                        title: n.summary,
-                        message: n.body,
-                        time: Qt.formatDateTime(clock.date, "HH:mm")
-                    });
-                    if (history.count > 50)
-                        history.remove(50, history.count - 50);
-                    if (preferences.dnd && n.urgency !== NotificationUrgency.Critical) {
-                        n.expire();
-                        return;
-                    }
-                    if (root.notice && root.notice !== n)
-                        root.expireNotice();
-                    root.notice = n;
-                    root.noticeCollapsed = false;
-                    noticeTimer.stop();
-                    if (n.expireTimeout !== 0 && n.urgency !== NotificationUrgency.Critical) {
-                        noticeTimer.interval = n.expireTimeout < 0 ? 6000 : Math.max(1000, n.expireTimeout);
-                        noticeTimer.restart();
-                    }
-                }
+                onNotification: n => root.enqueueNotice(n)
             }
         }
     }
@@ -262,7 +326,10 @@ ShellRoot {
                 notch: preferences.notch,
                 player: root.player?.identity || "",
                 notice: root.notice?.summary || "",
+                pendingNotices: root.notices.length,
                 notifications: history.count,
+                unread: root.unreadCount,
+                preferredPlayer: root.preferredPlayer,
                 audio: !!root.sink?.audio,
                 desktopBusy: desktop.busy,
                 desktopError: desktop.error,

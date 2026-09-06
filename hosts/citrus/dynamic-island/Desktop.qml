@@ -18,15 +18,25 @@ Scope {
     property var powerProfiles: []
     property string error: ""
     property var queue: []
-    readonly property bool busy: worker.running || queue.length > 0
+    readonly property bool busy: worker.running || lockWorker.running || queue.length > 0
     signal feedback(string message, real value)
 
     function run(args) {
         if (testing && !Quickshell.env("ISLAND_TEST_ACTION"))
             return;
         error = "";
+        if (args[0] === "lock") {
+            runLock();
+            return;
+        }
         queue = queue.concat([args.map(String)]);
         pump();
+    }
+    function runLock() {
+        if (lockWorker.running)
+            return;
+        lockWorker.command = [testing ? Quickshell.env("ISLAND_TEST_ACTION") : (Quickshell.env("ISLAND_ACTION") || "island-action"), "lock"];
+        lockWorker.running = true;
     }
     function coalesceBrightness(result) {
         let target = result.percent;
@@ -124,7 +134,7 @@ Scope {
             id: output
         }
         stderr: StdioCollector {}
-        onExited: (code, status) => {
+        onExited: {
             try {
                 const result = JSON.parse(output.text);
                 desktop.receive(action, result);
@@ -139,6 +149,27 @@ Scope {
                 desktop.feedback(desktop.error, -1);
             }
             Qt.callLater(desktop.pump);
+        }
+    }
+    Process {
+        id: lockWorker
+        stdout: StdioCollector {
+            id: lockOutput
+        }
+        stderr: StdioCollector {
+            id: lockError
+        }
+        onExited: code => {
+            try {
+                const result = JSON.parse(lockOutput.text);
+                if (code !== 0 || !result.ok) {
+                    desktop.error = result.error?.message || result.error || "Desktop action failed: lock";
+                    desktop.feedback(desktop.error, -1);
+                }
+            } catch (e) {
+                desktop.error = lockError.text.trim() || "Desktop action failed: lock";
+                desktop.feedback(desktop.error, -1);
+            }
         }
     }
 }

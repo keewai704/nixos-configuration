@@ -21,7 +21,9 @@ No original private source or paid assets are included here.
 The pill expands into media, app search, calendar, notification history, controls,
 settings and a session menu. Audio uses PipeWire directly; playback uses MPRIS and
 honors each player's supported operations. Notification text is always plain text.
-History retains the most recent 50 notifications for the current session.
+History retains the most recent 50 non-transient notifications for the current
+session. The resting pill shows an unread count and microphone-mute indicator
+only when needed; opening History marks its entries as read.
 The four animated bars indicate playback; they are not a measured audio spectrum.
 
 Noctalia is no longer installed or started by the Citrus configuration. The Island
@@ -44,6 +46,28 @@ clipboard history, window switcher, calendar and desktop controls.
 The lock timing uses [Hypridle's lock-notification mode](https://wiki.hypr.land/Hypr-Ecosystem/hypridle/).
 The video's separate full settings app and whole-screen corner masks are outside
 this Island implementation.
+
+The media player's menu selects an application or Automatic mode. A chosen player
+stays selected until it disappears or Automatic is selected. Position and remaining
+time appear only when the player supplies them; seeking also requires `canSeek`.
+Position updates run once per second only while playing in the expanded media view.
+With no active or paused track, the expanded Island becomes a smaller clock/date
+panel. Album art crossfades over 200 ms and loads at its display pixel size; reduced
+motion disables the fade. The clock itself updates once per minute.
+
+Normal notifications first show a compact icon and summary; hover or click to read
+the details. Their timeout starts when they reach the front and pauses while reading
+or using another page. Critical notifications expand immediately and remain until
+dismissed or closed by the sender. They preempt regular notifications without
+destroying them; regular notifications then resume in arrival order. Leaving folds
+the details back into the preview. Replacements refresh the existing queue entry,
+history, urgency and timeout when their properties change. Quickshell 0.3.0 does not
+signal replacements with entirely unchanged properties, so those cannot reset the
+timeout. Transient notifications skip history, including when an existing entry is
+replaced as transient.
+
+Lock requests use an independent process, so they run immediately even while the
+Island is waiting for a screenshot selection or a slow hardware operation.
 
 ## Controls
 
@@ -84,6 +108,10 @@ The runtime check requires a local Wayland session. It uses an isolated D-Bus
 session, temporary settings and a copied configuration; it never replaces the
 running desktop's notification server. Test logs remain under `/tmp/island-check.*`.
 It checks hover exit/re-entry, popup handling, equal panel margins and list bounds.
+It also covers notification priority, replacements, transient history, unread/mic
+badges, player selection, seek guards, artwork crossfades and the compact idle view.
+Fake actions also verify that locking bypasses a slow capture
+and reports failures without disturbing the ordinary action queue.
 Set `ISLAND_CAPTURE_SCREEN=DP-1` to save screenshots of each page and media state.
 Run `python3 hosts/citrus/dynamic-island/check-native-hover.py` against the running
 island to check real pointer entry and exit. It briefly moves the pointer and

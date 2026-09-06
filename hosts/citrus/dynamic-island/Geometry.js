@@ -119,6 +119,12 @@ function dateOffset(date, days) {
     return result;
 }
 
+function formatDuration(seconds) {
+    var total = Math.floor(Math.max(0, finite(seconds, 0)));
+    var minutes = Math.floor(total / 60);
+    return minutes + ":" + String(total % 60).padStart(2, "0");
+}
+
 function monthCells(year, month) {
     var first = new Date(year, month, 1);
     var mondayOffset = (first.getDay() + 6) % 7;
