@@ -38,7 +38,7 @@ in
       theme = islandTheme;
       defaultWallpaper = config.stylix.image;
       settings = {
-        notch = false;
+        notch = true;
         hover = true;
         dnd = false;
         reducedMotion = false;
