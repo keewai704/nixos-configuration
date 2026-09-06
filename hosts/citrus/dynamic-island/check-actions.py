@@ -166,6 +166,29 @@ Display 2
     assert not any(call and call[0] == "brightnessctl" for call in calls)
 
     calls = []
+    original_run = actions.run_command
+    actions.run_command = failing_ddc
+    try:
+        try:
+            actions._brightness_set(80, bus_name="i2c-3")
+        except actions.ActionError as error:
+            assert error.code == "command_failed"
+        else:
+            raise AssertionError("failed explicit-bus write was accepted")
+        try:
+            actions._brightness_set(80, bus_name="3; echo invalid")
+        except actions.ActionError as error:
+            assert error.code == "invalid_bus"
+        else:
+            raise AssertionError("invalid bus was accepted")
+    finally:
+        actions.run_command = original_run
+    assert calls == [
+        ["ddcutil", "--bus", "3", "--terse", "getvcp", "10"],
+        ["ddcutil", "--bus", "3", "setvcp", "10", "80"],
+    ]
+
+    calls = []
 
     def fake_wallpaper_output(argv, **kwargs):
         calls.append(list(argv))

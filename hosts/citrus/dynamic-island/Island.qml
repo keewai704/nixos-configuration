@@ -299,7 +299,7 @@ PanelWindow {
                     width: Math.max(90, parent.width - 322)
                     spacing: 3
                     Label {
-                        text: window.player?.trackTitle || "Not playing"
+                        text: window.player?.trackTitle || (window.player?.isPlaying ? "Playing" : "Not playing")
                         font.weight: Font.DemiBold
                         width: parent.width
                         maximumLineCount: 2

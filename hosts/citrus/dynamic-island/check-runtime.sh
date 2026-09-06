@@ -25,13 +25,42 @@ island_temp=$(mktemp -d /tmp/island-check.XXXXXX)
 cp "$island_source"/{shell.qml,Island.qml,Geometry.js,Desktop.qml,DesktopPages.qml} "$island_temp/"
 export ISLAND_TEST=1 ISLAND_TEST_NOTIFICATIONS=1
 export ISLAND_TEST_SETTINGS="$island_temp/settings.ini" QT_QPA_PLATFORM=wayland
+python3 - "$island_temp/shell.qml" <<'PY'
+from pathlib import Path
+import sys
+path = Path(sys.argv[1])
+source = path.read_text()
+source = source.replace('function brightnessUp(): void {', '''function testBrightnessInputs(inputs: string): void {
+            for (const args of JSON.parse(decodeURIComponent(inputs)))
+                desktop.run(args);
+        }
+        function testMediaSelection(players: string): string {
+            return root.selectPlayer(JSON.parse(decodeURIComponent(players)))?.identity || "";
+        }
+        function brightnessUp(): void {''')
+path.write_text(source)
+PY
 cat > "$island_temp/actions" <<'PY'
 #!/usr/bin/env python3
-import json, sys
+import json, sys, time
+from pathlib import Path
 action = sys.argv[1]
 result = {"ok": True, "action": action}
 if action.startswith('brightness-'):
-    result.update(available=True, percent=30 if action == 'brightness-up' else 25)
+    directory = Path(__file__).parent
+    state = directory / 'brightness'
+    value = float(state.read_text()) if state.exists() else 25
+    with (directory / 'brightness-calls').open('a') as log:
+        log.write(action + '\n')
+    time.sleep(0.2)  # Deliberately slower than a keyboard repeat.
+    if (directory / 'fail-brightness').exists():
+        result.update(ok=False, error={'message': 'Display disconnected'})
+    else:
+        if action == 'brightness-up': value = min(100, value + 5)
+        elif action == 'brightness-down': value = max(0, value - 5)
+        elif action == 'brightness-set': value = float(sys.argv[2])
+        state.write_text(str(value))
+        result.update(available=True, percent=value, backend='ddc', bus=3)
 elif action.startswith('nightlight-'):
     result['enabled'] = False
 elif action.startswith('power-'):
@@ -81,6 +110,46 @@ state = json.load(open(sys.argv[1]))
 assert state['brightnessAvailable'] and state['brightness'] == 30, state
 assert state['clipboardCount'] == 1 and state['windowCount'] == 1, state
 assert not state['desktopBusy'] and not state['desktopError'], state
+PY
+python3 - "$island_temp" <<'PY'
+import json, subprocess, sys, time
+from pathlib import Path
+from urllib.parse import quote
+directory = Path(sys.argv[1])
+def ipc(*args):
+    return subprocess.check_output(['qs', '-p', str(directory), 'ipc', 'call', 'island', *args], text=True)
+def burst(inputs, expected, failure=False):
+    log = directory / 'brightness-calls'
+    before = len(log.read_text().splitlines())
+    assert not ipc('testBrightnessInputs', quote(json.dumps(inputs), safe='')).strip()
+    deadline = time.monotonic() + 3
+    while True:
+        state = json.loads(ipc('status'))
+        if not state['desktopBusy']: break
+        assert time.monotonic() < deadline, 'Brightness repeats kept a slow backlog'
+        time.sleep(0.05)
+    assert len(log.read_text().splitlines()) - before <= 2, 'Repeated unnecessary hardware calls'
+    assert bool(state['desktopError']) == failure, state
+    if not failure:
+        assert state['brightness'] == expected, state
+        assert float((directory / 'brightness').read_text()) == expected
+burst([['brightness-up']] * 20 + [['brightness-down']] * 2, 90)
+burst([['brightness-down']] * 25 + [['brightness-up']] * 2, 10)
+burst([['brightness-set', 95], ['brightness-up'], ['brightness-up'],
+       ['brightness-down'], ['windows-list'], ['brightness-set', 40],
+       ['brightness-up'], ['brightness-down']], 40)
+(directory / 'fail-brightness').touch()
+burst([['brightness-up']] * 20, None, failure=True)
+(directory / 'fail-brightness').unlink()
+burst([['brightness-up']], 45)
+idle = {'identity': 'Codex', 'isPlaying': False, 'playbackState': 0,
+        'trackTitle': '', 'trackArtUrl': 'file:///app-icon.png'}
+paused = {'identity': 'Music', 'isPlaying': False, 'playbackState': 2, 'trackTitle': 'Song'}
+playing = {'identity': 'Radio', 'isPlaying': True, 'playbackState': 1, 'trackTitle': ''}
+for players, expected in [([], ''), ([idle], ''), ([idle, paused], 'Music'),
+                          ([idle, paused, playing], 'Radio'),
+                          ([dict(idle, trackTitle='Old track')], '')]:
+    assert ipc('testMediaSelection', quote(json.dumps(players), safe='')).strip() == expected
 PY
 island_ipc close
 notify-send --app-name='Island check' --expire-time=1000 'Notification test' 'Plain text <b>stays plain</b>'

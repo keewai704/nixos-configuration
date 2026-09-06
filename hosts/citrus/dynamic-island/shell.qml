@@ -14,7 +14,7 @@ ShellRoot {
     property string page: ""
     property bool pinned: false
     property string targetScreen: ""
-    property var player: Mpris.players.values.find(p => p.isPlaying) || Mpris.players.values[0] || null
+    property var player: selectPlayer(Mpris.players.values)
     readonly property var sink: Pipewire.defaultAudioSink
     readonly property var source: Pipewire.defaultAudioSource
     property var notice: null
@@ -25,6 +25,10 @@ ShellRoot {
     property alias history: history
     property alias clock: clock
     property alias desktop: desktop
+
+    function selectPlayer(players) {
+        return players.find(p => p.isPlaying) || players.find(p => p.playbackState === MprisPlaybackState.Paused && p.trackTitle?.trim()) || null;
+    }
 
     Desktop {
         id: desktop

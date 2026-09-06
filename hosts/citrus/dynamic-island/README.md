@@ -52,6 +52,9 @@ this Island implementation.
 - `Super+D`: media; `Super+Space`: apps; `Super+I`: controls; `Super+N`: history.
 - `Super+Z` / `Super+Shift+Z`: Island settings; `Super+Alt+C`: session menu.
 - `Alt+[` / `Alt+]`: lower/raise brightness; hardware brightness keys also work.
+  Repeats and slider moves are folded into the latest target while the monitor is
+  busy, preserving direction changes at 0/100%. A continuous burst reuses the
+  detected DDC bus; failed requests discard queued repeats so the next press can retry.
 - `Super+Shift+Space`: wallpapers; `Super+V`: clipboard; `Alt+Tab`: windows.
 - `Super+Alt+L`: lock; `Print`: region; `Ctrl+Print`: active window; `Shift+Print`: all screens.
 - Media and volume hardware keys route to the Island, including while locked.

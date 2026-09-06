@@ -575,10 +575,21 @@ def _brightness_set(percent, display_name=None, bus_name=None):
     explicit = display_name is not None or bus_name is not None
     if explicit:
         with _ddc_lock():
-            displays = parse_ddc_detect(
-                _text(_output(["ddcutil", "detect", "--brief"], timeout=DDC_TIMEOUT))
-            )
-            selected = _select_display(displays, display_name, bus_name)
+            if bus_name is not None:
+                match = BUS_RE.fullmatch(bus_name) or re.fullmatch(r"(\d+)", bus_name)
+                if not match:
+                    raise ActionError(
+                        "invalid_bus", f"Invalid I2C bus target: {bus_name}"
+                    )
+                # A known bus needs no slow scan of every connected display.
+                selected = {"bus": int(match.group(1))}
+            else:
+                displays = parse_ddc_detect(
+                    _text(
+                        _output(["ddcutil", "detect", "--brief"], timeout=DDC_TIMEOUT)
+                    )
+                )
+                selected = _select_display(displays, display_name)
             if selected is None:
                 raise ActionError(
                     "ddc_unavailable", "The requested DDC display is not available"

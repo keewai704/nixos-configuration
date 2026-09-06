@@ -25,11 +25,37 @@ Scope {
         if (testing && !Quickshell.env("ISLAND_TEST_ACTION"))
             return;
         error = "";
-        // Coalesce slider updates while DDC is busy; discrete key presses retain order.
-        if (args[0] === "brightness-set")
-            queue = queue.filter(a => a[0] !== "brightness-set");
         queue = queue.concat([args.map(String)]);
         pump();
+    }
+    function coalesceBrightness(result) {
+        let target = result.percent;
+        let position = -1;
+        const remaining = [];
+        // Fold keys and slider moves in order, including reversals at 0/100%.
+        // Only the latest target needs another slow monitor transaction.
+        for (const args of queue) {
+            if (!args[0].startsWith("brightness-")) {
+                remaining.push(args);
+                continue;
+            }
+            if (position < 0)
+                position = remaining.length;
+            if (args[0] === "brightness-up")
+                target = Math.min(100, target + 5);
+            else if (args[0] === "brightness-down")
+                target = Math.max(0, target - 5);
+            else if (args[0] === "brightness-set")
+                target = Number(args[1]);
+        }
+        if (result.ok && result.available !== false && position >= 0 && target !== result.percent) {
+            const args = ["brightness-set", String(target)];
+            if (result.backend === "ddc" && result.bus !== undefined)
+                args.push("--bus", String(result.bus));
+            remaining.splice(position, 0, args);
+        }
+        // Failed hardware requests also discard stale repeats, so recovery is immediate.
+        queue = remaining;
     }
     function pump() {
         if (worker.running || !queue.length)
@@ -100,8 +126,15 @@ Scope {
         stderr: StdioCollector {}
         onExited: (code, status) => {
             try {
-                desktop.receive(action, JSON.parse(output.text));
+                const result = JSON.parse(output.text);
+                desktop.receive(action, result);
+                if (action.startsWith("brightness-"))
+                    desktop.coalesceBrightness(result);
             } catch (e) {
+                if (action.startsWith("brightness-"))
+                    desktop.coalesceBrightness({
+                        ok: false
+                    });
                 desktop.error = "Desktop action failed: " + action;
                 desktop.feedback(desktop.error, -1);
             }
