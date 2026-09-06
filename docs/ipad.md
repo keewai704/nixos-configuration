@@ -48,5 +48,13 @@ If listing the USB identifier works but full device information hangs, check
 the lock/trust prompt, then reconnect the cable with the iPad unlocked.
 `journalctl -u usbmuxd` shows the local USB transport status.
 
+On 2026-09-06, USB identification, pairing, and Developer Mode were verified
+with an iPad17,3 running iPadOS 27.0 (24A5430a). Sustained communication failed:
+later connections timed out, and reconnecting also produced
+`RX transfer stalled`. Screenshot capture and coordinate input remain
+unverified. Rebooting/reconnecting the iPad, another cable/port, an alternate
+USB daemon/library/configuration, and a persistent tunnel did not establish
+a stable connection. Those experimental configurations were not retained.
+
 Upstream references: [CLI recipes](https://doronz88.github.io/pymobiledevice3/guides/cli-recipes/)
 and [iOS 17+ tunnels](https://doronz88.github.io/pymobiledevice3/guides/ios17-tunnels/).
