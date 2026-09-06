@@ -8,7 +8,7 @@ setopt errexit
 (( $+functions[_zsh_highlight] ))
 (( $+functions[history-substring-search-up] ))
 (( $+functions[nix-shell] ))
-(( $+functions[starship_precmd] ))
+(( $+functions[prompt_starship_precmd] ))
 [[ $(bindkey '^[[A') == *history-substring-search-up* ]]
 [[ $(bindkey '^[[B') == *history-substring-search-down* ]]
 [[ -s ${STARSHIP_CONFIG:-${XDG_CONFIG_HOME:-$HOME/.config}/starship.toml} ]]
