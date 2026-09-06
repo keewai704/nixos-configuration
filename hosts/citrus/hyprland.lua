@@ -297,13 +297,6 @@ for workspace = 1, 10 do
     )
 end
 
-bind(main_mod .. " + S", hl.dsp.workspace.toggle_special("scratchpad"), "Toggle scratchpad")
-bind(
-    main_mod .. " + SHIFT + S",
-    hl.dsp.window.move({ workspace = "special:scratchpad" }),
-    "Move window to scratchpad"
-)
-
 bind(main_mod .. " + mouse_down", hl.dsp.focus({ workspace = "e+1" }), "Next workspace")
 bind(main_mod .. " + mouse_up", hl.dsp.focus({ workspace = "e-1" }), "Previous workspace")
 bind(main_mod .. " + mouse:272", hl.dsp.window.drag(), "Drag window", { mouse = true })
@@ -397,7 +390,7 @@ bind(main_mod .. " + F1", function()
             "Super+Alt+C: session    Super+Alt+L: lock",
             "Alt+[: brightness down    Alt+]: brightness up",
             "Super+F: fullscreen",
-            "Super+S: scratchpad    Alt+Tab: cycle windows",
+            "Alt+Tab: cycle windows",
             "Hold Super+Shift+E: log out",
         }, "\n"),
         timeout = 8000,
