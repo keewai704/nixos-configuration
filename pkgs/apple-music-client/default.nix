@@ -97,11 +97,12 @@ rustPlatform.buildRustPackage {
 
   desktopItems = [
     (makeDesktopItem {
-      name = "alac-room-native";
-      desktopName = "ALAC Room";
+      name = "siora";
+      desktopName = "Siora";
       comment = "Apple Music client";
-      exec = "alac-room-native";
-      icon = "multimedia-player";
+      exec = "siora";
+      icon = "siora";
+      startupWMClass = "siora";
       categories = [
         "AudioVideo"
         "Audio"
@@ -113,8 +114,8 @@ rustPlatform.buildRustPackage {
   postInstall = ''
     mkdir -p "$out/share/alac-room"
     cp -r amclient "$out/share/alac-room/"
-    mv "$out/bin/siora" "$out/bin/alac-room-native"
-    wrapProgram "$out/bin/alac-room-native" \
+    install -Dm644 assets/branding/meaning/01-continuum.svg "$out/share/icons/hicolor/scalable/apps/siora.svg"
+    wrapProgram "$out/bin/siora" \
       --prefix PATH : ${
         lib.makeBinPath [
           mpv
@@ -141,10 +142,10 @@ rustPlatform.buildRustPackage {
   '';
 
   meta = {
-    description = "Native Linux Apple Music client (ALAC Room)";
-    homepage = "https://github.com/keewai704/apple-music-client";
+    description = "Native Linux Apple Music client (Siora)";
+    homepage = "https://github.com/keewai704/siora";
     license = lib.licenses.mit;
-    mainProgram = "alac-room-native";
+    mainProgram = "siora";
     platforms = [ "x86_64-linux" ];
   };
 }
