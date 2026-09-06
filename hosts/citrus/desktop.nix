@@ -40,6 +40,8 @@ in
   home-manager.users.keewai = {
     imports = [ inputs.nixcord.homeModules.nixcord ];
 
+    home.packages = [ pkgs.yt-dlp ];
+
     # Reuse the system's Hazkey package and UWSM autostart; Stylix owns the UI.
     i18n.inputMethod = {
       inherit (config.i18n.inputMethod) enable type;

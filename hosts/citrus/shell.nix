@@ -14,7 +14,6 @@
       pkgs.duf
       pkgs.dust
       pkgs.fd
-      pkgs.yt-dlp
       pkgs.zsh-completions
     ];
 
