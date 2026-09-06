@@ -66,10 +66,23 @@ in
 
   environment.systemPackages = [
     braveOrigin
+    pkgs.bitwarden-desktop
     pkgs.pywalfox-native
   ];
 
-  programs.firefox.nativeMessagingHosts.packages = [ pywalfoxManifest ];
+  programs = {
+    firefox = {
+      nativeMessagingHosts.packages = [ pywalfoxManifest ];
+      # Linux passkeys are provided by browser extensions, not the desktop app.
+      policies.ExtensionSettings."{446900e4-71c2-419f-a6a7-df9c091e268b}" = {
+        installation_mode = "force_installed";
+        install_url = "https://addons.mozilla.org/firefox/downloads/latest/bitwarden-password-manager/latest.xpi";
+      };
+    };
+    chromium.extensions = [
+      "nngceckbapebfimnlniiiahkandclblb;https://clients2.google.com/service/update2/crx"
+    ];
+  };
 
   services.udev.packages = [ webhidUdevRules ];
 
@@ -138,6 +151,7 @@ in
         "x-scheme-handler/https" = [ "firefox.desktop" ];
         "x-scheme-handler/unknown" = [ "firefox.desktop" ];
         "x-scheme-handler/codex" = [ "chatgpt.desktop" ];
+        "x-scheme-handler/bitwarden" = [ "bitwarden.desktop" ];
       };
     };
   };

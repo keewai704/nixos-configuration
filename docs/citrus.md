@@ -221,12 +221,21 @@ and activation workflow. Fetching the private repository requires Git
 authentication with an account that has read access.
 
 Home Manager deploys the module's managed files into the default profile's
-`chrome/` directory. Bookmarks, history, extensions, and `prefs.js` remain
+`chrome/` directory. Bookmarks, history, other extensions, and `prefs.js` remain
 user-managed. Restart Firefox after applying browser-module changes.
 
 Brave Origin is also installed for sites that require Chromium behavior.
 `x-scheme-handler/codex` remains mapped to `chatgpt.desktop` so authentication
 and deep links return to the desktop application.
+
+Bitwarden Desktop is installed system-wide, with its URL handler registered.
+System browser policies install the official Bitwarden extension in Firefox
+and Chromium-based browsers, including Brave. Restart the browser and sign in
+to Bitwarden in each extension. In Settings → Notifications, keep “Ask to save
+and use passkeys” enabled. Vault credentials and extension settings remain
+user-managed. On Linux, [Bitwarden passkey autofill](https://bitwarden.com/help/storing-passkeys/)
+works through browser extensions; the desktop app does not provide passkeys
+system-wide to native apps or embedded browser views.
 
 The Nix-managed Pywalfox native messenger is registered in the wrapped Firefox
 package, and Home Manager publishes the shared Tokyo Night palette at
