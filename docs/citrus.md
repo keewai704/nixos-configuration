@@ -40,6 +40,16 @@ NVIDIA initrd modules. Hyprland identifies the primary display as
 
 ## Desktop
 
+`keewai` uses Zsh as the login shell, configured in `hosts/citrus/shell.nix`.
+Autosuggestions show history matches (accept with Right), syntax highlighting
+marks commands, and fzf provides Ctrl+R history search, Ctrl+T file search, and
+Alt+C directory search. Zoxide provides `z <name>` and interactive `zi` jumps.
+Tab completion includes yt-dlp's packaged definitions and pymobiledevice3's
+native Typer completion, which starts Python only when completing a command.
+After activation, run `zsh -i hosts/citrus/check-shell.zsh` to verify both
+completers and the plugins. Open a new terminal or run `exec zsh -l` to use Zsh
+in an existing Bash session.
+
 The session starts Hyprland through UWSM and greetd. Home Manager installs
 Noctalia v5 from the pinned nixpkgs input and runs it as a systemd user service
 for the graphical session. Hazkey is the default Fcitx5 input method. Thunar is

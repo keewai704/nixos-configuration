@@ -3,6 +3,12 @@
 {
   services.usbmuxd.enable = true;
 
+  # Typer's native completion protocol; run Python only when completing.
+  home-manager.users.keewai.programs.zsh.siteFunctions._pymobiledevice3 = ''
+    #compdef pymobiledevice3
+    eval "$(env _TYPER_COMPLETE_ARGS="''${words[1,$CURRENT]}" _PYMOBILEDEVICE3_COMPLETE=complete_zsh pymobiledevice3)"
+  '';
+
   # Nixpkgs 7.7.0 lacks CoreDevice touch input and has a broken pyimg4 dependency.
   environment.systemPackages = [
     (pkgs.writeShellApplication {

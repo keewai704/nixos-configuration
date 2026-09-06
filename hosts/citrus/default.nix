@@ -78,6 +78,7 @@ in
     ./fingerprint.nix
     ./hardware-configuration.nix
     ./ipad.nix
+    ./shell.nix
   ];
 
   networking.hostName = "citrus";
