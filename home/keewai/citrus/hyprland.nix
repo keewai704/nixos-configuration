@@ -17,6 +17,8 @@ let
     checkPhase = ''
       cp "$target" "$TMPDIR/check.lua"
       echo 'assert(hl.get_config("decoration:blur:variant") == 8, "acrylic blur must be enabled")' >> "$TMPDIR/check.lua"
+      echo 'assert(hl.get_config("debug:damage_tracking") == 1, "repaint changed monitors to avoid stale regions")' >> "$TMPDIR/check.lua"
+      echo 'assert(hl.get_config("debug:vfr") == true, "keep idle frame skipping enabled")' >> "$TMPDIR/check.lua"
       HOME="$TMPDIR" XDG_RUNTIME_DIR="$TMPDIR" ${lib.getExe pkgs.hyprland} --verify-config -c "$TMPDIR/check.lua"
     '';
   };

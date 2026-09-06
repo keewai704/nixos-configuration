@@ -33,6 +33,12 @@ hl.env("QT_QPA_PLATFORM", "wayland")
 hl.env("MOZ_ENABLE_WAYLAND", "1")
 
 hl.config({
+    debug = {
+        -- Avoid intermittent black/stale regions with NVIDIA and live blur.
+        -- Repaint the whole output when it changes, but retain idle frame skipping.
+        damage_tracking = "monitor",
+    },
+
     render = {
         cm_auto_hdr = 1, -- Switch to HDR for fullscreen HDR content.
     },

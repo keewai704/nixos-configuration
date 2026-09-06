@@ -158,6 +158,26 @@ After changing the driver, run `bash hosts/citrus/check-fingerprint.sh` locally
 with the screen unlocked and no finger on the sensor. It checks recognition,
 cancellation during initialization and scanning, and reopening the device.
 
+## Desktop rendering
+
+Hyprland uses `debug.damage_tracking = "monitor"`: when an output changes,
+it repaints the whole output instead of reusing unchanged pixel regions.
+This works around intermittent black patches, flicker, and stale content seen
+in ChatGPT and Firefox on the NVIDIA desktop. In the September 6, 2026 live
+comparison, the user reported no further artifacts after switching from the
+default partial repaint mode. The underlying driver/compositor cause is not
+yet confirmed.
+
+Acrylic blur, opacity rules, and display modes are preserved. Whole-output
+repainting costs more GPU work during updates; `debug.vfr` stays enabled so
+unchanged frames can still be skipped. The generated configuration check
+verifies both settings. Reconsider partial repainting after a compositor or
+driver fix has been tested with the same applications and acrylic backdrop.
+
+Check `hyprctl getoption debug:damage_tracking` for `int: 1`,
+`hyprctl getoption debug:vfr` for `bool: true`, and `hyprctl configerrors`
+for an empty result after activation.
+
 ## Steam, VRR, and HDR
 
 The AW3926QW runs at `5120x2160@165` with 10-bit SDR output (`cm = "srgb"`)
