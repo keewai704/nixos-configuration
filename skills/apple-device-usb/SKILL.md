@@ -30,23 +30,23 @@ timeout -k 3 20 pymobiledevice3 usbmux list
 
 Identify the device by its observed UDID, name, and connection type. If several
 devices are present and the intended one is unclear, ask the user. Set
-`PYMOBILEDEVICE3_UDID` to the selected identifier for every subsequent CLI
-invocation, including screenshots and gestures. Environment variables set in
-one shell tool call do not automatically persist into the next.
+`apple_udid` to that observed identifier in each shell tool call. The examples
+pass it as `PYMOBILEDEVICE3_UDID` to every device command and fail if it is unset.
+Shell variables do not automatically persist into the next tool call.
 
 Ask for unlocking and **Trust This Computer** only when needed. Then check:
 
 ```bash
-timeout -k 3 20 pymobiledevice3 amfi developer-mode-status
+PYMOBILEDEVICE3_UDID="${apple_udid:?}" timeout -k 3 20 pymobiledevice3 amfi developer-mode-status
 ```
 
-If Developer Mode is disabled, `pymobiledevice3 amfi reveal-developer-mode`
-reveals its entry. The user enables it in **Settings > Privacy & Security >
+If Developer Mode is disabled, run `amfi reveal-developer-mode` with the same
+device selector to reveal its entry. The user enables it in **Settings > Privacy & Security >
 Developer Mode**, restarts the device, and completes the on-device confirmation.
 Mount the Developer Disk Image once per device boot:
 
 ```bash
-pymobiledevice3 mounter auto-mount
+PYMOBILEDEVICE3_UDID="${apple_udid:?}" pymobiledevice3 mounter auto-mount
 ```
 
 The first mount may download an image; allow the download to finish. On iOS
@@ -59,14 +59,17 @@ instructions instead of treating this version's path as universal.
 ## Capture and inspect
 
 Use the user's absolute output path, or a fresh file under
-`/home/keewai/Pictures/apple-device`. For example, with the selected UDID set:
+`/home/keewai/Pictures/apple-device`. Capture to a previously nonexistent file;
+if the requested path already exists, use a fresh sibling and replace the
+original only when overwriting was requested. For example:
 
 ```bash
 mkdir -p /home/keewai/Pictures/apple-device
 apple_capture="/home/keewai/Pictures/apple-device/screen-$(date +%Y%m%d-%H%M%S).png"
-timeout -k 3 40 pymobiledevice3 developer dvt screenshot "$apple_capture"
-test -s "$apple_capture"
-pymobiledevice3 developer core-device get-display-info
+test ! -e "$apple_capture" || exit 1
+PYMOBILEDEVICE3_UDID="${apple_udid:?}" timeout -k 3 40 pymobiledevice3 developer dvt screenshot "$apple_capture"
+test -s "$apple_capture" || exit 1
+PYMOBILEDEVICE3_UDID="${apple_udid:?}" pymobiledevice3 developer core-device get-display-info
 ```
 
 Some CLI failures log `ERROR` but exit with status zero. Verify that a **new,
@@ -91,13 +94,15 @@ On the verified iPad17,3 in **landscapeLeft**, the working mapping is
 This was verified with two different targets, not just the screen center.
 Other device/orientation combinations were not tested: establish the mapping
 with a harmless, visibly verifiable target before consequential interaction.
+Choose a control away from the screen center, such as a Settings category,
+and confirm that the intended page opens in a fresh screenshot.
 Recompute after rotation, resolution changes, or a changed screen layout.
 Reject out-of-bounds targets rather than clamping them to another control.
 
 After assigning the calculated integer coordinates in the same shell call:
 
 ```bash
-timeout -k 3 30 pymobiledevice3 developer core-device universal-hid-service tap -- "$hid_x" "$hid_y"
+PYMOBILEDEVICE3_UDID="${apple_udid:?}" timeout -k 3 30 pymobiledevice3 developer core-device universal-hid-service tap -- "$hid_x" "$hid_y"
 ```
 
 Capture and inspect the result before the next dependent action. A successful
@@ -108,7 +113,7 @@ a setting is unnecessary.
 For a touch swipe or scroll, use **`drag`**, converting both endpoints:
 
 ```bash
-timeout -k 3 30 pymobiledevice3 developer core-device universal-hid-service drag --steps 30 --duration 0.6 -- "$hid_x1" "$hid_y1" "$hid_x2" "$hid_y2"
+PYMOBILEDEVICE3_UDID="${apple_udid:?}" timeout -k 3 30 pymobiledevice3 developer core-device universal-hid-service drag --steps 30 --duration 0.6 -- "$hid_x1" "$hid_y1" "$hid_x2" "$hid_y2"
 ```
 
 In 11.5.0 the command named `swipe` sends pointer motion **without touch
@@ -121,7 +126,7 @@ stream. Keep actions that depend on a new screen separated by visual checks.
 The Home button has its own working path:
 
 ```bash
-timeout -k 3 30 pymobiledevice3 developer core-device hid button home press
+PYMOBILEDEVICE3_UDID="${apple_udid:?}" timeout -k 3 30 pymobiledevice3 developer core-device hid button home press
 ```
 
 ## Diagnose without repeating failed experiments
