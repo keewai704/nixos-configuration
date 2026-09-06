@@ -28,4 +28,6 @@ in
   };
 
   security.pam.services.sshd.fprintAuth = false;
+  # Hyprlock talks to fprintd directly; keep PAM for parallel password auth.
+  security.pam.services.hyprlock.fprintAuth = false;
 }

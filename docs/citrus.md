@@ -146,7 +146,10 @@ fprintd-list "$USER"
 Enrollment takes 15 scans; lift and reposition the same finger between scans.
 The system stores templates under `/var/lib/fprint`, outside the Nix store and
 Git. Local PAM services support fingerprint authentication with password
-fallback, and Noctalia's lock screen uses fprintd directly. SSH fingerprint
+fallback. Hyprlock uses its native fprintd backend to start scanning immediately
+when locked, alongside password entry. Its PAM service uses password authentication
+only, avoiding a second fingerprint request competing for the reader. Touch the
+reader with an enrolled finger to unlock; no Enter key is needed. SSH fingerprint
 authentication is disabled. Existing automatic login and passwordless wheel
 sudo settings remain in effect; fingerprint login does not unlock GNOME
 Keyring's password-encrypted secrets.

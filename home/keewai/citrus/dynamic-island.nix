@@ -47,6 +47,7 @@ in
   programs.hyprlock = {
     enable = true;
     settings = {
+      auth.fingerprint.enabled = true;
       general = {
         hide_cursor = true;
         ignore_empty_input = true;
@@ -98,7 +99,7 @@ in
           inner_color = rgba colors.base01 "cc";
           font_color = rgb colors.base05;
           fade_on_empty = false;
-          placeholder_text = "<i>Enter password</i>";
+          placeholder_text = "<i>Password or fingerprint</i>";
           hide_input = false;
           position = "0, -80";
           halign = "center";

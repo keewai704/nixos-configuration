@@ -48,6 +48,9 @@ assert onlyAtHome citrus [
   "qt6ct"
 ];
 assert citrus.security.pam.services ? hyprlock;
+assert citrus.services.fprintd.enable && home.programs.hyprlock.settings.auth.fingerprint.enabled;
+assert !citrus.security.pam.services.hyprlock.fprintAuth;
+assert citrus.security.pam.services.hyprlock.rules.auth.unix.enable;
 assert !citrus.services.hypridle.enable;
 assert home.services.hypridle.enable;
 assert !home.i18n.inputMethod.fcitx5.systemd.enable;
