@@ -38,10 +38,10 @@
   security.sudo.wheelNeedsPassword = false;
 
   services = {
-    journald.extraConfig = ''
-      SystemMaxUse=512M
-      RuntimeMaxUse=128M
-    '';
+    journald.settings.Journal = {
+      SystemMaxUse = "512M";
+      RuntimeMaxUse = "128M";
+    };
 
     openssh = {
       enable = true;

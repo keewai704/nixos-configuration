@@ -12,14 +12,14 @@ let
     ;
   dataDir = minecraftDataDir;
   minecraftVersion = "26.2";
-  fabricLoaderVersion = "0.19.3";
+  fabricLoaderVersion = "0.19.5";
   fabricInstallerVersion = "1.1.2";
 
   fabricServerLauncher = pkgs.fetchurl {
     pname = "fabric-server-launcher";
     version = "mc.${minecraftVersion}-loader.${fabricLoaderVersion}-installer.${fabricInstallerVersion}";
     url = "https://meta.fabricmc.net/v2/versions/loader/${minecraftVersion}/${fabricLoaderVersion}/${fabricInstallerVersion}/server/jar";
-    hash = "sha256-MB+DqsNrI/K8ZMxYVg7fmFM8+qMOU68AK6lQx19BALQ=";
+    hash = "sha256-8dK6/Qs7l2MLDN2OiQzRAts9vmCHejilyBOqkp5pESc=";
   };
 
   minecraftServer = pkgs.fetchurl {

@@ -9,7 +9,7 @@
 let
   # Use the current official binary until the pinned nixpkgs package catches up.
   # This only repackages the binary for NixOS; Chromium is not compiled locally.
-  braveOriginVersion = "1.94.117";
+  braveOriginVersion = "1.94.121";
   braveOriginBase = pkgs.brave-origin.override {
     commandLineArgs = "--lang=ja --accept-lang=ja-JP,ja,en-US,en";
   };
@@ -21,7 +21,7 @@ let
         version = braveOriginVersion;
         src = pkgs.fetchurl {
           url = "https://github.com/brave/brave-browser/releases/download/v${braveOriginVersion}/brave-origin_${braveOriginVersion}_amd64.deb";
-          hash = "sha256-xY1483jABvhlaCVSh9yDAwrXQ08EoE++wQcJalTVvuY=";
+          hash = "sha256-D3bsXwBBOVQ1XBmw1mM7YYrEQYr+0zPhTs6YDGtrFJU=";
         };
       });
   braveOrigin = braveOriginCurrent.overrideAttrs (previous: {
@@ -53,7 +53,9 @@ assert lib.assertMsg (
     "enable"
     "languagePacks"
     "package"
+    "policies"
     "preferences"
+    "preferencesStatus"
   ]
 ) "my-firefox-nix changed its options; review the Home Manager adapter before updating.";
 {
@@ -71,11 +73,11 @@ assert lib.assertMsg (
     });
     inherit (firefox) languagePacks;
     nativeMessagingHosts = [ pywalfoxManifest ];
-    policies = {
+    policies = firefox.policies // {
       DisableAppUpdate = true;
       Preferences = builtins.mapAttrs (_: value: {
         Value = value;
-        Status = "locked";
+        Status = firefox.preferencesStatus;
       }) firefox.preferences;
     };
   };

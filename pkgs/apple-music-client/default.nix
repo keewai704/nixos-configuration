@@ -113,6 +113,7 @@ rustPlatform.buildRustPackage {
   postInstall = ''
     mkdir -p "$out/share/alac-room"
     cp -r amclient "$out/share/alac-room/"
+    mv "$out/bin/siora" "$out/bin/alac-room-native"
     wrapProgram "$out/bin/alac-room-native" \
       --prefix PATH : ${
         lib.makeBinPath [
