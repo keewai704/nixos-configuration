@@ -181,7 +181,7 @@ in
         Environment = [
           "ISLAND_ACTION=${lib.getExe islandAction}"
           "ISLAND_DEFAULT_WALLPAPER=${toString config.stylix.image}"
-          "ISLAND_THEME=${builtins.toJSON islandTheme}"
+          (builtins.toJSON "ISLAND_THEME=${builtins.toJSON islandTheme}")
         ];
         RestartSec = 2;
       };
