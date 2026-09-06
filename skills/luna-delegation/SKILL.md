@@ -1,11 +1,11 @@
 ---
 name: luna-delegation
-description: Delegate substantial, separable coding, research, document, or data support batches to gpt-5.6-luna at max reasoning while the primary agent keeps intent, architecture, integration, and final review; do not trigger for simple answers or one tiny command.
+description: Delegate substantial, separable coding, research, document, or data support batches to in-conversation gpt-5.6-luna sub-agents at max reasoning while the primary agent keeps intent, architecture, integration, and final review; do not trigger for simple answers or one tiny command.
 ---
 
 # Luna delegation
 
-Use max reasoning for the primary conversation as well. Keep the primary Astra
+Preserve the primary conversation's configured reasoning effort. Keep the primary Astra
 agent responsible for understanding user intent, choosing the architecture,
 handling difficult or ambiguous reasoning, integrating results, and performing
 the final review.
@@ -44,7 +44,7 @@ references, commands and check results, changed paths, and unresolved facts.
 Ask it to stop after that report unless the explicitly bounded batch includes
 the approved edits.
 
-For a qualifying batch, use a concrete request equivalent to:
+For a qualifying batch, call `collaboration.spawn_agent` directly with:
 
 ```json
 {
@@ -55,6 +55,18 @@ For a qualifying batch, use a concrete request equivalent to:
   "message": "Inspect <bounded inputs> for <specific objective>. Do not duplicate the primary agent's work or take live, remote, destructive, or external-communication actions. Return findings, exact references, check results, changed paths, and unresolved facts; stop when this batch is complete."
 }
 ```
+
+Keep delegation inside the current conversation's sub-agent tree. Use
+`collaboration.send_message`, `collaboration.followup_task`, and
+`collaboration.wait_agent` to coordinate with the sub-agent and collect its result.
+`fork_turns=none` starts the sub-agent without inherited history; it does not
+create a standalone user task.
+
+Do not substitute `create_thread`, `fork_thread`, or `send_message_to_thread`
+for sub-agent delegation. A separate user task requires an explicit request
+for a separate task; asking for a sub-agent does not authorize one. If
+`collaboration.spawn_agent` is unavailable, report that limitation and continue
+the work in the primary conversation without creating a separate task.
 
 Delegation does not change existing authorization, host boundaries, trust
 boundaries, or repository ownership. Do not have a sub-agent rebuild or alter a
