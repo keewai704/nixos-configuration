@@ -30,11 +30,11 @@
         "nixpkgs": "nixpkgs"
       },
       "locked": {
-        "lastModified": 1788678950,
-        "narHash": "sha256-aGv3O+5V0jAqwBNobdsFAU3vmDnIclsKFKo3c/zBihE=",
+        "lastModified": 1788685397,
+        "narHash": "sha256-Wdx/8ac5sPDhdF/dYFQnCTVF81XhVQZfDVJhJDbMxWs=",
         "ref": "main",
-        "rev": "1ecd586ecd68bb04bb9845f5b7c90c433e4cc191",
-        "revCount": 10,
+        "rev": "72fe9128d4e24ac5dbb71c9831cb9c0c988cfa69",
+        "revCount": 12,
         "type": "git",
         "url": "https://github.com/keewai704/apple-music-client.git"
       },
