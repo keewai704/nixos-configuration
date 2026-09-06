@@ -1,6 +1,6 @@
 {
   config,
-  lib,
+  inputs,
   pkgs,
   ...
 }:
@@ -24,37 +24,25 @@ let
   rgb = color: "rgb(${color})";
   rgba = color: alpha: "rgba(${color}${alpha})";
 
-  islandAction = pkgs.writeShellApplication {
-    name = "island-action";
-    runtimeInputs = with pkgs; [
-      brightnessctl
-      blueman
-      cliphist
-      ddcutil
-      grimblast
-      hyprland
-      hyprlock
-      hyprpaper
-      hyprsunset
-      networkmanagerapplet
-      pavucontrol
-      power-profiles-daemon
-      python3
-      wl-clipboard
-    ];
-    text = ''
-      export ISLAND_DEFAULT_WALLPAPER=${lib.escapeShellArg (toString config.stylix.image)}
-      exec python3 ${./dynamic-island/actions.py} "$@"
-    '';
-  };
+  islandPackage = config.home-manager.users.keewai.programs.dynamic-island.package;
+
 in
 {
+  imports = [ inputs.dynamic-island.nixosModules.default ];
+  programs.dynamic-island.enable = true;
+
   home-manager.users.keewai = {
-    programs.quickshell = {
+    imports = [ inputs.dynamic-island.homeManagerModules.default ];
+    programs.dynamic-island = {
       enable = true;
-      activeConfig = "dynamic-island";
-      configs.dynamic-island = ./dynamic-island;
-      systemd.enable = true;
+      theme = islandTheme;
+      defaultWallpaper = config.stylix.image;
+      settings = {
+        notch = false;
+        hover = true;
+        dnd = false;
+        reducedMotion = false;
+      };
     };
 
     programs.hyprlock = {
@@ -124,24 +112,20 @@ in
     };
 
     services = {
-      cliphist = {
-        enable = true;
-        allowImages = true;
-      };
       hypridle = {
         enable = true;
         settings = {
           general = {
             inhibit_sleep = 3;
-            lock_cmd = "${lib.getExe islandAction} lock";
-            before_sleep_cmd = "${lib.getExe islandAction} lock";
+            lock_cmd = "${islandPackage}/bin/island-action lock";
+            before_sleep_cmd = "${islandPackage}/bin/island-action lock";
             after_sleep_cmd = "hyprctl dispatch dpms on";
             ignore_dbus_inhibit = false;
           };
           listener = [
             {
               timeout = 600;
-              on-timeout = "${lib.getExe islandAction} lock";
+              on-timeout = "${islandPackage}/bin/island-action lock";
             }
             {
               timeout = 660;
@@ -151,72 +135,6 @@ in
           ];
         };
       };
-      hyprpaper = {
-        enable = true;
-        settings = {
-          ipc = true;
-          splash = false;
-          wallpaper = [
-            {
-              monitor = "";
-              path = config.stylix.image;
-            }
-          ];
-        };
-      };
-      hyprpolkitagent.enable = true;
-      network-manager-applet.enable = true;
-      hyprsunset = {
-        enable = true;
-        extraArgs = [ "--identity" ];
-      };
     };
-
-    systemd.user.services.quickshell = {
-      Unit = {
-        After = [ "graphical-session.target" ];
-        PartOf = [ "graphical-session.target" ];
-      };
-      Service = {
-        Environment = [
-          "ISLAND_ACTION=${lib.getExe islandAction}"
-          "ISLAND_DEFAULT_WALLPAPER=${toString config.stylix.image}"
-          (builtins.toJSON "ISLAND_THEME=${builtins.toJSON islandTheme}")
-        ];
-        RestartSec = 2;
-      };
-    };
-
-    systemd.user.services.island-wallpaper-restore = {
-      Unit = {
-        Description = "Restore the selected Dynamic Island wallpaper";
-        After = [ "hyprpaper.service" ];
-        Wants = [ "hyprpaper.service" ];
-        PartOf = [
-          "graphical-session.target"
-          "hyprpaper.service"
-        ];
-      };
-      Service = {
-        Type = "oneshot";
-        ExecStart = "${lib.getExe islandAction} wallpaper-restore";
-        RemainAfterExit = true;
-        # Hyprpaper's simple service starts before its IPC socket is ready.
-        Restart = "on-failure";
-        RestartSec = 1;
-      };
-      Install.WantedBy = [ "graphical-session.target" ];
-    };
-
-    home.packages = [
-      islandAction
-      (pkgs.writeShellApplication {
-        name = "islandctl";
-        runtimeInputs = [ pkgs.quickshell ];
-        text = ''
-          exec qs -c dynamic-island ipc call island "''${@:-toggle}"
-        '';
-      })
-    ];
   };
 }

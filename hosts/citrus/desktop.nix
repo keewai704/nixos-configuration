@@ -8,14 +8,7 @@
 
 let
   chatgptDesktop = pkgs.callPackage ../../pkgs/chatgpt-desktop { };
-  islandI2cRules = pkgs.writeTextFile {
-    name = "island-i2c-udev-rules";
-    destination = "/lib/udev/rules.d/70-island-i2c.rules";
-    text = ''
-      # Apply the seat ACL before systemd's late seat rule runs.
-      KERNEL=="i2c-[0-9]*", TAG+="uaccess"
-    '';
-  };
+
 in
 {
   nixpkgs.config.allowUnfreePredicate =
@@ -37,12 +30,6 @@ in
     pkgs.pavucontrol
     pkgs.xarchiver
   ];
-
-  hardware.i2c.enable = true;
-  services.udev.packages = [ islandI2cRules ];
-  programs.hyprlock.enable = true;
-  security.pam.services.hyprlock = { };
-  services.power-profiles-daemon.enable = true;
 
   home-manager.users.keewai = {
     imports = [ inputs.nixcord.homeModules.nixcord ];

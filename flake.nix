@@ -4,6 +4,11 @@
   inputs = {
     nixpkgs.url = "github:NixOS/nixpkgs/nixos-unstable";
 
+    dynamic-island = {
+      url = "git+file:///home/keewai/dynamic-island";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
+
     my-firefox-nix.url = "git+https://github.com/keewai704/my-firefox-nix.git";
 
     agenix = {

@@ -169,6 +169,26 @@
         "type": "github"
       }
     },
+    "dynamic-island": {
+      "inputs": {
+        "nixpkgs": [
+          "nixpkgs"
+        ]
+      },
+      "locked": {
+        "lastModified": 1788667716,
+        "narHash": "sha256-zFJfjun7VcbtbaWm4MlPjyvsHa/RL9X+xAtfv9HFmd0=",
+        "ref": "refs/heads/main",
+        "rev": "91bafcda61e9c906a3b35fd84581328025a0d391",
+        "revCount": 1,
+        "type": "git",
+        "url": "file:///home/keewai/dynamic-island"
+      },
+      "original": {
+        "type": "git",
+        "url": "file:///home/keewai/dynamic-island"
+      }
+    },
     "firefox-gnome-theme": {
       "flake": false,
       "locked": {
@@ -930,6 +950,7 @@
       "inputs": {
         "agenix": "agenix",
         "chaotic": "chaotic",
+        "dynamic-island": "dynamic-island",
         "home-manager": "home-manager_2",
         "hyprland": "hyprland",
         "mcp-servers-nix": "mcp-servers-nix",
