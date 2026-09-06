@@ -103,8 +103,8 @@ let
 
   codexSystemConfig = (pkgs.formats.toml { }).generate "chatgpt-desktop-mcp.toml" {
     model = "gpt-6-astra";
-    model_reasoning_effort = "high";
-    plan_mode_reasoning_effort = "high";
+    model_reasoning_effort = "medium";
+    plan_mode_reasoning_effort = "medium";
     features = {
       context_management = {
         experimental_mode = true;
@@ -118,7 +118,7 @@ let
     };
 
     developer_instructions = ''
-      通常会話とPlanモードの推論設定は常にhighを使うこと。主担当のGPT-6 Astraが問題の理解、難しい設計判断、結果の統合、最終レビューまで責任を持つこと。クレジット節約のために明示された要件、品質、安全性、必要な検証を省略しないこと。
+      通常会話とPlanモードの推論設定はデフォルトでmediumを使うこと。主担当のGPT-6 Astraが問題の理解、難しい設計判断、結果の統合、最終レビューまで責任を持つこと。クレジット節約のために明示された要件、品質、安全性、必要な検証を省略しないこと。
 
       NixOSでは個人向けアプリとユーザー設定にHome Managerのprograms、services、home.packagesを優先すること。リポジトリの配置規約を確認し、ユーザー設定とシステム設定を対応するファイルに分けること。移動前に固定されたNixOSとHome Managerの統合モジュールを確認し、udev、PAM、polkit、D-Bus、kernel、boot、daemon、hardware、system fontsなどのシステム統合が必要ならNixOS側に残すこと。クライアントをHome Managerで提供できる場合は機能を保ったまま移動し、理由を記録すること。home.packagesはサンドボックス化や実行権限の低下を行わない。この構成はNixOS統合なのでデプロイにroot権限が必要だが、Home Managerのactivationサービスは対象ユーザーで動作することを区別すること。
 
