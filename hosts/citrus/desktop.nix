@@ -138,6 +138,7 @@ in
       font = {
         package = lib.mkForce pkgs.hackgen-nf-font;
         name = lib.mkForce "HackGen Console NF";
+        size = lib.mkForce 12;
       };
     };
 
