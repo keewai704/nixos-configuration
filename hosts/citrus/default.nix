@@ -77,6 +77,7 @@ in
     ./dynamic-island.nix
     ./fingerprint.nix
     ./hardware-configuration.nix
+    ./ipad.nix
   ];
 
   networking.hostName = "citrus";
