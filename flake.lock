@@ -195,11 +195,11 @@
         ]
       },
       "locked": {
-        "lastModified": 1788678898,
-        "narHash": "sha256-aDDeKZ2MwMqlkv462VsYHeJkzjqw5FNx/LRPhuUB64Q=",
+        "lastModified": 1788678936,
+        "narHash": "sha256-ps2aMCDWfqoeMO4fM5PjZQNl4iCuYoixPYCksBsnP/4=",
         "ref": "main",
-        "rev": "cbb7c8f5af0a98018ec2053f4c739d7dcecfcec6",
-        "revCount": 14,
+        "rev": "1cb9cbe0f208b8acd25346faf9c384d5e9fb6159",
+        "revCount": 15,
         "type": "git",
         "url": "file:///home/keewai/dynamic-island"
       },
