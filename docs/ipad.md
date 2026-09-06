@@ -1,14 +1,15 @@
 # iPad access from citrus
 
-`hosts/citrus/ipad.nix` enables `usbmuxd` and installs a system-wide
-`pymobiledevice3` launcher pinned to 11.4.2. Nix owns the launcher, Python,
-compiler, and native libraries; uv owns the Python packages in the user's
-tool environment (`~/.local/share/uv/tools/pymobiledevice3` for `keewai`).
-The launcher reuses that persistent installation and can download a cached
-environment if it is absent. Python dependencies are outside the Nix store;
-only the top-level pymobiledevice3 version is pinned.
+`hosts/citrus/ipad.nix` enables `usbmuxd`.
+`home/keewai/citrus/ipad.nix` installs the personal `pymobiledevice3` launcher,
+currently pinned to 11.5.0. Nix owns the launcher, Python, compiler, and native
+libraries; uv resolves and caches the Python packages in the user's environment.
+Python dependencies are outside the Nix store; only the top-level
+pymobiledevice3 version is pinned.
 
-Connect the iPad by USB, unlock it, and accept **Trust This Computer**.
+On citrus, use the **rear DP-capable USB-C port**. Connect the iPad, unlock it,
+and accept **Trust This Computer**. This port was verified working; other
+tested ports shared a failing USB controller path (see below).
 
 ```sh
 pymobiledevice3 version
@@ -33,10 +34,15 @@ pymobiledevice3 developer dvt screenshot ~/Pictures/ipad/screen.png
 pymobiledevice3 developer core-device get-display-info
 ```
 
-Coordinate taps use unsigned normalized coordinates: top-left `(0, 0)` to
-bottom-right `(65535, 65535)`. Inspect a current screenshot before tapping.
-For a pixel coordinate `(x, y)` in an image of width `w` and height `h`, the
-upstream conversion is `round(x * 65535 / w)`, `round(y * 65535 / h)`.
+Coordinate taps use unsigned normalized coordinates in the digitizer's native
+orientation. The CLI does **not** rotate them to match the screenshot.
+Inspect a current screenshot and `get-display-info` before tapping.
+
+For a screenshot pixel `(x, y)` in an image of width `w` and height `h`, first
+calculate `u = round(x * 65535 / w)` and `v = round(y * 65535 / h)`.
+On the verified iPad17,3 in **`landscapeLeft`**, send **`(65535 - v, u)`**.
+Sending `(u, v)` directly missed the target. Other orientations were not tested;
+do not reuse the landscape mapping after rotating the device.
 
 ```sh
 # Example: tap the screen center (only run when the target is safe).
@@ -48,13 +54,28 @@ If listing the USB identifier works but full device information hangs, check
 the lock/trust prompt, then reconnect the cable with the iPad unlocked.
 `journalctl -u usbmuxd` shows the local USB transport status.
 
-On 2026-09-06, USB identification, pairing, and Developer Mode were verified
-with an iPad17,3 running iPadOS 27.0 (24A5430a). Sustained communication failed:
-later connections timed out, and reconnecting also produced
-`RX transfer stalled`. Screenshot capture and coordinate input remain
-unverified. Rebooting/reconnecting the iPad, another cable/port, an alternate
-USB daemon/library/configuration, and a persistent tunnel did not establish
-a stable connection. Those experimental configurations were not retained.
+On 2026-09-06, an iPad17,3 running iPadOS 27.0 (24A5430a) repeatedly produced
+`RX transfer stalled` on the chipset controller (`bus 6`, `xhci-pci-prom21`).
+Reboots, different cables/ports on that controller, and temporary USB software
+variants did not fix it. Moving to the rear DP-capable USB-C port changed the
+controller to `bus 1` and worked with **stock usbmuxd**, including after restoring
+the desktop's GVFS automatic device detection. Both paths reported 480 Mbps.
+This isolates the failing controller/port path; the precise hardware or driver
+cause remains undetermined. Bus numbers are observations from this session,
+not stable port identifiers across every boot.
+
+Verified on the working port:
+
+- Developer Mode and Developer Disk Image mounting.
+- Repeated 3200×2400 screenshots and the Home button command.
+- Coordinate taps opening Settings and then selecting General, confirmed by
+  screenshots. The first tap used `(30563, 46636)` after the landscape transform;
+  these numbers are evidence from that screen layout, not reusable targets.
+
+Screenshots were saved locally under `~/Pictures/ipad/`, including
+`before-tap.png` and `verified-coordinate-tap.png`; they are not stored in Git.
+Temporary daemon variants, GVFS masking, and firewall allowances were removed.
+No persistent root tunnel or USB software patch is required.
 
 Upstream references: [CLI recipes](https://doronz88.github.io/pymobiledevice3/guides/cli-recipes/)
 and [iOS 17+ tunnels](https://doronz88.github.io/pymobiledevice3/guides/ios17-tunnels/).
