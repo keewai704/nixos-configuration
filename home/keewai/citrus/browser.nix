@@ -62,7 +62,6 @@ assert lib.assertMsg (
   imports = [ upstream.home-manager.users.keewai ];
   home.packages = [
     braveOrigin
-    (pkgs.callPackage ../../../pkgs/helium { })
     pkgs.pywalfox-native
   ];
   programs.firefox = {

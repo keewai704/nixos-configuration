@@ -356,12 +356,6 @@ These are intentionally excluded from the interactive root counts above.
 
 ## Migration decisions
 
-- **Helium is Home Manager-owned.** `home/keewai/citrus/browser.nix` installs
-  the pinned official Linux AppImage through `pkgs/helium`, including its
-  desktop launcher. It uses the existing desktop/graphics integration and
-  needs no additional system service or privileged wrapper. Updates are
-  managed by the Nix package version and hash.
-
 - **Keep personal applications and user CLI tools in Home Manager.** The
   direct citrus roots are now declared under `home/keewai/common.nix` and
   `home/keewai/citrus/`: Apple Music/auth, ChatGPT Desktop, Bitwarden
