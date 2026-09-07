@@ -13,7 +13,7 @@
     --text-5: #${colors.base03};
     --bg-1: #${colors.base02};
     --bg-2: #${colors.base01};
-    --bg-3: color-mix(in srgb, #${colors.base00}, black 15%);
+    --bg-3: color-mix(in srgb, #${colors.base00}, #${colors.base01} 50%);
     --bg-4: #${colors.base00};
     --hover: color-mix(in srgb, var(--text-3), transparent 90%);
     --active: color-mix(in srgb, var(--text-3), transparent 80%);

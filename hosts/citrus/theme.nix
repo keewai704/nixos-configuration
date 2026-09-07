@@ -50,27 +50,27 @@ in
     wallpaper
     ;
 
-  # A dimmer Tokyo Night palette shared by Stylix and desktop consumers.
+  # Pure black with cool gray surfaces and softened Tokyo Night accents.
   base16Scheme = {
-    scheme = "Tokyo Night Dim";
-    slug = "tokyo-night-dim";
+    scheme = "Tokyo Night Black";
+    slug = "tokyo-night-black";
     author = "folke, keewai";
-    base00 = "14151e";
-    base01 = "202435";
-    base02 = "303650";
-    base03 = "565f89";
-    base04 = "99a1c2";
-    base05 = "adb6dd";
-    base06 = "7bc7e6";
-    base07 = "a2e0df";
-    base08 = "de6a80";
-    base09 = "e68e5a";
-    base0A = "ca9e5e";
-    base0B = "8eba5f";
-    base0C = "71bae6";
-    base0D = "6e92de";
-    base0E = "a88bde";
-    base0F = "c54444";
+    base00 = "000000";
+    base01 = "141518";
+    base02 = "2a2c33";
+    base03 = "7c8192";
+    base04 = "a4a9b8";
+    base05 = "c0c5d4";
+    base06 = "d7dbe5";
+    base07 = "eceef4";
+    base08 = "d98294";
+    base09 = "d99a73";
+    base0A = "ccb078";
+    base0B = "a3bc82";
+    base0C = "86bebc";
+    base0D = "829fd9";
+    base0E = "b19bd9";
+    base0F = "c77e86";
   };
 
   icon = {

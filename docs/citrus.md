@@ -71,8 +71,9 @@ for the graphical session. Hazkey is the default Fcitx5 input method. Thunar is
 the directory handler and is paired with GVfs, Tumbler, and Xarchiver without
 installing a full desktop environment.
 The community-maintained [Stylix](https://github.com/nix-community/stylix)
-module applies the faithful Tokyo Night Base16 palette to supported NixOS and
-Home Manager targets. It owns GTK3/4, Qt5/6 through Base16 Kvantum, Kitty, the
+module applies the Tokyo Night Black Base16 palette: a pure `#000000` background,
+cool gray surfaces, soft gray text, and muted Tokyo Night accents, shared by
+supported NixOS and Home Manager targets. It owns GTK3/4, Qt5/6 through Base16 Kvantum, Kitty, the
 virtual console, and Brave's browser theme color. Neutral dark Colloid icons
 and cursors remain the system-wide choice.
 
