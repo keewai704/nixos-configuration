@@ -132,6 +132,16 @@ hl.config({
     },
 })
 
+-- Brave Origin's window.open popups initially have an untitled document.
+-- The same initial title also matches explicitly opened blank windows.
+hl.window_rule({
+    match = {
+        class = "^brave-origin$",
+        initial_title = "^(無題|Untitled) - Brave Origin$",
+    },
+    float = true,
+})
+
 -- XWayland uses Steam app IDs; native Wayland Proton windows expose an xdg tag.
 hl.window_rule({ match = { class = "^steam_app_[0-9]+$" }, tag = "+proton-game" })
 hl.window_rule({ match = { xdg_tag = "^proton-game$" }, tag = "+proton-game" })
