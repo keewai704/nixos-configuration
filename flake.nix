@@ -11,8 +11,6 @@
       inputs.nixpkgs.follows = "nixpkgs";
     };
 
-    my-firefox-nix.url = "git+https://github.com/keewai704/my-firefox-nix.git?ref=main";
-
     agenix = {
       url = "github:ryantm/agenix";
       inputs.home-manager.follows = "home-manager";

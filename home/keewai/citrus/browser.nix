@@ -1,7 +1,5 @@
 {
   config,
-  osConfig,
-  inputs,
   lib,
   pkgs,
   ...
@@ -34,88 +32,11 @@ let
     '';
   });
 
-  pywalfoxManifest = pkgs.writeTextDir "lib/mozilla/native-messaging-hosts/pywalfox.json" (
-    builtins.toJSON {
-      name = "pywalfox";
-      description = "Automatically theme Firefox using the Nix-managed Pywal palette";
-      path = lib.getExe pkgs.pywalfox-native;
-      type = "stdio";
-      allowed_extensions = [ "pywalfox@frewacom.org" ];
-    }
-  );
-  # The pinned upstream exports a mixed NixOS module. Reuse its package and
-  # profile activation directly, translating only the browser option boundary.
-  upstream = inputs.my-firefox-nix.nixosModules.default { inherit lib pkgs; };
-  firefox = upstream.programs.firefox;
 in
-assert lib.assertMsg (
-  builtins.attrNames firefox == [
-    "autoConfig"
-    "enable"
-    "languagePacks"
-    "package"
-    "policies"
-    "preferences"
-    "preferencesStatus"
-  ]
-) "my-firefox-nix changed its options; review the Home Manager adapter before updating.";
 {
-  imports = [ upstream.home-manager.users.keewai ];
-  home.packages = [
-    braveOrigin
-    pkgs.pywalfox-native
-  ];
-  programs.firefox = {
-    enable = true;
-    package = firefox.package.override (old: {
-      extraPrefsFiles = (old.extraPrefsFiles or [ ]) ++ [
-        (pkgs.writeText "firefox-autoconfig.js" firefox.autoConfig)
-      ];
-    });
-    inherit (firefox) languagePacks;
-    nativeMessagingHosts = [ pywalfoxManifest ];
-    policies = firefox.policies // {
-      DisableAppUpdate = true;
-      Preferences = builtins.mapAttrs (_: value: {
-        Value = value;
-        Status = firefox.preferencesStatus;
-      }) firefox.preferences;
-    };
-  };
+  home.packages = [ braveOrigin ];
 
   xdg = {
-    cacheFile."wal/colors.json".text = builtins.toJSON {
-      wallpaper = osConfig.stylix.image;
-      alpha = "100";
-      special = with osConfig.lib.stylix.colors; {
-        background = "#${base00}";
-        foreground = "#${base05}";
-        cursor = "#${base05}";
-      };
-      colors = builtins.listToAttrs (
-        lib.imap0 (index: color: lib.nameValuePair "color${toString index}" "#${color}") (
-          with osConfig.lib.stylix.colors;
-          [
-            base00
-            base08
-            base0B
-            base0A
-            base0D
-            base0E
-            base0C
-            base05
-            base03
-            base08
-            base0B
-            base0A
-            base0D
-            base0E
-            base0C
-            base07
-          ]
-        )
-      );
-    };
     configFile."mimeapps.list".force = true;
     # ChatGPT registers regular Brave only. Follow its generated manifest so
     # Origin also receives native-host path updates from the Browser plugin.
@@ -145,12 +66,12 @@ assert lib.assertMsg (
     mimeApps = {
       enable = true;
       defaultApplications = {
-        "application/xhtml+xml" = [ "firefox.desktop" ];
-        "text/html" = [ "firefox.desktop" ];
-        "x-scheme-handler/about" = [ "firefox.desktop" ];
-        "x-scheme-handler/http" = [ "firefox.desktop" ];
-        "x-scheme-handler/https" = [ "firefox.desktop" ];
-        "x-scheme-handler/unknown" = [ "firefox.desktop" ];
+        "application/xhtml+xml" = [ "brave-origin.desktop" ];
+        "text/html" = [ "brave-origin.desktop" ];
+        "x-scheme-handler/about" = [ "brave-origin.desktop" ];
+        "x-scheme-handler/http" = [ "brave-origin.desktop" ];
+        "x-scheme-handler/https" = [ "brave-origin.desktop" ];
+        "x-scheme-handler/unknown" = [ "brave-origin.desktop" ];
         "x-scheme-handler/codex" = [ "chatgpt.desktop" ];
       };
     };

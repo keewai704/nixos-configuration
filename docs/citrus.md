@@ -92,11 +92,9 @@ Only managed configuration files are linked, leaving dictionaries and other
 Fcitx5 settings writable. Home Manager's
 Wayland input-method integration also supplies GTK's X11 fallback and the
 Kitty/SDL input-module variables without forcing a global GTK input module.
-Stylix's Firefox target stays disabled to leave the `my-firefox-nix` profile
-styling under the browser module's control.
 
 GTK applications such as Thunar and Xarchiver inherit it directly, while
-Firefox, Brave, and ChatGPT receive the shared dark desktop preference.
+Brave Origin and ChatGPT receive the shared dark desktop preference.
 Noctalia, GTK/Qt, and Fcitx5 share Stylix's Noto Sans CJK JP sans-serif font;
 Fcitx5's Classic UI uses the rounded panel generated from the same palette.
 
@@ -246,35 +244,14 @@ requires the X11 driver and DXVK.
 
 ## Browsers and URL handlers
 
-Firefox is the default browser for HTTP, HTTPS, HTML, and unknown URL schemes.
-
-The `my-firefox-nix` flake input supplies its Sine/Natsumi customization, six
-marketplace mods, and Japanese localization. Their source and update
-instructions live in
-[`keewai704/my-firefox-nix`](https://github.com/keewai704/my-firefox-nix).
-The flake fetches it from `git+https://github.com/keewai704/my-firefox-nix.git`.
-Commit and push changes to that repository's `main` branch, then run
-`nix flake update my-firefox-nix` here before following the normal validation
-and activation workflow. Fetching the private repository requires Git
-authentication with an account that has read access.
-
-Home Manager deploys the module's managed files into the default profile's
-`chrome/` directory. Bookmarks, history, extensions, and `prefs.js` remain
-user-managed. Restart Firefox after applying browser-module changes.
-
-Brave Origin is also installed for sites that require Chromium behavior.
+Brave Origin is the sole configured browser and the default for HTTP, HTTPS,
+HTML, and unknown URL schemes. Home Manager installs it with Japanese language
+settings. Existing user browser profiles and bookmarks are not deleted.
 `x-scheme-handler/codex` remains mapped to `chatgpt.desktop` so authentication
 and deep links return to the desktop application.
 
 Bitwarden Desktop is installed through Home Manager. Its browser extensions and settings
 are user-managed; this configuration does not install or configure them.
-
-Home Manager registers the Pywalfox native messenger under
-`~/.mozilla/native-messaging-hosts/`, the supported Firefox user location,
-and publishes the shared Tokyo Night palette at
-`~/.cache/wal/colors.json`. The Pywalfox Firefox add-on, its settings, and its
-optional profile CSS remain user-managed; this configuration does not install
-or modify them.
 
 WebHID access is granted through vendor-scoped udev rules for the configured
 TwinStar keyboard and OpenMouse-compatible device vendors. The rules do not
@@ -426,9 +403,8 @@ rg -- '--st-background:' ~/.config/millennium/quick.css
 jq -e '.general.injectCSS and .themes.activeTheme == "Steam"' ~/.config/millennium/config.json
 xdg-mime query default x-scheme-handler/http
 xdg-mime query default x-scheme-handler/codex
-pywalfox --version
-jq -e '.colors | length == 16' ~/.cache/wal/colors.json
-jq -e '.name == "pywalfox"' ~/.mozilla/native-messaging-hosts/pywalfox.json
+brave-origin --version
+test "$(xdg-mime query default x-scheme-handler/https)" = brave-origin.desktop
 chatgpt --version
 cua-driver doctor
 codex mcp list

@@ -63,12 +63,8 @@ concrete integration requirement; see the complete [package audit](docs/package-
 `nix flake check` also checks the migrated package boundaries and user launch
 integration.
 
-Firefox's Sine/Natsumi configuration lives in
-[`keewai704/my-firefox-nix`](https://github.com/keewai704/my-firefox-nix).
-Citrus adapts its pinned `nixosModules.default` package settings and profile
-activation into Home Manager in `home/keewai/citrus/browser.nix`. The Git URL
-input remains pinned in `flake.lock`. Fetching this private repository
-requires Git authentication with an account that has read access.
+Citrus uses Brave Origin as its sole configured browser and default URL handler,
+managed by `home/keewai/citrus/browser.nix`.
 
 ## Hosts
 

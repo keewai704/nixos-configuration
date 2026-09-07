@@ -179,7 +179,6 @@ in
   stylix.targets = {
     font-packages.enable = true;
     fcitx5.enable = true;
-    firefox.enable = false;
     gtk = {
       enable = true;
       flatpakSupport.enable = false;

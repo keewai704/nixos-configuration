@@ -153,12 +153,11 @@ derivation supplies one.
 | `bitwarden-desktop-2026.8.0`, `pinentry-gnome3-1.3.2`, `island-bitwarden-setup` | [`home/keewai/citrus/bitwarden.nix`](../home/keewai/citrus/bitwarden.nix) |
 | `pymobiledevice3` | [`home/keewai/citrus/ipad.nix`](../home/keewai/citrus/ipad.nix) |
 | `ddcutil-2.2.7`, `grimblast-0.1-unstable-2026-06-30`, `network-manager-applet-1.36.0`, `pavucontrol-6.2`, `xarchiver-0.5.4.27` | [`home/keewai/citrus/desktop.nix`](../home/keewai/citrus/desktop.nix) |
-| `brave-origin-1.94.117`, `pywalfox-native-2.9.0` | [`home/keewai/citrus/browser.nix`](../home/keewai/citrus/browser.nix) |
+| `brave-origin-1.94.121` | [`home/keewai/citrus/browser.nix`](../home/keewai/citrus/browser.nix) |
 | `gws-0.22.5` | [`home/keewai/citrus/desktop.nix`](../home/keewai/citrus/desktop.nix) |
 | `hazkey-settings-0.2.1` | [`home/keewai/citrus/input-method.nix`](../home/keewai/citrus/input-method.nix) via `nix-hazkey.homeModules.hazkey` |
 | `git-2.55.0`, `ripgrep-15.2.0` | [`home/keewai/common.nix`](../home/keewai/common.nix) |
 | `fcitx5-with-addons-5.1.21`, `gtk3-immodule.cache` | Home Manager input-method/session modules |
-| `firefox-154.0` | [`home/keewai/citrus/browser.nix`](../home/keewai/citrus/browser.nix) through the pinned Home Manager adapter |
 | `hyprlock-0.9.6` | Home Manager `programs.hyprlock` |
 | `hypridle-0.1.8` | Home Manager `services.hypridle` and an explicit `home.packages` entry, preserving both the generated user unit and the command-line package |
 | `qt5ct-1.9`, `qt6ct-0.11` | Home Manager/Stylix Qt target |
@@ -180,11 +179,10 @@ evaluated `home.packages` root list.
 | [`home/keewai/citrus/ipad.nix`](../home/keewai/citrus/ipad.nix) | `pymobiledevice3` (the generated `_pymobiledevice3` completion root is listed below) |
 | [`home/keewai/citrus/desktop.nix`](../home/keewai/citrus/desktop.nix) | `apple-music-client-0.2.0-400b2b4`, `alac-room-auth-service-0.0.2-20260710`, `chatgpt-desktop-26.901.41123`, `brightnessctl-0.5.1`, `ddcutil-2.2.7`, `grimblast-0.1-unstable-2026-06-30`, `network-manager-applet-1.36.0`, `pavucontrol-6.2`, `yt-dlp-2026.08.19`, `gws-0.22.5`, `xarchiver-0.5.4.27`, `thunar-with-plugins-4.20.9`, `xfconf-4.20.0`, `noto-fonts-2026.08.01` |
 | [`home/keewai/citrus/codex.nix`](../home/keewai/citrus/codex.nix) | `cua-driver-0.22.2`, `rtk-0.45.0` |
-| [`home/keewai/citrus/browser.nix`](../home/keewai/citrus/browser.nix) | `brave-origin-1.94.117`, `pywalfox-native-2.9.0` |
+| [`home/keewai/citrus/browser.nix`](../home/keewai/citrus/browser.nix) | `brave-origin-1.94.121` |
 | [`home/keewai/citrus/bitwarden.nix`](../home/keewai/citrus/bitwarden.nix) | `bitwarden-desktop-2026.8.0`, `pinentry-gnome3-1.3.2`, `island-bitwarden-setup` |
 | [`home/keewai/common.nix`](../home/keewai/common.nix) | `git-2.55.0`, `ripgrep-15.2.0` |
 | pinned nixcord module imported by [`home/keewai/citrus/desktop.nix`](../home/keewai/citrus/desktop.nix) | `legcord-1.3.0` |
-| pinned `my-firefox-nix` module adapted by [`home/keewai/citrus/browser.nix`](../home/keewai/citrus/browser.nix) | `firefox-154.0` |
 | Home Manager `programs.zsh` and site-function generation | `_pymobiledevice3`, `zsh-5.9.2`, `nix-zsh-completions-0.5.1-unstable-2025-12-12` |
 | Home Manager `programs.zoxide`, `starship`, `rbw`, `quickshell`, `man` | `zoxide-0.10.0`, `starship-1.26.0`, `rbw-1.15.0`, `quickshell-0.3.0`, `man-db-2.13.1` |
 | Home Manager `programs.kitty`, `hyprlock`, `fzf`, `eza`, `bat` | `kitty-0.48.2`, `hackgen-nf-font-2.10.0`, `hyprlock-0.9.6`, `fzf-0.74.3`, `eza-0.23.5`, `bat-0.26.1` |
@@ -229,12 +227,10 @@ xfconf-4.20.0
 noto-fonts-2026.08.01
 cua-driver-0.22.2
 rtk-0.45.0
-brave-origin-1.94.117
-pywalfox-native-2.9.0
+brave-origin-1.94.121
 bitwarden-desktop-2026.8.0
 pinentry-gnome3-1.3.2
 island-bitwarden-setup
-firefox-154.0
 xdg-user-dirs-0.20
 shared-mime-info-2.4
 dummy-xdg-mime-dirs1
@@ -361,7 +357,7 @@ These are intentionally excluded from the interactive root counts above.
   `home/keewai/citrus/`: Apple Music/auth, ChatGPT Desktop, Bitwarden
   Desktop/pinentry, brightnessctl, ddcutil, grimblast, NetworkManager applet,
   pavucontrol, yt-dlp, gws, xarchiver, the Thunar client, xfconf, Brave
-  Origin, Pywalfox, pymobiledevice3, CUA/RTK, shell tools, git, and ripgrep.
+  Origin, pymobiledevice3, CUA/RTK, shell tools, git, and ripgrep.
   This preserves user availability while keeping host modules focused on
   machine integration.
 
@@ -387,13 +383,9 @@ These are intentionally excluded from the interactive root counts above.
   including Thunar’s wrapped `ExecStart`. The package’s `share/systemd/user`
   unit starts the unwrapped binary and must not be used.
 
-- **Firefox is user-scoped with feature parity.** The [Home Manager Firefox
-  options](https://home-manager.dev/manual/unstable/options/home-manager/programs/firefox.html)
-  adapter
-  reuses the pinned Sine/Natsumi package settings, preserves the autoconfig
-  file, language packs, locked policies, and Pywalfox native host manifest.
-  The manifest is installed under the user Firefox native-messaging directory;
-  the pinned upstream input is selected from `main`.
+- **Brave Origin is the sole configured browser.** Home Manager owns its
+  package, Japanese launch settings, and default HTML/HTTP/HTTPS handlers.
+  Vendor-scoped WebHID rules remain in NixOS for hardware access.
 
 - **Hazkey and Fcitx5 are user-scoped.** The pinned Hazkey Home Manager module
   provides the settings package and user service; the Home Manager input-method
@@ -424,7 +416,6 @@ The root flake input and lock data are the reproducibility boundary:
 | Home Manager | [`github:nix-community/home-manager`](https://github.com/nix-community/home-manager/tree/99c9ec63390f1d8c14d95d9e8b17cc29cfbd4e11), rev `99c9ec63390f1d8c14d95d9e8b17cc29cfbd4e11` (`master`) |
 | Stylix | [`github:nix-community/stylix`](https://github.com/nix-community/stylix/tree/5e3809851f486e7fc7e84b40f174c74b60ecc784), rev `5e3809851f486e7fc7e84b40f174c74b60ecc784` |
 | dynamic-island | local [`/home/keewai/dynamic-island`](/home/keewai/dynamic-island), ref `main`, rev `1cb9cbe0f208b8acd25346faf9c384d5e9fb6159` |
-| my-firefox-nix | [`github:keewai704/my-firefox-nix`](https://github.com/keewai704/my-firefox-nix/tree/ea344d520247a1b2e97931b13248b3f846d2177f), ref `main`, rev `ea344d520247a1b2e97931b13248b3f846d2177f` |
 | nix-hazkey | [`github:aster-void/nix-hazkey`](https://github.com/aster-void/nix-hazkey/tree/24cb2926666836988e78ceebeb67ad6c5a387ac3), rev `24cb2926666836988e78ceebeb67ad6c5a387ac3` |
 | nixcord | [`github:4evy/nixcord`](https://github.com/4evy/nixcord/tree/cbedffd31cad83b2db80ea30f790cffefc4777f), rev `cbedffd31cad83b2db80ea30f790cffefc4777f` |
 | mcp-servers-nix | [`github:natsukium/mcp-servers-nix`](https://github.com/natsukium/mcp-servers-nix/tree/dbb2006631de0bfb1e1a976ee83ce3e84704480e), rev `dbb2006631de0bfb1e1a976ee83ce3e84704480e` |

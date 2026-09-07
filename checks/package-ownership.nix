@@ -29,8 +29,6 @@ assert onlyAtHome citrus [
   "pinentry-gnome3"
   "island-bitwarden-setup"
   "brave-origin"
-  "pywalfox-native"
-  "firefox"
   "brightnessctl"
   "ddcutil"
   "grimblast"
@@ -56,9 +54,23 @@ assert home.services.hypridle.enable;
 assert !home.i18n.inputMethod.fcitx5.systemd.enable;
 assert home.services.hazkey.enable;
 assert citrus.services.usbmuxd.enable && citrus.hardware.i2c.enable;
-assert home.programs.firefox.languagePacks == [ "ja" ];
-assert home.programs.firefox.policies.Preferences."intl.locale.requested".Value == "ja";
-assert home.programs.firefox.policies.Preferences."sine.auto-updates".Status == "locked";
+assert !home.programs.firefox.enable;
+assert lib.all
+  (name: !(builtins.elem name (names (home.home.packages ++ citrus.environment.systemPackages))))
+  [
+    "firefox"
+    "pywalfox-native"
+    "brave"
+    "chromium"
+  ];
+assert lib.all (mime: home.xdg.mimeApps.defaultApplications.${mime} == [ "brave-origin.desktop" ]) [
+  "application/xhtml+xml"
+  "text/html"
+  "x-scheme-handler/about"
+  "x-scheme-handler/http"
+  "x-scheme-handler/https"
+  "x-scheme-handler/unknown"
+];
 assert builtins.elem "noto-fonts" (names home.home.packages);
 assert !(builtins.elem "noto-fonts" (names citrus.fonts.packages));
 assert lib.all (
@@ -74,9 +86,10 @@ pkgs.runCommand "package-ownership" { } ''
     ${home.xdg.configFile."systemd/user/thunar.service".source})
   test "$(readlink -f "$thunar_command")" = "$(readlink -f ${home.home.path}/bin/Thunar)"
   test -f ${home.xdg.dataFile."systemd/user".source}/xfconfd.service
-  test -f ${home.home.file.".mozilla/native-messaging-hosts".source}/pywalfox.json
-  ${pkgs.gnugrep}/bin/grep -q 'chrome://userscripts/content/sine.sys.mjs' \
-    ${home.programs.firefox.finalPackage}/lib/firefox/mozilla.cfg
+  test -x ${home.home.path}/bin/brave-origin
+  test -f ${home.home.path}/share/applications/brave-origin.desktop
+  test ! -e ${home.home.path}/bin/firefox
+  test ! -e ${home.home.path}/bin/pywalfox
   test ! -e ${home.xdg.configFile.fcitx5.source}/profile
   test -f ${home.xdg.configFile."autostart/org.fcitx.Fcitx5.desktop".source}
   touch "$out"
