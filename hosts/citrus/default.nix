@@ -98,27 +98,7 @@ in
     enable = true;
     autoEnable = false;
     image = theme.wallpaper;
-    base16Scheme = {
-      scheme = "Tokyo Night";
-      slug = "tokyo-night";
-      author = "folke";
-      base00 = "1a1b26";
-      base01 = "292e42";
-      base02 = "3b4261";
-      base03 = "565f89";
-      base04 = "a9b1d6";
-      base05 = "c0caf5";
-      base06 = "89ddff";
-      base07 = "b4f9f8";
-      base08 = "f7768e";
-      base09 = "ff9e64";
-      base0A = "e0af68";
-      base0B = "9ece6a";
-      base0C = "7dcfff";
-      base0D = "7aa2f7";
-      base0E = "bb9af7";
-      base0F = "db4b4b";
-    };
+    inherit (theme) base16Scheme;
     polarity = "dark";
     inherit (theme) cursor;
     fonts = {

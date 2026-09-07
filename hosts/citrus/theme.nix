@@ -50,6 +50,29 @@ in
     wallpaper
     ;
 
+  # A dimmer Tokyo Night palette shared by Stylix and desktop consumers.
+  base16Scheme = {
+    scheme = "Tokyo Night Dim";
+    slug = "tokyo-night-dim";
+    author = "folke, keewai";
+    base00 = "14151e";
+    base01 = "202435";
+    base02 = "303650";
+    base03 = "565f89";
+    base04 = "99a1c2";
+    base05 = "adb6dd";
+    base06 = "7bc7e6";
+    base07 = "a2e0df";
+    base08 = "de6a80";
+    base09 = "e68e5a";
+    base0A = "ca9e5e";
+    base0B = "8eba5f";
+    base0C = "71bae6";
+    base0D = "6e92de";
+    base0E = "a88bde";
+    base0F = "c54444";
+  };
+
   icon = {
     package = pkgs.colloid-icon-theme;
     name = "Colloid-Dark";
