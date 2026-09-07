@@ -1,9 +1,9 @@
 ---
-name: use-chatgpt-5-6-pro
-description: Consult GPT-5.6 Sol Pro once in a Temporary Chat through the Codex in-app browser. Use for an explicit Pro consultation or when a blocked task needs an independent view; not for routine review, model selection, or API calls.
+name: use-chatgpt-6-pro
+description: Consult GPT-6 Pro once in a Temporary Chat through the Codex in-app browser. Use for an explicit Pro consultation or when a blocked task needs an independent view; not for routine review, model selection, or API calls.
 ---
 
-# Use ChatGPT 5.6 Pro
+# Use ChatGPT 6 Pro
 
 Use the signed-in ChatGPT web experience as an external reasoning surface. Use
 a fresh Temporary Chat and at most one accepted Pro submission per invocation.
@@ -33,12 +33,12 @@ passwords, profiles, or other session data.
    Start a new Temporary Chat with the current UI and confirm that it is marked
    temporary before composing. Stop without sending if this cannot be confirmed.
 3. Open the model picker in or near the composer and select `Pro`. Confirm that
-   `Pro` is selected. Use the current UI to confirm that it maps to GPT-5.6 Sol
-   Pro, consulting official OpenAI documentation only if the UI is insufficient;
+   `Pro` is selected. Use the current UI to confirm that it maps to GPT-6 Pro,
+   consulting official OpenAI documentation only if the UI is insufficient;
    stop if the mapping cannot be confirmed.
 4. If Pro is absent, disabled, unavailable to the signed-in account or
    workspace, or cannot be confirmed, stop and report the visible condition.
-   Do not silently use Instant, Thinking, Extra High, another GPT-5.6 variant,
+   Do not silently use Instant, Thinking, Extra High, a non-Pro GPT-6 variant,
    or another model.
 5. Submit the prepared prompt faithfully as one message. Include attachments
    only when requested. Do not send setup, model-check, prompt-refinement, or
@@ -47,7 +47,7 @@ passwords, profiles, or other session data.
    clarifying question, return it to the user instead of replying in ChatGPT.
    Retry only when the UI proves the original submission was not accepted;
    never retry while acceptance or generation status is uncertain.
-7. Return the completed ChatGPT response clearly labeled as a GPT-5.6 Sol Pro
+7. Return the completed ChatGPT response clearly labeled as a GPT-6 Pro
    result. Preserve useful links and citations. Distinguish its claims from
    independently verified facts, and perform separate verification only when
    the user's task requires it.

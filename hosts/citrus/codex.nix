@@ -134,7 +134,7 @@ let
 
       Handle the task and verification yourself by default. Do not spawn subagents except for necessary independent reviews or when I explicitly ask you to.
 
-      use-chatgpt-5-6-proは明示指定、または行き詰まりに独立した見解が必要な場合に使うこと。
+      use-chatgpt-6-proは明示指定、または行き詰まりに独立した見解が必要な場合に使うこと。
 
       シェル出力によるトークン消費を抑えるため、RTKが対応するコマンドは原則として `rtk <command>` で実行すること。未加工の出力が必要な場合は `rtk proxy <command>` を使うこと。
 
