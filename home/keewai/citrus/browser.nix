@@ -1,4 +1,5 @@
 {
+  config,
   osConfig,
   inputs,
   lib,
@@ -116,6 +117,10 @@ assert lib.assertMsg (
       );
     };
     configFile."mimeapps.list".force = true;
+    # ChatGPT registers regular Brave only. Follow its generated manifest so
+    # Origin also receives native-host path updates from the Browser plugin.
+    configFile."BraveSoftware/Brave-Origin/NativeMessagingHosts/com.openai.codexextension.json".source =
+      config.lib.file.mkOutOfStoreSymlink "${config.xdg.configHome}/BraveSoftware/Brave-Browser/NativeMessagingHosts/com.openai.codexextension.json";
 
     desktopEntries = {
       everglide-web-driver = {
