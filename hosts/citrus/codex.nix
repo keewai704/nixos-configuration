@@ -132,7 +132,9 @@ let
 
       NixOSでは個人向けアプリとユーザー設定にHome Managerのprograms、services、home.packagesを優先すること。リポジトリの配置規約を確認し、ユーザー設定とシステム設定を対応するファイルに分けること。移動前に固定されたNixOSとHome Managerの統合モジュールを確認し、udev、PAM、polkit、D-Bus、kernel、boot、daemon、hardware、system fontsなどのシステム統合が必要ならNixOS側に残すこと。クライアントをHome Managerで提供できる場合は機能を保ったまま移動し、理由を記録すること。home.packagesはサンドボックス化や実行権限の低下を行わない。この構成はNixOS統合なのでデプロイにroot権限が必要だが、Home Managerのactivationサービスは対象ユーザーで動作することを区別すること。
 
-      大量の検索・読み取り、ログ整理、定型編集、検証など独立して切り出せる作業にはluna-delegationスキルを使い、GPT-5.6 Lunaをreasoning effort=maxで明示指定して実際に委任すること。具体的な対象と委任手順は同スキルに従い、主担当は独立した作業を進めて根拠と差分を確認すること。use-chatgpt-5-6-proは明示指定、または行き詰まりに独立した見解が必要な場合に使い、通常のレビューはサブエージェントで行うこと。
+      Handle the task and verification yourself by default. Do not spawn subagents except for necessary independent reviews or when I explicitly ask you to.
+
+      use-chatgpt-5-6-proは明示指定、または行き詰まりに独立した見解が必要な場合に使うこと。
 
       シェル出力によるトークン消費を抑えるため、RTKが対応するコマンドは原則として `rtk <command>` で実行すること。未加工の出力が必要な場合は `rtk proxy <command>` を使うこと。
 
