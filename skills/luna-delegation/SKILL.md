@@ -11,7 +11,7 @@ handling difficult or ambiguous reasoning, integrating results, and performing
 the final review.
 
 Delegate a bounded support batch to `gpt-5.6-luna` with
-`reasoning_effort=max` and `fork_turns="2"` when all of these are true:
+`reasoning_effort=max` and `fork_turns=none` when all of these are true:
 
 - The task is substantial and the batch is independently checkable.
 - The work is high-volume, repetitive, retrieval-heavy, or likely to consume a
@@ -50,7 +50,7 @@ For a qualifying batch, call `collaboration.spawn_agent` directly with:
 {
   "model": "gpt-5.6-luna",
   "reasoning_effort": "max",
-  "fork_turns": "2",
+  "fork_turns": "none",
   "task_name": "inspect_callers",
   "message": "Inspect <bounded inputs> for <specific objective>. Do not duplicate the primary agent's work or take live, remote, destructive, or external-communication actions. Return findings, exact references, check results, changed paths, and unresolved facts; stop when this batch is complete."
 }
@@ -59,7 +59,7 @@ For a qualifying batch, call `collaboration.spawn_agent` directly with:
 Keep delegation inside the current conversation's sub-agent tree. Use
 `collaboration.send_message`, `collaboration.followup_task`, and
 `collaboration.wait_agent` to coordinate with the sub-agent and collect its result.
-`fork_turns="2"` gives the sub-agent the two most recent turns; it does not
+`fork_turns=none` starts the sub-agent without inherited history; it does not
 create a standalone user task.
 
 Do not substitute `create_thread`, `fork_thread`, or `send_message_to_thread`
