@@ -45,7 +45,7 @@ separates machine integration from user applications and settings.
 │   ├── hyprpaper-shm/             # Hyper-V wallpaper renderer and Island IPC adapter
 │   └── cua-driver/
 ├── skills/                         # personal Codex skills
-├── checks/                         # package ownership and integration regression check
+├── checks/                         # package, desktop, and Codex hook regression checks
 ├── secrets/                        # Agenix declarations and ciphertext
 └── docs/                           # operational detail
 ```
@@ -81,7 +81,9 @@ managed by `home/keewai/citrus/browser.nix`.
 
 ## Non-activating quick start
 
-Run this from the repository root before inspecting or changing a host:
+To check the current host's configuration without activating it, this example
+can be run from the repository root. For task-specific checks, use the scope
+table in `AGENTS.md`; this is not a prerequisite for every edit.
 
 ```console
 runtime_host="$(hostnamectl --static 2>/dev/null || hostname)"

@@ -1,12 +1,14 @@
 ---
 name: use-chatgpt-6-pro
-description: Consult GPT-6 Pro once in a Temporary Chat through the Codex in-app browser. Use for an explicit Pro consultation or when a blocked task needs an independent view; not for routine review, model selection, or API calls.
+description: Consult GPT-6 Pro once in an in-app Temporary Chat, only when the user explicitly requests a Pro consultation.
 ---
 
 # Use ChatGPT 6 Pro
 
-Use the signed-in ChatGPT web experience as an external reasoning surface. Use
-a fresh Temporary Chat and at most one accepted Pro submission per invocation.
+Use only for an explicit Pro consultation request. A blocked task alone does
+not authorize another model or an external submission. Use the signed-in
+ChatGPT web experience, a fresh Temporary Chat, and at most one accepted Pro
+submission per invocation.
 
 ## Browser boundary
 
@@ -25,7 +27,7 @@ passwords, profiles, or other session data.
 ## One-message run
 
 1. Prepare the single prompt and requested attachments before opening ChatGPT.
-   For a blocked task, include the concrete question, relevant findings, and
+   Include the concrete question, relevant findings, and
    minimum context needed for an independent view. Ask first only if a missing
    input materially changes the answer or authorization; spend no submission
    until that input is available.

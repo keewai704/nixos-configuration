@@ -1,10 +1,9 @@
 # Runtime host boundary
 
-Before starting any task, and before reading or changing repository files,
-running checks, rebuilding, deploying, or inspecting live services, determine
-the host of the current local execution environment with `hostnamectl --static`
-(fall back to `hostname`) and confirm it against `/etc/hostname`. If those
-values disagree, stop and report the mismatch before making changes.
+At the start of a task, before repository or live-system work, confirm that
+`hostnamectl --static` (fallback: `hostname`) matches `/etc/hostname`. Stop on a
+mismatch. Reuse this result while the execution environment is unchanged;
+reconfirm after an environment change or when the host identity is uncertain.
 
 Treat the confirmed local runtime host as the only live system in scope. Do not
 infer the live host from the repository path, a flake target mentioned in these
@@ -28,9 +27,10 @@ the host or apply the result there.
 Keep each file's contents predictable from its name and directory. This rule
 applies to configuration, scripts, documentation, and agent instructions.
 
-1. Before editing, read the repository layout in `README.md`, the target file,
-   and related files and imports. Identify the responsibility of the target
-   file and check that the proposed content belongs there.
+1. Read the target and the callers or imports needed to understand the affected
+   behavior. Consult the layout in `README.md` when choosing a new location or
+   when file ownership is unclear; reuse already-read, unchanged context.
+   Check that the proposed content belongs in the target file.
 2. Reuse an existing file only when its responsibility matches. Do not append
    unrelated settings merely because the file is already imported, has access
    to a needed value, or produces a smaller diff. Existing misplaced content
@@ -89,10 +89,18 @@ activation workflow. Do not claim that these changes make deployment rootless.
 
 # Repository workflow
 
-Use this file for repository operations; keep reusable model preferences in
-`hosts/citrus/codex.nix` and task-specific procedures in `skills/`. Change the
-Nix-managed sources rather than generated files under `/etc/codex` or
-`/home/keewai/.agents/skills`.
+This file owns repository layout, package ownership, validation, commits, and
+local activation. `hosts/citrus/codex.nix` owns cross-project model preferences,
+decision boundaries, and skill selection; `skills/` owns task-specific methods.
+Change Nix-managed sources, not generated files under `/etc/codex` or
+`/home/keewai/.agents/skills`. Consult `docs/package-audit.md` for package-scope
+changes and `docs/development.md` for check and activation command examples.
+
+A request to change this repository authorizes the necessary local edits,
+disposable checks, repairs, task commits, and the applicable local activation
+gates below. Do not pause for approval at each of those steps. This does not
+authorize unrelated changes, remote operations, or push. An audit-only request
+authorizes inspection and advice, plus any changes separately requested.
 
 For every task that changes this repository, complete the applicable part of
 this workflow before ending the work or reporting it as complete:
@@ -120,7 +128,9 @@ this workflow before ending the work or reporting it as complete:
    evaluated NixOS configuration, deployed files, or services. If it does, run
    `sudo nixos-rebuild test --flake .#<runtime-host>` locally against the
    committed state. Never use a different host's flake output for this live
-   test.
+   test. Record the expected store path and relevant live health baseline first.
+   Determine affected hosts from imports and evaluated values, not a hardcoded
+   desktop hostname: `citrus-vm` inherits Citrus, including Codex and skills.
 5. When step 4 applies, verify networking and every affected service on the
    local live system.
 6. When step 4 applies, only after the test and health checks pass, run
@@ -140,6 +150,27 @@ applicable test or health check fails, do not run `switch` or report the task as
 complete; fix the problem and repeat the workflow, or report the work as
 blocked. Always report whether the change was committed and, when applicable,
 whether it was applied to the running system and persisted as the boot default.
+
+## Select the required checks
+
+| Change | Checks and explicit builds |
+| --- | --- |
+| Undeployed documentation, including this file | Whitespace, links, and instruction consistency; no Nix build or activation |
+| Undeployed repository tooling | Relevant syntax and behavioral checks; Nix checks only if its integration changed |
+| Nix declarations or deployed files, including personal skills | Format changed Nix files, analyze changed code, run `nix flake check --no-write-lock-file` once, and build every affected host |
+| `flake.nix` or shared modules used by all hosts | `citrus`, `citrus-vm`, and `orange` |
+| Citrus modules, Home Manager files, Codex, MCP, or skills | `citrus` and `citrus-vm`; exclude a host only when evaluation proves an override removes the effect |
+| VM-only overrides | `citrus-vm` |
+| Orange-only configuration | `orange` |
+| Package changes | Changed package outputs and all hosts consuming them |
+
+A normal flake check includes evaluation; a separate `--no-build` pass is useful
+for diagnosis, not an additional completion gate. Build success also includes
+evaluation of that output. Read the affected host's verification section only
+when choosing live checks. New failures or regressions block `switch`; report
+pre-existing limitations separately and never use them to waive behavior the
+requested change needs. A failed or unavailable push does not erase completed
+local work: report implementation, activation, and publication status separately.
 
 ## Package sources owned by `keewai704`
 

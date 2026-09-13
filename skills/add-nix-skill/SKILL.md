@@ -1,130 +1,56 @@
 ---
 name: add-nix-skill
-description: Create or update a personal ChatGPT Desktop and Codex skill as a Nix-managed source under /home/keewai/nixos-configuration/skills. Use when the user asks to add, author, split, replace, or persist a skill through Nix; do not use merely to invoke an existing skill or for an unrelated repository-local skill.
+description: Create or update personal skills managed by nixos-configuration. Use for persistent skill changes, not ordinary skill invocation or unrelated repository skills.
 ---
 
 # Add a Nix-managed skill
 
-Author personal skills in `/home/keewai/nixos-configuration/skills`; Home
-Manager publishes them to `/home/keewai/.agents/skills`, except Ponytail,
-which the managed hooks publish to `/etc/codex/skills/ponytail`. The workflow
-must work from any current directory. Use absolute paths, run Git as
-`git -C /home/keewai/nixos-configuration`, and use flake references beginning
-with `/home/keewai/nixos-configuration#`. Never rely on `.` or a prior `cd`.
+Author sources under `/home/keewai/nixos-configuration/skills`. Follow the
+repository's [AGENTS.md](/home/keewai/nixos-configuration/AGENTS.md) for host
+confirmation, worktree protection, checks, commits, and local activation.
+Reuse preparation already completed for this task. When working outside the
+checkout or in an isolated worktree, use that checkout's absolute paths with
+`git -C` and flake references.
 
-## Establish the local boundary
+## Author and publish
 
-Before reading repository files, confirm `hostnamectl --static` (fallback
-`hostname`) matches `/etc/hostname`. Then read and follow
-[/home/keewai/nixos-configuration/AGENTS.md](/home/keewai/nixos-configuration/AGENTS.md),
-including the matching flake-host check and preservation of unrelated changes.
-That file owns the shared preparation, commit, test, health, and switch gates;
-reuse checks already completed for unchanged inputs in this task.
+For a new or substantially revised skill, use the available `skill-creator`
+guidance, reusing it if already read. Keep one focused purpose, a concise
+description, and only the references or scripts the workflow needs. Repository
+operational gates belong in AGENTS.md rather than being repeated in the skill.
 
-If isolation is needed, use the actual isolated checkout's absolute paths in
-place of `/home/keewai/nixos-configuration` throughout this procedure.
-Never substitute a different runtime host or contact another host without the
-specific remote authorization required by AGENTS.md.
+Home Manager publishes selected `skills/<name>` directories under
+`~/.agents/skills`. Ponytail is published under `/etc/codex/skills/ponytail`;
+its lifecycle hook injects a short reference instead of the full skill.
+Check publication filters when adding, renaming, or removing a skill.
 
-## Author the skill
+Use `apply_patch` to edit the source. Do not reinitialize an existing skill or
+write into generated skill directories. Preserve application-managed system
+skills and plugin caches; cross-project routing preferences belong in
+`hosts/citrus/codex.nix`. Add `agents/openai.yaml` when invocation policy or UI
+metadata needs to change, preserving other metadata.
 
-Read `/home/keewai/.codex/skills/.system/skill-creator/SKILL.md` completely
-before creating or substantially changing a skill.
+## Verify skill behavior
 
-- Put the skill at
-  `/home/keewai/nixos-configuration/skills/<skill-name>/SKILL.md`.
-- Use lowercase letters, digits, and hyphens for `<skill-name>`, keep it under
-  64 characters, and make the folder name equal the frontmatter `name`.
-- Give the skill one focused job and a concise, discriminating `description`
-  that states when it should and should not trigger.
-- Keep a narrow workflow instruction-only. Add files under the absolute roots
-  `/home/keewai/nixos-configuration/skills/<skill-name>/scripts`,
-  `/home/keewai/nixos-configuration/skills/<skill-name>/references`, or
-  `/home/keewai/nixos-configuration/skills/<skill-name>/assets` only when they
-  materially improve repeatability.
-- Add `/home/keewai/nixos-configuration/skills/<skill-name>/agents/openai.yaml`
-  only when UI metadata, invocation policy, or tool dependencies are requested.
-- Use absolute paths for machine-specific repository commands; use linked
-  relative paths for a skill's own portable supporting resources. For commands
-  that operate on this repository, use
-  `git -C /home/keewai/nixos-configuration` and absolute flake references so
-  the skill remains correct from any current directory.
-- Do not write directly under `/home/keewai/.agents/skills`,
-  `/home/keewai/.codex/skills`, or `/etc/codex/skills`. Preserve OpenAI-bundled
-  system skills, plugin skills, and unrelated personal skills.
-
-Create and edit repository files with `apply_patch`. Do not initialize an
-existing skill again, and do not leave scaffold placeholders or unused resource
-directories.
-
-## Validate before committing
-
-Validate every new or changed skill with the bundled validator and a Nix-provided
-PyYAML runtime:
+Validate each changed skill with the available bundled `quick_validate.py`.
+If Python/PyYAML is unavailable, the pinned runtime for the default checkout is:
 
 ```bash
-nix shell --impure --expr 'with import (builtins.getFlake "/home/keewai/nixos-configuration").inputs.nixpkgs { system = builtins.currentSystem; }; python3.withPackages (pythonPackages: [ pythonPackages.pyyaml ])' --command python3 /home/keewai/.codex/skills/.system/skill-creator/scripts/quick_validate.py /home/keewai/nixos-configuration/skills/<skill-name>
+nix shell --impure --no-write-lock-file --expr 'with import (builtins.getFlake "/home/keewai/nixos-configuration").inputs.nixpkgs { system = builtins.currentSystem; }; python3.withPackages (pythonPackages: [ pythonPackages.pyyaml ])' --command python3 /home/keewai/.codex/skills/.system/skill-creator/scripts/quick_validate.py /home/keewai/nixos-configuration/skills/<skill-name>
 ```
 
-Markdown-only skill changes do not require Nix formatting. If the task also
-changes Nix files, pass only those files' explicit absolute paths to
-`/home/keewai/nixos-configuration#formatter.x86_64-linux`; never pass the
-repository root as the formatting target.
+For material trigger or workflow changes, check realistic matching and
+non-matching requests against the new instructions. Verify decisions and
+boundaries, not exact wording; report whether this was a manual scenario review
+or an executed model evaluation. Do not spend Pro usage or create subagents
+for this check without the corresponding authorization.
 
-Before the flake-based checks, stage every task path explicitly with
-`git -C /home/keewai/nixos-configuration add -- <absolute-task-path>...` and
-inspect `git -C /home/keewai/nixos-configuration diff --cached`. Git flakes
-omit untracked files, so evaluation before this task-only staging step does not
-validate a new skill or supporting resource. Verify that the staged diff
-contains only this task, using isolation when required by AGENTS.md.
+In addition to AGENTS.md's checks, verify the evaluated Home Manager file set
+or Ponytail's `environment.etc` source. After applicable local `test` and
+`switch`, confirm Home Manager success and compare each deployed skill with
+its repository source. For changed hook behavior, exercise activation and
+mode changes with temporary state, leaving the active session untouched.
 
-Then validate the Nix-managed publication and full system configuration:
-
-```bash
-nix flake check --no-write-lock-file /home/keewai/nixos-configuration
-nix eval --json --no-write-lock-file /home/keewai/nixos-configuration#nixosConfigurations.citrus.config.home-manager.users.keewai.home.file --apply 'files: builtins.attrNames files'
-nix build --no-link --no-write-lock-file /home/keewai/nixos-configuration#nixosConfigurations.citrus.config.system.build.toplevel
-git -C /home/keewai/nixos-configuration diff --check
-```
-
-Confirm that the evaluated Home Manager file set contains
-`.agents/skills/<skill-name>` and that deleted or renamed task skills are absent.
-For Ponytail, inspect the evaluated `environment.etc."codex/skills/ponytail"`
-source instead; its build checks the upstream hooks and local instruction
-loading. When changing a skill's workflow or trigger substantially, exercise
-representative requests and likely non-matches in an isolated, read-only
-review. Check decisions and preserved boundaries, not exact wording.
-
-## Commit and deploy
-
-Confirm that the staged diff contains only task paths, commit it, and confirm
-that no task-related change remains uncommitted. Then follow every gate in
-`/home/keewai/nixos-configuration/AGENTS.md`, substituting the absolute flake
-reference `/home/keewai/nixos-configuration#${runtime_host}` wherever that
-workflow uses `.#${runtime_host}`. Before and after `switch`, also verify Home
-Manager and the deployed skill:
-
-```bash
-systemctl show home-manager-keewai.service -p Result -p ActiveState --no-pager
-readlink -f /home/keewai/.agents/skills/<skill-name>
-cmp /home/keewai/.agents/skills/<skill-name>/SKILL.md /home/keewai/nixos-configuration/skills/<skill-name>/SKILL.md
-```
-
-For Ponytail, compare `/etc/codex/skills/ponytail/SKILL.md` with
-`/home/keewai/nixos-configuration/skills/ponytail/SKILL.md` instead of the
-Home Manager path above. Exercise hook activation, subagent propagation, and
-mode changes with temporary state so the active session is not modified.
-
-The personal skills in this repository are currently deployed by the
-`citrus` configuration. Run the live gates only when the confirmed runtime
-host is `citrus`. On another runtime host, validate the `citrus`
-configuration locally, do not contact either host or activate an unrelated
-local generation, and report that the skill was not activated on the desktop
-host.
-
-When the live gates apply, confirm that `/run/current-system` and
-`/nix/var/nix/profiles/system` resolve to the tested generation. Report the
-commit and whether deployment and boot-default checks were applied. Codex
-usually detects skill changes automatically; if the skill is not listed in the
-current client, tell the user to open a new task or restart the app without
-terminating the process that owns the current task.
+Use AGENTS.md's evaluated-host impact rule for deployment. If the client has
+not reloaded a changed skill, tell the user to open a new task or restart the
+app after completion; do not terminate the application owning the task.

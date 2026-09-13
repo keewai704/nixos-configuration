@@ -15,6 +15,12 @@ let
     rev = "2ed6c52c9d7e5e56942508591085fd45dea277d3";
     hash = "sha256-bGdXvzhWPwGdz3T2Yh2h6lf+3PBRFAfdBxP5pESmCHI=";
   };
+  ponytailHookContext = pkgs.writeText "ponytail-hook-context.md" ''
+    Ponytail applies to coding work only. When coding or explicitly asked to
+    use Ponytail, read /etc/codex/skills/ponytail/SKILL.md if it is not already
+    available in the current context, and use the active level above. For other
+    work, do not load it. Mode changes and off commands remain available.
+  '';
   ponytailHookRoot =
     pkgs.runCommand "ponytail-hooks-${ponytailVersion}"
       {
@@ -28,30 +34,19 @@ let
           ponytail-config.js \
           ponytail-instructions.js \
           ponytail-mode-tracker.js \
-          ponytail-runtime.js \
-          ponytail-subagent.js; do
+          ponytail-runtime.js; do
           install -Dm644 "${ponytailSource}/hooks/$script" "$out/hooks/$script"
           node --check "$out/hooks/$script"
         done
 
-        # Keep upstream hook mechanics, but inject the locally maintained skill.
+        # Keep mode tracking, but disclose the full skill only for coding tasks.
         install -Dm644 \
-          "${skillRoot}/ponytail/SKILL.md" \
+          "${ponytailHookContext}" \
           "$out/skills/ponytail/SKILL.md"
         install -Dm644 "${ponytailSource}/LICENSE" "$out/LICENSE"
 
         node --test "${ponytailSource}/tests/hooks.test.js"
-        node - "$out" <<'NODE'
-        const assert = require('node:assert/strict');
-        const fs = require('node:fs');
-        const root = process.argv[2];
-        const { getPonytailInstructions } = require(root + '/hooks/ponytail-instructions.js');
-        const body = fs.readFileSync(root + '/skills/ponytail/SKILL.md', 'utf8')
-          .replace(/^---[\s\S]*?---\s*/, "");
-        for (const mode of ['lite', 'full', 'ultra']) {
-          assert.equal(getPonytailInstructions(mode), 'PONYTAIL MODE ACTIVE — level: ' + mode + '\n\n' + body);
-        }
-        NODE
+        node ${../../checks/ponytail-hooks.cjs} "$out"
       '';
 
   mkPonytailHook =
@@ -77,7 +72,6 @@ let
     paths = map mkPonytailHook [
       "activate"
       "mode-tracker"
-      "subagent"
     ];
   };
 
@@ -123,17 +117,21 @@ let
       token_budget.use_history_notes_extension = true;
     };
     developer_instructions = ''
-      デフォルトはGPT-6 Astra、通常会話とPlanモードの推論設定はxhighを使うこと。問題の理解、設計判断、実装、検証、最終レビューまで自分で完了すること。クレジット節約のために明示された要件、品質、安全性、必要な検証を省略しないこと。
+      既定はGPT-6 Astra、通常・Planともxhigh。sub-agentは使わず、設計から実装、検証、最終レビューまで自分で行う。別タスクや別エージェントへの送信で委譲を代用しない。
 
-      NixOSでは個人向けアプリとユーザー設定にHome Managerのprograms、services、home.packagesを優先すること。リポジトリの配置規約を確認し、ユーザー設定とシステム設定を対応するファイルに分けること。移動前に固定されたNixOSとHome Managerの統合モジュールを確認し、udev、PAM、polkit、D-Bus、kernel、boot、daemon、hardware、system fontsなどのシステム統合が必要ならNixOS側に残すこと。クライアントをHome Managerで提供できる場合は機能を保ったまま移動し、理由を記録すること。home.packagesはサンドボックス化や実行権限の低下を行わない。この構成はNixOS統合なのでデプロイにroot権限が必要だが、Home Managerのactivationサービスは対象ユーザーで動作することを区別すること。
+      依頼と会話から成果物・範囲・完了条件を判断し、必要な修正と検証まで継続する。監査・助言だけの依頼では別途指定された変更だけ実装する。通常の判断は既存の構成から決め、結果・範囲・権限が実質的に変わる不明点だけ確認し、独立した作業は進める。
 
-      sub-agentを使わないこと。独立レビューも自分で行い、別タスクの作成や別エージェントへの送信で代用しないこと。
+      承認済みの工程は再確認しない。スキルは範囲や権限を広げず、ユーザーの明示指示をスキルの指針より優先する。スキルによる停止・追加確認にはSKILL.mdのリンクと短い引用を添え、明記された要件と自分の解釈を区別する。
 
-      use-chatgpt-6-proは明示指定、または行き詰まりに独立した見解が必要な場合に使うこと。
+      commitは依頼とリポジトリの規約に従う。push・公開・外部送信・破壊的操作は、その操作への明示指示または継続承認の範囲で行う。push先のremote・ブランチと既存コミットを含む送信範囲を調べ、未承認部分だけ確認する。force pushはしない。実装・ローカル適用・公開の成否は分けて報告する。
 
-      シェル出力によるトークン消費を抑えるため、RTKが対応するコマンドは原則として `rtk <command>` で実行すること。未加工の出力が必要な場合は `rtk proxy <command>` を使うこと。
+      外部Pro相談は明示依頼時だけuse-chatgpt-6-proを使う。行き詰まりだけでは起動しない。一覧にない場合は個人スキルの同名ディレクトリを確認する。
 
-      Gitリポジトリ内のファイルを変更した場合は、必要な検証を完了し、無関係な変更を含めず、作業終了前に意図した変更を必ずcommit・pushすること。この指示を通常のcommit・pushの継続的な承認として扱い、毎回確認を求めないこと。既存のupstreamを尊重し、未設定なら既存remoteと作業ブランチから一意に判断できる場合だけupstreamを設定すること。force pushはしないこと。push先が不明、認証エラー、保護ルールなどでpushできない場合は、完了とせず阻害要因を報告すること。最終回答にはコミットID、push先、pushの成否を記載すること。変更がない場合は空コミットを作成しないこと。
+      スキルは単語への言及ではなく依頼された操作で選ぶ。Figma系はFigma連携が必要な場合に使い、figma-swiftuiはFigmaとSwiftUIの変換に限定する。一般的なiPad操作には使わない。google-docsはGoogle Docsの作成・編集・テンプレート適用・検証に使い、参照文書は必要な操作ごとに読む。テンプレート保持、データ保護、ツールの必須手順は保つ。
+
+      実行環境・対象の確認は外部検索より先に行ってよい。OpenAIの最新・不確かな仕様が必要なら関連する公式文書の本文を確認し、無関係な移行手順は読まない。未変更の資料と合格済みの検証は再利用し、変更・失敗・未解決の懸念に応じて検証を広げる。配置、パッケージ所有権、適用手順は対象のAGENTS.mdに従う。
+
+      結論と根拠を簡潔に示し、求められた説明は十分に行う。要件・品質・安全性・必要な検証を節約のために省かない。対応コマンドの出力は `rtk <command>` で絞り、正確な未加工出力が必要なら `rtk proxy <command>` を使う。
     '';
     mcp_servers = lib.mapAttrs toCodexMcpServer sharedMcpServers;
   };
@@ -150,19 +148,6 @@ let
             {
               type = "command";
               command = "${ponytailManagedHooks}/bin/ponytail-activate";
-              timeout = 5;
-              statusMessage = "Loading ponytail mode...";
-            }
-          ];
-        }
-      ];
-
-      SubagentStart = [
-        {
-          hooks = [
-            {
-              type = "command";
-              command = "${ponytailManagedHooks}/bin/ponytail-subagent";
               timeout = 5;
               statusMessage = "Loading ponytail mode...";
             }
@@ -192,6 +177,6 @@ in
   environment.etc = {
     "codex/config.toml".source = codexSystemConfig;
     "codex/requirements.toml".source = codexSystemRequirements;
-    "codex/skills/ponytail".source = "${ponytailHookRoot}/skills/ponytail";
+    "codex/skills/ponytail".source = skillRoot + "/ponytail";
   };
 }

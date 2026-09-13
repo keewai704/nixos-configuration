@@ -20,7 +20,7 @@ hostname is `citrus` may run `nixos-rebuild test` or `switch` for this host.
 | [`hosts/citrus/browser.nix`](../hosts/citrus/browser.nix) | Vendor-scoped WebHID access |
 | [`hosts/citrus/codex.nix`](../hosts/citrus/codex.nix) | System Codex configuration, developer instructions, and managed hooks |
 | [`home/keewai/citrus/`](../home/keewai/citrus/) | Personal apps, browser, shell, input method, Dynamic Island, MCP, and skills |
-| [`modules/home-manager.nix`](../modules/home-manager.nix) | Shared Home Manager integration for both hosts |
+| [`modules/home-manager.nix`](../modules/home-manager.nix) | Shared Home Manager integration for all hosts |
 | [`pkgs/chatgpt-desktop/default.nix`](../pkgs/chatgpt-desktop/default.nix) | ChatGPT desktop package and launcher |
 | [`pkgs/cua-driver/default.nix`](../pkgs/cua-driver/default.nix) | CUA driver package |
 
@@ -332,6 +332,27 @@ The shared default is `gpt-6-astra` with `xhigh` reasoning in ordinary and Plan
 mode. Subagents are disabled with `features.multi_agent = false`, and the
 `luna-delegation` skill remains in the repository but is excluded from Home
 Manager publication. These defaults apply to both `citrus` and `citrus-vm`.
+
+The additional developer instructions in `hosts/citrus/codex.nix` cover
+cross-project scope, approval reuse, Git publication, external Pro consultation,
+and skill routing. Repository layout, Home Manager ownership, validation, and
+activation policy live in the root `AGENTS.md`; the Nix skills link to it.
+Pro consultation is explicitly invoked only. An implementation request alone
+does not authorize push or an external Pro submission.
+
+Ponytail keeps its existing mode tracking and default-mode controls, but its
+SessionStart hook injects only the active level and a short reference to
+`/etc/codex/skills/ponytail/SKILL.md`. The full skill is read for coding work
+when needed. Ordinary prompts do not reinject it, and no SubagentStart hook is
+registered. `checks/ponytail-hooks.cjs` verifies the packaged lifecycle and
+mode controls with temporary state during the hook build.
+
+Application-owned plugin skills remain updateable. The additional instructions
+narrow Figma/SwiftUI routing to actual conversion work and require only relevant
+Google Docs references; they do not shorten the external plugins' metadata.
+The documented per-skill configuration currently exposes enablement, not a
+description override. Keep metadata improvements upstream instead of patching
+mutable caches or installing competing copies of the same skills.
 
 After changing an MCP server or personal skill, rebuild through the development
 workflow and restart ChatGPT Desktop or begin a new local session.
