@@ -25,6 +25,7 @@ assert onlyAtHome citrus [
   "apple-music-client"
   "alac-room-auth-service"
   "chatgpt-desktop"
+  "codex"
   "bitwarden-desktop"
   "pinentry-gnome3"
   "island-bitwarden-setup"
@@ -46,6 +47,8 @@ assert onlyAtHome citrus [
   "qt6ct"
 ];
 assert citrus.security.pam.services ? hyprlock;
+assert !(home.home.file.".codex/config.toml".enable or false);
+assert !(home.home.file.".codex/AGENTS.md".enable or false);
 assert citrus.services.fprintd.enable && home.programs.hyprlock.settings.auth.fingerprint.enabled;
 assert !citrus.security.pam.services.hyprlock.fprintAuth;
 assert citrus.security.pam.services.hyprlock.rules.auth.unix.enable;
@@ -79,6 +82,10 @@ assert lib.all (
 pkgs.runCommand "package-ownership" { } ''
   # Check actual launch integration, not just the presence of package names.
   test -x ${home.home.path}/bin/chatgpt
+  test -x ${home.home.path}/bin/codex
+  test -x ${home.home.path}/bin/codex-code-mode-host
+  test -x ${home.home.file.".local/bin/codex".source}
+  ${home.home.path}/bin/codex --version
   test -f ${home.home.path}/share/applications/chatgpt.desktop
   test -f ${home.home.path}/share/dbus-1/services/org.xfce.Thunar.service
   test -f ${home.home.path}/share/dbus-1/services/org.xfce.Xfconf.service

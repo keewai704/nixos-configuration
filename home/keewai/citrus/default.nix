@@ -3,6 +3,7 @@
     ./bitwarden.nix
     ./browser.nix
     ./codex.nix
+    ./codex-remote.nix
     ./desktop.nix
     ./dynamic-island.nix
     ./hyprland.nix

@@ -352,6 +352,29 @@ These are intentionally excluded from the interactive root counts above.
 
 ## Migration decisions
 
+### Codex CLI and Remote Control addition (2026-09-13)
+
+The earlier package inventories above are historical migration snapshots.
+The native `codex-0.154.0` package from the pinned `sadjow/codex-cli-nix` input
+is now owned by Home Manager `programs.codex` in
+[`home/keewai/citrus/codex.nix`](../home/keewai/citrus/codex.nix), on both Citrus
+and the inheriting VM. It includes the code-mode companion binary and shell
+completions. It is not an `environment.systemPackages` root.
+
+[`home/keewai/citrus/codex-remote.nix`](../home/keewai/citrus/codex-remote.nix)
+runs that same package as `keewai`'s user service. The only new machine
+integration is `users.users.keewai.linger = true` in
+[`hosts/citrus/codex-remote.nix`](../hosts/citrus/codex-remote.nix), needed for
+startup before login and continued operation after logout. No root daemon,
+system Codex package, or inbound firewall opening is required.
+
+The existing `/etc/codex` settings, hooks, user-owned configuration, credentials,
+and skill publication stay in place. Home Manager installs the CLI without
+claiming `~/.codex/config.toml` or `~/.codex/AGENTS.md`; the ownership check
+guards those boundaries and verifies the CLI and companion executables.
+
+### Existing migration decisions
+
 - **Keep personal applications and user CLI tools in Home Manager.** The
   direct citrus roots are now declared under `home/keewai/common.nix` and
   `home/keewai/citrus/`: Apple Music/auth, ChatGPT Desktop, Bitwarden

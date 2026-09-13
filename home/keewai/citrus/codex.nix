@@ -69,7 +69,10 @@ in
   imports = [ inputs.mcp-servers-nix.homeManagerModules.default ];
 
   home = {
-    file = skillEntries;
+    file = skillEntries // {
+      # sadjow's wrapper advertises this stable executable path to Codex.
+      ".local/bin/codex".source = "${config.programs.codex.package}/bin/codex";
+    };
     packages = [
       cuaDriver
       pkgs.rtk
@@ -101,7 +104,16 @@ in
     '';
   };
 
-  programs.mcp.enable = true;
+  programs = {
+    mcp.enable = true;
+
+    # Install the CLI without generating a user config that shadows /etc/codex.
+    codex = {
+      enable = true;
+      package = inputs.codex-cli-nix.packages.${pkgs.stdenv.hostPlatform.system}.default;
+      enableMcpIntegration = false;
+    };
+  };
 
   systemd.user.sessionVariables = cuaEnvironment;
 

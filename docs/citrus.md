@@ -19,6 +19,8 @@ hostname is `citrus` may run `nixos-rebuild test` or `switch` for this host.
 | [`hosts/citrus/fingerprint.nix`](../hosts/citrus/fingerprint.nix) | CS9711 fingerprint driver, fprintd, and local PAM authentication |
 | [`hosts/citrus/browser.nix`](../hosts/citrus/browser.nix) | Vendor-scoped WebHID access |
 | [`hosts/citrus/codex.nix`](../hosts/citrus/codex.nix) | System Codex configuration, developer instructions, and managed hooks |
+| [`hosts/citrus/codex-remote.nix`](../hosts/citrus/codex-remote.nix) | User lingering for Codex startup at boot and continued operation after logout |
+| [`home/keewai/citrus/codex-remote.nix`](../home/keewai/citrus/codex-remote.nix) | Native Codex app-server user service and authenticated Remote Control |
 | [`home/keewai/citrus/`](../home/keewai/citrus/) | Personal apps, browser, shell, input method, Dynamic Island, MCP, and skills |
 | [`modules/home-manager.nix`](../modules/home-manager.nix) | Shared Home Manager integration for all hosts |
 | [`pkgs/chatgpt-desktop/default.nix`](../pkgs/chatgpt-desktop/default.nix) | ChatGPT desktop package and launcher |
@@ -314,6 +316,12 @@ env -u NIXOS_OZONE_WL chatgpt
 ```
 
 ## System and user configuration boundary
+
+Home Manager's `programs.codex` installs the native CLI from the pinned
+`sadjow/codex-cli-nix` input, leaving its settings and MCP integration empty so
+the existing system/user layers remain authoritative. The stable launcher is
+`~/.local/bin/codex`; Desktop keeps its bundled backend. See
+[Codex Remote Control](codex-remote.md) for the automatic server and pairing.
 
 | Path | Owner and purpose |
 | --- | --- |

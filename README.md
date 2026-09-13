@@ -23,6 +23,7 @@ separates machine integration from user applications and settings.
 │   │   ├── desktop.nix            # desktop environment
 │   │   ├── browser.nix            # WebHID hardware access rules
 │   │   ├── codex.nix              # system Codex instructions and managed hooks
+│   │   ├── codex-remote.nix       # boot/logout integration for the user server
 │   │   ├── theme.nix              # shared desktop palette and assets
 │   │   ├── hyprland.lua           # Hyprland behavior and key bindings
 │   │   └── assets/                # wallpaper and Noctalia localization files
@@ -109,3 +110,8 @@ output.
 See [development and deployment](docs/development.md) for the mandatory commit
 and scope-dependent activation workflow. Automated contributors must also
 follow [`AGENTS.md`](AGENTS.md).
+
+The native Codex CLI comes from the pinned `sadjow/codex-cli-nix` input and is
+installed through Home Manager on Citrus and its VM. See
+[Codex Remote Control](docs/codex-remote.md) for the shared settings, automatic
+user service, and device pairing.
