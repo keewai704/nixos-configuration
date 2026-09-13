@@ -59,6 +59,18 @@ requires a mutable standalone install and starts its own updater, whereas Nix
 owns the package and updates here. Pairing and read-only daemon version queries
 can use the service's standard control socket.
 
+Desktop and this service share `~/.codex`, including the installation identity.
+OpenAI permits one active Remote Control relay connection for that identity.
+Keep Desktop's **Settings > Connections > Control this PC > Allow connections**
+off while the user service owns Remote Control. This leaves Desktop and its
+local tasks running. Manage the always-on server with systemd instead of that
+Desktop toggle.
+
+An HTTP 409 with `Remote app server already online` means another process is
+holding the shared connection. Turn off that process's Remote connection, then
+allow the service to reconnect; do not create another Codex home or duplicate
+credentials to work around it.
+
 ## Connect a phone or another PC
 
 Use ChatGPT/Codex Remote on the controlling device, signed into the same
