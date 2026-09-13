@@ -45,13 +45,21 @@ let
     '';
   };
 
-  skillEntries = lib.mapAttrs' (
-    name: _type:
-    lib.nameValuePair ".agents/skills/${name}" {
-      source = skillRoot + "/${name}";
-      force = true;
-    }
-  ) (lib.removeAttrs (builtins.readDir skillRoot) [ "ponytail" ]);
+  skillEntries =
+    lib.mapAttrs'
+      (
+        name: _type:
+        lib.nameValuePair ".agents/skills/${name}" {
+          source = skillRoot + "/${name}";
+          force = true;
+        }
+      )
+      (
+        lib.removeAttrs (builtins.readDir skillRoot) [
+          "ponytail"
+          "luna-delegation"
+        ]
+      );
 
   managedMcpNames = lib.attrNames config.programs.mcp.servers;
   managedMcpNameArgs = lib.escapeShellArgs managedMcpNames;
@@ -69,13 +77,13 @@ in
     sessionVariables = cuaEnvironment;
 
     # A user-level entry wins over /etc/codex/config.toml. Remove only
-    # reasoning overrides and duplicate MCP names owned by this module,
+    # model, reasoning, and subagent overrides and duplicate MCP names,
     # while preserving bundled helpers and unrelated preferences.
     activation.removeUserCodexOverrides = lib.hm.dag.entryAfter [ "writeBoundary" ] ''
       user_config=${lib.escapeShellArg userCodexConfig}
       if [[ -f "$user_config" && -w "$user_config" ]]; then
         ${lib.getExe pkgs.yq-go} -i -p=toml -o=toml \
-          'del(.model_reasoning_effort, .plan_mode_reasoning_effort)' \
+          'del(.model, .model_reasoning_effort, .plan_mode_reasoning_effort, .features.multi_agent)' \
           "$user_config"
         for server_name in ${managedMcpNameArgs}; do
           export NIX_MANAGED_MCP_SERVER="$server_name"

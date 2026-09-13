@@ -323,10 +323,15 @@ env -u NIXOS_OZONE_WL chatgpt
 | `~/.agents/skills/<name>` | Home Manager links to repository-owned personal skills |
 | `~/.cache/chatgpt/bundled-plugin-resources/` | Disposable writable resource overlay |
 
-A user MCP entry shadows a system entry of the same name. Home Manager removes
-only user-level entries whose names are owned by the Nix MCP registry; bundled
-`node_repl`/`cua_repl` entries and unrelated preferences remain writable and
-untouched.
+A user entry shadows the system layer. Home Manager removes user-level model,
+reasoning-effort, and `features.multi_agent` overrides, plus MCP entries whose
+names are owned by the Nix MCP registry. Bundled `node_repl`/`cua_repl` entries
+and unrelated preferences remain writable and untouched.
+
+The shared default is `gpt-6-astra` with `xhigh` reasoning in ordinary and Plan
+mode. Subagents are disabled with `features.multi_agent = false`, and the
+`luna-delegation` skill remains in the repository but is excluded from Home
+Manager publication. These defaults apply to both `citrus` and `citrus-vm`.
 
 After changing an MCP server or personal skill, rebuild through the development
 workflow and restart ChatGPT Desktop or begin a new local session.

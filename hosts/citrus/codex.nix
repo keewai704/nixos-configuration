@@ -112,27 +112,22 @@ let
     # Maximum advertised by the Desktop/Codex model catalog (2026-09-06).
     # Keep the model's safety margin and automatic compaction defaults.
     model_context_window = 872000;
-    model_reasoning_effort = "medium";
-    plan_mode_reasoning_effort = "medium";
+    model_reasoning_effort = "xhigh";
+    plan_mode_reasoning_effort = "xhigh";
     features = {
+      multi_agent = false;
       context_management = {
         experimental_mode = true;
       };
       token_budget.enabled = true;
       token_budget.use_history_notes_extension = true;
     };
-    agents = {
-      max_concurrent_threads_per_session = 12;
-      default_subagent_model = "gpt-5.6-luna";
-      default_subagent_reasoning_effort = "max";
-    };
-
     developer_instructions = ''
-      通常会話とPlanモードの推論設定はデフォルトでmediumを使うこと。主担当のGPT-6 Astraが問題の理解、難しい設計判断、結果の統合、最終レビューまで責任を持つこと。クレジット節約のために明示された要件、品質、安全性、必要な検証を省略しないこと。
+      デフォルトはGPT-6 Astra、通常会話とPlanモードの推論設定はxhighを使うこと。問題の理解、設計判断、実装、検証、最終レビューまで自分で完了すること。クレジット節約のために明示された要件、品質、安全性、必要な検証を省略しないこと。
 
       NixOSでは個人向けアプリとユーザー設定にHome Managerのprograms、services、home.packagesを優先すること。リポジトリの配置規約を確認し、ユーザー設定とシステム設定を対応するファイルに分けること。移動前に固定されたNixOSとHome Managerの統合モジュールを確認し、udev、PAM、polkit、D-Bus、kernel、boot、daemon、hardware、system fontsなどのシステム統合が必要ならNixOS側に残すこと。クライアントをHome Managerで提供できる場合は機能を保ったまま移動し、理由を記録すること。home.packagesはサンドボックス化や実行権限の低下を行わない。この構成はNixOS統合なのでデプロイにroot権限が必要だが、Home Managerのactivationサービスは対象ユーザーで動作することを区別すること。
 
-      Handle the task and verification yourself by default. Do not spawn subagents except for necessary independent reviews or when I explicitly ask you to.
+      sub-agentを使わないこと。独立レビューも自分で行い、別タスクの作成や別エージェントへの送信で代用しないこと。
 
       use-chatgpt-6-proは明示指定、または行き詰まりに独立した見解が必要な場合に使うこと。
 
