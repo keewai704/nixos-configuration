@@ -1,5 +1,6 @@
 use super::*;
 use browse::{clean, clock};
+use mouse::{Action as MouseAction, Pane as MousePane};
 use ratatui::{
     Frame,
     layout::{Constraint, Layout, Rect},
@@ -15,6 +16,7 @@ use unicode_width::UnicodeWidthStr;
 const ACCENT: Color = Color::Cyan;
 
 pub(super) fn draw(frame: &mut Frame, app: &mut App) {
+    app.mouse.clear();
     let area = frame.area();
     if area.width < 30 || area.height < 10 {
         frame.render_widget(
@@ -31,6 +33,7 @@ pub(super) fn draw(frame: &mut Frame, app: &mut App) {
         Constraint::Length(1),
     ])
     .split(area);
+    let header = Layout::horizontal([Constraint::Min(1), Constraint::Length(44)]).split(layout[0]);
     frame.render_widget(
         Paragraph::new(Line::from(vec![
             Span::styled(
@@ -43,7 +46,20 @@ pub(super) fn draw(frame: &mut Frame, app: &mut App) {
                 Style::default().fg(Color::Yellow),
             ),
         ])),
-        layout[0],
+        header[0],
+    );
+    buttons(
+        frame,
+        &mut app.mouse,
+        header[1],
+        vec![
+            ("<".into(), MouseAction::Key(KeyCode::Backspace)),
+            ("Browse".into(), MouseAction::Navigation),
+            ("Search".into(), MouseAction::Search),
+            ("Settings".into(), MouseAction::Key(KeyCode::Char(','))),
+            ("?".into(), MouseAction::Key(KeyCode::Char('?'))),
+            ("Quit".into(), MouseAction::Quit),
+        ],
     );
     let body = layout[1];
     if area.width >= 140 {
@@ -85,7 +101,7 @@ pub(super) fn draw(frame: &mut Frame, app: &mut App) {
     } else if app.focus == Focus::Navigation {
         "↑↓ Move · Enter Open · Tab Focus · Ctrl+f Search · ? Help"
     } else {
-        "Enter Open/play · e Queue · E Next · a Actions · / Filter · ? Help"
+        "Click Select · Double-click Open/play · Right-click Actions · ? Help"
     };
     frame.render_widget(
         Paragraph::new(hint).style(Style::default().fg(ACCENT)),
@@ -93,8 +109,36 @@ pub(super) fn draw(frame: &mut Frame, app: &mut App) {
     );
     overlay(frame, app, body);
     if let Some(input) = &app.input {
-        input_box(frame, input, body);
+        app.mouse.clear();
+        input_box(frame, input, body, &mut app.mouse);
     }
+}
+
+fn buttons(
+    frame: &mut Frame,
+    mouse: &mut mouse::Mouse,
+    area: Rect,
+    items: Vec<(String, MouseAction)>,
+) -> u16 {
+    let mut x = area.x;
+    let mut spans = Vec::new();
+    for (label, action) in items {
+        let label = format!("[{label}]");
+        let width = label.width() as u16;
+        if x.saturating_add(width) <= area.right() {
+            mouse.hit(Rect::new(x, area.y, width, 1), action);
+        }
+        spans.push(Span::styled(
+            label,
+            Style::default()
+                .fg(ACCENT)
+                .add_modifier(Modifier::UNDERLINED),
+        ));
+        spans.push(Span::raw(" "));
+        x = x.saturating_add(width + 1);
+    }
+    frame.render_widget(Paragraph::new(Line::from(spans)), area);
+    x.min(area.right())
 }
 
 fn block(title: impl Into<Line<'static>>, active: bool) -> Block<'static> {
@@ -118,10 +162,35 @@ fn navigation(frame: &mut Frame, app: &mut App, area: Rect) {
         area,
         &mut app.nav,
     );
+    let inner = block("", false).inner(area);
+    app.mouse.pane(inner, MousePane::Navigation);
+    for index in app.nav.offset()..browse::NAV.len() {
+        let row = index - app.nav.offset();
+        if row >= inner.height as usize {
+            break;
+        }
+        app.mouse.hit(
+            Rect::new(inner.x, inner.y + row as u16, inner.width, 1),
+            MouseAction::Navigate(index),
+        );
+    }
 }
 
 fn browse(frame: &mut Frame, app: &mut App, area: Rect) {
     let area = selected_cover(frame, app, area);
+    let rows = Layout::vertical([Constraint::Length(1), Constraint::Min(1)]).split(area);
+    buttons(
+        frame,
+        &mut app.mouse,
+        rows[0],
+        vec![
+            ("Type".into(), MouseAction::Selected(KeyCode::Char('t'))),
+            ("Sort".into(), MouseAction::Selected(KeyCode::Char('o'))),
+            ("Filter".into(), MouseAction::Selected(KeyCode::Char('/'))),
+            ("More".into(), MouseAction::Selected(KeyCode::Char('m'))),
+        ],
+    );
+    let area = rows[1];
     let loading = if app.pending_page.is_some() {
         " · loading…"
     } else {
@@ -147,6 +216,7 @@ fn browse(frame: &mut Frame, app: &mut App, area: Rect) {
             else if !app.page.filter.is_empty() { "No loaded items match this filter. / edits the filter." }
             else { "No items. Ctrl+f searches Apple Music.\nTab opens navigation; :login connects your library." })
             .block(outer).wrap(Wrap { trim: false }), area);
+        app.mouse.pane(area, MousePane::Browse(1));
         return;
     }
     let current = app.queue.current().map(|entry| entry.item.key());
@@ -216,6 +286,29 @@ fn browse(frame: &mut Frame, app: &mut App, area: Rect) {
         .row_highlight_style(highlight())
         .highlight_symbol("› ");
     frame.render_stateful_widget(table, area, &mut app.page.table);
+    let inner = block("", false).inner(area);
+    let height = if compact { 2 } else { 1 };
+    let count = inner.height.saturating_sub(1) / height;
+    app.mouse
+        .pane(inner, MousePane::Browse(usize::from(count.max(1))));
+    for (row, &index) in app
+        .page
+        .visible
+        .iter()
+        .skip(app.page.table.offset())
+        .take(count as usize)
+        .enumerate()
+    {
+        app.mouse.hit(
+            Rect::new(
+                inner.x,
+                inner.y + 1 + row as u16 * height,
+                inner.width,
+                height,
+            ),
+            MouseAction::BrowseRow(app.page.items[index].key()),
+        );
+    }
 }
 
 fn selected_cover(frame: &mut Frame, app: &mut App, area: Rect) -> Rect {
@@ -249,6 +342,22 @@ fn selected_cover(frame: &mut Frame, app: &mut App, area: Rect) -> Rect {
     ];
     frame.render_widget(border, sections[0]);
     frame.render_widget(Paragraph::new(details), text_area);
+    if text_area.height > 0 {
+        buttons(
+            frame,
+            &mut app.mouse,
+            Rect::new(text_area.x, text_area.bottom() - 1, text_area.width, 1),
+            vec![
+                (
+                    if playable(item) { "Play" } else { "Open" }.into(),
+                    MouseAction::Selected(KeyCode::Enter),
+                ),
+                ("Next".into(), MouseAction::Selected(KeyCode::Char('E'))),
+                ("Add".into(), MouseAction::Selected(KeyCode::Char('e'))),
+                ("Actions".into(), MouseAction::Selected(KeyCode::Char('a'))),
+            ],
+        );
+    }
     if app.overlay.is_none() && app.input.is_none() {
         draw_cover(frame, &mut app.covers.selected, image_area);
     }
@@ -317,16 +426,56 @@ fn panel(frame: &mut Frame, app: &mut App, area: Rect) {
                     "off"
                 }
             );
+            let border = block(title, app.focus == Focus::Panel);
+            let inner = border.inner(area);
+            frame.render_widget(border, area);
+            buttons(
+                frame,
+                &mut app.mouse,
+                Rect::new(inner.x, inner.y, inner.width, 1),
+                vec![
+                    ("Up".into(), MouseAction::QueueMove(-1)),
+                    ("Down".into(), MouseAction::QueueMove(1)),
+                    ("Remove".into(), MouseAction::QueueRemove),
+                    ("Undo".into(), MouseAction::QueueUndo),
+                ],
+            );
+            let list_area = Rect::new(
+                inner.x,
+                inner.y + 1,
+                inner.width,
+                inner.height.saturating_sub(1),
+            );
             frame.render_stateful_widget(
                 List::new(items)
-                    .block(block(title, app.focus == Focus::Panel))
                     .highlight_style(highlight())
                     .highlight_symbol("› "),
-                area,
+                list_area,
                 &mut app.queue_list,
             );
+            let rows = (list_area.height / 2).max(1);
+            app.mouse.pane(list_area, MousePane::Queue(rows as usize));
+            for (row, entry) in app
+                .queue
+                .entries
+                .iter()
+                .skip(app.queue_list.offset())
+                .take(rows as usize)
+                .enumerate()
+            {
+                app.mouse.hit(
+                    Rect::new(
+                        list_area.x,
+                        list_area.y + row as u16 * 2,
+                        list_area.width,
+                        2,
+                    ),
+                    MouseAction::QueueRow(entry.id),
+                );
+            }
         }
         Some(Panel::Lyrics) => {
+            app.mouse.pane(area, MousePane::Text);
             let name = app
                 .queue
                 .current()
@@ -377,6 +526,7 @@ fn panel(frame: &mut Frame, app: &mut App, area: Rect) {
             );
         }
         Some(Panel::Details) => {
+            app.mouse.pane(area, MousePane::Text);
             let item = app.page.item();
             let mut details = item
                 .map(item_details)
@@ -401,6 +551,14 @@ fn panel(frame: &mut Frame, app: &mut App, area: Rect) {
             );
         }
         None => {}
+    }
+    if area.width >= 4 {
+        buttons(
+            frame,
+            &mut app.mouse,
+            Rect::new(area.right() - 3, area.y, 3, 1),
+            vec![("x".into(), MouseAction::Key(KeyCode::Esc))],
+        );
     }
 }
 
@@ -460,6 +618,7 @@ fn player(frame: &mut Frame, app: &mut App, area: Rect) {
     } else {
         format!("{} / {}", clock(position), clock(duration))
     };
+    let label_width = label.width() as u16;
     frame.render_widget(
         LineGauge::default()
             .ratio(ratio)
@@ -467,31 +626,73 @@ fn player(frame: &mut Frame, app: &mut App, area: Rect) {
             .filled_style(Style::default().fg(ACCENT)),
         rows[1],
     );
-    frame.render_widget(
-        Paragraph::new(format!(
-            "Volume {:3.0}%   Shuffle {}   Repeat {}   {}",
-            app.store.data.preferences.volume,
-            if app.store.data.preferences.shuffle {
-                "ON"
-            } else {
-                "OFF"
-            },
-            app.store.data.preferences.repeat,
-            source_text(&app.source)
-        )),
+    if app.loaded
+        && !app.is_radio()
+        && duration > 0.
+        && let Some(track) = app.queue.current
+    {
+        app.mouse.hit(
+            Rect::new(
+                rows[1].x + label_width + 1,
+                rows[1].y,
+                rows[1].width.saturating_sub(label_width + 1),
+                1,
+            ),
+            MouseAction::Seek(track),
+        );
+    }
+    let x = buttons(
+        frame,
+        &mut app.mouse,
         rows[2],
+        vec![
+            ("-".into(), MouseAction::Key(KeyCode::Char('-'))),
+            (
+                format!("Volume {:.0}%", app.store.data.preferences.volume),
+                MouseAction::Volume,
+            ),
+            ("+".into(), MouseAction::Key(KeyCode::Char('+'))),
+            (
+                format!(
+                    "Shuffle {}",
+                    if app.store.data.preferences.shuffle {
+                        "ON"
+                    } else {
+                        "OFF"
+                    }
+                ),
+                MouseAction::Key(KeyCode::Char('s')),
+            ),
+            (
+                format!("Repeat {}", app.store.data.preferences.repeat),
+                MouseAction::Key(KeyCode::Char('r')),
+            ),
+        ],
     );
     frame.render_widget(
-        Paragraph::new(format!(
-            "Space Pause · n/p Skip · ←→ Seek · +/- Volume{}",
-            if app.downloading {
-                " · Download in progress"
-            } else {
-                ""
-            }
-        ))
-        .style(Style::default().fg(Color::DarkGray)),
+        Paragraph::new(source_text(&app.source)),
+        Rect::new(x, rows[2].y, rows[2].right().saturating_sub(x), 1),
+    );
+    buttons(
+        frame,
+        &mut app.mouse,
         rows[3],
+        vec![
+            ("Prev".into(), MouseAction::Key(KeyCode::Char('p'))),
+            (
+                if app.loaded && app.snapshot["paused"] != true {
+                    "Pause"
+                } else {
+                    "Play"
+                }
+                .into(),
+                MouseAction::Key(KeyCode::Char(' ')),
+            ),
+            ("Next".into(), MouseAction::Key(KeyCode::Char('n'))),
+            ("Stop".into(), MouseAction::Stop),
+            ("Queue".into(), MouseAction::Key(KeyCode::Char('q'))),
+            ("Lyrics".into(), MouseAction::Key(KeyCode::Char('l'))),
+        ],
     );
 }
 
@@ -510,6 +711,7 @@ fn overlay(frame: &mut Frame, app: &mut App, body: Rect) {
     let Some(overlay) = &mut app.overlay else {
         return;
     };
+    app.mouse.clear();
     let area = popup(body, 90, body.height);
     frame.render_widget(Clear, area);
     match overlay {
@@ -533,6 +735,7 @@ fn overlay(frame: &mut Frame, app: &mut App, body: Rect) {
         Overlay::Actions(item, _, state) => {
             menu(
                 frame,
+                &mut app.mouse,
                 controls::ACTIONS.iter().map(|s| (*s).into()).collect(),
                 format!("Actions · {}", clean(&item.title)),
                 state,
@@ -555,18 +758,20 @@ fn overlay(frame: &mut Frame, app: &mut App, body: Rect) {
             ];
             menu(
                 frame,
+                &mut app.mouse,
                 controls::SETTINGS
                     .iter()
                     .zip(values)
                     .map(|(name, value)| format!("{name}  {value}"))
                     .collect(),
-                "Settings".into(),
+                format!("Settings · {}", clean(&app.account)),
                 state,
                 area,
             );
         }
         Overlay::Replace(_, _, _, state) => menu(
             frame,
+            &mut app.mouse,
             vec![
                 "Keep manual additions".into(),
                 "Replace queue including manual additions".into(),
@@ -578,6 +783,7 @@ fn overlay(frame: &mut Frame, app: &mut App, body: Rect) {
         ),
         Overlay::RemoveDownload(item, state) => menu(
             frame,
+            &mut app.mouse,
             vec!["Cancel".into(), "Remove cached download".into()],
             format!("Remove download · {}", clean(&item.title)),
             state,
@@ -585,6 +791,7 @@ fn overlay(frame: &mut Frame, app: &mut App, body: Rect) {
         ),
         Overlay::Devices(devices, state) => menu(
             frame,
+            &mut app.mouse,
             devices
                 .iter()
                 .map(|value| {
@@ -614,6 +821,17 @@ fn overlay(frame: &mut Frame, app: &mut App, body: Rect) {
                 area,
                 &mut page.table,
             );
+            let inner = block("", false).inner(area);
+            for index in page.table.offset()..page.visible.len() {
+                let row = index - page.table.offset();
+                if row >= inner.height as usize {
+                    break;
+                }
+                app.mouse.hit(
+                    Rect::new(inner.x, inner.y + row as u16, inner.width, 1),
+                    MouseAction::MenuRow(index),
+                );
+            }
         }
         Overlay::Text(title, text) => frame.render_widget(
             Paragraph::new(
@@ -627,9 +845,22 @@ fn overlay(frame: &mut Frame, app: &mut App, body: Rect) {
             area,
         ),
     }
+    buttons(
+        frame,
+        &mut app.mouse,
+        Rect::new(area.right().saturating_sub(3), area.y, 3, 1),
+        vec![("x".into(), MouseAction::Key(KeyCode::Esc))],
+    );
 }
-
-fn menu(frame: &mut Frame, items: Vec<String>, title: String, state: &mut ListState, area: Rect) {
+fn menu(
+    frame: &mut Frame,
+    mouse: &mut mouse::Mouse,
+    items: Vec<String>,
+    title: String,
+    state: &mut ListState,
+    area: Rect,
+) {
+    let count = items.len();
     frame.render_stateful_widget(
         List::new(items.into_iter().map(ListItem::new))
             .block(block(format!("{title} · Esc Close"), true))
@@ -638,13 +869,24 @@ fn menu(frame: &mut Frame, items: Vec<String>, title: String, state: &mut ListSt
         area,
         state,
     );
+    let inner = block("", false).inner(area);
+    for index in state.offset()..count {
+        let row = index - state.offset();
+        if row >= inner.height as usize {
+            break;
+        }
+        mouse.hit(
+            Rect::new(inner.x, inner.y + row as u16, inner.width, 1),
+            MouseAction::MenuRow(index),
+        );
+    }
 }
 
-fn input_box(frame: &mut Frame, input: &Input, body: Rect) {
+fn input_box(frame: &mut Frame, input: &Input, body: Rect, mouse: &mut mouse::Mouse) {
     let (title, hint) = match &input.kind {
         InputKind::Search(library) => (
             format!(
-                "Search · {}",
+                "Search · {} [switch scope]",
                 if *library {
                     "My Library"
                 } else {
@@ -684,6 +926,18 @@ fn input_box(frame: &mut Frame, input: &Input, body: Rect) {
     let outer = block(title, true).title_bottom(hint);
     let inner = outer.inner(area);
     frame.render_widget(outer, area);
+    if matches!(input.kind, InputKind::Search(_)) {
+        mouse.hit(
+            Rect::new(area.x, area.y, area.width.saturating_sub(3), 1),
+            MouseAction::SearchScope,
+        );
+    }
+    buttons(
+        frame,
+        mouse,
+        Rect::new(area.right().saturating_sub(3), area.y, 3, 1),
+        vec![("x".into(), MouseAction::Key(KeyCode::Esc))],
+    );
     if inner.width == 0 || inner.height == 0 {
         return;
     }
@@ -704,6 +958,10 @@ fn input_box(frame: &mut Frame, input: &Input, body: Rect) {
         Paragraph::new(text).scroll((0, offset)),
         Rect::new(inner.x, inner.y, inner.width, 1),
     );
+    mouse.hit(
+        Rect::new(inner.x, inner.y, inner.width, 1),
+        MouseAction::Caret(offset),
+    );
     frame.set_cursor_position((
         inner.x + (cursor_width.saturating_sub(offset as usize) as u16).min(inner.width - 1),
         inner.y,
@@ -717,7 +975,23 @@ fn input_box(frame: &mut Frame, input: &Input, body: Rect) {
             .collect();
         frame.render_widget(
             Paragraph::new(lines).style(Style::default().fg(Color::DarkGray)),
-            Rect::new(inner.x, inner.y + 2, inner.width, inner.height - 2),
+            Rect::new(
+                inner.x,
+                inner.y + 2,
+                inner.width,
+                inner.height.saturating_sub(3),
+            ),
+        );
+    }
+    if inner.height > 1 {
+        buttons(
+            frame,
+            mouse,
+            Rect::new(inner.x, inner.bottom() - 1, inner.width, 1),
+            vec![
+                ("OK".into(), MouseAction::Key(KeyCode::Enter)),
+                ("Cancel".into(), MouseAction::Key(KeyCode::Esc)),
+            ],
         );
     }
 }

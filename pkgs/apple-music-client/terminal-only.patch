@@ -2,7 +2,7 @@
 +++ b/Cargo.toml
 @@ -3 +3 @@
 -version = "0.2.0"
-+version = "0.3.1"
++version = "0.3.2"
 @@ -5 +5 @@
 -description = "Native Linux Apple Music client built with Rust and GPUI"
 +description = "Apple Music terminal client"
@@ -10,7 +10,7 @@
 +ratatui = "=0.29.0"
 +ratatui-image = { version = "=8.0.1", default-features = false, features = ["crossterm"] }
 +image = { version = "0.25", default-features = false, features = ["jpeg"] }
-+crossterm = "=0.28.1"
++crossterm = { version = "=0.28.1", features = ["use-dev-tty"] }
 +signal-hook = "0.3"
 +unicode-width = "0.2"
 @@ -15,3 +20,0 @@
@@ -86,3 +86,84 @@
 +            "file,pipe",
 +            "-i",
 +        ]);
+--- a/src/auth_service.rs
++++ b/src/auth_service.rs
+@@ -47,0 +48 @@
++        check_setup()?;
+@@ -84,0 +86,8 @@
++    pub fn is_running(&mut self) -> Result<bool> {
++        Ok(self
++            .child
++            .try_wait()
++            .context("認証ヘルパーの状態を確認できません。")?
++            .is_none())
++    }
++
+@@ -87,0 +97,40 @@
++}
++
++pub fn check_setup() -> Result<()> {
++    let data = std::env::var_os("ALAC_ROOM_AUTH_DATA_DIR")
++        .filter(|value| !value.is_empty())
++        .map(PathBuf::from)
++        .or_else(|| {
++            std::env::var_os("XDG_DATA_HOME")
++                .filter(|value| !value.is_empty())
++                .map(|path| PathBuf::from(path).join("alac-room/auth"))
++        })
++        .or_else(|| {
++            std::env::var_os("HOME")
++                .map(|path| PathBuf::from(path).join(".local/share/alac-room/auth"))
++        })
++        .ok_or_else(|| anyhow!("HOMEまたはALAC_ROOM_AUTH_DATA_DIRを設定してください。"))?;
++    validate_setup(&data)
++}
++
++fn validate_setup(data: &Path) -> Result<()> {
++    if !data.is_absolute() {
++        bail!("ALAC_ROOM_AUTH_DATA_DIRには絶対パスを指定してください。");
++    }
++    let root = data.join("rootfs");
++    for (name, executable) in [
++        ("system/bin/main", true),
++        ("system/bin/linker64", true),
++        ("system/lib64/libandroidappmusic.so", false),
++    ] {
++        let usable = std::fs::metadata(root.join(name)).is_ok_and(|metadata| {
++            metadata.is_file() && (!executable || metadata.permissions().mode() & 0o111 != 0)
++        });
++        if !usable {
++            bail!(
++                "Apple Music認証用ライブラリが未導入、または不完全です。\nApple Music 3.6.0-beta (1109) のx86_64対応APK/APKMを用意して、次を実行してください。\n\nalac-room-auth-import /path/to/apple-music.apkm\n\n導入先: {}\n不足: {name}\n取り込み後、Sioraで :connect または :login を実行してください。",
++                root.display()
++            );
++        }
++    }
++    Ok(())
+@@ -229,0 +279,26 @@
++
++    #[test]
++    fn setup_requires_imported_worker_and_apple_library() {
++        let root = tempfile::tempdir().unwrap();
++        let error = validate_setup(root.path()).unwrap_err().to_string();
++        assert!(error.contains("alac-room-auth-import"));
++        assert!(error.contains("3.6.0-beta (1109)"));
++        for name in [
++            "system/bin/main",
++            "system/bin/linker64",
++            "system/lib64/libandroidappmusic.so",
++        ] {
++            let path = root.path().join("rootfs").join(name);
++            std::fs::create_dir_all(path.parent().unwrap()).unwrap();
++            std::fs::write(&path, b"fixture").unwrap();
++            std::fs::set_permissions(path, std::fs::Permissions::from_mode(0o700)).unwrap();
++        }
++        validate_setup(root.path()).unwrap();
++        std::fs::set_permissions(
++            root.path().join("rootfs/system/bin/main"),
++            std::fs::Permissions::from_mode(0o600),
++        )
++        .unwrap();
++        assert!(validate_setup(root.path()).is_err());
++        assert!(validate_setup(Path::new("relative")).is_err());
++    }

@@ -158,7 +158,16 @@ or play, `Space` to pause, `e`/`E` to append/play next, and `q` for the editable
 queue. `Tab` changes focus, `Backspace` restores the previous page and position,
 `a` opens item actions, `?` shows help, and `Ctrl+c` exits. Queue, lyrics, and
 details share an optional panel; narrow terminals show one active pane.
+Mouse controls include clickable navigation, search, settings and player buttons;
+single-click row selection, double-click open/play, right-click actions, and
+middle-click queue insertion. The wheel scrolls lists, and the progress bar
+supports click/drag seeking. Queue buttons move/remove entries or undo edits.
 `:login` and `:code` handle account authentication, and `,` opens audio settings.
+Authentication requires importing the x86_64 libraries from Apple Music
+3.6.0-beta (1109) with `alac-room-auth-import /path/to/apple-music.apkm`.
+The default location is `~/.local/share/alac-room/auth/rootfs`; set
+`ALAC_ROOM_AUTH_DATA_DIR` for another auth data directory. `:connect` retries
+helper startup after import. Login fields open only after the helper responds.
 The terminal controls colors and fonts. Existing `alac-room` library, downloads,
 and authentication sessions remain compatible. Music videos play audio only.
 Selected items show their cover above the list, and the playing track has its

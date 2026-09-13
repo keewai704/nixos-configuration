@@ -114,6 +114,45 @@ impl Page {
         self.selected = self.item().map(MusicItem::key);
     }
 
+    pub fn select_visible(&mut self, index: usize) {
+        self.table.select(
+            (!self.visible.is_empty()).then_some(index.min(self.visible.len().saturating_sub(1))),
+        );
+        self.remember_selection();
+    }
+
+    pub fn select_key(&mut self, key: &str) -> bool {
+        let Some(index) = self
+            .visible
+            .iter()
+            .position(|&index| self.items[index].key() == key)
+        else {
+            return false;
+        };
+        self.select_visible(index);
+        true
+    }
+
+    pub fn scroll(&mut self, delta: isize, rows: usize) {
+        let rows = rows.max(1);
+        let start = self
+            .table
+            .offset()
+            .saturating_add_signed(delta)
+            .min(self.visible.len().saturating_sub(rows));
+        *self.table.offset_mut() = start;
+        if let Some(selected) = self.table.selected() {
+            self.select_visible(
+                selected.clamp(
+                    start,
+                    (start + rows)
+                        .saturating_sub(1)
+                        .min(self.visible.len().saturating_sub(1)),
+                ),
+            );
+        }
+    }
+
     pub fn append(&mut self, other: Page) {
         let mut seen: HashSet<_> = self.items.iter().map(MusicItem::key).collect();
         self.items.extend(
@@ -319,5 +358,21 @@ mod tests {
         assert!(page.next_url().is_none());
         page.kind = 2;
         assert_eq!(page.next_url().as_deref(), Some("/albums?page=2"));
+    }
+
+    #[test]
+    fn wheel_scroll_changes_viewport_without_changing_the_collection() {
+        let mut page = Page::new(
+            "Songs",
+            (0..30).map(|id| song(&id.to_string(), "song")).collect(),
+        );
+        page.select_visible(8);
+        page.scroll(3, 10);
+        assert_eq!(page.table.offset(), 3);
+        assert_eq!(page.item().unwrap().id, "8");
+        page.scroll(20, 10);
+        assert_eq!(page.table.offset(), 20);
+        assert_eq!(page.item().unwrap().id, "20");
+        assert_eq!(page.items.len(), 30);
     }
 }

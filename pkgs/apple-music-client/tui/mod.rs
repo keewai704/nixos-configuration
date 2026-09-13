@@ -1,6 +1,7 @@
 pub mod browse;
 mod controls;
 mod cover;
+mod mouse;
 mod queue;
 mod render;
 
@@ -10,8 +11,8 @@ use crossterm::{
     SynchronizedUpdate,
     cursor::{Hide, Show},
     event::{
-        self, DisableBracketedPaste, EnableBracketedPaste, Event as TerminalEvent, KeyCode,
-        KeyEvent, KeyEventKind, KeyModifiers,
+        self, DisableBracketedPaste, DisableMouseCapture, EnableBracketedPaste, EnableMouseCapture,
+        Event as TerminalEvent, KeyCode, KeyEvent, KeyEventKind, KeyModifiers,
     },
     execute,
     terminal::{
@@ -32,7 +33,7 @@ use siora::{
     player::{self, PreparedTrack},
 };
 use std::{
-    io,
+    io::{self, IsTerminal, Write},
     path::PathBuf,
     sync::{
         Arc,
@@ -55,6 +56,12 @@ enum Panel {
     Queue,
     Lyrics,
     Details,
+}
+
+#[derive(Clone, Copy)]
+enum LoginPrompt {
+    Account,
+    Code,
 }
 
 enum InputKind {
@@ -120,8 +127,12 @@ enum Overlay {
 
 enum Job {
     Page(u64, bool, Result<Page>),
-    Connected(Result<AppleMusic>),
-    Login(Result<LoginState>),
+    Connected(
+        u64,
+        Option<LoginPrompt>,
+        Result<(auth_service::ServiceStatus, Option<AppleMusic>)>,
+    ),
+    Login(u64, Result<LoginState>),
     Prepared(u64, u64, String, Result<PreparedTrack>),
     Prefetched(u64, u64, u64, String, Result<PreparedTrack>),
     Radio(u64, Result<String>),
@@ -153,6 +164,7 @@ struct App {
     cache: PathBuf,
     page: Page,
     covers: cover::Covers,
+    mouse: mouse::Mouse,
     history: Vec<Page>,
     focus: Focus,
     panel: Option<Panel>,
@@ -168,6 +180,9 @@ struct App {
     api: Option<AppleMusic>,
     runtime: Option<AuthRuntime>,
     auth_busy: bool,
+    auth_ready: bool,
+    auth_problem: Option<String>,
+    auth_generation: u64,
     request: u64,
     pending_page: Option<u64>,
     generation: u64,
@@ -217,48 +232,84 @@ pub fn run(store: LibraryStore, cache: PathBuf, no_auth: bool, url: Option<Strin
         io::stdout(),
         EnterAlternateScreen,
         EnableBracketedPaste,
+        EnableMouseCapture,
         Hide
     )?;
     let graphics = cover::Graphics::from_terminal();
-    let mut terminal = Terminal::new(CrosstermBackend::new(io::stdout()))?;
+    let mut terminal = Terminal::new(CrosstermBackend::new(TerminalOutput(io::stdout())))?;
     let mut app = App::new(store, cache, no_auth, graphics);
     if let Some(url) = url {
         app.open_url(url)?;
     }
-    while !app.quit && !stop.load(Ordering::Relaxed) {
-        io::stdout().sync_update(|_| {
-            if let Err(error) = app.poll() {
-                app.status = format!("{error:#}");
+    let interaction = (|| -> Result<()> {
+        while !app.quit && !stop.load(Ordering::Relaxed) {
+            if !terminal_connected() {
+                break;
             }
-            terminal
-                .draw(|frame| render::draw(frame, &mut app))
-                .map(|_| ())
-        })??;
-        if event::poll(Duration::from_millis(60))? {
-            let result = match event::read()? {
-                TerminalEvent::Key(key) if key.kind != KeyEventKind::Release => app.key(key),
-                TerminalEvent::Paste(value) => {
-                    if let Some(input) = &mut app.input {
-                        input.insert(&value);
+            io::stdout().sync_update(|_| {
+                if let Err(error) = app.poll() {
+                    app.status = format!("{error:#}");
+                }
+                terminal
+                    .draw(|frame| render::draw(frame, &mut app))
+                    .map(|_| ())
+            })??;
+            if event::poll(Duration::from_millis(60))? {
+                if !terminal_connected() {
+                    break;
+                }
+                let result = match event::read()? {
+                    TerminalEvent::Key(key) if key.kind != KeyEventKind::Release => app.key(key),
+                    TerminalEvent::Mouse(event) => app.mouse_event(event),
+                    TerminalEvent::Paste(value) => {
+                        if let Some(input) = &mut app.input {
+                            input.insert(&value);
+                        }
+                        app.preview_filter();
+                        Ok(())
                     }
-                    app.preview_filter();
-                    Ok(())
+                    TerminalEvent::Resize(_, _) => {
+                        app.covers.resize();
+                        Ok(())
+                    }
+                    _ => Ok(()),
+                };
+                if let Err(error) = result {
+                    app.status = format!("{error:#}");
                 }
-                TerminalEvent::Resize(_, _) => {
-                    app.covers.resize();
-                    Ok(())
-                }
-                _ => Ok(()),
-            };
-            if let Err(error) = result {
-                app.status = format!("{error:#}");
             }
         }
-    }
+        Ok(())
+    })();
     if app.dirty {
         app.store.save()?;
     }
-    Ok(())
+    if terminal_connected() {
+        interaction
+    } else {
+        Ok(())
+    }
+}
+
+fn terminal_connected() -> bool {
+    io::stdin().is_terminal() && io::stdout().is_terminal()
+}
+
+struct TerminalOutput(io::Stdout);
+
+impl Write for TerminalOutput {
+    fn write(&mut self, bytes: &[u8]) -> io::Result<usize> {
+        match self.0.write(bytes) {
+            Err(_) if !self.0.is_terminal() => Ok(bytes.len()),
+            result => result,
+        }
+    }
+    fn flush(&mut self) -> io::Result<()> {
+        match self.0.flush() {
+            Err(_) if !self.0.is_terminal() => Ok(()),
+            result => result,
+        }
+    }
 }
 
 struct TerminalGuard;
@@ -274,6 +325,7 @@ fn restore_terminal() {
         io::stdout(),
         EndSynchronizedUpdate,
         DisableBracketedPaste,
+        DisableMouseCapture,
         LeaveAlternateScreen,
         Show
     );
@@ -304,6 +356,7 @@ impl App {
             cache,
             page,
             covers: cover::Covers::new(graphics),
+            mouse: mouse::Mouse::default(),
             history: Vec::new(),
             focus: Focus::Browse,
             panel: None,
@@ -319,6 +372,9 @@ impl App {
             api: None,
             runtime: None,
             auth_busy: false,
+            auth_ready: false,
+            auth_problem: None,
+            auth_generation: 0,
             request: 0,
             pending_page: None,
             generation: 0,
@@ -347,16 +403,8 @@ impl App {
             dirty: false,
             quit: false,
         };
-        if !no_auth {
-            match AuthRuntime::spawn() {
-                Ok(runtime) => {
-                    app.runtime = Some(runtime);
-                    if let Err(error) = app.connect(true) {
-                        app.status = error.to_string();
-                    }
-                }
-                Err(error) => app.status = error.to_string(),
-            }
+        if !no_auth && let Err(error) = app.connect(None) {
+            app.status = error.to_string();
         }
         app
     }
@@ -379,6 +427,14 @@ impl App {
     }
 
     fn auth(&self) -> Result<Endpoints> {
+        if !self.auth_ready {
+            bail!(
+                "{}",
+                self.auth_problem.as_deref().unwrap_or(
+                    "認証ヘルパーが未接続です。:connect または :login を実行してください。"
+                )
+            );
+        }
         self.runtime.as_ref().map(|runtime| runtime.endpoints().clone()).context("Authentication helper unavailable; start Siora without --no-auth after importing the Apple Music runtime")
     }
 
@@ -395,27 +451,77 @@ impl App {
         Ok(())
     }
 
-    fn connect(&mut self, wait: bool) -> Result<()> {
+    fn auth_failed(&mut self, message: String, show: bool) {
+        self.auth_generation += 1;
+        self.auth_busy = false;
+        self.auth_ready = false;
+        self.api = None;
+        self.auth_problem = Some(message.clone());
+        self.account = "Auth unavailable".into();
+        self.status = message.clone();
+        if self.input.as_ref().is_some_and(|input| {
+            matches!(
+                input.kind,
+                InputKind::Username | InputKind::Password(_) | InputKind::Code
+            )
+        }) {
+            self.input = None;
+        }
+        if show {
+            self.panel_scroll = 0;
+            self.overlay = Some(Overlay::Text(
+                "Apple Musicの認証セットアップ".into(),
+                message,
+            ));
+        }
+    }
+
+    fn connect(&mut self, prompt: Option<LoginPrompt>) -> Result<()> {
         if self.auth_busy {
             bail!("Authentication is already in progress");
         }
-        let auth = self.auth()?;
+        let restart = self
+            .runtime
+            .as_mut()
+            .is_none_or(|runtime| !runtime.is_running().unwrap_or(false));
+        if restart {
+            self.runtime = None;
+            match AuthRuntime::spawn() {
+                Ok(runtime) => self.runtime = Some(runtime),
+                Err(error) => {
+                    self.auth_failed(error.to_string(), prompt.is_some());
+                    return Err(error);
+                }
+            }
+        }
+        let auth = self
+            .runtime
+            .as_ref()
+            .context("認証ヘルパーがありません。")?
+            .endpoints()
+            .clone();
+        self.auth_generation += 1;
+        let generation = self.auth_generation;
+        self.auth_ready = false;
         let storefront = self.store.data.preferences.storefront.clone();
         self.job(false, move || {
-            Job::Connected((|| {
-                let state = if wait {
-                    auth_service::wait_ready(&auth)?
-                } else {
-                    auth_service::status(&auth.http)?
-                };
-                if state.needs_code {
-                    bail!("Two-factor code required; use :code");
-                }
-                if !state.authenticated {
-                    bail!("Sign in with :login");
-                }
-                AppleMusic::from_wrapper(&auth.http, &storefront)
-            })())
+            Job::Connected(
+                generation,
+                prompt,
+                (|| {
+                    let state = if restart {
+                        auth_service::wait_ready(&auth)?
+                    } else {
+                        auth_service::status(&auth.http)?
+                    };
+                    let api = if state.authenticated {
+                        Some(AppleMusic::from_wrapper(&auth.http, &storefront)?)
+                    } else {
+                        None
+                    };
+                    Ok((state, api))
+                })(),
+            )
         })?;
         self.auth_busy = true;
         self.account = "Connecting…".into();
@@ -907,6 +1013,14 @@ impl App {
     }
 
     fn poll(&mut self) -> Result<()> {
+        if self
+            .runtime
+            .as_mut()
+            .is_some_and(|runtime| !runtime.is_running().unwrap_or(false))
+        {
+            self.runtime = None;
+            self.auth_failed("認証ヘルパーが終了しました。ライブラリの取り込み状態を確認し、:connect で再起動してください。".into(), false);
+        }
         self.prepare_threads.retain(|handle| !handle.is_finished());
         while let Ok(job) = self.rx.try_recv() {
             self.jobs = self.jobs.saturating_sub(1);
@@ -1027,22 +1141,46 @@ impl App {
                     )
                 };
             }
-            Job::Connected(result) => {
+            Job::Connected(generation, prompt, result) if generation == self.auth_generation => {
                 self.auth_busy = false;
                 match result {
-                    Ok(api) => {
-                        self.api = Some(api);
-                        self.account = "Connected".into();
-                        self.status = "Apple Music connected".into();
+                    Ok((state, api)) => {
+                        self.api = api;
+                        self.auth_ready = true;
+                        self.auth_problem = None;
+                        if state.authenticated {
+                            self.account = "Connected".into();
+                            self.status = "Apple Music connected".into();
+                        } else if state.needs_code {
+                            self.account = "Two-factor code required".into();
+                            self.status =
+                                "2段階認証コードが必要です。:code を実行してください。".into();
+                            if prompt.is_some() {
+                                self.input = Some(Input::new(InputKind::Code, String::new()));
+                            }
+                        } else {
+                            self.account = "Ready to sign in".into();
+                            self.status =
+                                "認証ヘルパーに接続しました。:login でサインインできます。".into();
+                            match prompt {
+                                Some(LoginPrompt::Account) => {
+                                    self.input =
+                                        Some(Input::new(InputKind::Username, String::new()))
+                                }
+                                Some(LoginPrompt::Code) => self.status =
+                                    "2段階認証待ちではありません。先に :login を実行してください。"
+                                        .into(),
+                                None => {}
+                            }
+                        }
                     }
                     Err(error) => {
-                        self.api = None;
-                        self.account = "Signed out / unavailable".into();
+                        self.auth_failed(error.to_string(), prompt.is_some());
                         return Err(error);
                     }
                 }
             }
-            Job::Login(result) => {
+            Job::Login(generation, result) if generation == self.auth_generation => {
                 self.auth_busy = false;
                 let state = match result {
                     Ok(state) => state,
@@ -1052,7 +1190,7 @@ impl App {
                     }
                 };
                 match state {
-                    LoginState::Authenticated => self.connect(false)?,
+                    LoginState::Authenticated => self.connect(None)?,
                     LoginState::TwoFactorRequired => {
                         self.account = "Two-factor code required".into();
                         self.input = Some(Input::new(InputKind::Code, String::new()));
@@ -1384,6 +1522,50 @@ mod tests {
         app.key(key(KeyCode::Tab))?;
         assert!(app.focus == Focus::Navigation);
         assert!(app.queue.entries.is_empty());
+        Ok(())
+    }
+
+    #[test]
+    fn login_prompts_require_a_ready_helper_and_ignore_old_auth_results() -> Result<()> {
+        let root = tempfile::tempdir()?;
+        let mut app = app(root.path())?;
+        app.auth_generation = 1;
+        let ready = auth_service::ServiceStatus {
+            running: true,
+            ..Default::default()
+        };
+        app.handle_job(Job::Connected(
+            1,
+            Some(LoginPrompt::Account),
+            Ok((ready, None)),
+        ))?;
+        assert!(app.auth_ready);
+        assert!(matches!(
+            app.input.as_ref().map(|input| &input.kind),
+            Some(InputKind::Username)
+        ));
+        assert!(app.api.is_none());
+        app.input = Some(Input::new(
+            InputKind::Password("test".into()),
+            "SECRET".into(),
+        ));
+        app.auth_failed("alac-room-auth-import is required".into(), true);
+        assert!(app.input.is_none());
+        assert!(
+            app.auth()
+                .unwrap_err()
+                .to_string()
+                .contains("alac-room-auth-import")
+        );
+        app.handle_job(Job::Connected(
+            1,
+            Some(LoginPrompt::Account),
+            Ok((ready, None)),
+        ))?;
+        app.handle_job(Job::Login(1, Ok(LoginState::Authenticated)))?;
+        assert!(!app.auth_ready);
+        assert!(app.input.is_none());
+        assert!(!app.status.contains("SECRET"));
         Ok(())
     }
 

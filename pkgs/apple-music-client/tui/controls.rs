@@ -50,6 +50,12 @@ pub(super) const COMMANDS: &[&str] = &[
 ];
 
 pub(super) const BINDINGS: &[(&str, &str)] = &[
+    ("Click", "Select; buttons and menus act immediately"),
+    ("Double-click", "Open / play selected row"),
+    ("Right-click", "Item actions"),
+    ("Middle-click", "Add row to queue"),
+    ("Wheel", "Scroll pane; over volume adjusts volume"),
+    ("Drag progress", "Seek (except live radio)"),
     ("Enter", "Open / play"),
     ("Space", "Play / pause"),
     ("Tab", "Next pane"),
@@ -106,7 +112,10 @@ impl App {
         }
         match key.code {
             KeyCode::Char(':') => self.input = Some(Input::new(InputKind::Command, String::new())),
-            KeyCode::Char('?') => self.overlay = Some(Overlay::Help),
+            KeyCode::Char('?') => {
+                self.panel_scroll = 0;
+                self.overlay = Some(Overlay::Help);
+            }
             KeyCode::Char(',') => {
                 self.overlay = Some(Overlay::Settings(
                     ListState::default().with_selected(Some(0)),
@@ -378,16 +387,24 @@ impl App {
                     bail!("Enter your password");
                 }
                 let auth = self.auth()?;
+                let generation = self.auth_generation;
                 self.job(false, move || {
-                    Job::Login(apple_music::sign_in(&auth.http, &username, &text, None))
+                    Job::Login(
+                        generation,
+                        apple_music::sign_in(&auth.http, &username, &text, None),
+                    )
                 })?;
                 self.auth_busy = true;
                 self.account = "Signing in…".into();
             }
             InputKind::Code => {
                 let auth = self.auth()?;
+                let generation = self.auth_generation;
                 self.job(false, move || {
-                    Job::Login(apple_music::sign_in(&auth.http, "", "", Some(&text)))
+                    Job::Login(
+                        generation,
+                        apple_music::sign_in(&auth.http, "", "", Some(&text)),
+                    )
                 })?;
                 self.auth_busy = true;
             }
@@ -662,21 +679,9 @@ impl App {
         match command {
             "quit" => self.quit = true,
             "stop" => self.stop(),
-            "login" => {
-                self.auth()?;
-                if self.auth_busy {
-                    bail!("Authentication is already in progress");
-                }
-                self.input = Some(Input::new(InputKind::Username, String::new()));
-            }
-            "connect" => self.connect(false)?,
-            "code" => {
-                self.auth()?;
-                if self.auth_busy {
-                    bail!("Authentication is already in progress");
-                }
-                self.input = Some(Input::new(InputKind::Code, String::new()));
-            }
+            "login" => self.connect(Some(LoginPrompt::Account))?,
+            "connect" => self.connect(None)?,
+            "code" => self.connect(Some(LoginPrompt::Code))?,
             "settings" => {
                 self.overlay = Some(Overlay::Settings(
                     ListState::default().with_selected(Some(0)),
@@ -839,7 +844,7 @@ impl App {
             }
         } else if name == "storefront" {
             if self.api.is_some() {
-                self.connect(false)?;
+                self.connect(None)?;
             }
         } else {
             if name == "eq" && self.loaded {
