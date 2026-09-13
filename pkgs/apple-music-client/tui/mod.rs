@@ -1,31 +1,27 @@
+mod authentication;
 pub mod browse;
+mod commands;
 mod controls;
 mod cover;
 mod events;
+mod input;
+mod item_actions;
 mod mouse;
 mod navigation;
 mod playback;
 mod queue;
 mod render;
 mod settings;
+mod terminal;
+
+use input::{Input, InputKind};
+pub use terminal::run;
 
 use anyhow::{Context, Result, bail};
 use browse::{Page, api_page, playable};
-use crossterm::{
-    SynchronizedUpdate,
-    cursor::{Hide, Show},
-    event::{
-        self, DisableBracketedPaste, DisableMouseCapture, EnableBracketedPaste, EnableMouseCapture,
-        Event as TerminalEvent, KeyCode, KeyEvent, KeyEventKind, KeyModifiers,
-    },
-    execute,
-    terminal::{
-        EndSynchronizedUpdate, EnterAlternateScreen, LeaveAlternateScreen, disable_raw_mode,
-        enable_raw_mode,
-    },
-};
+use crossterm::event::{KeyCode, KeyEvent, KeyModifiers};
 use queue::Queue;
-use ratatui::{Terminal, backend::CrosstermBackend, widgets::ListState};
+use ratatui::widgets::ListState;
 use serde_json::{Value, json};
 use siora::{
     apple_music::{self, AppleMusic, LoginState},
@@ -37,7 +33,6 @@ use siora::{
     player::{self, PreparedTrack},
 };
 use std::{
-    io::{self, IsTerminal, Write},
     path::PathBuf,
     sync::{
         Arc,
@@ -68,56 +63,6 @@ enum LoginPrompt {
     Code,
 }
 
-enum InputKind {
-    Search(bool),
-    Filter(String),
-    Command,
-    Username,
-    Password(String),
-    Code,
-    Setting(&'static str),
-    PlaylistName(bool),
-}
-
-struct Input {
-    kind: InputKind,
-    text: String,
-    cursor: usize,
-}
-
-impl Input {
-    fn new(kind: InputKind, text: String) -> Self {
-        let cursor = text.len();
-        Self { kind, text, cursor }
-    }
-
-    fn insert(&mut self, text: &str) {
-        let text = browse::clean(text);
-        if self.text.len() + text.len() <= 4096 {
-            self.text.insert_str(self.cursor, &text);
-            self.cursor += text.len();
-        }
-    }
-
-    fn previous(&self) -> usize {
-        self.text[..self.cursor]
-            .char_indices()
-            .next_back()
-            .map_or(0, |(index, _)| index)
-    }
-
-    fn next(&self) -> usize {
-        self.text[self.cursor..]
-            .chars()
-            .next()
-            .map_or(self.cursor, |ch| self.cursor + ch.len_utf8())
-    }
-
-    fn masked(&self) -> bool {
-        matches!(self.kind, InputKind::Password(_) | InputKind::Code)
-    }
-}
-
 enum Overlay {
     Help,
     Actions(MusicItem, Option<u64>, ListState),
@@ -127,6 +72,11 @@ enum Overlay {
     Devices(Vec<Value>, ListState),
     RemoveDownload(MusicItem, ListState),
     Text(String, String),
+}
+
+enum ShutdownBehavior {
+    Detach,
+    Wait,
 }
 
 enum Job {
@@ -165,7 +115,7 @@ struct Station {
 
 struct App {
     store: LibraryStore,
-    cache: PathBuf,
+    download_directory: PathBuf,
     page: Page,
     covers: cover::Covers,
     mouse: mouse::Mouse,
@@ -173,7 +123,7 @@ struct App {
     focus: Focus,
     panel: Option<Panel>,
     panel_scroll: u16,
-    nav: ListState,
+    navigation_list: ListState,
     queue: Queue,
     queue_list: ListState,
     input: Option<Input>,
@@ -182,182 +132,68 @@ struct App {
     status: String,
     account: String,
     api: Option<AppleMusic>,
-    runtime: Option<AuthRuntime>,
+    auth_runtime: Option<AuthRuntime>,
     auth_busy: bool,
     auth_ready: bool,
     auth_problem: Option<String>,
     auth_generation: u64,
-    request: u64,
+    page_generation: u64,
     pending_page: Option<u64>,
-    generation: u64,
-    prefetch: u64,
-    ready: Option<Ready>,
+    playback_generation: u64,
+    prefetch_generation: u64,
+    prefetched_track: Option<Ready>,
     preparing: bool,
     loaded: bool,
-    snapshot: Value,
-    source: Value,
+    playback_snapshot: Value,
+    playback_source: Value,
     lyrics: String,
     station: Option<Station>,
     station_serial: u64,
-    cancel: Arc<AtomicBool>,
-    next_cancel: Arc<AtomicBool>,
+    playback_cancel: Arc<AtomicBool>,
+    prefetch_cancel: Arc<AtomicBool>,
     download_cancel: Arc<AtomicBool>,
     downloading: bool,
-    audio: Sender<AudioCommand>,
+    audio_commands: Sender<AudioCommand>,
     audio_events: Receiver<AudioEvent>,
     audio_thread: Option<JoinHandle<()>>,
     mpris: Option<(Sender<mpris::Metadata>, Receiver<MediaCommand>)>,
     last_published: Option<mpris::Metadata>,
-    tx: Sender<Job>,
-    rx: Receiver<Job>,
-    jobs: usize,
-    prepare_threads: Vec<JoinHandle<()>>,
-    dirty: bool,
+    job_sender: Sender<Job>,
+    job_receiver: Receiver<Job>,
+    pending_jobs: usize,
+    shutdown_threads: Vec<JoinHandle<()>>,
+    library_dirty: bool,
     quit: bool,
-}
-
-pub fn run(store: LibraryStore, cache: PathBuf, no_auth: bool, url: Option<String>) -> Result<()> {
-    let stop = Arc::new(AtomicBool::new(false));
-    for signal in [
-        signal_hook::consts::SIGTERM,
-        signal_hook::consts::SIGHUP,
-        signal_hook::consts::SIGINT,
-    ] {
-        signal_hook::flag::register(signal, stop.clone())?;
-    }
-    let previous_hook = std::panic::take_hook();
-    std::panic::set_hook(Box::new(move |info| {
-        restore_terminal();
-        previous_hook(info);
-    }));
-    enable_raw_mode()?;
-    let _guard = TerminalGuard;
-    execute!(
-        io::stdout(),
-        EnterAlternateScreen,
-        EnableBracketedPaste,
-        EnableMouseCapture,
-        Hide
-    )?;
-    let graphics = cover::Graphics::from_terminal();
-    let mut terminal = Terminal::new(CrosstermBackend::new(TerminalOutput(io::stdout())))?;
-    let mut app = App::new(store, cache, no_auth, graphics);
-    if let Some(url) = url {
-        app.open_url(url)?;
-    }
-    let interaction = (|| -> Result<()> {
-        while !app.quit && !stop.load(Ordering::Relaxed) {
-            if !terminal_connected() {
-                break;
-            }
-            io::stdout().sync_update(|_| {
-                if let Err(error) = app.poll() {
-                    app.status = format!("{error:#}");
-                }
-                terminal
-                    .draw(|frame| render::draw(frame, &mut app))
-                    .map(|_| ())
-            })??;
-            if event::poll(Duration::from_millis(60))? {
-                if !terminal_connected() {
-                    break;
-                }
-                let result = match event::read()? {
-                    TerminalEvent::Key(key) if key.kind != KeyEventKind::Release => app.key(key),
-                    TerminalEvent::Mouse(event) => app.mouse_event(event),
-                    TerminalEvent::Paste(value) => {
-                        if let Some(input) = &mut app.input {
-                            input.insert(&value);
-                        }
-                        app.preview_filter();
-                        Ok(())
-                    }
-                    TerminalEvent::Resize(_, _) => {
-                        app.covers.resize();
-                        Ok(())
-                    }
-                    _ => Ok(()),
-                };
-                if let Err(error) = result {
-                    app.status = format!("{error:#}");
-                }
-            }
-        }
-        Ok(())
-    })();
-    if app.dirty {
-        app.store.save()?;
-    }
-    if terminal_connected() {
-        interaction
-    } else {
-        Ok(())
-    }
-}
-
-fn terminal_connected() -> bool {
-    io::stdin().is_terminal() && io::stdout().is_terminal()
-}
-
-struct TerminalOutput(io::Stdout);
-
-impl Write for TerminalOutput {
-    fn write(&mut self, bytes: &[u8]) -> io::Result<usize> {
-        match self.0.write(bytes) {
-            Err(_) if !self.0.is_terminal() => Ok(bytes.len()),
-            result => result,
-        }
-    }
-    fn flush(&mut self) -> io::Result<()> {
-        match self.0.flush() {
-            Err(_) if !self.0.is_terminal() => Ok(()),
-            result => result,
-        }
-    }
-}
-
-struct TerminalGuard;
-impl Drop for TerminalGuard {
-    fn drop(&mut self) {
-        restore_terminal();
-    }
-}
-
-fn restore_terminal() {
-    let _ = disable_raw_mode();
-    let _ = execute!(
-        io::stdout(),
-        EndSynchronizedUpdate,
-        DisableBracketedPaste,
-        DisableMouseCapture,
-        LeaveAlternateScreen,
-        Show
-    );
 }
 
 impl Drop for App {
     fn drop(&mut self) {
-        self.cancel.store(true, Ordering::Release);
-        self.next_cancel.store(true, Ordering::Release);
+        self.playback_cancel.store(true, Ordering::Release);
+        self.prefetch_cancel.store(true, Ordering::Release);
         self.download_cancel.store(true, Ordering::Release);
-        let _ = self.audio.send(AudioCommand::Shutdown);
+        let _ = self.audio_commands.send(AudioCommand::Shutdown);
         if let Some(handle) = self.audio_thread.take() {
             let _ = handle.join();
         }
-        for handle in self.prepare_threads.drain(..) {
+        for handle in self.shutdown_threads.drain(..) {
             let _ = handle.join();
         }
     }
 }
 
 impl App {
-    fn new(store: LibraryStore, cache: PathBuf, no_auth: bool, graphics: cover::Graphics) -> Self {
+    fn new(
+        store: LibraryStore,
+        download_directory: PathBuf,
+        no_auth: bool,
+        graphics: cover::Graphics,
+    ) -> Self {
         let page = Page::new("Recent · played on this device", store.recent_items());
-        let (audio, audio_events, audio_thread) = audio_output::start_joinable();
-        let (tx, rx) = mpsc::channel();
+        let (audio_commands, audio_events, audio_thread) = audio_output::start_joinable();
+        let (job_sender, job_receiver) = mpsc::channel();
         let mut app = Self {
             store,
-            cache,
+            download_directory,
             page,
             covers: cover::Covers::new(graphics),
             mouse: mouse::Mouse::default(),
@@ -365,7 +201,7 @@ impl App {
             focus: Focus::Browse,
             panel: None,
             panel_scroll: 0,
-            nav: ListState::default().with_selected(Some(8)),
+            navigation_list: ListState::default().with_selected(Some(8)),
             queue: Queue::default(),
             queue_list: ListState::default(),
             input: None,
@@ -374,164 +210,70 @@ impl App {
             status: "Ctrl+f Search · :login Account · ? Help".into(),
             account: "Public / signed out".into(),
             api: None,
-            runtime: None,
+            auth_runtime: None,
             auth_busy: false,
             auth_ready: false,
             auth_problem: None,
             auth_generation: 0,
-            request: 0,
+            page_generation: 0,
             pending_page: None,
-            generation: 0,
-            prefetch: 0,
-            ready: None,
+            playback_generation: 0,
+            prefetch_generation: 0,
+            prefetched_track: None,
             preparing: false,
             loaded: false,
-            snapshot: json!({}),
-            source: Value::Null,
+            playback_snapshot: json!({}),
+            playback_source: Value::Null,
             lyrics: String::new(),
             station: None,
             station_serial: 0,
-            cancel: Arc::new(AtomicBool::new(false)),
-            next_cancel: Arc::new(AtomicBool::new(false)),
+            playback_cancel: Arc::new(AtomicBool::new(false)),
+            prefetch_cancel: Arc::new(AtomicBool::new(false)),
             download_cancel: Arc::new(AtomicBool::new(false)),
             downloading: false,
-            audio,
+            audio_commands,
             audio_events,
             audio_thread: Some(audio_thread),
             mpris: mpris::start().ok(),
             last_published: None,
-            tx,
-            rx,
-            jobs: 0,
-            prepare_threads: Vec::new(),
-            dirty: false,
+            job_sender,
+            job_receiver,
+            pending_jobs: 0,
+            shutdown_threads: Vec::new(),
+            library_dirty: false,
             quit: false,
         };
-        if !no_auth && let Err(error) = app.connect(None) {
+        if !no_auth && let Err(error) = app.connect_authentication(None) {
             app.status = error.to_string();
         }
         app
     }
 
-    fn job(&mut self, prepare: bool, work: impl FnOnce() -> Job + Send + 'static) -> Result<()> {
-        if self.jobs >= 8 {
+    fn spawn_job(
+        &mut self,
+        shutdown: ShutdownBehavior,
+        work: impl FnOnce() -> Job + Send + 'static,
+    ) -> Result<()> {
+        if self.pending_jobs >= 8 {
             bail!("Background jobs are busy; please retry shortly");
         }
-        let tx = self.tx.clone();
+        let job_sender = self.job_sender.clone();
         let handle = thread::Builder::new()
             .name("siora-work".into())
             .spawn(move || {
-                let _ = tx.send(work());
+                let _ = job_sender.send(work());
             })?;
-        self.jobs += 1;
-        if prepare {
-            self.prepare_threads.push(handle);
+        self.pending_jobs += 1;
+        if matches!(shutdown, ShutdownBehavior::Wait) {
+            self.shutdown_threads.push(handle);
         }
         Ok(())
-    }
-
-    fn auth(&self) -> Result<Endpoints> {
-        if !self.auth_ready {
-            bail!(
-                "{}",
-                self.auth_problem.as_deref().unwrap_or(
-                    "認証ヘルパーが未接続です。:connect または :login を実行してください。"
-                )
-            );
-        }
-        let runtime = self.runtime.as_ref().context(
-            "Authentication helper unavailable; start Siora without --no-auth after importing the Apple Music runtime",
-        )?;
-        Ok(runtime.endpoints().clone())
-    }
-
-    fn api(&self) -> Result<AppleMusic> {
-        self.api
-            .clone()
-            .context("Sign in with :login or reconnect with :connect")
     }
 
     fn save(&mut self) -> Result<()> {
-        self.dirty = true;
+        self.library_dirty = true;
         self.store.save()?;
-        self.dirty = false;
-        Ok(())
-    }
-
-    fn auth_failed(&mut self, message: String, show: bool) {
-        self.auth_generation += 1;
-        self.auth_busy = false;
-        self.auth_ready = false;
-        self.api = None;
-        self.auth_problem = Some(message.clone());
-        self.account = "Auth unavailable".into();
-        self.status = message.clone();
-        if self.input.as_ref().is_some_and(|input| {
-            matches!(
-                input.kind,
-                InputKind::Username | InputKind::Password(_) | InputKind::Code
-            )
-        }) {
-            self.input = None;
-        }
-        if show {
-            self.panel_scroll = 0;
-            self.overlay = Some(Overlay::Text(
-                "Apple Musicの認証セットアップ".into(),
-                message,
-            ));
-        }
-    }
-
-    fn connect(&mut self, prompt: Option<LoginPrompt>) -> Result<()> {
-        if self.auth_busy {
-            bail!("Authentication is already in progress");
-        }
-        let restart = self
-            .runtime
-            .as_mut()
-            .is_none_or(|runtime| !runtime.is_running().unwrap_or(false));
-        if restart {
-            self.runtime = None;
-            match AuthRuntime::spawn() {
-                Ok(runtime) => self.runtime = Some(runtime),
-                Err(error) => {
-                    self.auth_failed(error.to_string(), prompt.is_some());
-                    return Err(error);
-                }
-            }
-        }
-        let auth = self
-            .runtime
-            .as_ref()
-            .context("認証ヘルパーがありません。")?
-            .endpoints()
-            .clone();
-        self.auth_generation += 1;
-        let generation = self.auth_generation;
-        self.auth_ready = false;
-        let storefront = self.store.data.preferences.storefront.clone();
-        self.job(false, move || {
-            Job::Connected(
-                generation,
-                prompt,
-                (|| {
-                    let state = if restart {
-                        auth_service::wait_ready(&auth)?
-                    } else {
-                        auth_service::status(&auth.http)?
-                    };
-                    let api = if state.authenticated {
-                        Some(AppleMusic::from_wrapper(&auth.http, &storefront)?)
-                    } else {
-                        None
-                    };
-                    Ok((state, api))
-                })(),
-            )
-        })?;
-        self.auth_busy = true;
-        self.account = "Connecting…".into();
+        self.library_dirty = false;
         Ok(())
     }
 }
@@ -592,7 +334,7 @@ mod tests {
     fn late_search_and_preparation_results_cannot_replace_newer_state() -> Result<()> {
         let root = tempfile::tempdir()?;
         let mut app = app(root.path())?;
-        app.request = 10;
+        app.page_generation = 10;
         app.pending_page = Some(10);
         let title = app.page.title.clone();
         app.handle_job(Job::Page(
@@ -602,14 +344,14 @@ mod tests {
         ))?;
         assert_eq!(app.page.title, title);
         assert_eq!(app.pending_page, Some(10));
-        app.generation = 3;
+        app.playback_generation = 3;
         app.handle_job(Job::Prepared(
             2,
             1,
             "aac".into(),
             Err(anyhow!("stale error")),
         ))?;
-        assert!(app.source.is_null());
+        assert!(app.playback_source.is_null());
         app.handle_job(Job::Page(10, false, Err(anyhow!("network unavailable"))))
             .unwrap_err();
         assert_eq!(app.page.title, title);
@@ -679,10 +421,10 @@ mod tests {
             InputKind::Password("test".into()),
             "SECRET".into(),
         ));
-        app.auth_failed("alac-room-auth-import is required".into(), true);
+        app.handle_auth_failure("alac-room-auth-import is required".into(), true);
         assert!(app.input.is_none());
         assert!(
-            app.auth()
+            app.authentication_endpoints()
                 .unwrap_err()
                 .to_string()
                 .contains("alac-room-auth-import")

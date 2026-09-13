@@ -1,4 +1,4 @@
-use super::{App, Input, InputKind, Job, LoginPrompt, Overlay, Ready, cover};
+use super::{App, Input, InputKind, Job, LoginPrompt, Overlay, Ready, ShutdownBehavior, cover};
 use anyhow::{Context, Result, anyhow, bail};
 use ratatui::widgets::ListState;
 use serde_json::json;
@@ -12,23 +12,23 @@ use std::time::Instant;
 impl App {
     pub(super) fn poll(&mut self) -> Result<()> {
         if self
-            .runtime
+            .auth_runtime
             .as_mut()
             .is_some_and(|runtime| !runtime.is_running().unwrap_or(false))
         {
-            self.runtime = None;
-            self.auth_failed("認証ヘルパーが終了しました。ライブラリの取り込み状態を確認し、:connect で再起動してください。".into(), false);
+            self.auth_runtime = None;
+            self.handle_auth_failure("認証ヘルパーが終了しました。ライブラリの取り込み状態を確認し、:connect で再起動してください。".into(), false);
         }
-        self.prepare_threads.retain(|handle| !handle.is_finished());
-        while let Ok(job) = self.rx.try_recv() {
-            self.jobs = self.jobs.saturating_sub(1);
+        self.shutdown_threads.retain(|handle| !handle.is_finished());
+        while let Ok(job) = self.job_receiver.try_recv() {
+            self.pending_jobs = self.pending_jobs.saturating_sub(1);
             if let Err(error) = self.handle_job(job) {
                 self.status = format!("{error:#}");
             }
         }
         while let Ok(event) = self.audio_events.try_recv() {
             let result = match event {
-                AudioEvent::Loaded(id, result) if id == self.generation => {
+                AudioEvent::Loaded(id, result) if id == self.playback_generation => {
                     self.preparing = false;
                     match result {
                         Ok(()) => {
@@ -47,20 +47,26 @@ impl App {
                         }
                     }
                 }
-                AudioEvent::Snapshot(id, value) if id == self.generation => {
-                    self.snapshot = value;
-                    if self.loaded && self.snapshot["eof_reached"] == true && self.ready.is_none() {
+                AudioEvent::Snapshot(id, value) if id == self.playback_generation => {
+                    self.playback_snapshot = value;
+                    if self.loaded
+                        && self.playback_snapshot["eof_reached"] == true
+                        && self.prefetched_track.is_none()
+                    {
                         self.loaded = false;
                         self.next(true)
                     } else {
                         Ok(())
                     }
                 }
-                AudioEvent::Transition(id, path) if id == self.generation => {
-                    if let Some(ready) = self.ready.take().filter(|ready| ready.track.path == path)
+                AudioEvent::Transition(id, path) if id == self.playback_generation => {
+                    if let Some(ready) = self
+                        .prefetched_track
+                        .take()
+                        .filter(|ready| ready.track.path == path)
                     {
                         self.queue.current = Some(ready.id);
-                        self.source = ready.track.source;
+                        self.playback_source = ready.track.source;
                         self.lyrics = ready.track.lyrics.unwrap_or_default();
                         if let Some(entry) = self.queue.current() {
                             self.store.record_play(&entry.item.key())?;
@@ -71,8 +77,8 @@ impl App {
                         Ok(())
                     }
                 }
-                AudioEvent::Error(id, error) if id == self.generation => {
-                    self.ready = None;
+                AudioEvent::Error(id, error) if id == self.playback_generation => {
+                    self.prefetched_track = None;
                     Err(anyhow!(error))
                 }
                 _ => Ok(()),
@@ -102,9 +108,9 @@ impl App {
             .select(self.queue.current().map(|entry| &entry.item));
         for role in [cover::Role::Playing, cover::Role::Selected] {
             if let Some((key, item)) = self.covers.slot(role).request(Instant::now()) {
-                let cache = self.cache.clone();
+                let cache = self.download_directory.clone();
                 if self
-                    .job(true, move || {
+                    .spawn_job(ShutdownBehavior::Wait, move || {
                         Job::Cover(role, key, cover::load(item, &cache))
                     })
                     .is_err()
@@ -117,7 +123,7 @@ impl App {
 
     pub(super) fn handle_job(&mut self, job: Job) -> Result<()> {
         match job {
-            Job::Page(request, append, result) if request == self.request => {
+            Job::Page(request, append, result) if request == self.page_generation => {
                 self.pending_page = None;
                 let page = result?;
                 if append {
@@ -173,7 +179,7 @@ impl App {
                         }
                     }
                     Err(error) => {
-                        self.auth_failed(error.to_string(), prompt.is_some());
+                        self.handle_auth_failure(error.to_string(), prompt.is_some());
                         return Err(error);
                     }
                 }
@@ -188,7 +194,7 @@ impl App {
                     }
                 };
                 match state {
-                    LoginState::Authenticated => self.connect(None)?,
+                    LoginState::Authenticated => self.connect_authentication(None)?,
                     LoginState::TwoFactorRequired => {
                         self.account = "Two-factor code required".into();
                         self.input = Some(Input::new(InputKind::Code, String::new()));
@@ -196,14 +202,14 @@ impl App {
                 }
             }
             Job::Prepared(generation, id, quality, result)
-                if generation == self.generation && self.queue.current == Some(id) =>
+                if generation == self.playback_generation && self.queue.current == Some(id) =>
             {
                 self.preparing = false;
                 let track = result?;
                 self.prepared(id, &quality, &track)?;
-                self.source = track.source;
+                self.playback_source = track.source;
                 self.lyrics = track.lyrics.unwrap_or_default();
-                self.audio.send(AudioCommand::Load(
+                self.audio_commands.send(AudioCommand::Load(
                     generation,
                     track.path,
                     false,
@@ -211,25 +217,25 @@ impl App {
                 ))?;
             }
             Job::Prefetched(generation, serial, id, quality, result)
-                if generation == self.generation && serial == self.prefetch =>
+                if generation == self.playback_generation && serial == self.prefetch_generation =>
             {
                 let track = result?;
                 self.prepared(id, &quality, &track)?;
                 let prefs = self.store.data.preferences.clone();
-                self.audio.send(AudioCommand::Next(
+                self.audio_commands.send(AudioCommand::Next(
                     generation,
                     track.path.clone(),
                     false,
                     prefs.clone(),
                     prefs.crossfade_seconds,
                 ))?;
-                self.ready = Some(Ready { id, track });
+                self.prefetched_track = Some(Ready { id, track });
             }
-            Job::Radio(generation, result) if generation == self.generation => {
+            Job::Radio(generation, result) if generation == self.playback_generation => {
                 self.preparing = false;
                 let url = result?;
-                self.source = json!({"live": true});
-                self.audio.send(AudioCommand::Radio(
+                self.playback_source = json!({"live": true});
+                self.audio_commands.send(AudioCommand::Radio(
                     generation,
                     url,
                     self.store.data.preferences.clone(),
@@ -383,9 +389,9 @@ impl App {
                 title: item.map(|item| item.title.clone()).unwrap_or_default(),
                 artist: item.map(|item| item.artist.clone()).unwrap_or_default(),
                 album: item.map(|item| item.album.clone()).unwrap_or_default(),
-                duration: self.snapshot["duration"].as_f64().unwrap_or(0.),
-                position: self.snapshot["position"].as_f64().unwrap_or(0.),
-                paused: self.snapshot["paused"].as_bool().unwrap_or(true),
+                duration: self.playback_snapshot["duration"].as_f64().unwrap_or(0.),
+                position: self.playback_snapshot["position"].as_f64().unwrap_or(0.),
+                paused: self.playback_snapshot["paused"].as_bool().unwrap_or(true),
                 active: self.loaded,
                 volume: prefs.volume,
                 shuffle: prefs.shuffle,

@@ -42,6 +42,22 @@ let
   ];
   loopbackBackendPortPattern = lib.concatStringsSep "|" (map toString loopbackBackendPorts);
 
+  scriptReplacements = {
+    "@monitoredServices@" = lib.escapeShellArgs monitoredServices;
+    "@storageRootArg@" = lib.escapeShellArg storageRoot;
+    "@storageRoot@" = storageRoot;
+    "@smartDevices@" = lib.escapeShellArgs smartDevices;
+    "@tailnetOrigin@" = tailnetOrigin;
+    "@nginxPort@" = toString nginxPort;
+    "@tailnetHostname@" = tailnetHostname;
+    "@minecraftPort@" = toString minecraftPort;
+    "@loopbackBackendPortPattern@" = loopbackBackendPortPattern;
+    "@immichBackupRoot@" = lib.escapeShellArg immichBackupRoot;
+    "@vaultwardenBackupRoot@" = lib.escapeShellArg vaultwardenBackupRoot;
+    "@minecraftBackupRoot@" = lib.escapeShellArg "${localBackupRoot}/minecraft";
+    "@versionedVaultwardenBackupRoot@" = lib.escapeShellArg "${localBackupRoot}/vaultwarden";
+  };
+
   healthMonitor = pkgs.writeShellApplication {
     name = "orange-health-monitor";
     runtimeInputs = with pkgs; [
@@ -59,27 +75,9 @@ let
       tailscale
       util-linux
     ];
-    text =
-      let
-        substitutions = {
-          "@monitoredServices@" = lib.escapeShellArgs monitoredServices;
-          "@storageRootArg@" = lib.escapeShellArg storageRoot;
-          "@storageRoot@" = storageRoot;
-          "@smartDevices@" = lib.escapeShellArgs smartDevices;
-          "@tailnetOrigin@" = tailnetOrigin;
-          "@nginxPort@" = toString nginxPort;
-          "@tailnetHostname@" = tailnetHostname;
-          "@minecraftPort@" = toString minecraftPort;
-          "@loopbackBackendPortPattern@" = loopbackBackendPortPattern;
-          "@immichBackupRoot@" = lib.escapeShellArg immichBackupRoot;
-          "@vaultwardenBackupRoot@" = lib.escapeShellArg vaultwardenBackupRoot;
-          "@minecraftBackupRoot@" = lib.escapeShellArg "${localBackupRoot}/minecraft";
-          "@versionedVaultwardenBackupRoot@" = lib.escapeShellArg "${localBackupRoot}/vaultwarden";
-        };
-      in
-      lib.replaceStrings (lib.attrNames substitutions) (lib.attrValues substitutions) (
-        builtins.readFile ./health-monitor.sh
-      );
+    text = lib.replaceStrings (lib.attrNames scriptReplacements) (lib.attrValues scriptReplacements) (
+      builtins.readFile ./health-monitor.sh
+    );
   };
 in
 {

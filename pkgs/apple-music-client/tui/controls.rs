@@ -1,53 +1,6 @@
+use super::item_actions::ACTIONS;
+use super::settings::SETTINGS;
 use super::*;
-
-pub(super) const ACTIONS: &[&str] = &[
-    "Play now / open",
-    "Play next",
-    "Add to queue",
-    "Open album",
-    "Open artist",
-    "Like on Apple Music",
-    "Clear Apple Music rating",
-    "Add to Apple Music library",
-    "Add to playlist",
-    "Start station",
-    "Download",
-    "Remove download",
-    "Details / link",
-];
-
-pub(super) const SETTINGS: &[&str] = &[
-    "Sign in",
-    "Reconnect",
-    "Two-factor code",
-    "Audio quality",
-    "Output device",
-    "Crossfade seconds",
-    "Atmos passthrough",
-    "Equalizer",
-    "Cache limit (MB)",
-    "Storefront",
-];
-
-pub(super) const COMMANDS: &[&str] = &[
-    "login",
-    "connect",
-    "code",
-    "settings",
-    "devices",
-    "quality aac|lossless|hires|atmos",
-    "device auto|pipewire|alsa/…",
-    "crossfade 0..12",
-    "passthrough on|off",
-    "eq off|gain1,gain2,…,gain10",
-    "cache-limit 256..1048576",
-    "storefront jp",
-    "playlist-new NAME",
-    "queue-save NAME",
-    "cancel-download",
-    "stop",
-    "quit",
-];
 
 pub(super) const BINDINGS: &[(&str, &str)] = &[
     ("Click", "Select; buttons and menus act immediately"),
@@ -135,7 +88,7 @@ impl App {
             KeyCode::Home => self.move_cursor(isize::MIN),
             KeyCode::End => self.move_cursor(isize::MAX),
             KeyCode::Enter => match self.focus {
-                Focus::Navigation => self.navigate(self.nav.selected().unwrap_or(0))?,
+                Focus::Navigation => self.navigate(self.navigation_list.selected().unwrap_or(0))?,
                 Focus::Panel if self.panel == Some(Panel::Queue) => {
                     if let Some(id) = self.queue.selected {
                         self.play(id)?;
@@ -237,7 +190,7 @@ impl App {
         Ok(())
     }
 
-    fn cycle_focus(&mut self, reverse: bool) {
+    pub(super) fn cycle_focus(&mut self, reverse: bool) {
         let mut panes = vec![Focus::Browse, Focus::Navigation];
         if self.panel.is_some() {
             panes.push(Focus::Panel);
@@ -268,12 +221,12 @@ impl App {
             Focus::Browse => self.page.move_by(delta),
             Focus::Navigation => {
                 let index = self
-                    .nav
+                    .navigation_list
                     .selected()
                     .unwrap_or(0)
                     .saturating_add_signed(delta)
                     .min(browse::NAV.len() - 1);
-                self.nav.select(Some(index));
+                self.navigation_list.select(Some(index));
             }
             Focus::Panel if self.panel == Some(Panel::Queue) => self.queue.move_cursor(delta),
             Focus::Panel => {
@@ -295,123 +248,6 @@ impl App {
             queue_id,
             ListState::default().with_selected(Some(0)),
         ));
-    }
-
-    fn input_key(&mut self, key: KeyEvent) -> Result<()> {
-        let input = self.input.as_mut().unwrap();
-        if key.code == KeyCode::Esc {
-            if let InputKind::Filter(original) = &input.kind {
-                self.page.filter = original.clone();
-                self.page.refresh();
-            }
-            self.input = None;
-            return Ok(());
-        }
-        if key.modifiers.contains(KeyModifiers::CONTROL) {
-            match key.code {
-                KeyCode::Char('l') => {
-                    if let InputKind::Search(library) = &mut input.kind {
-                        *library = !*library;
-                    }
-                }
-                KeyCode::Char('u') => {
-                    input.text.clear();
-                    input.cursor = 0;
-                }
-                KeyCode::Char('a') => input.cursor = 0,
-                KeyCode::Char('e') => input.cursor = input.text.len(),
-                _ => {}
-            }
-        } else {
-            match key.code {
-                KeyCode::Enter => return self.submit_input(),
-                KeyCode::Tab | KeyCode::BackTab
-                    if matches!(input.kind, InputKind::Search(_) | InputKind::Filter(_)) =>
-                {
-                    return self.submit_input();
-                }
-                KeyCode::Tab | KeyCode::BackTab => {
-                    self.input = None;
-                    self.cycle_focus(key.code == KeyCode::BackTab);
-                    return Ok(());
-                }
-                KeyCode::Char(ch) if !key.modifiers.contains(KeyModifiers::ALT) => {
-                    input.insert(&ch.to_string())
-                }
-                KeyCode::Backspace => {
-                    let previous = input.previous();
-                    input.text.drain(previous..input.cursor);
-                    input.cursor = previous;
-                }
-                KeyCode::Delete => {
-                    let next = input.next();
-                    input.text.drain(input.cursor..next);
-                }
-                KeyCode::Left => input.cursor = input.previous(),
-                KeyCode::Right => input.cursor = input.next(),
-                KeyCode::Home => input.cursor = 0,
-                KeyCode::End => input.cursor = input.text.len(),
-                _ => {}
-            }
-        }
-        self.preview_filter();
-        Ok(())
-    }
-
-    pub(super) fn preview_filter(&mut self) {
-        if let Some(Input {
-            kind: InputKind::Filter(_),
-            text,
-            ..
-        }) = &self.input
-        {
-            self.page.filter = text.clone();
-            self.page.refresh();
-        }
-    }
-
-    fn submit_input(&mut self) -> Result<()> {
-        let Input { kind, text, .. } = self.input.take().unwrap();
-        match kind {
-            InputKind::Search(library) => self.search(text, library)?,
-            InputKind::Filter(_) => self.focus = Focus::Browse,
-            InputKind::Command => self.run_command(&text)?,
-            InputKind::Username => {
-                if text.trim().is_empty() {
-                    bail!("Enter your Apple ID");
-                }
-                self.input = Some(Input::new(InputKind::Password(text), String::new()));
-            }
-            InputKind::Password(username) => {
-                if text.is_empty() {
-                    bail!("Enter your password");
-                }
-                let auth = self.auth()?;
-                let generation = self.auth_generation;
-                self.job(false, move || {
-                    Job::Login(
-                        generation,
-                        apple_music::sign_in(&auth.http, &username, &text, None),
-                    )
-                })?;
-                self.auth_busy = true;
-                self.account = "Signing in…".into();
-            }
-            InputKind::Code => {
-                let auth = self.auth()?;
-                let generation = self.auth_generation;
-                self.job(false, move || {
-                    Job::Login(
-                        generation,
-                        apple_music::sign_in(&auth.http, "", "", Some(&text)),
-                    )
-                })?;
-                self.auth_busy = true;
-            }
-            InputKind::Setting(name) => self.setting(name, text.trim())?,
-            InputKind::PlaylistName(queue) => self.create_playlist(text, queue)?,
-        }
-        Ok(())
     }
 
     fn overlay_key(&mut self, key: KeyEvent) -> Result<()> {
@@ -470,8 +306,8 @@ impl App {
             },
             Overlay::Playlists(item, page) => {
                 let playlist = page.item().context("No playlist selected")?.clone();
-                let api = self.api()?;
-                self.job(false, move || {
+                let api = self.authenticated_api()?;
+                self.spawn_job(ShutdownBehavior::Detach, move || {
                     Job::Mutation(
                         api.add_playlist_tracks(&playlist.id, &[(item.id, item.kind)])
                             .map(|_| "Added to playlist".into()),
@@ -492,246 +328,6 @@ impl App {
         }
         Ok(())
     }
-
-    fn item_action(&mut self, item: MusicItem, index: usize) -> Result<()> {
-        match index {
-            0 => self.open_item(item)?,
-            1 | 2 => self.enqueue(item, index == 1)?,
-            3 | 4 => {
-                let api = self.api()?;
-                let relationship = if index == 3 { "albums" } else { "artists" };
-                self.fetch(false, move || {
-                    api.related(
-                        &item.kind,
-                        &item.id,
-                        relationship,
-                        item.kind.starts_with("library-"),
-                    )
-                    .map(|value| api_page(relationship, value))
-                })?;
-            }
-            5 | 6 => {
-                let api = self.api()?;
-                let target = item.clone();
-                self.job(false, move || {
-                    Job::Favorite(
-                        item,
-                        index == 5,
-                        api.rate(
-                            &target.kind,
-                            &target.id,
-                            if index == 5 { Some(1) } else { None },
-                        ),
-                    )
-                })?;
-            }
-            7 => {
-                let api = self.api()?;
-                self.job(false, move || {
-                    Job::Mutation((|| {
-                        let (id, kind) = api.catalog_reference(&item)?;
-                        api.library_add(&kind, &id)?;
-                        Ok("Added to Apple Music library".into())
-                    })())
-                })?;
-            }
-            8 => {
-                if !item.is_song() && !item.kind.contains("music-videos") {
-                    bail!("Select a song or music video");
-                }
-                let api = self.api()?;
-                self.job(false, move || {
-                    Job::Playlists(
-                        item,
-                        (|| {
-                            let mut page =
-                                api_page("Choose playlist", api.browse("library-playlists")?);
-                            while let Some(next) = page.next.clone() {
-                                if page.items.len() >= 10_000 {
-                                    bail!("Playlist list exceeds 10,000 items");
-                                }
-                                page.append(api_page("", api.next_page(&next)?));
-                            }
-                            Ok(page)
-                        })(),
-                    )
-                })?;
-            }
-            9 => self.start_station(item)?,
-            10 => self.download(item)?,
-            11 => {
-                self.overlay = Some(Overlay::RemoveDownload(
-                    item,
-                    ListState::default().with_selected(Some(0)),
-                ))
-            }
-            _ => {
-                self.overlay = Some(Overlay::Text(
-                    format!("Selected · {}", item.title),
-                    render::item_details(&item),
-                ))
-            }
-        }
-        Ok(())
-    }
-
-    fn enqueue(&mut self, item: MusicItem, next: bool) -> Result<()> {
-        if playable(&item) {
-            self.queue.add(item, next);
-            self.status = if next {
-                "Added to play next"
-            } else {
-                "Added to end of queue"
-            }
-            .into();
-            return self.schedule_next();
-        }
-        if !item.kind.contains("albums") && !item.kind.contains("playlists") {
-            bail!("Open the artist and choose an album first");
-        }
-        let api = self.api()?;
-        self.job(false, move || {
-            Job::Enqueue(
-                next,
-                (|| {
-                    let mut page = api_page(
-                        "",
-                        api.related(
-                            &item.kind,
-                            &item.id,
-                            "tracks",
-                            item.kind.starts_with("library-"),
-                        )?,
-                    );
-                    while let Some(next) = page.next.clone() {
-                        if page.items.len() >= 10_000 {
-                            bail!("Collection exceeds 10,000 tracks");
-                        }
-                        page.append(api_page("", api.next_page(&next)?));
-                    }
-                    Ok(page.items.into_iter().filter(playable).collect())
-                })(),
-            )
-        })
-    }
-
-    fn download(&mut self, item: MusicItem) -> Result<()> {
-        if self.downloading {
-            bail!("A download is already running; :cancel-download stops it");
-        }
-        if !playable(&item) || item.kind == "stations" {
-            bail!("Only songs and music videos can be downloaded");
-        }
-        let auth = self.auth()?;
-        let (prefs, cache) = (self.store.data.preferences.clone(), self.cache.clone());
-        self.download_cancel = Arc::new(AtomicBool::new(false));
-        let cancel = self.download_cancel.clone();
-        self.job(true, move || {
-            let result = player::prepare(&item, &prefs, &cache, &cancel, &auth);
-            Job::Download(item, prefs.quality, result)
-        })?;
-        self.downloading = true;
-        self.status = "Downloading… :cancel-download cancels".into();
-        Ok(())
-    }
-
-    fn remove_download(&mut self, item: MusicItem) -> Result<()> {
-        let path = self
-            .store
-            .data
-            .items
-            .iter()
-            .find(|row| row.key() == item.key())
-            .and_then(|row| row.local_path.clone())
-            .context("No cached download for this item")?;
-        if self.loaded
-            || self.downloading
-            || self.preparing
-            || self
-                .queue
-                .current()
-                .is_some_and(|entry| entry.item.local_path.as_ref() == Some(&path))
-            || self
-                .ready
-                .as_ref()
-                .is_some_and(|ready| ready.track.path == path)
-        {
-            bail!("Stop playback and pending downloads before removing this file");
-        }
-        self.cancel_prefetch();
-        player::remove_cached_track(&self.cache, &path)?;
-        for row in &mut self.store.data.items {
-            if row.local_path.as_ref() == Some(&path) {
-                row.local_path = None;
-                row.cached_quality = None;
-            }
-        }
-        self.save()?;
-        self.status = "Cached download removed".into();
-        Ok(())
-    }
-
-    pub(super) fn run_command(&mut self, text: &str) -> Result<()> {
-        let (command, value) = text
-            .trim()
-            .split_once(char::is_whitespace)
-            .unwrap_or((text.trim(), ""));
-        match command {
-            "quit" => self.quit = true,
-            "stop" => self.stop(),
-            "login" => self.connect(Some(LoginPrompt::Account))?,
-            "connect" => self.connect(None)?,
-            "code" => self.connect(Some(LoginPrompt::Code))?,
-            "settings" => {
-                self.overlay = Some(Overlay::Settings(
-                    ListState::default().with_selected(Some(0)),
-                ))
-            }
-            "devices" => self.job(false, || {
-                Job::Devices(player::Mpv::new("null", false).and_then(|mut mpv| mpv.devices()))
-            })?,
-            "playlist-new" | "queue-save" => {
-                let queue = command == "queue-save";
-                if value.is_empty() {
-                    self.input = Some(Input::new(InputKind::PlaylistName(queue), String::new()));
-                } else {
-                    self.create_playlist(value.into(), queue)?;
-                }
-            }
-            "cancel-download" => {
-                self.download_cancel.store(true, Ordering::Release);
-                self.status = "Cancelling download…".into();
-            }
-            "quality" | "device" | "crossfade" | "passthrough" | "eq" | "cache-limit"
-            | "storefront" => self.setting(command, value.trim())?,
-            "" => {}
-            _ => bail!("Unknown command: {command}. Use ? for help."),
-        }
-        Ok(())
-    }
-
-    fn create_playlist(&mut self, name: String, queue: bool) -> Result<()> {
-        let api = self.api()?;
-        let tracks: Vec<_> = if queue {
-            self.queue
-                .entries
-                .iter()
-                .filter(|entry| entry.item.is_song() || entry.item.kind.contains("music-videos"))
-                .map(|entry| (entry.item.id.clone(), entry.item.kind.clone()))
-                .collect()
-        } else {
-            Vec::new()
-        };
-        if queue && tracks.is_empty() {
-            bail!("The queue has no songs to save");
-        }
-        self.job(false, move || {
-            Job::Mutation(
-                api.create_playlist(&name, "", &tracks)
-                    .map(|_| format!("Created playlist: {name}")),
-            )
-        })
-    }
 }
 
 fn move_list(state: &mut ListState, length: usize, delta: isize) {
@@ -742,20 +338,4 @@ fn move_list(state: &mut ListState, length: usize, delta: isize) {
             .saturating_add_signed(delta)
             .min(length - 1)
     }));
-}
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn unicode_editing_and_paste_never_treat_text_as_shortcuts() {
-        let mut input = Input::new(InputKind::Search(false), "夜🌙".into());
-        input.cursor = input.previous();
-        input.insert("日本語 q e\x1b\r\n");
-        assert_eq!(input.text, "夜日本語 q e🌙");
-        assert!(input.text.is_char_boundary(input.cursor));
-        assert_eq!(input.next(), input.text.len());
-        assert!(Input::new(InputKind::Password("account".into()), "secret".into()).masked());
-    }
 }

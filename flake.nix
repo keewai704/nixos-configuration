@@ -68,14 +68,14 @@
       };
 
       mkNixosHost =
-        modules:
+        hostModules:
         nixpkgs.lib.nixosSystem {
           specialArgs = { inherit inputs; };
           modules = [
             ./modules/common.nix
             ./modules/home-manager.nix
           ]
-          ++ modules;
+          ++ hostModules;
         };
     in
     {

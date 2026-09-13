@@ -20,19 +20,8 @@ rustPlatform.buildRustPackage {
   postPatch = ''
     rm -r src/app src/app.rs src/icons.rs src/theme.rs amclient assets
     cp ${./Cargo.lock} Cargo.lock
-    cp ${./tui/main.rs} src/main.rs
-    mkdir src/tui
-    cp ${./tui/mod.rs} src/tui/mod.rs
-    cp ${./tui/browse.rs} src/tui/browse.rs
-    cp ${./tui/queue.rs} src/tui/queue.rs
-    cp ${./tui/controls.rs} src/tui/controls.rs
-    cp ${./tui/cover.rs} src/tui/cover.rs
-    cp ${./tui/mouse.rs} src/tui/mouse.rs
-    cp ${./tui/events.rs} src/tui/events.rs
-    cp ${./tui/navigation.rs} src/tui/navigation.rs
-    cp ${./tui/playback.rs} src/tui/playback.rs
-    cp ${./tui/settings.rs} src/tui/settings.rs
-    cp ${./tui/render.rs} src/tui/render.rs
+    cp ${./main.rs} src/main.rs
+    cp -r ${./tui} src/tui
   '';
 
   nativeBuildInputs = [

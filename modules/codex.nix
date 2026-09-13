@@ -14,24 +14,24 @@ let
     let
       disabled = server.disabled or null;
       enabled = server.enabled or null;
-    in
-    lib.filterAttrs (_: value: value != null && value != [ ] && value != { }) (
-      lib.removeAttrs server [
+      connectionSettings = lib.removeAttrs server [
         "disabled"
         "headers"
         "serverUrl"
         "type"
-      ]
-      // lib.optionalAttrs ((server.headers or { }) != { }) {
+      ];
+      httpHeaders = lib.optionalAttrs ((server.headers or { }) != { }) {
         http_headers = server.headers;
-      }
-      // lib.optionalAttrs (enabled == null && disabled != null) {
+      };
+      enabledSetting = lib.optionalAttrs (enabled == null && disabled != null) {
         enabled = !disabled;
-      }
-      // lib.optionalAttrs (name == "cua-driver") {
+      };
+      toolApproval = lib.optionalAttrs (name == "cua-driver") {
         default_tools_approval_mode = "writes";
-      }
-    );
+      };
+      codexSettings = connectionSettings // httpHeaders // enabledSetting // toolApproval;
+    in
+    lib.filterAttrs (_: value: value != null && value != [ ] && value != { }) codexSettings;
 
   codexSystemConfig = (pkgs.formats.toml { }).generate "codex-config.toml" {
     model = "gpt-6-astra";

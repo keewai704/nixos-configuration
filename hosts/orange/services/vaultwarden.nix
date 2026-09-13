@@ -23,6 +23,11 @@ let
   ];
   backupDependencies = storagePreparationDependencies ++ [ "vaultwarden-import-existing.service" ];
 
+  scriptReplacements = {
+    "@legacyVaultwardenRoot@" = lib.escapeShellArg legacyVaultwardenRoot;
+    "@legacyDatabase@" = lib.escapeShellArg "${legacyVaultwardenRoot}/db.sqlite3";
+  };
+
   importVaultwardenData = pkgs.writeShellApplication {
     name = "import-existing-vaultwarden-data";
     runtimeInputs = [
@@ -31,16 +36,9 @@ let
       pkgs.rsync
       pkgs.sqlite
     ];
-    text =
-      let
-        substitutions = {
-          "@legacyVaultwardenRoot@" = lib.escapeShellArg legacyVaultwardenRoot;
-          "@legacyDatabase@" = lib.escapeShellArg "${legacyVaultwardenRoot}/db.sqlite3";
-        };
-      in
-      lib.replaceStrings (lib.attrNames substitutions) (lib.attrValues substitutions) (
-        builtins.readFile ./import-vaultwarden-data.sh
-      );
+    text = lib.replaceStrings (lib.attrNames scriptReplacements) (lib.attrValues scriptReplacements) (
+      builtins.readFile ./import-vaultwarden-data.sh
+    );
   };
 in
 {

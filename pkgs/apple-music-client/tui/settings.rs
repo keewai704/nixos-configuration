@@ -3,6 +3,19 @@ use anyhow::{Context, Result, anyhow, bail};
 use serde_json::json;
 use siora::{library::Preferences, player};
 
+pub(super) const SETTINGS: &[&str] = &[
+    "Sign in",
+    "Reconnect",
+    "Two-factor code",
+    "Audio quality",
+    "Output device",
+    "Crossfade seconds",
+    "Atmos passthrough",
+    "Equalizer",
+    "Cache limit (MB)",
+    "Storefront",
+];
+
 impl App {
     pub(super) fn open_setting(&mut self, index: usize) -> Result<()> {
         match index {
@@ -115,7 +128,7 @@ impl App {
             }
         } else if name == "storefront" {
             if self.api.is_some() {
-                self.connect(None)?;
+                self.connect_authentication(None)?;
             }
         } else {
             if name == "eq" && self.loaded {

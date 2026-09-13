@@ -8,6 +8,13 @@ let
     vaultwardenBackupRoot
     ;
 
+  scriptReplacements = {
+    "@localBackupRoot@" = lib.escapeShellArg localBackupRoot;
+    "@minecraftArchivePath@" = lib.escapeShellArg (lib.removePrefix "/" minecraftDataDir);
+    "@vaultwardenDatabase@" = lib.escapeShellArg "${vaultwardenBackupRoot}/db.sqlite3";
+    "@vaultwardenBackupRoot@" = lib.escapeShellArg vaultwardenBackupRoot;
+  };
+
   localBackup = pkgs.writeShellApplication {
     name = "orange-local-backup";
     runtimeInputs = with pkgs; [
@@ -17,18 +24,9 @@ let
       systemd
       zstd
     ];
-    text =
-      let
-        substitutions = {
-          "@localBackupRoot@" = lib.escapeShellArg localBackupRoot;
-          "@minecraftArchivePath@" = lib.escapeShellArg (lib.removePrefix "/" minecraftDataDir);
-          "@vaultwardenDatabase@" = lib.escapeShellArg "${vaultwardenBackupRoot}/db.sqlite3";
-          "@vaultwardenBackupRoot@" = lib.escapeShellArg vaultwardenBackupRoot;
-        };
-      in
-      lib.replaceStrings (lib.attrNames substitutions) (lib.attrValues substitutions) (
-        builtins.readFile ./local-backup.sh
-      );
+    text = lib.replaceStrings (lib.attrNames scriptReplacements) (lib.attrValues scriptReplacements) (
+      builtins.readFile ./local-backup.sh
+    );
   };
 
 in

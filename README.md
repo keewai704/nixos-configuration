@@ -3,9 +3,23 @@
 `citrus`、`citrus-vm`、`orange` の NixOS 設定を管理するリポジトリです。
 3 台とも `x86_64-linux` で、機器・OS の設定は NixOS、個人のアプリと設定は Home Manager が担当します。
 
-## 最初に読む場所
+## 読み方
+
+知りたいことから、次の節へ進んでください。
+
+- [設定の読み順とホストの違い](#設定の読み順とホストの違い)
+- [ディレクトリと Nix の基本](#ディレクトリの役割)
+- [変更したい内容から探す](#変更したい内容から探す)
+- [Codex・MCP・スキルの編集先](#codexmcpスキル)
+- [Orange のサービスと保存先](#orange-のサービスを読む)
+- [独自パッケージと音楽クライアントの実装](#パッケージの独自変更)
+- [検証とローカル適用](#適用せずに設定を確認する)
+- [アプリの使い方と開発環境](#アプリの使い方と開発環境)
+
+## 設定の読み順とホストの違い
 
 1. [flake.nix](flake.nix) で、外部の依存関係と各ホストの入口を確認します。
+   入力の名前と取得元は `inputs`、このリポジトリが提供する設定・パッケージは `outputs` にあります。
 2. 対象ホストの `default.nix` を開き、`imports` をたどります。
 3. アプリや操作環境を変える場合は、[home/keewai/common.nix](home/keewai/common.nix) と
    [デスクトップ設定の入口](home/keewai/desktop/default.nix) を確認します。
@@ -24,6 +38,20 @@
 `citrus-vm` は `citrus` の設定を読み込んでから、実機のハードウェア設定を無効化し、
 VM 用のカーネル・起動方法・描画設定に置き換えます。
 Citrus の変更が VM にも届くことに注意してください。
+
+設定は次の順に合流します。`imports` は別の設定を読み込む入口です。
+
+```text
+flake.nix
+├── 全ホスト: modules/common.nix
+│   └── Codex・ログインシェルなどの共通 OS 設定
+├── 全ホスト: modules/home-manager.nix
+│   └── home/keewai/common.nix → shared/ の個人設定
+└── 各ホスト: hosts/<host>/default.nix
+    ├── citrus → 機器設定 + modules/desktop.nix → home/keewai/desktop/
+    ├── citrus-vm → citrus を継承 + VM 用の上書き
+    └── orange → ストレージとサーバーサービス
+```
 
 ## ディレクトリの役割
 
@@ -44,10 +72,24 @@ Citrus の変更が VM にも届くことに注意してください。
 `imports` に機能別のファイルを並べ、個々の設定をそのファイルに置きます。
 `pkgs/<名前>/default.nix` は、そのパッケージの作り方を定義します。
 
-Nix の `let ... in` は、後ろの設定で使う値に名前を付ける構文です。
-`${...}` は値を文字列へ埋め込みます。`lib.mkDefault` は上書き可能な既定値、
-`lib.mkForce` は通常の設定より優先する指定です。VM の上書きを読むときは、
-元の設定とこの優先順位を合わせて確認します。
+Nix に慣れていない場合は、まず次の構文が分かれば読み進められます。
+
+| 書き方 | 読み方 |
+| --- | --- |
+| `{ pkgs, lib, ... }:` | 呼び出し元から受け取る値。`pkgs` はパッケージ、`lib` は設定用の関数 |
+| `let 名前 = 値; in ...` | 後ろの設定で使う値に名前を付ける |
+| `imports = [ ./名前.nix ];` | 別ファイルの設定を読み込んで合流する |
+| `名前 = { ... };` / `[ ... ]` | 名前付きの値のまとまり / 順序のある一覧 |
+| `${...}` | 値を文字列へ埋め込む |
+| `inherit 名前;` | 同名の値を引き渡す。`名前 = 名前;` と同じ |
+| `lib.mkIf 条件 { ... }` | 条件が成立する場合に設定を有効にする |
+| `lib.mkDefault 値` / `lib.mkForce 値` | 上書き可能な既定値 / 通常の設定より優先する値 |
+| `左 ++ 右` / `左 // 右` | 一覧を連結する / 属性を合わせ、同じ名前には右側の値を使う |
+| `pkgs.callPackage ./名前 { ... }` | パッケージ定義に必要な依存関係を渡す |
+
+VM の設定は、継承元と `mkForce` などの優先順位を合わせて読みます。
+`system.stateVersion` と `home.stateVersion` は互換性の基準です。
+パッケージの更新日を示すものではないため、入力の更新に合わせて変更しません。
 
 ## 変更したい内容から探す
 
@@ -105,6 +147,8 @@ Home Manager は `useUserPackages = true` で NixOS に統合されています�
 Codex CLI は固定した `sadjow/codex-cli-nix` 入力から導入します。
 設定を変える場合は、このリポジトリの編集元を変更してください。
 生成先の `/etc/codex` や `/home/keewai/.agents/skills` は直接編集しません。
+Ponytail は `/etc/codex/skills/ponytail`、配布対象の個人スキルは `~/.agents/skills` に配置されます。
+`skills/luna-delegation` は配布対象から外れており、現在の共通指示はサブエージェントを使わない設定です。
 
 ## Orange のサービスを読む
 
@@ -129,7 +173,7 @@ Web の入口は Tailscale Serve の HTTPS 443 です。
 
 長い実行処理は、サービス設定の隣のシェルファイルに置いています。
 Nix ファイルを読むと依存関係・権限・起動条件がわかり、シェルファイルを読むと処理の順番がわかります。
-シェル内の `@名前@` は、対応する Nix ファイルの `substitutions` で置き換えます。
+シェル内の `@名前@` は、対応する Nix ファイルの `scriptReplacements` で置き換えます。
 これらのシェルファイルはサービス用のテンプレートなので、直接実行するものではありません。
 
 | 処理 | サービス設定 | 実行処理 |
@@ -141,6 +185,9 @@ Nix ファイルを読むと依存関係・権限・起動条件がわかり、�
 
 監視は 15 分間隔で実行し、新しい異常を検出したときに Discord へ通知します。
 同じ異常を毎回通知しないよう、通知済みの状態を保存します。
+監視内容は [health-monitor.sh](hosts/orange/services/health-monitor.sh) の末尾の `main` から読めます。
+サービス、保存領域、ドライブ、メモリー、温度、ログ、時刻、通信、バックアップ、カーネルの順に確認し、
+終了時の `finish_and_notify` が新しい異常をまとめて通知します。
 [smart-tests.nix](hosts/orange/services/smart-tests.nix) はドライブの定期自己診断、
 [maintenance.nix](hosts/orange/services/maintenance.nix) はログ掃除・TRIM・Nix Store の保守を担当します。
 
@@ -165,6 +212,73 @@ Nix ファイルを読むと依存関係・権限・起動条件がわかり、�
 パッチは対象パッケージと同じディレクトリに置きます。
 上流を更新するときは、パッチの前提と付属のテストも確認してください。
 `keewai704` 所有の GitHub 入力は `main` ブランチを明示し、リビジョンとハッシュを固定します。
+
+### Apple Music の実装を読む
+
+端末 UI は [main.rs](pkgs/apple-music-client/main.rs) から始まります。
+画面を描く処理、操作を受け取る処理、状態を更新する処理を分けています。
+
+| 読む順番・目的 | ファイル |
+| --- | --- |
+| 引数、保存先、一重起動の確認 | [main.rs](pkgs/apple-music-client/main.rs) |
+| アプリ全体の状態とバックグラウンド処理 | [tui/mod.rs](pkgs/apple-music-client/tui/mod.rs) |
+| 端末の開始・終了、入力と再描画のループ | [terminal.rs](pkgs/apple-music-client/tui/terminal.rs) |
+| 認証ヘルパーへの接続と接続失敗時の処理 | [authentication.rs](pkgs/apple-music-client/tui/authentication.rs) |
+| キー操作、ペイン移動、メニュー選択 | [controls.rs](pkgs/apple-music-client/tui/controls.rs) |
+| 入力欄の編集、検索・ログイン入力の確定 | [input.rs](pkgs/apple-music-client/tui/input.rs) |
+| `:` から実行するコマンド | [commands.rs](pkgs/apple-music-client/tui/commands.rs) |
+| 項目の操作、ダウンロード、プレイリスト作成 | [item_actions.rs](pkgs/apple-music-client/tui/item_actions.rs) |
+| クリック、ドラッグ、スクロール | [mouse.rs](pkgs/apple-music-client/tui/mouse.rs) |
+| 検索、ページ移動、履歴、追加読み込み | [navigation.rs](pkgs/apple-music-client/tui/navigation.rs) |
+| ページのデータと API 応答の変換 | [browse.rs](pkgs/apple-music-client/tui/browse.rs) |
+| 再生、停止、先読み、ラジオ、音量 | [playback.rs](pkgs/apple-music-client/tui/playback.rs) |
+| キューの順番、選択、編集の取り消し | [queue.rs](pkgs/apple-music-client/tui/queue.rs) |
+| 非同期結果、音声イベント、MPRIS 連携 | [events.rs](pkgs/apple-music-client/tui/events.rs) |
+| 音声設定の入力・検証・保存 | [settings.rs](pkgs/apple-music-client/tui/settings.rs) |
+| アルバム画像の取得と端末への表示 | [cover.rs](pkgs/apple-music-client/tui/cover.rs) |
+| 画面全体の配置と共通の描画部品 | [render/mod.rs](pkgs/apple-music-client/tui/render/mod.rs) |
+| 一覧と選択中の曲 | [render/browser.rs](pkgs/apple-music-client/tui/render/browser.rs) |
+| キュー・歌詞・詳細のパネル | [render/panels.rs](pkgs/apple-music-client/tui/render/panels.rs) |
+| 再生バー | [render/player_bar.rs](pkgs/apple-music-client/tui/render/player_bar.rs) |
+| ダイアログと入力欄 | [render/dialogs.rs](pkgs/apple-music-client/tui/render/dialogs.rs) |
+
+たとえば検索では、`controls` が入力欄を開き、`input` が入力を確定します。
+`navigation` が取得処理を開始し、`events` が結果を受け取り、`render` が表示します。
+ページ、再生、先読み、認証はそれぞれの世代番号で古い応答を見分けます。
+`ShutdownBehavior::Wait` は、アプリ終了時に完了を待つ必要があるバックグラウンド処理を示します。
+
+認証とメディア処理には固定した上流コードを使います。
+ビルド時に端末 UI を組み込み、GPUI、ブラウザー用資産、旧 Python UI を除去します。
+
+## 適用せずに設定を確認する
+
+次の例は、リポジトリのルートで、現在のホストの設定だけを評価・ビルドします。
+ホスト名が一致しない場合は終了します。別のホスト名で代用しません。
+
+```sh
+runtime_host="$(hostnamectl --static 2>/dev/null || hostname)"
+configured_host="$(cat /etc/hostname)"
+test "$runtime_host" = "$configured_host" || exit 1
+
+flake_host="$(nix eval --raw --no-write-lock-file \
+  ".#nixosConfigurations.$runtime_host.config.networking.hostName")" || exit 1
+test "$runtime_host" = "$flake_host" || exit 1
+
+nix build ".#nixosConfigurations.$runtime_host.config.system.build.toplevel" \
+  --no-link --no-write-lock-file
+```
+
+全体の出力を確認するには `nix flake show --no-write-lock-file` を使います。
+変更時の必須チェックは [AGENTS.md](AGENTS.md) の対象表から選びます。
+設定変更を実機へ適用する場合は、コミット後に現在のホストで `test`、稼働確認、
+`switch`、再確認の順に進めます。別ホストへの接続・適用は、その操作の明示的な依頼がある場合に限ります。
+
+## アプリの使い方と開発環境
+
+日常操作を確認するときに開いてください。構成や編集先は上の一覧からたどれます。
+
+<details>
+<summary>Apple Music（Siora）の操作と認証</summary>
 
 ### Apple Music（Siora）
 
@@ -194,25 +308,10 @@ Nix ファイルを読むと依存関係・権限・起動条件がわかり、�
 Kitty では画像プロトコル、それ以外の端末や tmux では文字ブロックで表示します。
 画像が取得できない場合も、テキストの操作は利用できます。
 
-実装を読む順番は次のとおりです。
+</details>
 
-| ファイル | 役割 |
-| --- | --- |
-| [main.rs](pkgs/apple-music-client/tui/main.rs) | 引数を読み、保存先を準備して起動 |
-| [mod.rs](pkgs/apple-music-client/tui/mod.rs) | アプリの状態、端末の開始・終了、認証、バックグラウンド処理の起動 |
-| [controls.rs](pkgs/apple-music-client/tui/controls.rs) | キー入力、入力欄、項目の操作、コマンド |
-| [mouse.rs](pkgs/apple-music-client/tui/mouse.rs) | クリック、ドラッグ、スクロールと画面上の操作対象の判定 |
-| [navigation.rs](pkgs/apple-music-client/tui/navigation.rs) | 検索、ページ移動、履歴、追加読み込み |
-| [browse.rs](pkgs/apple-music-client/tui/browse.rs) | 表示するページのデータと、API 応答の変換 |
-| [playback.rs](pkgs/apple-music-client/tui/playback.rs) | 再生、停止、先読み、ラジオ、音量 |
-| [queue.rs](pkgs/apple-music-client/tui/queue.rs) | キューの順番と選択、編集の取り消し |
-| [events.rs](pkgs/apple-music-client/tui/events.rs) | 非同期結果、音声イベント、MPRIS との連携 |
-| [settings.rs](pkgs/apple-music-client/tui/settings.rs) | 音声設定の入力・検証・保存 |
-| [cover.rs](pkgs/apple-music-client/tui/cover.rs) | アルバム画像の取得、サイズ制限、端末への表示方式 |
-| [render.rs](pkgs/apple-music-client/tui/render.rs) | 画面の配置と描画 |
-
-認証とメディア処理には固定した上流コードを使います。
-ビルド時に端末 UI を組み込み、GPUI、ブラウザー用資産、旧 Python UI を除去します。
+<details>
+<summary>ブラウザーと日本語設定</summary>
 
 ### ブラウザー
 
@@ -223,30 +322,12 @@ Firefox は固定した `keewai704/my-firefox-nix` の `main` を利用し、Sin
 Firefox の見た目は Sine/Natsumi が担当するため、Stylix の Firefox 対応は無効です。
 この非公開入力の取得には GitHub の読み取り認証が必要です。
 
-## 適用せずに設定を確認する
+</details>
 
-次の例は、リポジトリのルートで、現在のホストの設定だけを評価・ビルドします。
-ホスト名が一致しない場合は終了します。別のホスト名で代用しません。
+<details>
+<summary>Neovim の操作と開発環境</summary>
 
-```sh
-runtime_host="$(hostnamectl --static 2>/dev/null || hostname)"
-configured_host="$(cat /etc/hostname)"
-test "$runtime_host" = "$configured_host" || exit 1
-
-flake_host="$(nix eval --raw --no-write-lock-file \
-  ".#nixosConfigurations.$runtime_host.config.networking.hostName")" || exit 1
-test "$runtime_host" = "$flake_host" || exit 1
-
-nix build ".#nixosConfigurations.$runtime_host.config.system.build.toplevel" \
-  --no-link --no-write-lock-file
-```
-
-全体の出力を確認するには `nix flake show --no-write-lock-file` を使います。
-変更時の必須チェックは [AGENTS.md](AGENTS.md) の対象表から選びます。
-設定変更を実機へ適用する場合は、コミット後に現在のホストで `test`、稼働確認、
-`switch`、再確認の順に進めます。別ホストへの接続・適用は、その操作の明示的な依頼がある場合に限ります。
-
-## Neovim と開発環境
+### Neovim と開発環境
 
 全ホストで `nvim`、`vim`、`vi` が利用でき、新しいセッションでは `EDITOR` と `VISUAL` にも設定されます。
 一般の編集設定は [shared/neovim.lua](home/keewai/shared/neovim.lua)、
@@ -304,3 +385,5 @@ statix と deadnix はコマンドとして利用できます。
 ファイル一覧では `Enter` で開き、`a` / `A` でファイル / ディレクトリを作成します。
 `r` は名前変更、`y` / `x` の後に `p` でコピー / 移動、`d` は削除、
 `H` は隠しファイルの表示切り替え、`?` は操作ガイドです。
+
+</details>

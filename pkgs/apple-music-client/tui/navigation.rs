@@ -1,5 +1,5 @@
 use super::browse::{self, Page, api_page, playable, public_page};
-use super::{App, Focus, Job, Panel};
+use super::{App, Focus, Job, Panel, ShutdownBehavior};
 use anyhow::{Context, Result, bail};
 use siora::model::MusicItem;
 
@@ -9,9 +9,11 @@ impl App {
         append: bool,
         work: impl FnOnce() -> Result<Page> + Send + 'static,
     ) -> Result<()> {
-        let request = self.request + 1;
-        self.job(false, move || Job::Page(request, append, work()))?;
-        self.request = request;
+        let request = self.page_generation + 1;
+        self.spawn_job(ShutdownBehavior::Detach, move || {
+            Job::Page(request, append, work())
+        })?;
+        self.page_generation = request;
         self.pending_page = Some(request);
         self.status = "Loading… You can keep browsing or start another search.".into();
         Ok(())
@@ -21,7 +23,7 @@ impl App {
         if let Some(search) = &page.search {
             self.search_draft = search.clone();
         }
-        self.request += 1;
+        self.page_generation += 1;
         self.pending_page = None;
         self.history.push(std::mem::replace(&mut self.page, page));
         if self.history.len() > 50 {
@@ -31,7 +33,7 @@ impl App {
     }
 
     pub(super) fn back(&mut self) {
-        self.request += 1;
+        self.page_generation += 1;
         self.pending_page = None;
         if let Some(page) = self.history.pop() {
             self.page = page;
@@ -41,7 +43,7 @@ impl App {
 
     pub(super) fn navigate(&mut self, index: usize) -> Result<()> {
         let (title, section) = browse::NAV[index];
-        self.nav.select(Some(index));
+        self.navigation_list.select(Some(index));
         match section {
             "recent" | "favorites" | "downloads" => {
                 let items = if section == "recent" {
@@ -70,7 +72,7 @@ impl App {
                 self.fetch(false, move || public_page(section, &storefront))
             }
             _ => {
-                let api = self.api()?;
+                let api = self.authenticated_api()?;
                 self.fetch(false, move || {
                     api.browse(section).map(|value| api_page(title, value))
                 })
@@ -121,7 +123,7 @@ impl App {
         {
             return self.open_url(url.clone());
         }
-        let api = self.api()?;
+        let api = self.authenticated_api()?;
         self.fetch(false, move || {
             let relationship = if item.kind.contains("artists") {
                 "albums"
@@ -150,7 +152,7 @@ impl App {
             .page
             .next_url()
             .context("No next page for this category; use t to choose a search result type")?;
-        let api = self.api()?;
+        let api = self.authenticated_api()?;
         let kind = self.page.kind;
         let search = self.page.search.clone();
         self.fetch(true, move || {

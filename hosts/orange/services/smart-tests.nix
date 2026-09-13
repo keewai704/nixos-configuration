@@ -9,10 +9,10 @@ let
       runtimeInputs = with pkgs; [ smartmontools ];
       text = ''
         for device in ${lib.escapeShellArgs smartDevices}; do
-          [[ -b "$device" ]] || {
+          if [[ ! -b "$device" ]]; then
             echo "Missing block device: $device" >&2
             exit 1
-          }
+          fi
           smartctl --test=${testType} "$device"
         done
       '';

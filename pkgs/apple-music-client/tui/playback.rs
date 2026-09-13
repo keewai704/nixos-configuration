@@ -1,4 +1,4 @@
-use super::{App, Job, Overlay, Station};
+use super::{App, Job, Overlay, ShutdownBehavior, Station};
 use anyhow::{Context, Result, bail};
 use ratatui::widgets::ListState;
 use serde_json::{Value, json};
@@ -61,11 +61,13 @@ impl App {
     }
 
     pub(super) fn cancel_prefetch(&mut self) {
-        self.next_cancel.store(true, Ordering::Release);
-        self.next_cancel = Arc::new(AtomicBool::new(false));
-        self.prefetch += 1;
-        self.ready = None;
-        let _ = self.audio.send(AudioCommand::ClearNext(self.generation));
+        self.prefetch_cancel.store(true, Ordering::Release);
+        self.prefetch_cancel = Arc::new(AtomicBool::new(false));
+        self.prefetch_generation += 1;
+        self.prefetched_track = None;
+        let _ = self
+            .audio_commands
+            .send(AudioCommand::ClearNext(self.playback_generation));
     }
 
     pub(super) fn play(&mut self, id: u64) -> Result<()> {
@@ -79,29 +81,29 @@ impl App {
         if entry.item.kind == "stations" && !siora::radio::is_public_station(&entry.item.id) {
             return self.start_station(entry.item);
         }
-        self.cancel.store(true, Ordering::Release);
-        self.cancel = Arc::new(AtomicBool::new(false));
+        self.playback_cancel.store(true, Ordering::Release);
+        self.playback_cancel = Arc::new(AtomicBool::new(false));
         self.cancel_prefetch();
-        self.generation += 1;
-        let generation = self.generation;
-        self.audio.send(AudioCommand::Stop(generation))?;
+        self.playback_generation += 1;
+        let generation = self.playback_generation;
+        self.audio_commands.send(AudioCommand::Stop(generation))?;
         self.queue.current = Some(id);
         self.preparing = false;
         self.loaded = false;
-        self.snapshot = json!({});
-        self.source = Value::Null;
+        self.playback_snapshot = json!({});
+        self.playback_source = Value::Null;
         self.lyrics.clear();
         if entry.item.kind == "stations" {
-            self.job(false, move || {
+            self.spawn_job(ShutdownBehavior::Detach, move || {
                 Job::Radio(generation, siora::radio::station_stream_url(&entry.item.id))
             })?;
         } else {
-            let auth = self.auth()?;
+            let auth = self.authentication_endpoints()?;
             let item = self.cached(entry.item);
             let prefs = self.store.data.preferences.clone();
-            let cache = self.cache.clone();
-            let cancel = self.cancel.clone();
-            self.job(true, move || {
+            let cache = self.download_directory.clone();
+            let cancel = self.playback_cancel.clone();
+            self.spawn_job(ShutdownBehavior::Wait, move || {
                 Job::Prepared(
                     generation,
                     id,
@@ -170,14 +172,14 @@ impl App {
             return Ok(());
         }
         let item = self.cached(item);
-        let auth = self.auth()?;
-        let (generation, serial) = (self.generation, self.prefetch);
+        let auth = self.authentication_endpoints()?;
+        let (generation, serial) = (self.playback_generation, self.prefetch_generation);
         let (prefs, cache, cancel) = (
             self.store.data.preferences.clone(),
-            self.cache.clone(),
-            self.next_cancel.clone(),
+            self.download_directory.clone(),
+            self.prefetch_cancel.clone(),
         );
-        self.job(true, move || {
+        self.spawn_job(ShutdownBehavior::Wait, move || {
             Job::Prefetched(
                 generation,
                 serial,
@@ -195,16 +197,18 @@ impl App {
     }
 
     pub(super) fn stop(&mut self) {
-        self.cancel.store(true, Ordering::Release);
+        self.playback_cancel.store(true, Ordering::Release);
         self.cancel_prefetch();
-        self.generation += 1;
-        let _ = self.audio.send(AudioCommand::Stop(self.generation));
+        self.playback_generation += 1;
+        let _ = self
+            .audio_commands
+            .send(AudioCommand::Stop(self.playback_generation));
         self.loaded = false;
         self.preparing = false;
         self.queue.current = None;
         self.station = None;
-        self.snapshot = json!({});
-        self.source = Value::Null;
+        self.playback_snapshot = json!({});
+        self.playback_source = Value::Null;
         self.lyrics.clear();
         self.status = "Stopped".into();
     }
@@ -230,7 +234,7 @@ impl App {
     }
 
     pub(super) fn previous(&mut self) -> Result<()> {
-        if !self.is_radio() && self.snapshot["position"].as_f64().unwrap_or(0.) > 3. {
+        if !self.is_radio() && self.playback_snapshot["position"].as_f64().unwrap_or(0.) > 3. {
             self.command(json!(["seek", 0, "absolute"]));
             self.schedule_next()
         } else if let Some(index) = self.queue.index(self.queue.current) {
@@ -241,7 +245,7 @@ impl App {
     }
 
     pub(super) fn command(&self, command: Value) {
-        let _ = self.audio.send(AudioCommand::Command(command));
+        let _ = self.audio_commands.send(AudioCommand::Command(command));
     }
 
     pub(super) fn pause(&mut self) -> Result<()> {
@@ -261,14 +265,14 @@ impl App {
     }
 
     pub(super) fn start_station(&mut self, item: MusicItem) -> Result<()> {
-        let api = self.api()?;
+        let api = self.authenticated_api()?;
         if self.station.as_ref().is_some_and(|station| station.busy) {
             bail!("Station is loading");
         }
         self.station_serial += 1;
         let serial = self.station_serial;
         let seed = item.clone();
-        self.job(false, move || {
+        self.spawn_job(ShutdownBehavior::Detach, move || {
             Job::Station(
                 serial,
                 true,
@@ -297,7 +301,7 @@ impl App {
     }
 
     pub(super) fn fetch_station(&mut self, initial: bool) -> Result<()> {
-        let api = self.api()?;
+        let api = self.authenticated_api()?;
         let Some(station) = &self.station else {
             return Ok(());
         };
@@ -305,7 +309,7 @@ impl App {
             return Ok(());
         }
         let (serial, id) = (station.serial, station.item.id.clone());
-        self.job(false, move || {
+        self.spawn_job(ShutdownBehavior::Detach, move || {
             Job::Station(serial, initial, api.station_tracks(&id))
         })?;
         if let Some(station) = &mut self.station {

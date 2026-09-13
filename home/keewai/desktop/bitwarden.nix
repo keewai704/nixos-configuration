@@ -6,6 +6,13 @@
 }:
 let
   vaultwardenUrl = "https://orange.tail1e65cd.ts.net/vault";
+  rbwConfigPath = "${config.xdg.configHome}/rbw/config.json";
+  autostartPath = "${config.xdg.configHome}/autostart/bitwarden.desktop";
+  autostartEntry = pkgs.makeDesktopItem {
+    name = "bitwarden";
+    desktopName = "Bitwarden";
+    exec = "${lib.getExe pkgs.bitwarden-desktop} --autostart";
+  };
   initialRbwConfig = pkgs.writeText "rbw-initial-config.json" (
     builtins.toJSON {
       base_url = vaultwardenUrl;
@@ -64,20 +71,14 @@ in
   home = {
     sessionVariables.SSH_AUTH_SOCK = sshAgentSocket;
     activation.initializeBitwardenLauncher = lib.hm.dag.entryAfter [ "writeBoundary" ] ''
-      if [[ ! -e ${lib.escapeShellArg "${config.xdg.configHome}/rbw/config.json"} ]]; then
-        install -Dm600 ${initialRbwConfig} ${lib.escapeShellArg "${config.xdg.configHome}/rbw/config.json"}
+      if [[ ! -e ${lib.escapeShellArg rbwConfigPath} ]]; then
+        install -Dm600 ${initialRbwConfig} ${lib.escapeShellArg rbwConfigPath}
       fi
     '';
 
     activation.initializeBitwardenAutostart = lib.hm.dag.entryAfter [ "writeBoundary" ] ''
-      if [[ ! -e ${lib.escapeShellArg "${config.xdg.configHome}/autostart/bitwarden.desktop"} ]]; then
-        install -Dm644 ${
-          pkgs.makeDesktopItem {
-            name = "bitwarden";
-            desktopName = "Bitwarden";
-            exec = "${lib.getExe pkgs.bitwarden-desktop} --autostart";
-          }
-        }/share/applications/bitwarden.desktop ${lib.escapeShellArg "${config.xdg.configHome}/autostart/bitwarden.desktop"}
+      if [[ ! -e ${lib.escapeShellArg autostartPath} ]]; then
+        install -Dm644 ${autostartEntry}/share/applications/bitwarden.desktop ${lib.escapeShellArg autostartPath}
       fi
     '';
   };

@@ -24,6 +24,13 @@ let
     "immich-import-existing-database.service"
   ];
 
+  scriptReplacements = {
+    "@utilLinux@" = toString pkgs.util-linux;
+    "@postgresqlPackage@" = toString postgresqlPackage;
+    "@immichBackupRootArg@" = lib.escapeShellArg immichBackupRoot;
+    "@immichBackupRoot@" = immichBackupRoot;
+  };
+
   importImmichDatabase = pkgs.writeShellApplication {
     name = "import-existing-immich-database";
     runtimeInputs = [
@@ -31,18 +38,9 @@ let
       pkgs.findutils
       pkgs.gzip
     ];
-    text =
-      let
-        substitutions = {
-          "@utilLinux@" = toString pkgs.util-linux;
-          "@postgresqlPackage@" = toString postgresqlPackage;
-          "@immichBackupRootArg@" = lib.escapeShellArg immichBackupRoot;
-          "@immichBackupRoot@" = immichBackupRoot;
-        };
-      in
-      lib.replaceStrings (lib.attrNames substitutions) (lib.attrValues substitutions) (
-        builtins.readFile ./import-immich-database.sh
-      );
+    text = lib.replaceStrings (lib.attrNames scriptReplacements) (lib.attrValues scriptReplacements) (
+      builtins.readFile ./import-immich-database.sh
+    );
   };
 in
 {

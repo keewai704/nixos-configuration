@@ -213,7 +213,7 @@ impl App {
         if self.queue.current != Some(track) || !self.loaded || self.is_radio() {
             return;
         }
-        let duration = self.snapshot["duration"].as_f64().unwrap_or(0.);
+        let duration = self.playback_snapshot["duration"].as_f64().unwrap_or(0.);
         if duration <= 0. || !duration.is_finite() {
             return;
         }
@@ -261,12 +261,12 @@ impl App {
             Some(Pane::Browse(rows)) => self.page.scroll(delta, rows),
             Some(Pane::Navigation) => {
                 let index = self
-                    .nav
+                    .navigation_list
                     .selected()
                     .unwrap_or(0)
                     .saturating_add_signed(delta)
                     .min(browse::NAV.len() - 1);
-                self.nav.select(Some(index));
+                self.navigation_list.select(Some(index));
             }
             Some(Pane::Queue(rows)) => {
                 let start = self
@@ -391,10 +391,10 @@ mod tests {
             true,
             cover::Graphics::text((10, 20)),
         );
-        app.audio.send(AudioCommand::Shutdown)?;
+        app.audio_commands.send(AudioCommand::Shutdown)?;
         app.audio_thread.take().unwrap().join().unwrap();
         let (audio, commands) = mpsc::channel();
-        app.audio = audio;
+        app.audio_commands = audio;
         app.queue.add(
             MusicItem {
                 id: "1".into(),
@@ -406,7 +406,7 @@ mod tests {
         let track = app.queue.entries[0].id;
         app.queue.current = Some(track);
         app.loaded = true;
-        app.snapshot = json!({"duration": 100.});
+        app.playback_snapshot = json!({"duration": 100.});
         app.mouse.hit(Rect::new(10, 2, 101, 1), Action::Seek(track));
         let event = |kind, column| MouseEvent {
             kind,

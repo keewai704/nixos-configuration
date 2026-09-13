@@ -31,7 +31,9 @@ PATCHES = {
 }
 
 
-def entry_metadata(mapping: mmap.mmap, path: str) -> tuple[bytearray, dict, int, int]:
+def read_entry_metadata(
+    mapping: mmap.mmap, path: str
+) -> tuple[bytearray, dict, int, int]:
     header_size = struct.unpack_from("<I", mapping, 4)[0]
     header_start = 8
     header_end = header_start + header_size
@@ -89,7 +91,7 @@ def check_archive(archive: Path) -> None:
         mmap.mmap(stream.fileno(), 0, access=mmap.ACCESS_READ) as mapping,
     ):
         for path, patches in PATCHES.items():
-            _header, entry, entry_start, entry_end = entry_metadata(mapping, path)
+            _header, entry, entry_start, entry_end = read_entry_metadata(mapping, path)
             entry_bytes = bytes(mapping[entry_start:entry_end])
             verify_entry_integrity(entry_bytes, entry)
             for needle, replacement in patches:
@@ -102,6 +104,67 @@ def check_archive(archive: Path) -> None:
                     )
 
 
+def patch_entry(mapping: mmap.mmap, path: str, patches: tuple) -> None:
+    header, entry, entry_start, entry_end = read_entry_metadata(mapping, path)
+
+    entry_bytes = bytes(mapping[entry_start:entry_end])
+    verify_entry_integrity(entry_bytes, entry)
+    for needle, _replacement in patches:
+        if entry_bytes.count(needle) != 1:
+            raise RuntimeError("expected exactly one original patch marker")
+
+    header_size = len(header)
+    patched_entry = entry_bytes
+    for needle, replacement in patches:
+        patched_entry = patched_entry.replace(needle, replacement)
+    mapping[entry_start:entry_end] = patched_entry
+    block_size = int(entry["integrity"]["blockSize"])
+    patched_integrity = {
+        **entry["integrity"],
+        "hash": hashlib.sha256(patched_entry).hexdigest(),
+        "blocks": integrity_block_hashes(patched_entry, block_size),
+    }
+    new_hash = verify_entry_integrity(
+        patched_entry,
+        {"integrity": patched_integrity},
+    ).encode()
+    old_hash = entry["integrity"]["hash"].encode()
+    if len(old_hash) != len(new_hash) or header.count(old_hash) != 2:
+        raise RuntimeError("unexpected ASAR entry integrity layout")
+
+    header = header.replace(old_hash, new_hash)
+    if len(header) != header_size:
+        raise RuntimeError("integrity replacement changed the ASAR header size")
+    mapping[8 : 8 + header_size] = header
+    mapping.flush()
+
+    _final_header, final_entry, final_start, final_end = read_entry_metadata(
+        mapping, path
+    )
+    if final_start != entry_start or final_end != entry_end:
+        raise RuntimeError("ASAR entry metadata changed its ASAR byte range")
+    verify_entry_integrity(bytes(mapping[final_start:final_end]), final_entry)
+    final_entry_bytes = bytes(mapping[final_start:final_end])
+    for _needle, replacement in patches:
+        if final_entry_bytes.count(replacement) != 1:
+            raise RuntimeError("patched ASAR entry marker is missing or duplicated")
+
+
+def patch_archive(archive: Path) -> None:
+    if any(
+        len(needle) != len(replacement)
+        for patches in PATCHES.values()
+        for needle, replacement in patches
+    ):
+        raise RuntimeError("replacement must preserve its byte length")
+
+    with archive.open("r+b") as stream, mmap.mmap(stream.fileno(), 0) as mapping:
+        for path, patches in PATCHES.items():
+            patch_entry(mapping, path, patches)
+
+    check_archive(archive)
+
+
 def main() -> None:
     check_only = len(sys.argv) == 3 and sys.argv[1] == "--check"
     if check_only:
@@ -111,63 +174,8 @@ def main() -> None:
     if len(sys.argv) != 2:
         raise SystemExit(f"usage: {sys.argv[0]} [--check] APP.ASAR")
 
-    if any(
-        len(needle) != len(replacement)
-        for patches in PATCHES.values()
-        for needle, replacement in patches
-    ):
-        raise RuntimeError("replacement must preserve its byte length")
-
     archive = Path(sys.argv[1])
-    with archive.open("r+b") as stream, mmap.mmap(stream.fileno(), 0) as mapping:
-        for path, patches in PATCHES.items():
-            header, entry, entry_start, entry_end = entry_metadata(mapping, path)
-
-            entry_bytes = bytes(mapping[entry_start:entry_end])
-            verify_entry_integrity(entry_bytes, entry)
-            for needle, _replacement in patches:
-                if entry_bytes.count(needle) != 1:
-                    raise RuntimeError("expected exactly one original patch marker")
-
-            header_size = len(header)
-            patched_entry = entry_bytes
-            for needle, replacement in patches:
-                patched_entry = patched_entry.replace(needle, replacement)
-            mapping[entry_start:entry_end] = patched_entry
-            block_size = int(entry["integrity"]["blockSize"])
-            patched_integrity = {
-                **entry["integrity"],
-                "hash": hashlib.sha256(patched_entry).hexdigest(),
-                "blocks": integrity_block_hashes(patched_entry, block_size),
-            }
-            new_hash = verify_entry_integrity(
-                patched_entry,
-                {"integrity": patched_integrity},
-            ).encode()
-            old_hash = entry["integrity"]["hash"].encode()
-            if len(old_hash) != len(new_hash) or header.count(old_hash) != 2:
-                raise RuntimeError("unexpected ASAR entry integrity layout")
-
-            header = header.replace(old_hash, new_hash)
-            if len(header) != header_size:
-                raise RuntimeError("integrity replacement changed the ASAR header size")
-            mapping[8 : 8 + header_size] = header
-            mapping.flush()
-
-            _final_header, final_entry, final_start, final_end = entry_metadata(
-                mapping, path
-            )
-            if final_start != entry_start or final_end != entry_end:
-                raise RuntimeError("ASAR entry metadata changed its ASAR byte range")
-            verify_entry_integrity(bytes(mapping[final_start:final_end]), final_entry)
-            final_entry_bytes = bytes(mapping[final_start:final_end])
-            for _needle, replacement in patches:
-                if final_entry_bytes.count(replacement) != 1:
-                    raise RuntimeError(
-                        "patched ASAR entry marker is missing or duplicated"
-                    )
-
-    check_archive(archive)
+    patch_archive(archive)
     print(f"patched {archive} (watcher, selection, and SHA256 integrity)")
 
 
