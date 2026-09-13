@@ -112,6 +112,8 @@
 
       packages.${system} = localPackages;
 
+      devShells.${system}.default = import ./devshell { pkgs = packagePkgs; };
+
       formatter.${system} = nixpkgs.legacyPackages.${system}.nixfmt-tree;
     };
 }

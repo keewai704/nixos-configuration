@@ -8,6 +8,9 @@ separates machine integration from user applications and settings.
 ```text
 .
 ├── flake.nix
+├── devshell/
+│   ├── default.nix                # repository development tools and Neovim extension
+│   └── neovim.lua                 # Nix, Lua, and shell language servers and formatting
 ├── modules/
 │   ├── common.nix                 # system settings used by every host
 │   ├── home-manager.nix           # shared NixOS/Home Manager integration
@@ -25,6 +28,8 @@ separates machine integration from user applications and settings.
 │   │   ├── codex.nix              # Codex CLI and user override cleanup
 │   │   ├── codex-remote.nix       # Codex Remote user service
 │   │   ├── mcp.nix                # common MCP server registry
+│   │   ├── neovim.nix             # Neovim and pinned lazy.nvim plugins
+│   │   ├── neovim.lua             # general editing, search, Git, completion, and key bindings
 │   │   ├── skills.nix             # personal skill publication and filters
 │   │   ├── apple-device-usb.nix   # pymobiledevice3 launcher and completion
 │   │   ├── shell.nix              # interactive shell and CLI integration
@@ -188,3 +193,57 @@ local activation workflow.
 The native Codex CLI comes from the pinned `sadjow/codex-cli-nix` input and is
 installed through Home Manager on all three hosts. Its automatic user service
 is configured in [`home/keewai/shared/codex-remote.nix`](home/keewai/shared/codex-remote.nix).
+
+## Neovim and repository development
+
+Home Manager installs Neovim as `nvim`, `vim`, and `vi` on all three hosts and
+sets it as `EDITOR` and `VISUAL` for new sessions. The common configuration in
+[`home/keewai/shared/neovim.nix`](home/keewai/shared/neovim.nix) uses
+[lazy.nvim](https://lazy.folke.io/) to load Nix-pinned plugins. Inspect them with
+`:Lazy`; update their versions through the repository's pinned Nixpkgs input.
+Plugins are available without a first-launch download, and Wayland clipboard
+integration is included.
+
+mini.nvim provides file and text search, file browsing, Git diffs and commands,
+completion, a status line, comment toggling, text objects, paired delimiters,
+and surrounding-text edits. which-key shows available key bindings after a
+pause. nvim-lspconfig and conform.nvim provide the language-server and formatter
+integration used by project extensions. Outside a development shell, completion
+works with buffer text without requiring a language server.
+
+From this repository's root, start the development environment and open a file:
+
+```console
+nix develop --no-write-lock-file
+nvim flake.nix
+```
+
+The shell supplies nixd, nixfmt, statix, deadnix, Lua Language Server, StyLua,
+Bash Language Server, ShellCheck, and shfmt. It sets `NVIM_PROJECT_CONFIG` to
+the Nix-store copy of [`devshell/neovim.lua`](devshell/neovim.lua), which extends
+the same Home Manager editor with Nix, Lua, and Bash completion, diagnostics,
+navigation, and manual formatting. nixd uses the edited flake's pinned Nixpkgs
+and exposes NixOS and Home Manager options for the local hostname. To inspect
+another declared configuration, set `NVIM_NIXOS_HOST=orange` before starting
+Neovim. This only selects completion data and does not contact or deploy a host.
+Zsh files retain general editing and highlighting; Bash diagnostics and shfmt
+are not applied to Zsh syntax. statix and deadnix are available as CLI checks.
+
+The extension is loaded only by Neovim processes started with
+`NVIM_PROJECT_CONFIG`; starting Neovim outside the shell restores the common
+setup. Re-enter `nix develop` after changing the extension. Another project's
+devShell can set the same variable to its own trusted Lua configuration.
+
+| Keys | Action |
+| --- | --- |
+| `Space ff` / `Space fg` | Find files / search contents |
+| `Space fb` / `Space fh` | Find buffers / search help |
+| `Space e` | Browse and edit the file tree (`=` applies file operations) |
+| `Space gd` / `Space gg` | Toggle Git diff overlay / show Git status |
+| `Space l` | Open the plugin manager |
+| `Space cf` | Format the buffer or selection when a formatter is available |
+| `Space cd` / `Space cq` | Show diagnostic / list diagnostics |
+| `gd` / `gr` / `K` | Definition / references / documentation with an attached LSP |
+| `Space cr` / `Space ca` | Rename symbol / code action with an attached LSP |
+| `gcc` / `gc` in Visual mode | Toggle comments |
+| `Ctrl-n` / `Ctrl-p` / `Ctrl-y` | Next / previous / accept completion |
