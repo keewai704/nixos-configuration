@@ -37,7 +37,7 @@ separates machine integration from user applications and settings.
 │   │   └── starship.toml          # shell prompt
 │   └── desktop/
 │       ├── applications.nix       # desktop tools without additional configuration
-│       ├── apple-music.nix        # Apple Music client, authentication, and theme
+│       ├── apple-music.nix        # Apple Music terminal client and authentication
 │       ├── bitwarden.nix          # desktop client, launcher setup, and SSH agent
 │       ├── browser.nix            # Brave Origin, native messaging, and URL handlers
 │       ├── codex.nix              # Codex desktop client and protocol handler
@@ -151,6 +151,19 @@ initialized before Sine deployment, so the first activation installs the
 theme without requiring a preliminary Firefox launch. Stylix's Firefox target
 is disabled to leave styling to Sine/Natsumi. Fetching the private input requires
 GitHub read authentication.
+
+Siora (`apple-music-client`) runs entirely in a terminal. Start `siora`, use
+`Ctrl+f` for Apple Music search, `/` to filter the loaded list, `Enter` to open
+or play, `Space` to pause, `e`/`E` to append/play next, and `q` for the editable
+queue. `Tab` changes focus, `Backspace` restores the previous page and position,
+`a` opens item actions, `?` shows help, and `Ctrl+c` exits. Queue, lyrics, and
+details share an optional panel; narrow terminals show one active pane.
+`:login` and `:code` handle account authentication, and `,` opens audio settings.
+The terminal controls colors and fonts. Existing `alac-room` library, downloads,
+and authentication sessions remain compatible. Music videos play audio only.
+The package keeps the pinned upstream media/authentication backend and applies
+the terminal frontend in `pkgs/apple-music-client/tui/`; GPUI, browser assets,
+and the legacy Python frontend are removed from its build and installation.
 
 ## Hosts
 
