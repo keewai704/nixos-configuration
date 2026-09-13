@@ -12,22 +12,25 @@ hostname is `citrus` may run `nixos-rebuild test` or `switch` for this host.
 | Path | Responsibility |
 | --- | --- |
 | [`hosts/citrus/default.nix`](../hosts/citrus/default.nix) | Host imports, Hyprland login session, system theme, graphics, and state version |
-| [`home/keewai/shared/theme.nix`](../home/keewai/shared/theme.nix) | Shared palette, fonts, cursor, wallpaper, and adapters for Hyprland, Dynamic Island, and tuigreet |
+| [`home/keewai/desktop/theme.nix`](../home/keewai/desktop/theme.nix) | Shared palette, fonts, cursor, wallpaper, and adapters for Hyprland, Dynamic Island, and tuigreet |
 | [`hosts/citrus/hardware-configuration.nix`](../hosts/citrus/hardware-configuration.nix) | Generated machine hardware, filesystems, and swap |
-| [`home/keewai/shared/hyprland.lua`](../home/keewai/shared/hyprland.lua) | Hyprland behavior and key bindings; Nix prepends the shared theme table |
+| [`home/keewai/desktop/hyprland.lua`](../home/keewai/desktop/hyprland.lua) | Hyprland behavior and key bindings; Nix prepends the shared theme table |
 | [`hosts/citrus/desktop.nix`](../hosts/citrus/desktop.nix) | Steam/Gamescope, GVfs, Tumbler, and desktop system services |
 | [`hosts/citrus/fingerprint.nix`](../hosts/citrus/fingerprint.nix) | CS9711 fingerprint driver, fprintd, and local PAM authentication |
 | [`hosts/citrus/browser.nix`](../hosts/citrus/browser.nix) | Vendor-scoped WebHID access |
 | [`modules/codex.nix`](../modules/codex.nix) | System Codex configuration, developer instructions, and managed hooks |
 | [`modules/codex-remote.nix`](../modules/codex-remote.nix) | User lingering for Codex startup at boot and continued operation after logout |
 | [`home/keewai/shared/codex-remote.nix`](../home/keewai/shared/codex-remote.nix) | Native Codex app-server user service and authenticated Remote Control |
-| [`home/keewai/shared/`](../home/keewai/shared/) | Personal apps, browser, shell, input method, Dynamic Island, MCP, and skills |
+| [`home/keewai/shared/`](../home/keewai/shared/) | Common CLI, shell, Codex, Remote, MCP, skills, and iPad USB CLI |
+| [`home/keewai/desktop/`](../home/keewai/desktop/) | GUI apps, browser, input method, Dynamic Island, CUA, and themes |
+| [`modules/desktop.nix`](../modules/desktop.nix) | Select the desktop Home Manager profile and required NixOS integration |
 | [`modules/home-manager.nix`](../modules/home-manager.nix) | Shared Home Manager integration for all hosts |
 | [`pkgs/chatgpt-desktop/default.nix`](../pkgs/chatgpt-desktop/default.nix) | ChatGPT desktop package and launcher |
 | [`pkgs/cua-driver/default.nix`](../pkgs/cua-driver/default.nix) | CUA driver package |
 
 The host entry point selects machine integration. `home/keewai/common.nix`
 imports `home/keewai/shared/default.nix` on all three hosts, including Orange.
+The desktop host also imports `modules/desktop.nix`, inherited by the VM.
 Codex and login-shell integration are shared NixOS modules. See the
 [package ownership audit](package-audit.md) for all packages
 and the features requiring system integration.
@@ -79,7 +82,7 @@ supported NixOS and Home Manager targets. It owns GTK3/4, Qt5/6 through Base16 K
 virtual console, and Brave's browser theme color. Neutral dark Colloid icons
 and cursors remain the system-wide choice.
 
-`home/keewai/shared/theme.nix` adapts `config.lib.stylix.colors` for components
+`home/keewai/desktop/theme.nix` adapts `config.lib.stylix.colors` for components
 outside the generic targets: the custom Hyprland Lua session, Noctalia's
 `Stylix` palette, and tuigreet. The immutable Noctalia baseline selects that
 palette with `theme.source = "custom"`, the Stylix font, and the Stylix
@@ -103,7 +106,7 @@ Fcitx5's Classic UI uses the rounded panel generated from the same palette.
 
 Discord runs in Legcord with Equicord and the
 [System24 theme](https://github.com/refact0r/system24).
-`home/keewai/shared/system24.nix` imports System24's official stylesheet and maps
+`home/keewai/desktop/system24.nix` imports System24's official stylesheet and maps
 Stylix's palette to its text, background, accent, and status variables. Its
 terminal-style panels, labels, and square corners remain active; text uses
 Stylix's monospace font with Noto Sans CJK JP as the Japanese fallback.
@@ -120,10 +123,10 @@ font for the currently installed SpaceTheme for Steam. SpaceTheme's layout,
 plugins, and other settings remain in Millennium's own configuration. Its
 color overrides require SpaceTheme; select that theme to use them.
 These two Quick CSS files are Nix-managed; edit the Stylix settings or
-`home/keewai/shared/system24.nix` / `home/keewai/shared/desktop.nix` instead of the apps'
+`home/keewai/desktop/system24.nix` / `home/keewai/desktop/applications.nix` instead of the apps'
 CSS editors. Restart Legcord or Steam after rebuilding its generated styles.
 
-The initial wallpaper is repository-owned under `home/keewai/shared/assets/` and
+The initial wallpaper is repository-owned under `home/keewai/desktop/assets/` and
 rendered by Noctalia; choosing another wallpaper in the GUI persists as a user
 override. Keep machine-specific display and GPU settings in the
 host entry point, not in a module used by Orange.

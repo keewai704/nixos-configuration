@@ -69,8 +69,9 @@ for target_host in citrus citrus-vm; do
 done
 ```
 
-For inputs, shared Home Manager settings, Codex, skills, or other modules used
-by all hosts, include `orange` as well. For a
+For inputs, common Home Manager settings, Codex, skills, or other modules used
+by all hosts, include `orange` as well. Desktop Home Manager settings and CUA
+affect Citrus and its VM. For a
 VM-only or Orange-only change, build only that affected host. Build changed
 package outputs too. On memory-constrained hosts, run Nix evaluations and
 builds sequentially; `max-jobs` does not limit separate evaluator processes.

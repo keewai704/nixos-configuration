@@ -6,7 +6,10 @@
   ...
 }:
 {
-  imports = [ ./bitwarden.nix ];
+  imports = [
+    ../../modules/desktop.nix
+    ./bitwarden.nix
+  ];
 
   nixpkgs.config.allowUnfreePredicate =
     package:

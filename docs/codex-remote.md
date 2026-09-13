@@ -15,6 +15,8 @@ repository's pinned `nixpkgs`; existing inputs are not upgraded for the install.
   shared Nix-managed settings and hook layers. Astra/xhigh, the subagent policy,
   additional instructions, MCP servers, and personal skills are retained.
   [modules/codex.nix](../modules/codex.nix) publishes them on every host.
+  Common MCP servers come from the common profile; the desktop profile adds
+  [CUA](../home/keewai/desktop/cua.nix) only on Citrus and its VM.
 - The CLI and server use the existing `~/.codex` configuration, authentication,
   plugins, and local state. Credentials are neither copied into Nix nor printed.
 - ChatGPT Desktop keeps its own bundled backend. A terminal opened from an

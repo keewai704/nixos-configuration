@@ -7,7 +7,7 @@
 }:
 
 let
-  theme = import ../../home/keewai/shared/theme.nix {
+  theme = import ../../home/keewai/desktop/theme.nix {
     inherit pkgs;
     colors = config.lib.stylix.colors;
   };

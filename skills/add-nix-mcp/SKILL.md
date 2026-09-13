@@ -13,8 +13,11 @@ already completed for this task. Use the actual checkout's absolute paths with
 
 ## Declare the server
 
-The registry is
+The common registry is
 [/home/keewai/nixos-configuration/home/keewai/shared/codex.nix](/home/keewai/nixos-configuration/home/keewai/shared/codex.nix).
+Desktop-only servers belong in the desktop profile; CUA is defined in
+[/home/keewai/nixos-configuration/home/keewai/desktop/cua.nix](/home/keewai/nixos-configuration/home/keewai/desktop/cua.nix).
+The generated Codex registry combines only the profiles selected by that host.
 Do not edit generated `/etc/codex/config.toml`, `~/.config/mcp/mcp.json`, or
 application-owned `~/.codex/config.toml` for persistent server configuration.
 

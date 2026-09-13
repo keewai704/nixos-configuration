@@ -29,8 +29,6 @@ in
     pkgs.grimblast
     pkgs.networkmanagerapplet
     pkgs.pavucontrol
-    pkgs.yt-dlp
-    pkgs.gws
     pkgs.xarchiver
     thunar
     pkgs.xfconf

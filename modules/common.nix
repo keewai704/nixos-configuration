@@ -7,14 +7,8 @@
   imports = [
     ./codex.nix
     ./codex-remote.nix
-    ./dconf.nix
-    ./hyprland-package.nix
-    ./hyprlock.nix
     ./shell.nix
   ];
-
-  # The shared Home Manager profile includes the proprietary desktop client.
-  nixpkgs.config.allowUnfreePackages = [ "chatgpt-desktop" ];
 
   boot.loader = {
     systemd-boot = {

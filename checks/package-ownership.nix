@@ -15,55 +15,62 @@ let
       builtins.elem name (names system.home-manager.users.keewai.home.packages)
       && !(builtins.elem name (names system.environment.systemPackages))
     ) packages;
-in
-assert lib.all
-  (
-    system:
-    onlyAtHome system [
-      "git"
-      "ripgrep"
-      "apple-music-client"
-      "alac-room-auth-service"
-      "chatgpt-desktop"
-      "codex"
-      "bitwarden-desktop"
-      "pinentry-gnome3"
-      "island-bitwarden-setup"
-      "brave-origin"
-      "brightnessctl"
-      "ddcutil"
-      "grimblast"
-      "network-manager-applet"
-      "pavucontrol"
-      "xarchiver"
-      "gws"
-      "pymobiledevice3"
-      "thunar-with-plugins"
-      "xfconf"
-      "hazkey-settings"
-      "hyprlock"
-      "hypridle"
-      "qt5ct"
-      "qt6ct"
-    ]
-  )
-  [
-    citrus
-    orange
+  sharedHomePackages = [
+    "git"
+    "ripgrep"
+    "codex"
+    "rtk"
+    "gws"
+    "yt-dlp"
+    "pymobiledevice3"
   ];
+  desktopHomePackages = [
+    "apple-music-client"
+    "alac-room-auth-service"
+    "chatgpt-desktop"
+    "cua-driver"
+    "bitwarden-desktop"
+    "rbw"
+    "pinentry-gnome3"
+    "island-bitwarden-setup"
+    "brave-origin"
+    "brightnessctl"
+    "ddcutil"
+    "grimblast"
+    "network-manager-applet"
+    "pavucontrol"
+    "xarchiver"
+    "thunar-with-plugins"
+    "xfconf"
+    "hazkey-settings"
+    "hyprlock"
+    "hypridle"
+    "qt5ct"
+    "qt6ct"
+  ];
+in
+assert lib.all (system: onlyAtHome system sharedHomePackages) [
+  citrus
+  orange
+];
+assert onlyAtHome citrus desktopHomePackages;
+assert lib.all (
+  name: !(builtins.elem name (names (orangeHome.home.packages ++ orange.environment.systemPackages)))
+) desktopHomePackages;
 assert orangeHome.programs.zsh.enable && orangeHome.programs.starship.enable;
-assert orangeHome.programs.mcp.servers == home.programs.mcp.servers;
-assert orangeHome.programs.dynamic-island.theme == home.programs.dynamic-island.theme;
+assert
+  orangeHome.programs.mcp.servers == lib.removeAttrs home.programs.mcp.servers [ "cua-driver" ];
+assert !(orangeHome.home.sessionVariables ? CUA_DRIVER_PERMISSION_MODE);
+assert !(orangeHome.home.sessionVariables ? SSH_AUTH_SOCK);
 assert orangeHome.programs.codex.package == home.programs.codex.package;
 assert orange.users.users.keewai.linger;
-assert orange.security.pam.services ? hyprlock;
-assert orange.programs.dconf.enable;
+assert !(orange.security.pam.services ? hyprlock);
+assert !orange.programs.dconf.enable;
 assert !orange.programs.hyprland.enable && !orange.services.greetd.enable;
-# Sharing desktop settings must not start graphical services on the headless server.
-assert lib.all (
-  name:
-  !(builtins.elem "default.target" (orangeHome.systemd.user.services.${name}.Install.WantedBy or [ ]))
-) (lib.remove "codex-remote" (builtins.attrNames orangeHome.systemd.user.services));
+assert !(orangeHome.stylix.enable or false);
+assert !orangeHome.i18n.inputMethod.enable;
+assert !(orangeHome.xdg.configFile ? "hypr/hyprland.lua");
+assert builtins.attrNames orangeHome.systemd.user.services == [ "codex-remote" ];
 assert citrus.security.pam.services ? hyprlock;
 assert !(home.home.file.".codex/config.toml".enable or false);
 assert !(home.home.file.".codex/AGENTS.md".enable or false);
@@ -117,5 +124,11 @@ pkgs.runCommand "package-ownership" { } ''
   test ! -e ${home.home.path}/bin/pywalfox
   test ! -e ${home.xdg.configFile.fcitx5.source}/profile
   test -f ${home.xdg.configFile."autostart/org.fcitx.Fcitx5.desktop".source}
+  test -x ${orangeHome.home.path}/bin/codex
+  test -x ${orangeHome.home.path}/bin/gws
+  test -x ${orangeHome.home.path}/bin/yt-dlp
+  test ! -e ${orangeHome.home.path}/bin/chatgpt
+  test ! -e ${orangeHome.home.path}/bin/cua-driver
+  test ! -e ${orangeHome.home.path}/bin/brave-origin
   touch "$out"
 ''

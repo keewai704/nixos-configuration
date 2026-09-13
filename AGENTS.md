@@ -58,10 +58,12 @@ Prefer Home Manager for personal applications, command-line tools, shell
 configuration, user services, and user files. Use an existing Home Manager
 `programs.*` or `services.*` module when it preserves the required behavior;
 otherwise use `home.packages`. Put these declarations in
-`home/<user>/common.nix` or `home/<user>/shared/`, not inside `hosts/`.
-All hosts use the complete shared profile; apply necessary hardware adaptations
-by capability within it. `modules/home-manager.nix` owns
-the NixOS/Home Manager integration.
+`home/<user>/common.nix`, `home/<user>/shared/`, or `home/<user>/desktop/`,
+not inside `hosts/`. Every host uses the common profile; desktop hosts also
+import the shared desktop profile through `modules/desktop.nix`. Keep GUI
+applications, session services, themes, and desktop-only MCP servers there.
+Apply necessary hardware adaptations by capability within the desktop profile.
+`modules/home-manager.nix` owns the NixOS/Home Manager integration.
 
 Before choosing the system scope, inspect the pinned NixOS and Home Manager
 modules and the package's upstream requirements. Check boot/login availability,
@@ -161,7 +163,8 @@ whether it was applied to the running system and persisted as the boot default.
 | Undeployed repository tooling | Relevant syntax and behavioral checks; Nix checks only if its integration changed |
 | Nix declarations or deployed files, including personal skills | Format changed Nix files, analyze changed code, run `nix flake check --no-write-lock-file` once, and build every affected host |
 | `flake.nix` or shared modules used by all hosts | `citrus`, `citrus-vm`, and `orange` |
-| Shared Home Manager files, Codex, MCP, skills, or shared package selection | `citrus`, `citrus-vm`, and `orange` |
+| Common Home Manager files, Codex, common MCP, skills, or all-host package selection | `citrus`, `citrus-vm`, and `orange` |
+| Desktop Home Manager files, desktop-only MCP, or desktop integration | `citrus` and `citrus-vm` |
 | Citrus system modules | `citrus` and `citrus-vm`; exclude a host only when evaluation proves an override removes the effect |
 | VM-only overrides | `citrus-vm` |
 | Orange-only configuration | `orange` |

@@ -11,6 +11,7 @@ separates machine integration from user applications and settings.
 ├── modules/
 │   ├── common.nix                 # system settings used by every host
 │   ├── home-manager.nix           # shared NixOS/Home Manager integration
+│   ├── desktop.nix                # opt-in desktop profile and its system integration
 │   ├── codex.nix                  # system Codex instructions, MCP, and hooks
 │   ├── codex-remote.nix           # user server startup before login
 │   ├── dconf.nix                  # D-Bus/GIO integration for user GTK settings
@@ -20,7 +21,8 @@ separates machine integration from user applications and settings.
 ├── home/
 │   └── keewai/
 │       ├── common.nix             # entry point for every host
-│       └── shared/                # all personal apps, settings, themes, and services
+│       ├── shared/                # common CLI, shell, Codex, Remote, MCP, and skills
+│       └── desktop/               # GUI apps, desktop services, CUA, IME, and themes
 │           ├── hyperv.nix         # rendering adaptations when Hyper-V is enabled
 │           ├── theme.nix          # palette, fonts, cursor, and shared theme values
 │           ├── hyprland.lua       # Hyprland behavior and key bindings
@@ -60,7 +62,8 @@ The ownership rules are intentionally small:
 
 1. Put a setting in `modules/common.nix` only when every host uses it.
 2. Put system integration under `hosts/<name>/`, and user applications and
-   configuration under `home/<user>/shared/`, selected by `common.nix` on every host.
+   configuration under `home/<user>/shared/` or `home/<user>/desktop/` according
+   to whether they need a desktop session.
 3. Put build recipes, skills, and encrypted secrets in their matching top-level
    directory.
 
@@ -69,11 +72,13 @@ Physical host entry points import only files from their own directory.
 Orange modules read `settings.nix` directly, so there is no hidden host-specific argument
 injection from `flake.nix`.
 
-All three hosts receive the complete Home Manager profile, including desktop
-applications and configuration. The shared profile applies Hyper-V rendering
-adaptations by capability and uses fingerprint authentication only where fprintd
-is enabled. Orange remains headless: graphical user services wait for a graphical
-session, while Codex Remote starts with the user manager. Desktop sessions,
+All three hosts receive the common Home Manager profile: CLI tools, shell,
+Codex CLI and Remote, common MCP servers, skills, and the iPad USB CLI.
+Citrus and its VM also import the same desktop profile through
+`modules/desktop.nix`: GUI applications, Bitwarden desktop/launcher integration,
+CUA, IME, desktop services, and themes. Orange imports only the common profile.
+The desktop profile applies Hyper-V rendering adaptations by capability and
+uses fingerprint authentication only where fprintd is enabled. Desktop sessions,
 drivers, USB access, and other hardware integration remain NixOS-owned.
 
 Prefer Home Manager for personal packages. Keep system scope only for a
@@ -82,7 +87,7 @@ concrete integration requirement; see the complete [package audit](docs/package-
 integration.
 
 Citrus uses Brave Origin as its sole configured browser and default URL handler,
-managed by `home/keewai/shared/browser.nix`.
+managed by `home/keewai/desktop/browser.nix`.
 
 ## Hosts
 
