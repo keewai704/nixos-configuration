@@ -62,24 +62,12 @@
     let
       system = "x86_64-linux";
 
-      packagePkgs = import nixpkgs {
+      pkgs = import nixpkgs {
         inherit system;
         config.allowUnfreePredicate = package: nixpkgs.lib.getName package == "chatgpt-desktop";
       };
-      localPackages = {
-        apple-music-client = packagePkgs.callPackage ./pkgs/apple-music-client {
-          src = inputs.apple-music-client;
-          authService = inputs.apple-music-client.packages.${system}.auth-service;
-        };
-        chatgpt-desktop = packagePkgs.callPackage ./pkgs/chatgpt-desktop { };
-        cua-driver = packagePkgs.callPackage ./pkgs/cua-driver { };
-        millennium-steam = import ./pkgs/millennium-steam {
-          inherit (packagePkgs) lib stdenv;
-          inherit (inputs) millennium;
-        };
-      };
 
-      mkHost =
+      mkNixosHost =
         modules:
         nixpkgs.lib.nixosSystem {
           specialArgs = { inherit inputs; };
@@ -92,27 +80,27 @@
     in
     {
       nixosConfigurations = {
-        orange = mkHost [
+        orange = mkNixosHost [
           inputs.agenix.nixosModules.default
           ./hosts/orange
         ];
 
-        citrus = mkHost [
+        citrus = mkNixosHost [
           inputs.chaotic.nixosModules.default
           inputs.stylix.nixosModules.stylix
           ./hosts/citrus
         ];
 
-        citrus-vm = mkHost [
+        citrus-vm = mkNixosHost [
           inputs.chaotic.nixosModules.default
           inputs.stylix.nixosModules.stylix
           ./hosts/citrus-vm
         ];
       };
 
-      packages.${system} = localPackages;
+      packages.${system} = import ./pkgs { inherit inputs pkgs; };
 
-      devShells.${system}.default = import ./devshell { pkgs = packagePkgs; };
+      devShells.${system}.default = import ./devshell { inherit pkgs; };
 
       formatter.${system} = nixpkgs.legacyPackages.${system}.nixfmt-tree;
     };

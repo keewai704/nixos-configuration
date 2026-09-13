@@ -1,5 +1,5 @@
 { hyprland, src }:
-hyprland.overrideAttrs (old: {
+hyprland.overrideAttrs (previousAttrs: {
   inherit src;
-  patches = (old.patches or [ ]) ++ [ ./hyprland-ime-modifiers.patch ];
+  patches = (previousAttrs.patches or [ ]) ++ [ ./hyprland-ime-modifiers.patch ];
 })

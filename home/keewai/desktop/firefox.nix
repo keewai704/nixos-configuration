@@ -6,29 +6,29 @@
   ...
 }:
 let
-  upstream = inputs.my-firefox-nix.nixosModules.default { inherit lib pkgs; };
-  firefox = upstream.programs.firefox;
+  upstreamModule = inputs.my-firefox-nix.nixosModules.default { inherit lib pkgs; };
+  upstreamFirefox = upstreamModule.programs.firefox;
   lockedPreferences = lib.concatStringsSep "\n" (
     lib.mapAttrsToList (
       name: value: "lockPref(${builtins.toJSON name}, ${builtins.toJSON value});"
-    ) firefox.preferences
+    ) upstreamFirefox.preferences
   );
   profileDirectory = "${config.home.homeDirectory}/${config.programs.firefox.profilesPath}/${config.programs.firefox.profiles.default.path}";
 in
 {
-  imports = [ upstream.home-manager.users.keewai ];
+  imports = [ upstreamModule.home-manager.users.keewai ];
 
   programs.firefox = {
-    inherit (firefox) enable languagePacks;
-    package = firefox.package.override (previous: {
+    inherit (upstreamFirefox) enable languagePacks;
+    package = upstreamFirefox.package.override (previous: {
       extraPrefsFiles = (previous.extraPrefsFiles or [ ]) ++ [
         (pkgs.writeText "firefox-autoconfig.js" ''
           ${lockedPreferences}
-          ${firefox.autoConfig}
+          ${upstreamFirefox.autoConfig}
         '')
       ];
     });
-    policies = firefox.policies // {
+    policies = upstreamFirefox.policies // {
       DisableAppUpdate = true;
     };
     profiles.default.isDefault = true;

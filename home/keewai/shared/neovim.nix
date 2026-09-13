@@ -35,17 +35,24 @@ let
       ]
     );
   };
-  pluginSpec = name: plugin: ''
-    {
-      name = "${name}",
-      dir = "${plugin}",
-      dependencies = {
-        ${lib.concatMapStringsSep ",\n" (dependency: pluginSpec (lib.getName dependency) dependency) (
-          plugin.dependencies or [ ]
-        )}
-      },
-    }
-  '';
+  renderPluginSpec =
+    name: plugin:
+    let
+      dependencies = plugin.dependencies or [ ];
+      dependencySpecs = map (
+        dependency: renderPluginSpec (lib.getName dependency) dependency
+      ) dependencies;
+    in
+    ''
+      {
+        name = "${name}",
+        dir = "${plugin}",
+        dependencies = {
+          ${lib.concatStringsSep ",\n" dependencySpecs}
+        },
+      }
+    '';
+
 in
 {
   programs.neovim = {
@@ -64,7 +71,7 @@ in
       vim.g.maplocalleader = " "
       vim.opt.rtp:prepend("${pkgs.vimPlugins.lazy-nvim}")
       require("lazy").setup({
-        ${lib.concatStringsSep ",\n" (lib.mapAttrsToList pluginSpec plugins)}
+        ${lib.concatStringsSep ",\n" (lib.mapAttrsToList renderPluginSpec plugins)}
       }, {
         local_spec = false,
         lockfile = vim.fn.stdpath("state") .. "/lazy-lock.json",
