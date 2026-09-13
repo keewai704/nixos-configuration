@@ -41,15 +41,6 @@ let
     size = 24;
   };
   wallpaper = ./assets/videoframe_150744_10240x4320_clean-faithful.png;
-in
-{
-  inherit
-    cursor
-    palette
-    semantic
-    wallpaper
-    ;
-
   # Pure black with cool gray surfaces and softened Tokyo Night accents.
   base16Scheme = {
     scheme = "Tokyo Night Black";
@@ -72,10 +63,50 @@ in
     base0E = "b19bd9";
     base0F = "c77e86";
   };
-
   icon = {
     package = pkgs.colloid-icon-theme;
     name = "Colloid-Dark";
+  };
+in
+{
+  inherit
+    base16Scheme
+    icon
+    cursor
+    palette
+    semantic
+    wallpaper
+    ;
+
+  stylix = {
+    enable = true;
+    autoEnable = false;
+    image = wallpaper;
+    inherit base16Scheme;
+    polarity = "dark";
+    inherit cursor;
+    fonts = {
+      monospace = {
+        package = pkgs.nerd-fonts.jetbrains-mono;
+        name = "JetBrainsMono Nerd Font";
+      };
+      sansSerif = {
+        package = pkgs.noto-fonts-cjk-sans;
+        name = "Noto Sans CJK JP";
+      };
+      sizes = {
+        applications = 10;
+        desktop = 10;
+        popups = 10;
+        terminal = 11;
+      };
+    };
+    icons = {
+      enable = true;
+      inherit (icon) package;
+      dark = icon.name;
+      light = icon.name;
+    };
   };
 
   hyprland = {

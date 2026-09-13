@@ -58,8 +58,9 @@ Prefer Home Manager for personal applications, command-line tools, shell
 configuration, user services, and user files. Use an existing Home Manager
 `programs.*` or `services.*` module when it preserves the required behavior;
 otherwise use `home.packages`. Put these declarations in
-`home/<user>/common.nix` or `home/<user>/<host>/`, not inside `hosts/`.
-Host modules may select Home Manager imports; `modules/home-manager.nix` owns
+`home/<user>/common.nix` or `home/<user>/shared/`, not inside `hosts/`.
+All hosts use the complete shared profile; apply necessary hardware adaptations
+by capability within it. `modules/home-manager.nix` owns
 the NixOS/Home Manager integration.
 
 Before choosing the system scope, inspect the pinned NixOS and Home Manager
@@ -90,7 +91,7 @@ activation workflow. Do not claim that these changes make deployment rootless.
 # Repository workflow
 
 This file owns repository layout, package ownership, validation, commits, and
-local activation. `hosts/citrus/codex.nix` owns cross-project model preferences,
+local activation. `modules/codex.nix` owns cross-project model preferences,
 decision boundaries, and skill selection; `skills/` owns task-specific methods.
 Change Nix-managed sources, not generated files under `/etc/codex` or
 `/home/keewai/.agents/skills`. Consult `docs/package-audit.md` for package-scope
@@ -130,7 +131,8 @@ this workflow before ending the work or reporting it as complete:
    committed state. Never use a different host's flake output for this live
    test. Record the expected store path and relevant live health baseline first.
    Determine affected hosts from imports and evaluated values, not a hardcoded
-   desktop hostname: `citrus-vm` inherits Citrus, including Codex and skills.
+   desktop hostname. Codex and skills are shared by every host; `citrus-vm` also
+   inherits Citrus's machine integration.
 5. When step 4 applies, verify networking and every affected service on the
    local live system.
 6. When step 4 applies, only after the test and health checks pass, run
@@ -159,7 +161,8 @@ whether it was applied to the running system and persisted as the boot default.
 | Undeployed repository tooling | Relevant syntax and behavioral checks; Nix checks only if its integration changed |
 | Nix declarations or deployed files, including personal skills | Format changed Nix files, analyze changed code, run `nix flake check --no-write-lock-file` once, and build every affected host |
 | `flake.nix` or shared modules used by all hosts | `citrus`, `citrus-vm`, and `orange` |
-| Citrus modules, Home Manager files, Codex, MCP, or skills | `citrus` and `citrus-vm`; exclude a host only when evaluation proves an override removes the effect |
+| Shared Home Manager files, Codex, MCP, skills, or shared package selection | `citrus`, `citrus-vm`, and `orange` |
+| Citrus system modules | `citrus` and `citrus-vm`; exclude a host only when evaluation proves an override removes the effect |
 | VM-only overrides | `citrus-vm` |
 | Orange-only configuration | `orange` |
 | Package changes | Changed package outputs and all hosts consuming them |

@@ -27,7 +27,7 @@ Check publication filters when adding, renaming, or removing a skill.
 Use `apply_patch` to edit the source. Do not reinitialize an existing skill or
 write into generated skill directories. Preserve application-managed system
 skills and plugin caches; cross-project routing preferences belong in
-`hosts/citrus/codex.nix`. Add `agents/openai.yaml` when invocation policy or UI
+`modules/codex.nix`. Add `agents/openai.yaml` when invocation policy or UI
 metadata needs to change, preserving other metadata.
 
 ## Verify skill behavior

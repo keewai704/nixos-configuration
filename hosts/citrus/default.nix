@@ -7,25 +7,13 @@
 }:
 
 let
-  theme = import ./theme.nix {
+  theme = import ../../home/keewai/shared/theme.nix {
     inherit pkgs;
     colors = config.lib.stylix.colors;
   };
   hyprlandSession = "${lib.getExe pkgs.uwsm} start -e -D Hyprland ${pkgs.hyprland}/bin/start-hyprland";
 in
 {
-  nixpkgs.overlays = [
-    (_final: _previous: {
-      hyprland =
-        inputs.hyprland.packages.${pkgs.stdenv.hostPlatform.system}.hyprland.overrideAttrs
-          (old: {
-            # Upstream reads VERSION while evaluating and builds hyprtester.
-            src = inputs.hyprland;
-            patches = (old.patches or [ ]) ++ [ ./hyprland-ime-modifiers.patch ];
-          });
-    })
-  ];
-
   nix = {
     # Leave room for the physical desktop during builds.
     settings = {
@@ -82,48 +70,17 @@ in
 
   imports = [
     ./browser.nix
-    ./codex.nix
-    ./codex-remote.nix
     ./desktop.nix
     ./dynamic-island.nix
     ./fingerprint.nix
     ./hardware-configuration.nix
     ./ipad.nix
-    ./shell.nix
   ];
 
   networking.hostName = "citrus";
-  home-manager.users.keewai.imports = [ ../../home/keewai/citrus ];
 
-  stylix = {
-    enable = true;
-    autoEnable = false;
-    image = theme.wallpaper;
-    inherit (theme) base16Scheme;
-    polarity = "dark";
-    inherit (theme) cursor;
-    fonts = {
-      monospace = {
-        package = pkgs.nerd-fonts.jetbrains-mono;
-        name = "JetBrainsMono Nerd Font";
-      };
-      sansSerif = {
-        package = pkgs.noto-fonts-cjk-sans;
-        name = "Noto Sans CJK JP";
-      };
-      sizes = {
-        applications = 10;
-        desktop = 10;
-        popups = 10;
-        terminal = 11;
-      };
-    };
-    icons = {
-      enable = true;
-      inherit (theme.icon) package;
-      dark = theme.icon.name;
-      light = theme.icon.name;
-    };
+  stylix = theme.stylix // {
+    homeManagerIntegration.autoImport = false;
     targets = {
       chromium.enable = true;
       console.enable = true;

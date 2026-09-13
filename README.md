@@ -10,23 +10,28 @@ separates machine integration from user applications and settings.
 ├── flake.nix
 ├── modules/
 │   ├── common.nix                 # system settings used by every host
-│   └── home-manager.nix           # shared NixOS/Home Manager integration
+│   ├── home-manager.nix           # shared NixOS/Home Manager integration
+│   ├── codex.nix                  # system Codex instructions, MCP, and hooks
+│   ├── codex-remote.nix           # user server startup before login
+│   ├── dconf.nix                  # D-Bus/GIO integration for user GTK settings
+│   ├── hyprland-package.nix       # shared Hyprland package and IME patch
+│   ├── hyprlock.nix               # PAM authentication for the user-owned locker
+│   └── shell.nix                  # login-shell integration
 ├── home/
 │   └── keewai/
-│       ├── common.nix             # personal CLI packages on every host
-│       ├── citrus/                # desktop apps, shell, IME, MCP, and user files
-│       └── citrus-vm/             # VM desktop overrides
+│       ├── common.nix             # entry point for every host
+│       └── shared/                # all personal apps, settings, themes, and services
+│           ├── hyperv.nix         # rendering adaptations when Hyper-V is enabled
+│           ├── theme.nix          # palette, fonts, cursor, and shared theme values
+│           ├── hyprland.lua       # Hyprland behavior and key bindings
+│           └── assets/            # shared wallpaper
 ├── hosts/
 │   ├── citrus/
 │   │   ├── default.nix            # host entry point
 │   │   ├── hardware-configuration.nix
 │   │   ├── desktop.nix            # desktop environment
 │   │   ├── browser.nix            # WebHID hardware access rules
-│   │   ├── codex.nix              # system Codex instructions and managed hooks
-│   │   ├── codex-remote.nix       # boot/logout integration for the user server
-│   │   ├── theme.nix              # shared desktop palette and assets
-│   │   ├── hyprland.lua           # Hyprland behavior and key bindings
-│   │   └── assets/                # wallpaper and Noctalia localization files
+│   │   └── assets/                # desktop localization files
 │   ├── citrus-vm/                 # Citrus base with Hyper-V hardware overrides
 │   └── orange/
 │       ├── default.nix            # host entry point
@@ -55,7 +60,7 @@ The ownership rules are intentionally small:
 
 1. Put a setting in `modules/common.nix` only when every host uses it.
 2. Put system integration under `hosts/<name>/`, and user applications and
-   configuration under `home/<user>/<host>/` (shared user tools in `common.nix`).
+   configuration under `home/<user>/shared/`, selected by `common.nix` on every host.
 3. Put build recipes, skills, and encrypted secrets in their matching top-level
    directory.
 
@@ -64,13 +69,20 @@ Physical host entry points import only files from their own directory.
 Orange modules read `settings.nix` directly, so there is no hidden host-specific argument
 injection from `flake.nix`.
 
+All three hosts receive the complete Home Manager profile, including desktop
+applications and configuration. The shared profile applies Hyper-V rendering
+adaptations by capability and uses fingerprint authentication only where fprintd
+is enabled. Orange remains headless: graphical user services wait for a graphical
+session, while Codex Remote starts with the user manager. Desktop sessions,
+drivers, USB access, and other hardware integration remain NixOS-owned.
+
 Prefer Home Manager for personal packages. Keep system scope only for a
 concrete integration requirement; see the complete [package audit](docs/package-audit.md).
 `nix flake check` also checks the migrated package boundaries and user launch
 integration.
 
 Citrus uses Brave Origin as its sole configured browser and default URL handler,
-managed by `home/keewai/citrus/browser.nix`.
+managed by `home/keewai/shared/browser.nix`.
 
 ## Hosts
 
@@ -112,6 +124,6 @@ and scope-dependent activation workflow. Automated contributors must also
 follow [`AGENTS.md`](AGENTS.md).
 
 The native Codex CLI comes from the pinned `sadjow/codex-cli-nix` input and is
-installed through Home Manager on Citrus and its VM. See
+installed through Home Manager on all three hosts. See
 [Codex Remote Control](docs/codex-remote.md) for the shared settings, automatic
 user service, and device pairing.

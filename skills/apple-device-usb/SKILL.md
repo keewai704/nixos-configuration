@@ -153,7 +153,7 @@ needs a different port.
 The local verified setup and diagnostic history are in
 [/home/keewai/nixos-configuration/docs/ipad.md](/home/keewai/nixos-configuration/docs/ipad.md).
 The Nix-owned launcher is declared in
-[/home/keewai/nixos-configuration/home/keewai/citrus/ipad.nix](/home/keewai/nixos-configuration/home/keewai/citrus/ipad.nix).
+[/home/keewai/nixos-configuration/home/keewai/shared/ipad.nix](/home/keewai/nixos-configuration/home/keewai/shared/ipad.nix).
 For version-specific commands, use the installed `--help` and upstream
 [CLI recipes](https://doronz88.github.io/pymobiledevice3/guides/cli-recipes/)
 and [tunnel guide](https://doronz88.github.io/pymobiledevice3/guides/ios17-tunnels/).

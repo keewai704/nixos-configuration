@@ -1,7 +1,7 @@
 # Bitwarden on citrus
 
 Personal packages, SSH settings, and writable initialization live in
-[`home/keewai/citrus/bitwarden.nix`](../home/keewai/citrus/bitwarden.nix).
+[`home/keewai/shared/bitwarden.nix`](../home/keewai/shared/bitwarden.nix).
 Only the competing system SSH agent is disabled in the host module.
 
 The desktop app uses the existing GNOME Secret Service and polkit agent for

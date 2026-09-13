@@ -6,10 +6,10 @@
   ...
 }:
 let
-  inherit (osConfig.lib.stylix) colors;
-  stylixTheme = import ../../../hosts/citrus/theme.nix {
+  inherit (config.lib.stylix) colors;
+  stylixTheme = import ./theme.nix {
     inherit pkgs;
-    colors = osConfig.lib.stylix.colors;
+    colors = config.lib.stylix.colors;
   };
   islandTheme = {
     surface = "#${stylixTheme.semantic.surface}";
@@ -35,7 +35,7 @@ in
   programs.dynamic-island = {
     enable = true;
     theme = islandTheme;
-    defaultWallpaper = osConfig.stylix.image;
+    defaultWallpaper = config.stylix.image;
     settings = {
       notch = true;
       hover = true;
@@ -47,7 +47,7 @@ in
   programs.hyprlock = {
     enable = true;
     settings = {
-      auth.fingerprint.enabled = true;
+      auth.fingerprint.enabled = osConfig.services.fprintd.enable;
       general = {
         hide_cursor = true;
         ignore_empty_input = true;
@@ -55,7 +55,7 @@ in
       background = [
         {
           monitor = "";
-          path = osConfig.stylix.image;
+          path = config.stylix.image;
           blur_passes = 3;
           blur_size = 8;
           noise = 0.0117;
@@ -70,7 +70,7 @@ in
           monitor = "";
           text = "cmd[update:1000] LC_ALL=C date +'%A, %B %d'";
           color = rgb colors.base05;
-          font_family = osConfig.stylix.fonts.sansSerif.name;
+          font_family = config.stylix.fonts.sansSerif.name;
           font_size = 28;
           position = "0, 190";
           halign = "center";
@@ -80,7 +80,7 @@ in
           monitor = "";
           text = "cmd[update:1000] LC_ALL=C date +'%H:%M'";
           color = rgb colors.base05;
-          font_family = osConfig.stylix.fonts.sansSerif.name;
+          font_family = config.stylix.fonts.sansSerif.name;
           font_size = 96;
           position = "0, 55";
           halign = "center";

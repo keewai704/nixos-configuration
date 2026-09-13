@@ -1,6 +1,6 @@
 # Native Codex CLI and Remote Control
 
-Citrus and `citrus-vm` install the native CLI through Home Manager
+All three hosts install the native CLI through Home Manager
 `programs.codex`, using the `sadjow/codex-cli-nix` input pinned in `flake.lock`.
 The initial package is Codex 0.154.0 from sadjow revision
 `33542c7e7139127a4bac1cbe0fac8c81a570410a`. Its `nixpkgs` input follows this
@@ -8,12 +8,13 @@ repository's pinned `nixpkgs`; existing inputs are not upgraded for the install.
 
 ## Configuration and ownership
 
-- [home/keewai/citrus/codex.nix](../home/keewai/citrus/codex.nix) installs the
+- [home/keewai/shared/codex.nix](../home/keewai/shared/codex.nix) installs the
   CLI and `~/.local/bin/codex` stable launcher. Home Manager does not generate a
   user config or global AGENTS file, or duplicate the system MCP registry.
 - Existing `/etc/codex/config.toml` and `/etc/codex/requirements.toml` remain the
   shared Nix-managed settings and hook layers. Astra/xhigh, the subagent policy,
   additional instructions, MCP servers, and personal skills are retained.
+  [modules/codex.nix](../modules/codex.nix) publishes them on every host.
 - The CLI and server use the existing `~/.codex` configuration, authentication,
   plugins, and local state. Credentials are neither copied into Nix nor printed.
 - ChatGPT Desktop keeps its own bundled backend. A terminal opened from an
@@ -22,7 +23,7 @@ repository's pinned `nixpkgs`; existing inputs are not upgraded for the install.
 
 ## Automatic user service
 
-[home/keewai/citrus/codex-remote.nix](../home/keewai/citrus/codex-remote.nix)
+[home/keewai/shared/codex-remote.nix](../home/keewai/shared/codex-remote.nix)
 declares `codex-remote.service`. It runs the pinned executable in the foreground:
 
 ```console
@@ -37,7 +38,7 @@ directory and service umask. Remote Control establishes an authenticated
 outbound connection to OpenAI's relay; this configuration adds no externally
 reachable TCP listener, firewall opening, public HTTP service, or third-party bridge.
 
-[hosts/citrus/codex-remote.nix](../hosts/citrus/codex-remote.nix) enables user
+[modules/codex-remote.nix](../modules/codex-remote.nix) enables user
 lingering so the default-target user service starts at boot and remains after
 logout. The host must remain awake and online. The server runs as `keewai`
 and uses the same task permissions and settings as that user.
@@ -85,6 +86,11 @@ The pairing command issues a short-lived manual code for device registration.
 Enter it in the client's Remote device-pairing flow when that option is
 available; generate a new code if it expires. Each controlling device must be
 paired. Do not put pairing codes in Git or service configuration.
+
+Each host keeps its own existing `~/.codex` state and needs its own login and
+pairing. Sharing the declarative profile does not copy credentials or device
+identities between machines. A newly provisioned host needs that initial login
+before its Remote Control connection can become ready.
 
 [Official Remote documentation](https://learn.chatgpt.com/docs/remote-connections)
 describes the desktop/mobile setup screens and QR pairing. Its supported-host

@@ -1,19 +1,18 @@
 {
-  osConfig,
+  config,
   lib,
   pkgs,
   ...
 }:
 let
-  theme = import ../../../hosts/citrus/theme.nix {
+  theme = import ./theme.nix {
     inherit pkgs;
-    colors = osConfig.lib.stylix.colors;
+    colors = config.lib.stylix.colors;
   };
   hyprlandConfig = pkgs.writeTextFile {
     name = "hyprland.lua";
     text =
-      "local theme = ${lib.generators.toLua { } theme.hyprland}\n"
-      + builtins.readFile ../../../hosts/citrus/hyprland.lua;
+      "local theme = ${lib.generators.toLua { } theme.hyprland}\n" + builtins.readFile ./hyprland.lua;
     checkPhase = ''
       cp "$target" "$TMPDIR/check.lua"
       echo 'assert(hl.get_config("decoration:blur:variant") == 8, "acrylic blur must be enabled")' >> "$TMPDIR/check.lua"

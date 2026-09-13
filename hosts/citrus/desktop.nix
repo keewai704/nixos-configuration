@@ -11,15 +11,12 @@
   nixpkgs.config.allowUnfreePredicate =
     package:
     builtins.elem (lib.getName package) [
-      "chatgpt-desktop"
       "cuda_nvml_dev"
       "nvidia-x11"
       "nvidia-settings"
     ];
 
   programs = {
-    dconf.enable = true;
-
     gamescope = {
       enable = true;
       enableWsi = true;

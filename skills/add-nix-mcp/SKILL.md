@@ -14,7 +14,7 @@ already completed for this task. Use the actual checkout's absolute paths with
 ## Declare the server
 
 The registry is
-[/home/keewai/nixos-configuration/home/keewai/citrus/codex.nix](/home/keewai/nixos-configuration/home/keewai/citrus/codex.nix).
+[/home/keewai/nixos-configuration/home/keewai/shared/codex.nix](/home/keewai/nixos-configuration/home/keewai/shared/codex.nix).
 Do not edit generated `/etc/codex/config.toml`, `~/.config/mcp/mcp.json`, or
 application-owned `~/.codex/config.toml` for persistent server configuration.
 
@@ -38,7 +38,7 @@ nix eval --impure --raw --expr '(builtins.getFlake "/home/keewai/nixos-configura
 
 Preserve the requested name, transport, arguments, environment, working
 directory, and authentication behavior. Change the conversion in
-[hosts/citrus/codex.nix](/home/keewai/nixos-configuration/hosts/citrus/codex.nix)
+[modules/codex.nix](/home/keewai/nixos-configuration/modules/codex.nix)
 only if a required field is missing from generated Codex configuration.
 
 ## Verify the integration

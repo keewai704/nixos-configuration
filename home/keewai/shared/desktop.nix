@@ -1,5 +1,5 @@
 {
-  osConfig,
+  config,
   inputs,
   lib,
   pkgs,
@@ -44,7 +44,7 @@ in
   # Steam reads user fontconfig; keep semibold Japanese text in the sans family.
   fonts.fontconfig = {
     enable = true;
-    defaultFonts.sansSerif = osConfig.fonts.fontconfig.defaultFonts.sansSerif ++ [ "Noto Sans CJK JP" ];
+    defaultFonts.sansSerif = [ config.stylix.fonts.sansSerif.name ];
   };
 
   xdg = {
@@ -75,22 +75,22 @@ in
           "base0D"
           "base0E"
           "base0F"
-        ] osConfig.lib.stylix.colors;
-        fontFamily = osConfig.stylix.fonts.sansSerif.name;
-        fontSize = osConfig.stylix.fonts.sizes.applications * 4.0 / 3.0;
-        polarity = osConfig.stylix.polarity;
+        ] config.lib.stylix.colors;
+        fontFamily = config.stylix.fonts.sansSerif.name;
+        fontSize = config.stylix.fonts.sizes.applications * 4.0 / 3.0;
+        polarity = config.stylix.polarity;
       };
       "user-dirs.dirs".force = true;
       # Link only managed files so Fcitx5 can still save its other settings.
       fcitx5.recursive = true;
 
       "legcord/quickCss.css".text = import ./system24.nix {
-        colors = osConfig.lib.stylix.colors;
-        fonts = osConfig.stylix.fonts;
+        colors = config.lib.stylix.colors;
+        fonts = config.stylix.fonts;
       };
 
       # SpaceTheme uses comma-separated RGB channels; keep its layout and plugins.
-      "millennium/quick.css".source = osConfig.lib.stylix.colors {
+      "millennium/quick.css".source = config.lib.stylix.colors {
         template = pkgs.writeText "millennium.css.mustache" ''
           /* Managed by Stylix for SpaceTheme for Steam. */
           :root {
@@ -113,7 +113,7 @@ in
             --st-yellow-hover: var(--st-yellow) !important;
           }
           :root * {
-            font-family: "${osConfig.stylix.fonts.sansSerif.name}", sans-serif !important;
+            font-family: "${config.stylix.fonts.sansSerif.name}", sans-serif !important;
           }
 
           /* Give settings rows one card; Steam places controls outside FieldLabelRow. */

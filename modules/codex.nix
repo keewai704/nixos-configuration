@@ -7,7 +7,7 @@
 
 let
   userName = "keewai";
-  skillRoot = ../../skills;
+  skillRoot = ../skills;
   ponytailVersion = "4.9.0";
   ponytailSource = pkgs.fetchFromGitHub {
     owner = "DietrichGebert";
@@ -46,7 +46,7 @@ let
         install -Dm644 "${ponytailSource}/LICENSE" "$out/LICENSE"
 
         node --test "${ponytailSource}/tests/hooks.test.js"
-        node ${../../checks/ponytail-hooks.cjs} "$out"
+        node ${../checks/ponytail-hooks.cjs} "$out"
       '';
 
   mkPonytailHook =

@@ -59,8 +59,8 @@ diagnosing evaluation separately. The flake includes Orange's backup-freshness
 and alert-state regression tests; those use temporary local data and send no
 alerts.
 
-Build all affected configurations from the AGENTS.md table. For a shared Citrus
-change, this includes the VM that imports Citrus:
+Build all affected configurations from the AGENTS.md table. For a Citrus system
+module change, this includes the VM that imports Citrus:
 
 ```console
 for target_host in citrus citrus-vm; do
@@ -69,7 +69,8 @@ for target_host in citrus citrus-vm; do
 done
 ```
 
-For inputs or modules used by all hosts, include `orange` as well. For a
+For inputs, shared Home Manager settings, Codex, skills, or other modules used
+by all hosts, include `orange` as well. For a
 VM-only or Orange-only change, build only that affected host. Build changed
 package outputs too. On memory-constrained hosts, run Nix evaluations and
 builds sequentially; `max-jobs` does not limit separate evaluator processes.

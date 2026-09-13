@@ -6,6 +6,7 @@
 }:
 let
   home = citrus.home-manager.users.keewai;
+  orangeHome = orange.home-manager.users.keewai;
   names = packages: map lib.getName packages;
   onlyAtHome =
     system: packages:
@@ -15,37 +16,54 @@ let
       && !(builtins.elem name (names system.environment.systemPackages))
     ) packages;
 in
-assert onlyAtHome orange [
-  "git"
-  "ripgrep"
-];
-assert onlyAtHome citrus [
-  "git"
-  "ripgrep"
-  "apple-music-client"
-  "alac-room-auth-service"
-  "chatgpt-desktop"
-  "codex"
-  "bitwarden-desktop"
-  "pinentry-gnome3"
-  "island-bitwarden-setup"
-  "brave-origin"
-  "brightnessctl"
-  "ddcutil"
-  "grimblast"
-  "network-manager-applet"
-  "pavucontrol"
-  "xarchiver"
-  "gws"
-  "pymobiledevice3"
-  "thunar-with-plugins"
-  "xfconf"
-  "hazkey-settings"
-  "hyprlock"
-  "hypridle"
-  "qt5ct"
-  "qt6ct"
-];
+assert lib.all
+  (
+    system:
+    onlyAtHome system [
+      "git"
+      "ripgrep"
+      "apple-music-client"
+      "alac-room-auth-service"
+      "chatgpt-desktop"
+      "codex"
+      "bitwarden-desktop"
+      "pinentry-gnome3"
+      "island-bitwarden-setup"
+      "brave-origin"
+      "brightnessctl"
+      "ddcutil"
+      "grimblast"
+      "network-manager-applet"
+      "pavucontrol"
+      "xarchiver"
+      "gws"
+      "pymobiledevice3"
+      "thunar-with-plugins"
+      "xfconf"
+      "hazkey-settings"
+      "hyprlock"
+      "hypridle"
+      "qt5ct"
+      "qt6ct"
+    ]
+  )
+  [
+    citrus
+    orange
+  ];
+assert orangeHome.programs.zsh.enable && orangeHome.programs.starship.enable;
+assert orangeHome.programs.mcp.servers == home.programs.mcp.servers;
+assert orangeHome.programs.dynamic-island.theme == home.programs.dynamic-island.theme;
+assert orangeHome.programs.codex.package == home.programs.codex.package;
+assert orange.users.users.keewai.linger;
+assert orange.security.pam.services ? hyprlock;
+assert orange.programs.dconf.enable;
+assert !orange.programs.hyprland.enable && !orange.services.greetd.enable;
+# Sharing desktop settings must not start graphical services on the headless server.
+assert lib.all (
+  name:
+  !(builtins.elem "default.target" (orangeHome.systemd.user.services.${name}.Install.WantedBy or [ ]))
+) (lib.remove "codex-remote" (builtins.attrNames orangeHome.systemd.user.services));
 assert citrus.security.pam.services ? hyprlock;
 assert !(home.home.file.".codex/config.toml".enable or false);
 assert !(home.home.file.".codex/AGENTS.md".enable or false);

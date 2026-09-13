@@ -21,6 +21,4 @@
     LIBGL_ALWAYS_SOFTWARE = "1";
     QT_QUICK_BACKEND = "software";
   };
-
-  home-manager.users.keewai.imports = [ ../../home/keewai/citrus-vm ];
 }

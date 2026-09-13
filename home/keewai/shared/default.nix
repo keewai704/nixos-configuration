@@ -7,8 +7,10 @@
     ./desktop.nix
     ./dynamic-island.nix
     ./hyprland.nix
+    ./hyperv.nix
     ./input-method.nix
     ./ipad.nix
     ./shell.nix
+    ./stylix.nix
   ];
 }

@@ -1,7 +1,7 @@
 # iPad access from citrus
 
 `hosts/citrus/ipad.nix` enables `usbmuxd`.
-`home/keewai/citrus/ipad.nix` installs the personal `pymobiledevice3` launcher,
+`home/keewai/shared/ipad.nix` installs the personal `pymobiledevice3` launcher,
 currently pinned to 11.5.0. Nix owns the launcher, Python, compiler, and native
 libraries; uv resolves and caches the Python packages in the user's environment.
 Python dependencies are outside the Nix store; only the top-level

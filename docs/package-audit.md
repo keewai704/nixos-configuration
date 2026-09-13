@@ -149,19 +149,19 @@ derivation supplies one.
 
 | baseline system roots | current owner |
 | --- | --- |
-| `apple-music-client-0.2.0-400b2b4`, `alac-room-auth-service-0.0.2-20260710`, `chatgpt-desktop-26.901.41123`, `brightnessctl-0.5.1` | [`home/keewai/citrus/desktop.nix`](../home/keewai/citrus/desktop.nix) |
-| `bitwarden-desktop-2026.8.0`, `pinentry-gnome3-1.3.2`, `island-bitwarden-setup` | [`home/keewai/citrus/bitwarden.nix`](../home/keewai/citrus/bitwarden.nix) |
-| `pymobiledevice3` | [`home/keewai/citrus/ipad.nix`](../home/keewai/citrus/ipad.nix) |
-| `ddcutil-2.2.7`, `grimblast-0.1-unstable-2026-06-30`, `network-manager-applet-1.36.0`, `pavucontrol-6.2`, `xarchiver-0.5.4.27` | [`home/keewai/citrus/desktop.nix`](../home/keewai/citrus/desktop.nix) |
-| `brave-origin-1.94.121` | [`home/keewai/citrus/browser.nix`](../home/keewai/citrus/browser.nix) |
-| `gws-0.22.5` | [`home/keewai/citrus/desktop.nix`](../home/keewai/citrus/desktop.nix) |
-| `hazkey-settings-0.2.1` | [`home/keewai/citrus/input-method.nix`](../home/keewai/citrus/input-method.nix) via `nix-hazkey.homeModules.hazkey` |
+| `apple-music-client-0.2.0-400b2b4`, `alac-room-auth-service-0.0.2-20260710`, `chatgpt-desktop-26.901.41123`, `brightnessctl-0.5.1` | [`home/keewai/shared/desktop.nix`](../home/keewai/shared/desktop.nix) |
+| `bitwarden-desktop-2026.8.0`, `pinentry-gnome3-1.3.2`, `island-bitwarden-setup` | [`home/keewai/shared/bitwarden.nix`](../home/keewai/shared/bitwarden.nix) |
+| `pymobiledevice3` | [`home/keewai/shared/ipad.nix`](../home/keewai/shared/ipad.nix) |
+| `ddcutil-2.2.7`, `grimblast-0.1-unstable-2026-06-30`, `network-manager-applet-1.36.0`, `pavucontrol-6.2`, `xarchiver-0.5.4.27` | [`home/keewai/shared/desktop.nix`](../home/keewai/shared/desktop.nix) |
+| `brave-origin-1.94.121` | [`home/keewai/shared/browser.nix`](../home/keewai/shared/browser.nix) |
+| `gws-0.22.5` | [`home/keewai/shared/desktop.nix`](../home/keewai/shared/desktop.nix) |
+| `hazkey-settings-0.2.1` | [`home/keewai/shared/input-method.nix`](../home/keewai/shared/input-method.nix) via `nix-hazkey.homeModules.hazkey` |
 | `git-2.55.0`, `ripgrep-15.2.0` | [`home/keewai/common.nix`](../home/keewai/common.nix) |
 | `fcitx5-with-addons-5.1.21`, `gtk3-immodule.cache` | Home Manager input-method/session modules |
 | `hyprlock-0.9.6` | Home Manager `programs.hyprlock` |
 | `hypridle-0.1.8` | Home Manager `services.hypridle` and an explicit `home.packages` entry, preserving both the generated user unit and the command-line package |
 | `qt5ct-1.9`, `qt6ct-0.11` | Home Manager/Stylix Qt target |
-| `thunar-with-plugins-4.20.9`, `xfconf-4.20.0` | [`home/keewai/citrus/desktop.nix`](../home/keewai/citrus/desktop.nix), with Home Manager publishing the plugin-aware Thunar unit and xfconf user unit |
+| `thunar-with-plugins-4.20.9`, `xfconf-4.20.0` | [`home/keewai/shared/desktop.nix`](../home/keewai/shared/desktop.nix), with Home Manager publishing the plugin-aware Thunar unit and xfconf user unit |
 
 ## Evaluated Home Manager package roots
 
@@ -173,16 +173,16 @@ evaluated `home.packages` root list.
 
 | source module | roots |
 | --- | --- |
-| [`home/keewai/citrus/input-method.nix`](../home/keewai/citrus/input-method.nix) via pinned `nix-hazkey.homeModules.hazkey` | `hazkey-settings-0.2.1` |
-| [`home/keewai/citrus/dynamic-island.nix`](../home/keewai/citrus/dynamic-island.nix) via pinned `dynamic-island.homeManagerModules.default` | `dynamic-island-0.1.0` |
-| [`home/keewai/citrus/shell.nix`](../home/keewai/citrus/shell.nix) | `btop-1.4.7`, `duf-0.9.1`, `du-dust-1.2.5`, `fd-10.4.2`, `zsh-completions-0.36.0` |
-| [`home/keewai/citrus/ipad.nix`](../home/keewai/citrus/ipad.nix) | `pymobiledevice3` (the generated `_pymobiledevice3` completion root is listed below) |
-| [`home/keewai/citrus/desktop.nix`](../home/keewai/citrus/desktop.nix) | `apple-music-client-0.2.0-400b2b4`, `alac-room-auth-service-0.0.2-20260710`, `chatgpt-desktop-26.901.41123`, `brightnessctl-0.5.1`, `ddcutil-2.2.7`, `grimblast-0.1-unstable-2026-06-30`, `network-manager-applet-1.36.0`, `pavucontrol-6.2`, `yt-dlp-2026.08.19`, `gws-0.22.5`, `xarchiver-0.5.4.27`, `thunar-with-plugins-4.20.9`, `xfconf-4.20.0`, `noto-fonts-2026.08.01` |
-| [`home/keewai/citrus/codex.nix`](../home/keewai/citrus/codex.nix) | `cua-driver-0.22.2`, `rtk-0.45.0` |
-| [`home/keewai/citrus/browser.nix`](../home/keewai/citrus/browser.nix) | `brave-origin-1.94.121` |
-| [`home/keewai/citrus/bitwarden.nix`](../home/keewai/citrus/bitwarden.nix) | `bitwarden-desktop-2026.8.0`, `pinentry-gnome3-1.3.2`, `island-bitwarden-setup` |
+| [`home/keewai/shared/input-method.nix`](../home/keewai/shared/input-method.nix) via pinned `nix-hazkey.homeModules.hazkey` | `hazkey-settings-0.2.1` |
+| [`home/keewai/shared/dynamic-island.nix`](../home/keewai/shared/dynamic-island.nix) via pinned `dynamic-island.homeManagerModules.default` | `dynamic-island-0.1.0` |
+| [`home/keewai/shared/shell.nix`](../home/keewai/shared/shell.nix) | `btop-1.4.7`, `duf-0.9.1`, `du-dust-1.2.5`, `fd-10.4.2`, `zsh-completions-0.36.0` |
+| [`home/keewai/shared/ipad.nix`](../home/keewai/shared/ipad.nix) | `pymobiledevice3` (the generated `_pymobiledevice3` completion root is listed below) |
+| [`home/keewai/shared/desktop.nix`](../home/keewai/shared/desktop.nix) | `apple-music-client-0.2.0-400b2b4`, `alac-room-auth-service-0.0.2-20260710`, `chatgpt-desktop-26.901.41123`, `brightnessctl-0.5.1`, `ddcutil-2.2.7`, `grimblast-0.1-unstable-2026-06-30`, `network-manager-applet-1.36.0`, `pavucontrol-6.2`, `yt-dlp-2026.08.19`, `gws-0.22.5`, `xarchiver-0.5.4.27`, `thunar-with-plugins-4.20.9`, `xfconf-4.20.0`, `noto-fonts-2026.08.01` |
+| [`home/keewai/shared/codex.nix`](../home/keewai/shared/codex.nix) | `cua-driver-0.22.2`, `rtk-0.45.0` |
+| [`home/keewai/shared/browser.nix`](../home/keewai/shared/browser.nix) | `brave-origin-1.94.121` |
+| [`home/keewai/shared/bitwarden.nix`](../home/keewai/shared/bitwarden.nix) | `bitwarden-desktop-2026.8.0`, `pinentry-gnome3-1.3.2`, `island-bitwarden-setup` |
 | [`home/keewai/common.nix`](../home/keewai/common.nix) | `git-2.55.0`, `ripgrep-15.2.0` |
-| pinned nixcord module imported by [`home/keewai/citrus/desktop.nix`](../home/keewai/citrus/desktop.nix) | `legcord-1.3.0` |
+| pinned nixcord module imported by [`home/keewai/shared/desktop.nix`](../home/keewai/shared/desktop.nix) | `legcord-1.3.0` |
 | Home Manager `programs.zsh` and site-function generation | `_pymobiledevice3`, `zsh-5.9.2`, `nix-zsh-completions-0.5.1-unstable-2025-12-12` |
 | Home Manager `programs.zoxide`, `starship`, `rbw`, `quickshell`, `man` | `zoxide-0.10.0`, `starship-1.26.0`, `rbw-1.15.0`, `quickshell-0.3.0`, `man-db-2.13.1` |
 | Home Manager `programs.kitty`, `hyprlock`, `fzf`, `eza`, `bat` | `kitty-0.48.2`, `hackgen-nf-font-2.10.0`, `hyprlock-0.9.6`, `fzf-0.74.3`, `eza-0.23.5`, `bat-0.26.1` |
@@ -337,9 +337,9 @@ These are intentionally excluded from the interactive root counts above.
 | consumer | explicit inputs and scope |
 | --- | --- |
 | [`hosts/citrus/fingerprint.nix`](../hosts/citrus/fingerprint.nix) | Custom `fprintd` wraps a pinned `libfprint-CS9711`; `opencv4` is a build input and `doctest` is a native build/test input. The fprintd daemon remains system-owned. |
-| [`hosts/citrus/codex.nix`](../hosts/citrus/codex.nix) | Pinned Ponytail source is checked with `nodejs`; generated hook wrappers use `nodejs` and `coreutils`. The CUA MCP wrapper uses `systemd`; user activation uses `yq-go`; Serena's declared extra packages are `nixd` and `nixfmt`. These are helper/runtime or build inputs, not extra personal roots. |
-| [`home/keewai/citrus/ipad.nix`](../home/keewai/citrus/ipad.nix) | The wrapper uses `stdenv.cc`/its compiler library, `zlib`, `libusb1`, `uv`, and `python313`, then runs the pinned `pymobiledevice3==11.4.2` tool. The compiler is retained because lzfse may compile on first install. |
-| [`home/keewai/citrus/bitwarden.nix`](../home/keewai/citrus/bitwarden.nix) | The setup helper runtime is `kitty`, `rbw`, and `jq`; the direct user roots are Bitwarden Desktop and `pinentry-gnome3`. |
+| [`modules/codex.nix`](../modules/codex.nix) | Pinned Ponytail source is checked with `nodejs`; generated hook wrappers use `nodejs` and `coreutils`. The CUA MCP wrapper uses `systemd`; user activation uses `yq-go`; Serena's declared extra packages are `nixd` and `nixfmt`. These are helper/runtime or build inputs, not extra personal roots. |
+| [`home/keewai/shared/ipad.nix`](../home/keewai/shared/ipad.nix) | The wrapper uses `stdenv.cc`/its compiler library, `zlib`, `libusb1`, `uv`, and `python313`, then runs the pinned `pymobiledevice3==11.4.2` tool. The compiler is retained because lzfse may compile on first install. |
+| [`home/keewai/shared/bitwarden.nix`](../home/keewai/shared/bitwarden.nix) | The setup helper runtime is `kitty`, `rbw`, and `jq`; the direct user roots are Bitwarden Desktop and `pinentry-gnome3`. |
 | [`hosts/orange/services/health-monitor.nix`](../hosts/orange/services/health-monitor.nix) | Service runtime inputs: `coreutils`, `curl`, `findutils`, `gawk`, `gnugrep`, `gnused`, `iproute2`, `jq`, `netcat-openbsd`, `smartmontools`, `systemd`, `tailscale`, and `util-linux`. Its check derivation uses `coreutils`, `findutils`, and `gnugrep` as native build inputs. |
 | [`hosts/orange/services/immich.nix`](../hosts/orange/services/immich.nix) | `postgresql_17` is the pinned database/service package; the one-shot import helper uses `coreutils`, `findutils`, `gzip`, and `util-linux`. `intel-media-driver` and `vpl-gpu-rt` are hardware acceleration runtime packages. |
 | [`hosts/orange/services/vaultwarden.nix`](../hosts/orange/services/vaultwarden.nix) | The one-shot import helper uses `coreutils`, `findutils`, `rsync`, and `sqlite`. Vaultwarden itself remains provided by its NixOS service module. |
@@ -352,19 +352,52 @@ These are intentionally excluded from the interactive root counts above.
 
 ## Migration decisions
 
+### Complete shared Home Manager profile (2026-09-13)
+
+[`home/keewai/common.nix`](../home/keewai/common.nix) now imports the complete
+[`shared` profile](../home/keewai/shared/) on Citrus, the Hyper-V VM, and Orange.
+The earlier inventories remain historical snapshots; their owner links point
+to the current files. Personal package ownership stays in Home Manager, including
+all desktop clients, shell tools, fonts, IME, MCP, skills, and Codex Remote.
+
+The user theme no longer depends on a desktop host's NixOS Stylix module.
+[`theme.nix`](../home/keewai/shared/theme.nix) holds shared palette, font, cursor,
+and wallpaper values; Citrus reuses those values for its system login theme.
+[`hyperv.nix`](../home/keewai/shared/hyperv.nix) applies the existing CPU renderer
+and wallpaper adapter only when the NixOS Hyper-V guest capability is enabled.
+The shared locker enables fingerprint authentication only when fprintd is enabled.
+
+The necessary system integration remains explicit:
+
+| Owner | Concrete integration |
+| --- | --- |
+| [`modules/shell.nix`](../modules/shell.nix) | Register Zsh as the login shell and provide its system initialization; Home Manager owns completion and prompt settings. |
+| [`modules/hyprlock.nix`](../modules/hyprlock.nix) | Supply PAM authentication for the Home Manager locker on every host, without adding a system locker or duplicate idle service. |
+| [`modules/dconf.nix`](../modules/dconf.nix) | Keep the NixOS dconf module's D-Bus service, systemd integration, GIO module, and executable. Home Manager's GTK/dconf activation requires this machine integration even on Orange; the user settings remain in Home Manager. |
+| [`modules/codex-remote.nix`](../modules/codex-remote.nix) | Start the user manager before login and keep Codex Remote running after logout. |
+| [`modules/hyprland-package.nix`](../modules/hyprland-package.nix) | Select the pinned Lua-capable package and existing IME patch for shared configuration checks and desktop clients. This overlay alone does not enable a compositor or install it as an interactive system package. |
+
+Orange remains a headless server. Its graphical Home Manager services are bound
+to graphical-session targets; Codex Remote is the default-target user service.
+The package-ownership check covers the full shared package list on Orange as
+well as Citrus and guards the server's session boundary. Desktop sessions,
+portals, graphics drivers, Steam, USB/WebHID access, and other hardware services
+remain in the relevant host modules. All three hosts are built locally; only the
+confirmed runtime host may be activated.
+
 ### Codex CLI and Remote Control addition (2026-09-13)
 
 The earlier package inventories above are historical migration snapshots.
 The native `codex-0.154.0` package from the pinned `sadjow/codex-cli-nix` input
 is now owned by Home Manager `programs.codex` in
-[`home/keewai/citrus/codex.nix`](../home/keewai/citrus/codex.nix), on both Citrus
-and the inheriting VM. It includes the code-mode companion binary and shell
+[`home/keewai/shared/codex.nix`](../home/keewai/shared/codex.nix), on all three
+hosts. It includes the code-mode companion binary and shell
 completions. It is not an `environment.systemPackages` root.
 
-[`home/keewai/citrus/codex-remote.nix`](../home/keewai/citrus/codex-remote.nix)
+[`home/keewai/shared/codex-remote.nix`](../home/keewai/shared/codex-remote.nix)
 runs that same package as `keewai`'s user service. The only new machine
 integration is `users.users.keewai.linger = true` in
-[`hosts/citrus/codex-remote.nix`](../hosts/citrus/codex-remote.nix), needed for
+[`modules/codex-remote.nix`](../modules/codex-remote.nix), needed for
 startup before login and continued operation after logout. No root daemon,
 system Codex package, or inbound firewall opening is required.
 
@@ -377,7 +410,7 @@ guards those boundaries and verifies the CLI and companion executables.
 
 - **Keep personal applications and user CLI tools in Home Manager.** The
   direct citrus roots are now declared under `home/keewai/common.nix` and
-  `home/keewai/citrus/`: Apple Music/auth, ChatGPT Desktop, Bitwarden
+  `home/keewai/shared/`: Apple Music/auth, ChatGPT Desktop, Bitwarden
   Desktop/pinentry, brightnessctl, ddcutil, grimblast, NetworkManager applet,
   pavucontrol, yt-dlp, gws, xarchiver, the Thunar client, xfconf, Brave
   Origin, pymobiledevice3, CUA/RTK, shell tools, git, and ripgrep.
