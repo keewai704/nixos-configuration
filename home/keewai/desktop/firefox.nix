@@ -8,6 +8,11 @@
 let
   upstream = inputs.my-firefox-nix.nixosModules.default { inherit lib pkgs; };
   firefox = upstream.programs.firefox;
+  lockedPreferences = lib.concatStringsSep "\n" (
+    lib.mapAttrsToList (
+      name: value: "lockPref(${builtins.toJSON name}, ${builtins.toJSON value});"
+    ) firefox.preferences
+  );
   profileDirectory = "${config.home.homeDirectory}/${config.programs.firefox.profilesPath}/${config.programs.firefox.profiles.default.path}";
 in
 {
@@ -17,15 +22,14 @@ in
     inherit (firefox) enable languagePacks;
     package = firefox.package.override (previous: {
       extraPrefsFiles = (previous.extraPrefsFiles or [ ]) ++ [
-        (pkgs.writeText "firefox-autoconfig.js" firefox.autoConfig)
+        (pkgs.writeText "firefox-autoconfig.js" ''
+          ${lockedPreferences}
+          ${firefox.autoConfig}
+        '')
       ];
     });
     policies = firefox.policies // {
       DisableAppUpdate = true;
-      Preferences = lib.mapAttrs (_: value: {
-        Value = value;
-        Status = firefox.preferencesStatus;
-      }) firefox.preferences;
     };
     profiles.default.isDefault = true;
   };

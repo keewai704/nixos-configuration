@@ -140,8 +140,9 @@ Citrus and its VM use Brave Origin as the default URL handler, managed by
 `home/keewai/desktop/firefox.nix`, which adapts the pinned `main` branch of
 `keewai704/my-firefox-nix` without enabling its system-wide Firefox module.
 It preserves the upstream Sine/Natsumi configuration, Japanese localization,
-Bitwarden/uBlock Origin policies, and locked preferences. The default profile
-is initialized before Sine deployment, so the first activation installs the
+Bitwarden/uBlock Origin policies, and locked preferences. Preferences are locked
+through AutoConfig so custom Sine settings also apply. The default profile is
+initialized before Sine deployment, so the first activation installs the
 theme without requiring a preliminary Firefox launch. Stylix's Firefox target
 is disabled to leave styling to Sine/Natsumi. Fetching the private input requires
 GitHub read authentication.
