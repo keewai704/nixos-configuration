@@ -19,7 +19,8 @@ export HYPRLAND_INSTANCE_SIGNATURE
 HYPRLAND_INSTANCE_SIGNATURE=$(systemctl --user show-environment | sed -n 's/^HYPRLAND_INSTANCE_SIGNATURE=//p')
 test -n "$HYPRLAND_INSTANCE_SIGNATURE"
 test -z "$(hyprctl configerrors)"
-hyprctl -j monitors | grep -Eq '"disabled"[[:space:]]*:[[:space:]]*false'
+# Hyprland 214bb0e inverts JSON "disabled"; its text output is correct.
+hyprctl monitors | grep -Eq 'disabled:[[:space:]]+false'
 island-action wallpaper-status | grep -q '"ok":true'
 log="$XDG_RUNTIME_DIR/hypr/$HYPRLAND_INSTANCE_SIGNATURE/hyprland.log"
 test -f "$log"
