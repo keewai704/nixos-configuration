@@ -3,11 +3,10 @@
   nixpkgs.overlays = lib.mkAfter [
     (_final: previous: {
       hyprland = previous.hyprland.override {
-        aquamarine =
-          inputs.hyprland.inputs.aquamarine.packages.${previous.stdenv.hostPlatform.system}.aquamarine.overrideAttrs
-            (old: {
-              patches = (old.patches or [ ]) ++ [ ./aquamarine-gbm.patch ];
-            });
+        aquamarine = previous.callPackage ../../pkgs/aquamarine-hyperv {
+          aquamarine =
+            inputs.hyprland.inputs.aquamarine.packages.${previous.stdenv.hostPlatform.system}.aquamarine;
+        };
       };
     })
   ];

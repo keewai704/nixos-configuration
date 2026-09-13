@@ -162,6 +162,11 @@ in
   };
 
   systemd = {
+    tmpfiles = {
+      rules = [ "d /var/lib/vaultwarden 0700 vaultwarden vaultwarden -" ];
+      settings."10-vaultwarden" = lib.mkForce { };
+    };
+
     services = {
       vaultwarden-import-existing = {
         description = "Import the existing Vaultwarden state once";
@@ -189,6 +194,9 @@ in
       };
     };
 
-    timers.backup-vaultwarden.timerConfig.OnCalendar = "*-*-* 06:05:00";
+    timers.backup-vaultwarden.timerConfig = {
+      OnCalendar = "*-*-* 06:05:00";
+      Persistent = lib.mkForce false;
+    };
   };
 }

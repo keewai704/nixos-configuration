@@ -1,44 +1,27 @@
 { pkgs, ... }:
 
 let
-  inherit (import ./settings.nix) hostName lanInterface;
+  inherit (import ./settings.nix) hostName;
 in
 {
   imports = [
     ./hardware-configuration.nix
     ./services/health-monitor.nix
     ./services/immich.nix
+    ./services/local-backup.nix
     ./services/maintenance.nix
     ./services/minecraft.nix
+    ./services/samba.nix
+    ./services/smart-tests.nix
     ./services/storage.nix
+    ./services/tailscale-exit-node.nix
     ./services/vaultwarden.nix
     ./services/web.nix
   ];
 
   boot.kernelPackages = pkgs.linuxPackages_latest;
 
-  networking = {
-    inherit hostName;
-
-    networkmanager.dispatcherScripts = [
-      {
-        source = pkgs.writeShellScript "tailscale-udp-gro-forwarding" ''
-          if [ "$1" = "${lanInterface}" ] && [ "$2" = "up" ]; then
-            ${pkgs.ethtool}/bin/ethtool -K "$1" \
-              rx-udp-gro-forwarding on \
-              rx-gro-list off
-          fi
-        '';
-      }
-    ];
-  };
-
-  services = {
-    tailscale = {
-      useRoutingFeatures = "server";
-      extraSetFlags = [ "--advertise-exit-node" ];
-    };
-  };
+  networking.hostName = hostName;
 
   nix.settings = {
     min-free = 5 * 1024 * 1024 * 1024;

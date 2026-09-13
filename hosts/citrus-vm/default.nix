@@ -2,9 +2,10 @@
 {
   imports = [
     ../citrus
-    ./access.nix
+    ./ssh.nix
     ./hardware-configuration.nix
-    ./desktop.nix
+    ./image.nix
+    ./graphics.nix
   ];
 
   networking.hostName = lib.mkForce "citrus-vm";

@@ -7,33 +7,13 @@
 }:
 
 let
-  skillRoot = ../../../skills;
-
-  skillEntries =
-    lib.mapAttrs'
-      (
-        name: _type:
-        lib.nameValuePair ".agents/skills/${name}" {
-          source = skillRoot + "/${name}";
-          force = true;
-        }
-      )
-      (
-        lib.removeAttrs (builtins.readDir skillRoot) [
-          "ponytail"
-          "luna-delegation"
-        ]
-      );
-
   managedMcpNames = lib.attrNames config.programs.mcp.servers;
   managedMcpNameArgs = lib.escapeShellArgs managedMcpNames;
   userCodexConfig = "${config.home.homeDirectory}/.codex/config.toml";
 in
 {
-  imports = [ inputs.mcp-servers-nix.homeManagerModules.default ];
-
   home = {
-    file = skillEntries // {
+    file = {
       ".local/bin/codex".source = "${config.programs.codex.package}/bin/codex";
     };
     packages = [ pkgs.rtk ];
@@ -61,45 +41,10 @@ in
   };
 
   programs = {
-    mcp.enable = true;
-
     codex = {
       enable = true;
       package = inputs.codex-cli-nix.packages.${pkgs.stdenv.hostPlatform.system}.default;
       enableMcpIntegration = false;
-    };
-  };
-
-  mcp-servers = {
-    programs = {
-      context7.enable = true;
-
-      nixos = {
-        enable = true;
-        env = {
-          FASTMCP_CHECK_FOR_UPDATES = "off";
-          FASTMCP_SHOW_SERVER_BANNER = "false";
-        };
-      };
-
-      serena = {
-        enable = true;
-        context = "codex";
-        enableWebDashboard = false;
-        args = [ "--project-from-cwd" ];
-        extraPackages = [
-          pkgs.nixd
-          pkgs.nixfmt
-        ];
-        env = {
-          FASTMCP_ENV_FILE = "/dev/null";
-          SERENA_USAGE_REPORTING = "false";
-        };
-      };
-    };
-
-    settings.servers = {
-      openaiDeveloperDocs.url = "https://developers.openai.com/mcp";
     };
   };
 }

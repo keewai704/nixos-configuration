@@ -4,15 +4,17 @@
     ./apple-music.nix
     ./bitwarden.nix
     ./browser.nix
+    ./codex.nix
     ./cua.nix
     ./dynamic-island.nix
     ./file-manager.nix
     ./hyprland.nix
-    ./hyperv.nix
+    ./hyperv-rendering.nix
     ./input-method.nix
     ./kitty.nix
     ./legcord.nix
-    ./steam.nix
+    ./screen-lock.nix
+    ./steam-theme.nix
     ./stylix.nix
   ];
 }

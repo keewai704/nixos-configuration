@@ -7,7 +7,6 @@
 let
   inherit (import ../settings.nix)
     immichMediaRoot
-    lanInterface
     storageMountUnit
     storageRoot
     vaultwardenBackupRoot
@@ -25,67 +24,14 @@ in
     ];
   };
 
-  networking.firewall.interfaces = {
-    ${lanInterface} = {
-      allowedTCPPorts = [
-        139
-        445
-      ];
-      allowedUDPPorts = [
-        137
-        138
-      ];
-    };
-    tailscale0.allowedTCPPorts = [ 445 ];
-  };
-
-  services.samba = {
-    enable = true;
-    winbindd.enable = false;
-    settings = {
-      global = {
-        "map to guest" = "Bad User";
-      };
-
-      storage = {
-        path = storageRoot;
-        comment = "Orange HDD storage";
-        "guest ok" = "yes";
-        "guest only" = "yes";
-        "read only" = "no";
-        "force user" = "keewai";
-        "force group" = "immich-media";
-        "create mask" = "0664";
-        "directory mask" = "0775";
-        "veto files" = "/server/lost+found/";
-      };
-    };
-  };
-
   systemd = {
     tmpfiles = {
       rules = [
-        "d /var/lib/vaultwarden 0700 vaultwarden vaultwarden -"
         "z ${storageRoot} 0775 keewai immich-media -"
       ];
-
-      settings = {
-        "10-vaultwarden" = lib.mkForce { };
-
-        immich.${immichMediaRoot}.e = {
-          user = lib.mkForce "keewai";
-          group = lib.mkForce "immich-media";
-          mode = lib.mkForce "0770";
-        };
-      };
     };
 
     services = {
-      samba-smbd = {
-        requires = storageDependencies;
-        after = storageDependencies;
-      };
-
       media-storage-prepare = {
         description = "Prepare mounted HDD directories for media services";
         requires = storageDependencies;

@@ -151,7 +151,7 @@ print their private keys. Do not switch to wireless pairing merely because USB
 needs a different port.
 
 The Nix-owned launcher is declared in
-[/home/keewai/nixos-configuration/home/keewai/shared/ipad.nix](/home/keewai/nixos-configuration/home/keewai/shared/ipad.nix).
+[/home/keewai/nixos-configuration/home/keewai/shared/apple-device-usb.nix](/home/keewai/nixos-configuration/home/keewai/shared/apple-device-usb.nix).
 For version-specific commands, use the installed `--help` and upstream
 [CLI recipes](https://doronz88.github.io/pymobiledevice3/guides/cli-recipes/)
 and [tunnel guide](https://doronz88.github.io/pymobiledevice3/guides/ios17-tunnels/).

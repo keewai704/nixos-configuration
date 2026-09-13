@@ -5,7 +5,7 @@
   ...
 }:
 let
-  theme = import ./theme.nix {
+  theme = import ../../../themes/tokyo-night-black {
     inherit pkgs;
     colors = config.lib.stylix.colors;
   };

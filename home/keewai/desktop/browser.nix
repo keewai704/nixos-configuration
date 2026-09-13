@@ -6,29 +6,7 @@
 }:
 
 let
-  braveOriginVersion = "1.94.121";
-  braveOriginBase = pkgs.brave-origin.override {
-    commandLineArgs = "--lang=ja --accept-lang=ja-JP,ja,en-US,en";
-  };
-  braveOriginCurrent =
-    if lib.versionAtLeast braveOriginBase.version braveOriginVersion then
-      braveOriginBase
-    else
-      braveOriginBase.overrideAttrs (_: {
-        version = braveOriginVersion;
-        src = pkgs.fetchurl {
-          url = "https://github.com/brave/brave-browser/releases/download/v${braveOriginVersion}/brave-origin_${braveOriginVersion}_amd64.deb";
-          hash = "sha256-D3bsXwBBOVQ1XBmw1mM7YYrEQYr+0zPhTs6YDGtrFJU=";
-        };
-      });
-  braveOrigin = braveOriginCurrent.overrideAttrs (previous: {
-    preFixup = (previous.preFixup or "") + ''
-      gappsWrapperArgs+=(
-        --set LANG ja_JP.UTF-8
-        --set LANGUAGE ja_JP:ja
-      )
-    '';
-  });
+  braveOrigin = pkgs.callPackage ../../../pkgs/brave-origin { };
 
 in
 {
@@ -68,7 +46,6 @@ in
         "x-scheme-handler/http" = [ "brave-origin.desktop" ];
         "x-scheme-handler/https" = [ "brave-origin.desktop" ];
         "x-scheme-handler/unknown" = [ "brave-origin.desktop" ];
-        "x-scheme-handler/codex" = [ "chatgpt.desktop" ];
       };
     };
   };

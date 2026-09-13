@@ -2,13 +2,13 @@
   imports = [
     ./audio.nix
     ./boot.nix
-    ./browser.nix
+    ./webhid.nix
     ./desktop.nix
     ./dynamic-island.nix
     ./fingerprint.nix
     ./hardware-configuration.nix
     ./hyprland.nix
-    ./ipad.nix
+    ./apple-device-usb.nix
     ./nvidia.nix
     ./stylix.nix
   ];

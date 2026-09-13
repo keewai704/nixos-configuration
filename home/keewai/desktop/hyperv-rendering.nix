@@ -8,7 +8,7 @@
 }:
 let
   wallpaper = pkgs.callPackage ../../../pkgs/hyprpaper-shm { };
-  theme = import ./theme.nix {
+  theme = import ../../../themes/tokyo-night-black {
     inherit pkgs;
     colors = config.lib.stylix.colors;
   };

@@ -20,9 +20,12 @@ description, and only the references or scripts the workflow needs. Repository
 operational gates belong in AGENTS.md rather than being repeated in the skill.
 
 Home Manager publishes selected `skills/<name>` directories under
-`~/.agents/skills`. Ponytail is published under `/etc/codex/skills/ponytail`;
-its lifecycle hook injects a short reference instead of the full skill.
-Check publication filters when adding, renaming, or removing a skill.
+`~/.agents/skills` through
+[home/keewai/shared/skills.nix](/home/keewai/nixos-configuration/home/keewai/shared/skills.nix).
+[modules/codex-ponytail.nix](/home/keewai/nixos-configuration/modules/codex-ponytail.nix)
+publishes Ponytail under `/etc/codex/skills/ponytail`; its lifecycle hook injects
+a short reference instead of the full skill. Check publication filters when
+adding, renaming, or removing a skill.
 
 Use `apply_patch` to edit the source. Do not reinitialize an existing skill or
 write into generated skill directories. Preserve application-managed system

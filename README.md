@@ -11,61 +11,95 @@ separates machine integration from user applications and settings.
 ├── modules/
 │   ├── common.nix                 # system settings used by every host
 │   ├── home-manager.nix           # shared NixOS/Home Manager integration
-│   ├── desktop.nix                # opt-in desktop profile and its system integration
-│   ├── codex.nix                  # system Codex instructions, MCP, and hooks
+│   ├── desktop.nix                # opt-in desktop profile and system integration
+│   ├── codex.nix                  # Codex model preferences, instructions, and MCP conversion
+│   ├── codex-ponytail.nix         # managed Ponytail hooks and system skill publication
 │   ├── codex-remote.nix           # user server startup before login
 │   ├── dconf.nix                  # D-Bus/GIO integration for user GTK settings
-│   ├── hyprland-package.nix       # shared Hyprland package and IME patch
+│   ├── hyprland-package.nix       # shared Hyprland package selection
 │   ├── hyprlock.nix               # PAM authentication for the user-owned locker
 │   └── shell.nix                  # login-shell integration
-├── home/
-│   └── keewai/
-│       ├── common.nix             # entry point for every host
-│       ├── shared/                # common CLI, shell, Codex, Remote, MCP, and skills
-│       └── desktop/               # GUI apps, desktop services, CUA, IME, and themes
-│           ├── applications.nix   # desktop tools without additional configuration
-│           ├── apple-music.nix    # Apple Music client, authentication, and theme
-│           ├── file-manager.nix   # Thunar, archive tools, directory handlers, and XDG folders
-│           ├── kitty.nix          # terminal and font settings
-│           ├── legcord.nix        # Discord client and System24 integration
-│           ├── steam.nix          # Millennium's SpaceTheme overrides
-│           ├── hyperv.nix         # rendering adaptations when Hyper-V is enabled
-│           ├── theme.nix          # palette, fonts, cursor, and shared theme values
-│           ├── hyprland.lua       # Hyprland behavior and key bindings
-│           └── assets/            # shared wallpaper
+├── home/keewai/
+│   ├── common.nix                 # common profile and CLI tools
+│   ├── shared/
+│   │   ├── codex.nix              # Codex CLI and user override cleanup
+│   │   ├── codex-remote.nix       # Codex Remote user service
+│   │   ├── mcp.nix                # common MCP server registry
+│   │   ├── skills.nix             # personal skill publication and filters
+│   │   ├── apple-device-usb.nix   # pymobiledevice3 launcher and completion
+│   │   ├── shell.nix              # interactive shell and CLI integration
+│   │   ├── check-shell.zsh        # manual diagnostics for the common shell
+│   │   └── starship.toml          # shell prompt
+│   └── desktop/
+│       ├── applications.nix       # desktop tools without additional configuration
+│       ├── apple-music.nix        # Apple Music client, authentication, and theme
+│       ├── bitwarden.nix          # desktop client, launcher setup, and SSH agent
+│       ├── browser.nix            # Brave Origin, native messaging, and URL handlers
+│       ├── codex.nix              # Codex desktop client and protocol handler
+│       ├── cua.nix                # desktop computer-use driver and MCP server
+│       ├── dynamic-island.nix     # desktop shell appearance and preferences
+│       ├── file-manager.nix       # Thunar, archives, directory handlers, and XDG folders
+│       ├── hyperv-rendering.nix    # rendering adaptations when Hyper-V is enabled
+│       ├── hyprland.nix           # compositor configuration generation
+│       ├── hyprland.lua           # compositor behavior and key bindings
+│       ├── input-method.nix       # Fcitx5 and Hazkey integration
+│       ├── kitty.nix              # terminal and font settings
+│       ├── legcord.nix            # Discord client and theme selection
+│       ├── legcord-system24.nix   # System24 CSS for Legcord
+│       ├── screen-lock.nix        # Hyprlock appearance and idle/suspend locking
+│       ├── steam-theme.nix        # Millennium SpaceTheme CSS
+│       └── stylix.nix             # user theme, font, and toolkit integration
+├── themes/tokyo-night-black/
+│   ├── default.nix                # shared NixOS/Home Manager theme values
+│   └── astronaut-and-angel.png    # desktop and lock-screen wallpaper
 ├── hosts/
 │   ├── citrus/
 │   │   ├── default.nix            # host entry point
 │   │   ├── audio.nix              # PipeWire and Bluetooth LE Audio
 │   │   ├── boot.nix               # bootloader and kernel selection
 │   │   ├── hardware-configuration.nix
-│   │   ├── desktop.nix            # desktop services and Steam/Gamescope integration
+│   │   ├── desktop.nix            # desktop profile and session services
+│   │   ├── steam.nix              # Steam/Millennium and Gamescope system integration
 │   │   ├── hyprland.nix           # compositor, portal, and greetd login session
+│   │   ├── fingerprint.nix        # CS9711 fprintd selection and PAM policy
+│   │   ├── check-fingerprint.sh   # local CS9711 cancellation diagnostics
+│   │   ├── apple-device-usb.nix   # usbmuxd system service
 │   │   ├── nvidia.nix             # NVIDIA driver and stable device path
 │   │   ├── stylix.nix             # system theme integration
-│   │   ├── browser.nix            # WebHID hardware access rules
-│   │   └── assets/                # desktop localization files
-│   ├── citrus-vm/                 # Citrus base with Hyper-V hardware overrides
+│   │   └── webhid.nix             # keyboard and mouse hardware access rules
+│   ├── citrus-vm/
+│   │   ├── default.nix            # Citrus imports and VM host settings
+│   │   ├── hardware-configuration.nix
+│   │   ├── image.nix              # Hyper-V image format, size, and image-builder fix
+│   │   ├── graphics.nix           # Hyper-V graphics package and environment
+│   │   └── ssh.nix                # SSH access and authorized key
 │   └── orange/
 │       ├── default.nix            # host entry point
 │       ├── hardware-configuration.nix
 │       ├── settings.nix           # values shared inside this host
 │       └── services/
-│           ├── storage.nix        # storage and SMB
-│           ├── immich.nix
-│           ├── vaultwarden.nix
+│           ├── storage.nix        # HDD mount and shared service-directory preparation
+│           ├── samba.nix          # SMB share, firewall, and mount dependencies
+│           ├── immich.nix         # media service, database import, and directory permissions
+│           ├── vaultwarden.nix    # password service, legacy import, and backup permissions
 │           ├── web.nix            # nginx and Tailscale Serve
+│           ├── tailscale-exit-node.nix # exit routing and UDP offload
 │           ├── minecraft.nix
 │           ├── health-monitor.nix
-│           └── maintenance.nix
-├── pkgs/                           # one directory per local package
+│           ├── local-backup.nix   # versioned Minecraft and Vaultwarden backups
+│           ├── smart-tests.nix    # scheduled drive self-tests
+│           └── maintenance.nix    # log cleanup, TRIM, and Nix Store maintenance
+├── pkgs/                           # package recipes and their patches/runtime helpers
+│   ├── apple-music-client/
+│   ├── aquamarine-hyperv/
+│   ├── brave-origin/
 │   ├── chatgpt-desktop/
-│   │   ├── default.nix            # package recipe
-│   │   ├── launch-chatgpt.sh      # runtime environment and writable plugin resources
-│   │   └── patch-asar.py          # application bundle patches and integrity checks
-│   ├── millennium-steam/          # reproducible dependency layout for Millennium
-│   ├── hyprpaper-shm/             # Hyper-V wallpaper renderer and Island IPC adapter
-│   └── cua-driver/
+│   ├── cua-driver/
+│   ├── fprintd-cs9711/
+│   ├── hyprland/
+│   ├── hyprpaper-shm/
+│   ├── millennium-steam/
+│   └── ponytail-hooks/
 ├── skills/                         # personal Codex skills
 └── secrets/                        # Agenix declarations and ciphertext
 ```
@@ -77,15 +111,18 @@ The ownership rules are intentionally small:
    configuration under `home/<user>/shared/` or `home/<user>/desktop/` according
    to whether they need a desktop session.
 3. Put build recipes, skills, and encrypted secrets in their matching top-level
-   directory.
+   directory. Shared visual values and assets belong in `themes/`; NixOS and
+   Home Manager integration stays in their respective profiles.
 
 Physical host entry points import only files from their own directory.
 `citrus-vm` imports Citrus and applies VM-specific hardware and desktop overrides.
-Orange modules read `settings.nix` directly, so there is no hidden host-specific argument
-injection from `flake.nix`.
+Orange modules read `settings.nix` directly, so there is no hidden host-specific
+argument injection from `flake.nix`. Its storage module prepares the mounted HDD
+directories used by Immich and Vaultwarden; each service owns its application
+permissions and import lifecycle.
 
 All three hosts receive the common Home Manager profile: CLI tools, shell,
-Codex CLI and Remote, common MCP servers, skills, and the iPad USB CLI.
+Codex CLI and Remote, common MCP servers, skills, and the Apple device USB CLI.
 Citrus and its VM also import the same desktop profile through
 `modules/desktop.nix`: GUI applications, Bitwarden desktop/launcher integration,
 CUA, IME, desktop services, and themes. Orange imports only the common profile.

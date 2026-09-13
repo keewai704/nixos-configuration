@@ -7,72 +7,6 @@
 
 let
   userName = "keewai";
-  skillRoot = ../skills;
-  ponytailVersion = "4.9.0";
-  ponytailSource = pkgs.fetchFromGitHub {
-    owner = "DietrichGebert";
-    repo = "ponytail";
-    rev = "2ed6c52c9d7e5e56942508591085fd45dea277d3";
-    hash = "sha256-bGdXvzhWPwGdz3T2Yh2h6lf+3PBRFAfdBxP5pESmCHI=";
-  };
-  ponytailHookContext = pkgs.writeText "ponytail-hook-context.md" ''
-    Ponytail applies to coding work only. When coding or explicitly asked to
-    use Ponytail, read /etc/codex/skills/ponytail/SKILL.md if it is not already
-    available in the current context, and use the active level above. For other
-    work, do not load it. Mode changes and off commands remain available.
-  '';
-  ponytailHookRoot =
-    pkgs.runCommand "ponytail-hooks-${ponytailVersion}"
-      {
-        nativeBuildInputs = [ pkgs.nodejs ];
-      }
-      ''
-        mkdir -p "$out/hooks" "$out/skills/ponytail"
-
-        for script in \
-          ponytail-activate.js \
-          ponytail-config.js \
-          ponytail-instructions.js \
-          ponytail-mode-tracker.js \
-          ponytail-runtime.js; do
-          install -Dm644 "${ponytailSource}/hooks/$script" "$out/hooks/$script"
-          node --check "$out/hooks/$script"
-        done
-
-        install -Dm644 \
-          "${ponytailHookContext}" \
-          "$out/skills/ponytail/SKILL.md"
-        install -Dm644 "${ponytailSource}/LICENSE" "$out/LICENSE"
-
-        node --test "${ponytailSource}/tests/hooks.test.js"
-      '';
-
-  mkPonytailHook =
-    name:
-    pkgs.writeShellApplication {
-      name = "ponytail-${name}";
-      runtimeInputs = [ pkgs.coreutils ];
-      text = ''
-        pluginData="''${XDG_STATE_HOME:-$HOME/.local/state}/codex/plugins/ponytail"
-        mkdir -p "$pluginData"
-
-        export PLUGIN_ROOT=${lib.escapeShellArg "${ponytailHookRoot}"}
-        export CLAUDE_PLUGIN_ROOT="$PLUGIN_ROOT"
-        export PLUGIN_DATA="$pluginData"
-        export CLAUDE_PLUGIN_DATA="$pluginData"
-
-        exec ${lib.getExe pkgs.nodejs} ${lib.escapeShellArg "${ponytailHookRoot}/hooks/ponytail-${name}.js"}
-      '';
-    };
-
-  ponytailManagedHooks = pkgs.symlinkJoin {
-    name = "ponytail-managed-hooks-${ponytailVersion}";
-    paths = map mkPonytailHook [
-      "activate"
-      "mode-tracker"
-    ];
-  };
-
   sharedMcpServers = config.home-manager.users.${userName}.programs.mcp.servers;
 
   toCodexMcpServer =
@@ -99,7 +33,7 @@ let
       }
     );
 
-  codexSystemConfig = (pkgs.formats.toml { }).generate "chatgpt-desktop-mcp.toml" {
+  codexSystemConfig = (pkgs.formats.toml { }).generate "codex-config.toml" {
     model = "gpt-6-astra";
     model_context_window = 872000;
     model_reasoning_effort = "xhigh";
@@ -132,44 +66,11 @@ let
     mcp_servers = lib.mapAttrs toCodexMcpServer sharedMcpServers;
   };
 
-  codexSystemRequirements = (pkgs.formats.toml { }).generate "codex-requirements.toml" {
-    features.hooks = true;
-    hooks = {
-      managed_dir = "${ponytailManagedHooks}/bin";
-
-      SessionStart = [
-        {
-          matcher = "startup|resume|clear|compact";
-          hooks = [
-            {
-              type = "command";
-              command = "${ponytailManagedHooks}/bin/ponytail-activate";
-              timeout = 5;
-              statusMessage = "Loading ponytail mode...";
-            }
-          ];
-        }
-      ];
-
-      UserPromptSubmit = [
-        {
-          hooks = [
-            {
-              type = "command";
-              command = "${ponytailManagedHooks}/bin/ponytail-mode-tracker";
-              timeout = 5;
-              statusMessage = "Tracking ponytail mode...";
-            }
-          ];
-        }
-      ];
-    };
-  };
 in
 {
+  imports = [ ./codex-ponytail.nix ];
+
   environment.etc = {
     "codex/config.toml".source = codexSystemConfig;
-    "codex/requirements.toml".source = codexSystemRequirements;
-    "codex/skills/ponytail".source = skillRoot + "/ponytail";
   };
 }

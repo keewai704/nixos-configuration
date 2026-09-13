@@ -2,7 +2,9 @@
   imports = [
     ./codex.nix
     ./codex-remote.nix
-    ./ipad.nix
+    ./apple-device-usb.nix
+    ./mcp.nix
     ./shell.nix
+    ./skills.nix
   ];
 }

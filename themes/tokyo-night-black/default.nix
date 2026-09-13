@@ -40,7 +40,7 @@ let
     name = "Colloid-dark-cursors";
     size = 24;
   };
-  wallpaper = ./assets/videoframe_150744_10240x4320_clean-faithful.png;
+  wallpaper = ./astronaut-and-angel.png;
   base16Scheme = {
     scheme = "Tokyo Night Black";
     slug = "tokyo-night-black";

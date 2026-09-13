@@ -141,6 +141,12 @@ in
     postgresql.package = postgresqlPackage;
   };
 
+  systemd.tmpfiles.settings.immich.${immichMediaRoot}.e = {
+    user = lib.mkForce "keewai";
+    group = lib.mkForce "immich-media";
+    mode = lib.mkForce "0770";
+  };
+
   systemd.services = {
     immich-import-existing-database = {
       description = "Import the existing Immich PostgreSQL backup once";

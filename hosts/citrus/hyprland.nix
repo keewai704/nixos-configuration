@@ -6,7 +6,7 @@
   ...
 }:
 let
-  theme = import ../../home/keewai/desktop/theme.nix {
+  theme = import ../../themes/tokyo-night-black {
     inherit pkgs;
     colors = config.lib.stylix.colors;
   };

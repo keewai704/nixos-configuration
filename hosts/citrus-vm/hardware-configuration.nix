@@ -1,32 +1,16 @@
 {
   lib,
   pkgs,
-  modulesPath,
   ...
 }:
 {
   disabledModules = [
     ../citrus/hardware-configuration.nix
     ../citrus/fingerprint.nix
-    ../citrus/ipad.nix
+    ../citrus/apple-device-usb.nix
   ];
-  imports = [ (modulesPath + "/virtualisation/hyperv-image.nix") ];
 
   nixpkgs.hostPlatform = "x86_64-linux";
-  image.baseName = "citrus-vm";
-  virtualisation.diskSize = 128 * 1024;
-
-  nixpkgs.overlays = [
-    (_final: prev: {
-      lkl = prev.lkl.overrideAttrs (old: {
-        postPatch = old.postPatch + ''
-          substituteInPlace tools/lkl/cptofs.c \
-            --replace-fail 'lkl_start_kernel("mem=100M")' 'lkl_start_kernel("mem=1024M")'
-        '';
-      });
-    })
-  ];
-
   boot = {
     loader = {
       limine.enable = lib.mkForce false;
