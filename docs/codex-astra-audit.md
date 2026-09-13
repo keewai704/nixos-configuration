@@ -20,7 +20,6 @@ sub-agentを無効化し、Luna自動委譲スキルの配布を止めた。
 | コマンドの使用例 | [development.md](development.md) | AGENTSの方針を参照する実行ガイドとし、重複する完了条件をなくす |
 | モデル・自律的な完遂・確認条件 | [Codex追加指示](../hosts/citrus/codex.nix) | 全プロジェクト共通の `developer_instructions` として定義する |
 | push・公開・外部送信 | Codex追加指示 | 操作と送信範囲を含む明示指示・継続承認を使い、同じ承認は再確認しない |
-| 外部Pro相談 | 追加指示と[Proスキル](../skills/use-chatgpt-6-pro/SKILL.md) | 明示的な依頼に限定し、スキルの自動コンテキスト投入も止める |
 | スキル選択と参照順序 | Codex追加指示 | 単語一致で発火させず、必要な操作に応じて参照を読む |
 | MCP固有の構成と確認 | [add-nix-mcp](../skills/add-nix-mcp/SKILL.md) | 固定入力、資格情報、生成設定、smoke checkを残して共通工程をAGENTSへ集約する |
 | 個人スキル固有の作成と配布確認 | [add-nix-skill](../skills/add-nix-skill/SKILL.md) | validator、配布先、発火・非発火の確認を残して共通工程をAGENTSへ集約する |
@@ -44,9 +43,6 @@ Home Managerの配置・所有権の詳細はこのNixOSリポジトリ固有な
 - **検証:** `nix flake check` に含まれる評価を毎回 `--no-build` で重複させない。
   未変更入力の合格結果を再利用する。実システムの `test → health → switch → health`
   は異なる状態の確認なので維持する。
-- **Pro:** 行き詰まりだけでは相談を開始しない。
-  `agents/openai.yaml` の `allow_implicit_invocation: false` で明示呼び出し用にする。
-  自然言語で明示的にPro相談を求められた場合も、追加指示が個人スキルの確認へ導く。
 - **Ponytail:** 起動hookが本文全体を常時投入する方式を止めた。active levelと
   `/etc/codex/skills/ponytail/SKILL.md` への案内を注入する。
   lite/full/ultra、off、defaultの制御を保持し、SubagentStart hookは登録しない。
@@ -82,8 +78,7 @@ Google Docsは対象の作成・編集・テンプレート適用・検証のと
 | Orange専用の宣言変更 | Orangeをローカル検証・build・commitし、VMへ適用せずリモート操作もしない |
 | 個人スキル更新 | creatorとNix固有の配布確認を使い、共通ゲートはAGENTSから一度だけ適用 |
 | iPadのスクリーンショット | USB操作スキルを選び、FigmaやPonytailを起動しない |
-| 大きな調査で行き詰まる | 自分で継続し、sub-agentやProを自動起動しない |
-| Proへの明示的な相談 | 対応スキルを読み、Temporary Chat確認と1回の送信制限を守る |
+| 大きな調査で行き詰まる | 自分で継続し、sub-agentを起動しない |
 | 承認済みのbranchをpush | 実際の送信範囲を確認し、承認済みなら再度質問しない |
 
 [checks/ponytail-hooks.cjs](../checks/ponytail-hooks.cjs) は実行する回帰確認で、

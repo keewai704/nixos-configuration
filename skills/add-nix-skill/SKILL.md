@@ -42,8 +42,8 @@ nix shell --impure --no-write-lock-file --expr 'with import (builtins.getFlake "
 For material trigger or workflow changes, check realistic matching and
 non-matching requests against the new instructions. Verify decisions and
 boundaries, not exact wording; report whether this was a manual scenario review
-or an executed model evaluation. Do not spend Pro usage or create subagents
-for this check without the corresponding authorization.
+or an executed model evaluation. Keep this check within the authorized
+resources and the user's delegation policy.
 
 In addition to AGENTS.md's checks, verify the evaluated Home Manager file set
 or Ponytail's `environment.etc` source. After applicable local `test` and

@@ -334,11 +334,10 @@ mode. Subagents are disabled with `features.multi_agent = false`, and the
 Manager publication. These defaults apply to both `citrus` and `citrus-vm`.
 
 The additional developer instructions in `hosts/citrus/codex.nix` cover
-cross-project scope, approval reuse, Git publication, external Pro consultation,
-and skill routing. Repository layout, Home Manager ownership, validation, and
+cross-project scope, approval reuse, Git publication, and skill routing.
+Repository layout, Home Manager ownership, validation, and
 activation policy live in the root `AGENTS.md`; the Nix skills link to it.
-Pro consultation is explicitly invoked only. An implementation request alone
-does not authorize push or an external Pro submission.
+An implementation request alone does not authorize push or external submission.
 
 Ponytail keeps its existing mode tracking and default-mode controls, but its
 SessionStart hook injects only the active level and a short reference to
