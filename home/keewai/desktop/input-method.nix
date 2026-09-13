@@ -1,6 +1,8 @@
 {
   config,
   inputs,
+  lib,
+  pkgs,
   ...
 }:
 {
@@ -11,6 +13,16 @@
     type = "fcitx5";
 
     fcitx5 = {
+      addons = [
+        (pkgs.writeShellScriptBin "hazkey-server" ''
+          case "$*" in
+            "") action=start ;;
+            -r|--replace) action=restart ;;
+            *) exit 64 ;;
+          esac
+          exec ${lib.getExe' pkgs.systemd "systemctl"} --user "$action" hazkey-server.service
+        '')
+      ];
       waylandFrontend = true;
       systemd.enable = false;
       settings.inputMethod = {
