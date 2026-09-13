@@ -9,6 +9,7 @@ use ratatui::{
         Block, Borders, Cell, Clear, LineGauge, List, ListItem, Paragraph, Row, Table, Wrap,
     },
 };
+use ratatui_image::StatefulImage;
 use unicode_width::UnicodeWidthStr;
 
 const ACCENT: Color = Color::Cyan;
@@ -120,6 +121,7 @@ fn navigation(frame: &mut Frame, app: &mut App, area: Rect) {
 }
 
 fn browse(frame: &mut Frame, app: &mut App, area: Rect) {
+    let area = selected_cover(frame, app, area);
     let loading = if app.pending_page.is_some() {
         " · loading…"
     } else {
@@ -214,6 +216,60 @@ fn browse(frame: &mut Frame, app: &mut App, area: Rect) {
         .row_highlight_style(highlight())
         .highlight_symbol("› ");
     frame.render_stateful_widget(table, area, &mut app.page.table);
+}
+
+fn selected_cover(frame: &mut Frame, app: &mut App, area: Rect) -> Rect {
+    let Some(item) = app.page.item() else {
+        return area;
+    };
+    if area.height < 15 {
+        return area;
+    }
+    let sections = Layout::vertical([Constraint::Length(7), Constraint::Min(1)]).split(area);
+    let border = block("Selected", app.focus == Focus::Browse);
+    let inner = border.inner(sections[0]);
+    let image_area = app.covers.square(inner, inner.height);
+    let text_area = Rect::new(
+        inner.x + image_area.width + 2,
+        inner.y,
+        inner.width.saturating_sub(image_area.width + 2),
+        inner.height,
+    );
+    let details = vec![
+        Line::styled(
+            clean(&item.title),
+            Style::default().fg(ACCENT).add_modifier(Modifier::BOLD),
+        ),
+        Line::raw(clean(&item.artist)),
+        Line::raw(clean(&item.album)),
+        Line::styled(
+            clean(item.kind.trim_start_matches("library-")),
+            Style::default().fg(Color::DarkGray),
+        ),
+    ];
+    frame.render_widget(border, sections[0]);
+    frame.render_widget(Paragraph::new(details), text_area);
+    if app.overlay.is_none() && app.input.is_none() {
+        draw_cover(frame, &mut app.covers.selected, image_area);
+    }
+    sections[1]
+}
+
+fn draw_cover(frame: &mut Frame, cover: &mut cover::Slot, area: Rect) {
+    if area.is_empty() {
+        return;
+    }
+    if let Some(image) = &mut cover.image {
+        frame.render_stateful_widget(StatefulImage::default(), area, image);
+        cover.check_encoding();
+    } else {
+        frame.render_widget(
+            Paragraph::new(cover.message)
+                .style(Style::default().fg(Color::DarkGray))
+                .wrap(Wrap { trim: false }),
+            area,
+        );
+    }
 }
 
 fn panel(frame: &mut Frame, app: &mut App, area: Rect) {
@@ -348,7 +404,19 @@ fn panel(frame: &mut Frame, app: &mut App, area: Rect) {
     }
 }
 
-fn player(frame: &mut Frame, app: &App, area: Rect) {
+fn player(frame: &mut Frame, app: &mut App, area: Rect) {
+    let area = if app.queue.current().is_some() && area.width >= 60 {
+        let cover_area = app.covers.square(area, 4);
+        draw_cover(frame, &mut app.covers.playing, cover_area);
+        Rect::new(
+            area.x + cover_area.width + 2,
+            area.y,
+            area.width.saturating_sub(cover_area.width + 2),
+            area.height,
+        )
+    } else {
+        area
+    };
     let rows = Layout::vertical([
         Constraint::Length(1),
         Constraint::Length(1),
@@ -737,7 +805,12 @@ mod tests {
     fn layouts_keep_player_and_essential_controls_at_80_columns() -> Result<()> {
         let root = tempfile::tempdir()?;
         let store = LibraryStore::open(root.path().join("apple-music.json"))?;
-        let mut app = App::new(store, root.path().join("downloads"), true);
+        let mut app = App::new(
+            store,
+            root.path().join("downloads"),
+            true,
+            cover::Graphics::text((10, 20)),
+        );
         app.page = Page::new(
             "日本語 Album",
             vec![MusicItem {
@@ -776,6 +849,7 @@ mod tests {
             LibraryStore::open(root.path().join("state.json"))?,
             root.path().join("downloads"),
             true,
+            cover::Graphics::text((10, 20)),
         );
         app.input = Some(Input::new(
             InputKind::Password("name".into()),

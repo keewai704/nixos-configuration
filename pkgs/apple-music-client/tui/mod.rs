@@ -1,18 +1,23 @@
 pub mod browse;
 mod controls;
+mod cover;
 mod queue;
 mod render;
 
 use anyhow::{Context, Result, anyhow, bail};
 use browse::{Page, api_page, playable, public_page};
 use crossterm::{
+    SynchronizedUpdate,
     cursor::{Hide, Show},
     event::{
         self, DisableBracketedPaste, EnableBracketedPaste, Event as TerminalEvent, KeyCode,
         KeyEvent, KeyEventKind, KeyModifiers,
     },
     execute,
-    terminal::{EnterAlternateScreen, LeaveAlternateScreen, disable_raw_mode, enable_raw_mode},
+    terminal::{
+        EndSynchronizedUpdate, EnterAlternateScreen, LeaveAlternateScreen, disable_raw_mode,
+        enable_raw_mode,
+    },
 };
 use queue::Queue;
 use ratatui::{Terminal, backend::CrosstermBackend, widgets::ListState};
@@ -35,7 +40,7 @@ use std::{
         mpsc::{self, Receiver, Sender},
     },
     thread::{self, JoinHandle},
-    time::Duration,
+    time::{Duration, Instant},
 };
 
 #[derive(Clone, Copy, PartialEq)]
@@ -127,6 +132,7 @@ enum Job {
     Download(MusicItem, String, Result<PreparedTrack>),
     Enqueue(bool, Result<Vec<MusicItem>>),
     Devices(Result<Vec<Value>>),
+    Cover(cover::Role, String, Result<Option<image::DynamicImage>>),
 }
 
 struct Ready {
@@ -146,6 +152,7 @@ struct App {
     store: LibraryStore,
     cache: PathBuf,
     page: Page,
+    covers: cover::Covers,
     history: Vec<Page>,
     focus: Focus,
     panel: Option<Panel>,
@@ -212,16 +219,21 @@ pub fn run(store: LibraryStore, cache: PathBuf, no_auth: bool, url: Option<Strin
         EnableBracketedPaste,
         Hide
     )?;
+    let graphics = cover::Graphics::from_terminal();
     let mut terminal = Terminal::new(CrosstermBackend::new(io::stdout()))?;
-    let mut app = App::new(store, cache, no_auth);
+    let mut app = App::new(store, cache, no_auth, graphics);
     if let Some(url) = url {
         app.open_url(url)?;
     }
     while !app.quit && !stop.load(Ordering::Relaxed) {
-        if let Err(error) = app.poll() {
-            app.status = format!("{error:#}");
-        }
-        terminal.draw(|frame| render::draw(frame, &mut app))?;
+        io::stdout().sync_update(|_| {
+            if let Err(error) = app.poll() {
+                app.status = format!("{error:#}");
+            }
+            terminal
+                .draw(|frame| render::draw(frame, &mut app))
+                .map(|_| ())
+        })??;
         if event::poll(Duration::from_millis(60))? {
             let result = match event::read()? {
                 TerminalEvent::Key(key) if key.kind != KeyEventKind::Release => app.key(key),
@@ -230,6 +242,10 @@ pub fn run(store: LibraryStore, cache: PathBuf, no_auth: bool, url: Option<Strin
                         input.insert(&value);
                     }
                     app.preview_filter();
+                    Ok(())
+                }
+                TerminalEvent::Resize(_, _) => {
+                    app.covers.resize();
                     Ok(())
                 }
                 _ => Ok(()),
@@ -256,6 +272,7 @@ fn restore_terminal() {
     let _ = disable_raw_mode();
     let _ = execute!(
         io::stdout(),
+        EndSynchronizedUpdate,
         DisableBracketedPaste,
         LeaveAlternateScreen,
         Show
@@ -278,7 +295,7 @@ impl Drop for App {
 }
 
 impl App {
-    fn new(store: LibraryStore, cache: PathBuf, no_auth: bool) -> Self {
+    fn new(store: LibraryStore, cache: PathBuf, no_auth: bool, graphics: cover::Graphics) -> Self {
         let page = Page::new("Recent · played on this device", store.recent_items());
         let (audio, audio_events, audio_thread) = audio_output::start_joinable();
         let (tx, rx) = mpsc::channel();
@@ -286,6 +303,7 @@ impl App {
             store,
             cache,
             page,
+            covers: cover::Covers::new(graphics),
             history: Vec::new(),
             focus: Focus::Browse,
             panel: None,
@@ -961,7 +979,28 @@ impl App {
             }
         }
         self.publish();
+        self.poll_covers();
         Ok(())
+    }
+
+    fn poll_covers(&mut self) {
+        self.covers.selected.select(self.page.item());
+        self.covers
+            .playing
+            .select(self.queue.current().map(|entry| &entry.item));
+        for role in [cover::Role::Playing, cover::Role::Selected] {
+            if let Some((key, item)) = self.covers.slot(role).request(Instant::now()) {
+                let cache = self.cache.clone();
+                if self
+                    .job(true, move || {
+                        Job::Cover(role, key, cover::load(item, &cache))
+                    })
+                    .is_err()
+                {
+                    self.covers.slot(role).retry_later();
+                }
+            }
+        }
     }
 
     fn handle_job(&mut self, job: Job) -> Result<()> {
@@ -1147,6 +1186,7 @@ impl App {
                     ListState::default().with_selected(Some(0)),
                 ))
             }
+            Job::Cover(role, key, result) => self.covers.finish(role, &key, result),
             _ => {}
         }
         Ok(())
@@ -1247,6 +1287,7 @@ mod tests {
             LibraryStore::open(root.join("state.json"))?,
             root.join("downloads"),
             true,
+            cover::Graphics::text((10, 20)),
         ))
     }
 

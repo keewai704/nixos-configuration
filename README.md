@@ -161,6 +161,10 @@ details share an optional panel; narrow terminals show one active pane.
 `:login` and `:code` handle account authentication, and `,` opens audio settings.
 The terminal controls colors and fonts. Existing `alac-room` library, downloads,
 and authentication sessions remain compatible. Music videos play audio only.
+Selected items show their cover above the list, and the playing track has its
+own thumbnail in the playback bar. Images load asynchronously into the private
+cache. Kitty uses its graphics protocol; other terminals and tmux use character
+block previews. Missing covers leave text controls usable.
 The package keeps the pinned upstream media/authentication backend and applies
 the terminal frontend in `pkgs/apple-music-client/tui/`; GPUI, browser assets,
 and the legacy Python frontend are removed from its build and installation.

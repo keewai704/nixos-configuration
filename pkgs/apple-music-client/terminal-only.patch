@@ -2,24 +2,24 @@
 +++ b/Cargo.toml
 @@ -3 +3 @@
 -version = "0.2.0"
-+version = "0.3.0"
++version = "0.3.1"
 @@ -5 +5 @@
 -description = "Native Linux Apple Music client built with Rust and GPUI"
 +description = "Apple Music terminal client"
-@@ -13,0 +14,4 @@
+@@ -13,0 +14,6 @@
 +ratatui = "=0.29.0"
++ratatui-image = { version = "=8.0.1", default-features = false, features = ["crossterm"] }
++image = { version = "0.25", default-features = false, features = ["jpeg"] }
 +crossterm = "=0.28.1"
 +signal-hook = "0.3"
 +unicode-width = "0.2"
-@@ -15,3 +18,0 @@
+@@ -15,3 +20,0 @@
 -gpui = "=0.2.2"
 -gpui-component = "=0.5.1"
 -gpui-component-assets = "=0.5.1"
 --- a/src/lib.rs
 +++ b/src/lib.rs
-@@ -2 +1,0 @@
--pub mod artwork;
-@@ -14 +12,0 @@
+@@ -14 +13,0 @@
 -pub mod theme;
 --- a/src/player.rs
 +++ b/src/player.rs
@@ -68,3 +68,21 @@
 -        eprintln!("MPRIS disabled: {error}");
 -    }
 +    let _ = result;
+--- a/src/artwork.rs
++++ b/src/artwork.rs
+@@ -19,2 +19,2 @@
+-const SUBPROCESS_TIMEOUT: Duration = Duration::from_secs(15);
+-const HTTP_CONNECT_TIMEOUT: Duration = Duration::from_secs(5);
++const SUBPROCESS_TIMEOUT: Duration = Duration::from_secs(5);
++const HTTP_CONNECT_TIMEOUT: Duration = Duration::from_secs(3);
+@@ -216 +216,9 @@
+-        command.args(["-v", "error", "-nostdin", "-y", "-i"]);
++        command.args([
++            "-v",
++            "error",
++            "-nostdin",
++            "-y",
++            "-protocol_whitelist",
++            "file,pipe",
++            "-i",
++        ]);

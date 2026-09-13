@@ -12,13 +12,13 @@
 }:
 rustPlatform.buildRustPackage {
   pname = "apple-music-client";
-  version = "0.3.0-tui-${src.shortRev}";
+  version = "0.3.1-tui-${src.shortRev}";
   inherit src;
   cargoLock.lockFile = ./Cargo.lock;
 
   patches = [ ./terminal-only.patch ];
   postPatch = ''
-    rm -r src/app src/app.rs src/icons.rs src/artwork.rs src/theme.rs amclient assets
+    rm -r src/app src/app.rs src/icons.rs src/theme.rs amclient assets
     cp ${./Cargo.lock} Cargo.lock
     cp ${./tui/main.rs} src/main.rs
     mkdir src/tui
@@ -26,6 +26,7 @@ rustPlatform.buildRustPackage {
     cp ${./tui/browse.rs} src/tui/browse.rs
     cp ${./tui/queue.rs} src/tui/queue.rs
     cp ${./tui/controls.rs} src/tui/controls.rs
+    cp ${./tui/cover.rs} src/tui/cover.rs
     cp ${./tui/render.rs} src/tui/render.rs
   '';
 
