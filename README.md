@@ -217,12 +217,27 @@ sets it as `EDITOR` and `VISUAL` for new sessions. The common configuration in
 Plugins are available without a first-launch download, and Wayland clipboard
 integration is included.
 
-mini.nvim provides file and text search, file browsing, Git diffs and commands,
-completion, a status line, comment toggling, text objects, paired delimiters,
-and surrounding-text edits. which-key shows available key bindings after a
-pause. nvim-lspconfig and conform.nvim provide the language-server and formatter
-integration used by project extensions. Outside a development shell, completion
-works with buffer text without requiring a language server.
+The editor uses absolute line numbers. Its home screen links to file search,
+the file explorer, recent files, workspace restoration, the terminal, and help.
+Neo-tree provides a sidebar for browsing, creating, renaming, copying, moving,
+and deleting files, plus a view of Git changes. In the tree, use `Enter` to open,
+`a` / `A` to create a file / directory, `r` to rename, `y` / `x` then `p` to copy /
+move, `d` to delete, `H` to toggle hidden entries, and `?` for the full key guide.
+
+bufferline displays open files as tabs. ToggleTerm opens a floating terminal,
+and persistence saves open files and window layouts per working directory and
+Git branch on exit; restoration is manual. Trouble provides diagnostic and
+document-symbol panels. Tree-sitter supplies syntax highlighting for common
+configuration and programming languages, with parsers also pinned and installed
+by Nix. Change the parser list in `neovim.nix` instead of running `:TSInstall`.
+
+mini.nvim provides file and text search, Git history and diffs, completion, a
+status line, comment toggling, text objects, paired delimiters, surrounding-text
+edits, moving selected lines, alignment, and splitting/joining argument lists.
+which-key shows available key bindings after a pause. nvim-lspconfig and
+conform.nvim provide the language-server and formatter integration used by
+project extensions. Outside a development shell, completion works with buffer
+text without requiring a language server.
 
 From this repository's root, start the development environment and open a file:
 
@@ -251,12 +266,24 @@ devShell can set the same variable to its own trusted Lua configuration.
 | --- | --- |
 | `Space ff` / `Space fg` | Find files / search contents |
 | `Space fb` / `Space fh` | Find buffers / search help |
-| `Space e` | Browse and edit the file tree (`=` applies file operations) |
+| `Space fr` | Find recent files |
+| `Space e` | Toggle the file explorer |
+| `Space h` / `Space ?` | Home screen / key guide |
+| `Space t` or `Ctrl-\` | Toggle the floating terminal |
+| `Esc Esc` in a terminal | Leave terminal input mode |
+| `[b` / `]b` / `Space bd` | Previous file / next file / close file |
+| `Space ws` / `Space wv` / `Space wc` | Horizontal split / vertical split / close window |
+| `Space sr` / `Space ss` / `Space sd` | Restore workspace / select workspace / stop saving this session |
 | `Space gd` / `Space gg` | Toggle Git diff overlay / show Git status |
+| `Space gc` / `Space ge` | Git history / Git changes explorer |
 | `Space l` | Open the plugin manager |
 | `Space cf` | Format the buffer or selection when a formatter is available |
 | `Space cd` / `Space cq` | Show diagnostic / list diagnostics |
+| `Space xx` / `Space xb` / `Space cs` | Workspace diagnostics / buffer diagnostics / document symbols |
 | `gd` / `gr` / `K` | Definition / references / documentation with an attached LSP |
 | `Space cr` / `Space ca` | Rename symbol / code action with an attached LSP |
 | `gcc` / `gc` in Visual mode | Toggle comments |
+| `Alt-h/j/k/l` in Visual mode | Move selected text |
+| `ga` in Visual mode | Align selected text interactively |
+| `gS` | Split or join an argument list |
 | `Ctrl-n` / `Ctrl-p` / `Ctrl-y` | Next / previous / accept completion |

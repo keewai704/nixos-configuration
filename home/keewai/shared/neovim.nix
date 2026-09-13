@@ -5,7 +5,47 @@ let
     "which-key.nvim" = pkgs.vimPlugins.which-key-nvim;
     "nvim-lspconfig" = pkgs.vimPlugins.nvim-lspconfig;
     "conform.nvim" = pkgs.vimPlugins.conform-nvim;
+    "neo-tree.nvim" = pkgs.vimPlugins.neo-tree-nvim;
+    "nvim-web-devicons" = pkgs.vimPlugins.nvim-web-devicons;
+    "bufferline.nvim" = pkgs.vimPlugins.bufferline-nvim;
+    "toggleterm.nvim" = pkgs.vimPlugins.toggleterm-nvim;
+    "persistence.nvim" = pkgs.vimPlugins.persistence-nvim;
+    "trouble.nvim" = pkgs.vimPlugins.trouble-nvim;
+    "nvim-treesitter" = pkgs.vimPlugins.nvim-treesitter.withPlugins (
+      parsers: with parsers; [
+        bash
+        c
+        cpp
+        css
+        html
+        javascript
+        json
+        lua
+        markdown
+        markdown_inline
+        nix
+        python
+        regex
+        toml
+        tsx
+        typescript
+        vim
+        vimdoc
+        yaml
+      ]
+    );
   };
+  pluginSpec = name: plugin: ''
+    {
+      name = "${name}",
+      dir = "${plugin}",
+      dependencies = {
+        ${lib.concatMapStringsSep ",\n" (dependency: pluginSpec (lib.getName dependency) dependency) (
+          plugin.dependencies or [ ]
+        )}
+      },
+    }
+  '';
 in
 {
   programs.neovim = {
@@ -24,9 +64,7 @@ in
       vim.g.maplocalleader = " "
       vim.opt.rtp:prepend("${pkgs.vimPlugins.lazy-nvim}")
       require("lazy").setup({
-        ${lib.concatStringsSep "\n" (
-          lib.mapAttrsToList (name: plugin: ''{ name = "${name}", dir = "${plugin}" },'') plugins
-        )}
+        ${lib.concatStringsSep ",\n" (lib.mapAttrsToList pluginSpec plugins)}
       }, {
         local_spec = false,
         lockfile = vim.fn.stdpath("state") .. "/lazy-lock.json",
