@@ -27,7 +27,7 @@
 
     steam = {
       enable = true;
-      package = inputs.millennium.packages.${pkgs.stdenv.hostPlatform.system}.millennium-steam;
+      package = inputs.self.packages.${pkgs.stdenv.hostPlatform.system}.millennium-steam;
       # Preserve Steam's FHS font set when personal fonts move to Home Manager.
       fontPackages = config.stylix.fonts.packages ++ [ pkgs.noto-fonts ] ++ config.fonts.packages;
       extraPackages = [ pkgs.gamescope ];

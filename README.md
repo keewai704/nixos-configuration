@@ -1,6 +1,6 @@
 # nixos-configuration
 
-Flake-based NixOS configurations for two `x86_64-linux` machines. The layout
+Flake-based NixOS configurations for three `x86_64-linux` machines. The layout
 separates machine integration from user applications and settings.
 
 ## Layout
@@ -13,8 +13,9 @@ separates machine integration from user applications and settings.
 │   └── home-manager.nix           # shared NixOS/Home Manager integration
 ├── home/
 │   └── keewai/
-│       ├── common.nix             # personal CLI packages on both hosts
-│       └── citrus/                # desktop apps, shell, IME, MCP, and user files
+│       ├── common.nix             # personal CLI packages on every host
+│       ├── citrus/                # desktop apps, shell, IME, MCP, and user files
+│       └── citrus-vm/             # VM desktop overrides
 ├── hosts/
 │   ├── citrus/
 │   │   ├── default.nix            # host entry point
@@ -25,6 +26,7 @@ separates machine integration from user applications and settings.
 │   │   ├── theme.nix              # shared desktop palette and assets
 │   │   ├── hyprland.lua           # Hyprland behavior and key bindings
 │   │   └── assets/                # wallpaper and Noctalia localization files
+│   ├── citrus-vm/                 # Citrus base with Hyper-V hardware overrides
 │   └── orange/
 │       ├── default.nix            # host entry point
 │       ├── hardware-configuration.nix
@@ -39,6 +41,7 @@ separates machine integration from user applications and settings.
 │           └── maintenance.nix
 ├── pkgs/                           # one directory per local package
 │   ├── chatgpt-desktop/
+│   ├── millennium-steam/          # reproducible dependency layout for Millennium
 │   └── cua-driver/
 ├── skills/                         # personal Codex skills
 ├── checks/                         # package ownership and integration regression check
@@ -54,8 +57,9 @@ The ownership rules are intentionally small:
 3. Put build recipes, skills, and encrypted secrets in their matching top-level
    directory.
 
-Each host entry point imports only files from its own directory. Orange modules
-read `settings.nix` directly, so there is no hidden host-specific argument
+Physical host entry points import only files from their own directory.
+`citrus-vm` imports Citrus and applies VM-specific hardware and desktop overrides.
+Orange modules read `settings.nix` directly, so there is no hidden host-specific argument
 injection from `flake.nix`.
 
 Prefer Home Manager for personal packages. Keep system scope only for a
@@ -71,6 +75,7 @@ managed by `home/keewai/citrus/browser.nix`.
 | Host | Role | Entry point | Guide |
 | --- | --- | --- | --- |
 | `citrus` | Hyprland desktop and local ChatGPT/Codex client | [`hosts/citrus/default.nix`](hosts/citrus/default.nix) | [Citrus](docs/citrus.md) |
+| `citrus-vm` | Citrus desktop on Hyper-V | [`hosts/citrus-vm/default.nix`](hosts/citrus-vm/default.nix) | [Hyper-V](docs/citrus-vm.md) |
 | `orange` | Tailnet server, storage, media, password manager, and Minecraft | [`hosts/orange/default.nix`](hosts/orange/default.nix) | [Orange](docs/orange.md) |
 
 ## Non-activating quick start

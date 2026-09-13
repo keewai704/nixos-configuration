@@ -201,12 +201,12 @@
         "rev": "df24559db134a08b6942dbe8f8b885d301b28482",
         "revCount": 29,
         "type": "git",
-        "url": "file:///home/keewai/dynamic-island"
+        "url": "https://github.com/keewai704/hypr-island.git"
       },
       "original": {
         "ref": "main",
         "type": "git",
-        "url": "file:///home/keewai/dynamic-island"
+        "url": "https://github.com/keewai704/hypr-island.git"
       }
     },
     "firefox-gnome-theme": {

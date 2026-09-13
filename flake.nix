@@ -1,5 +1,5 @@
 {
-  description = "NixOS configurations for orange and citrus";
+  description = "NixOS configurations for orange, citrus, and citrus-vm";
 
   inputs = {
     nixpkgs.url = "github:NixOS/nixpkgs/nixos-unstable";
@@ -7,7 +7,7 @@
     apple-music-client.url = "git+https://github.com/keewai704/apple-music-client.git?ref=main";
 
     dynamic-island = {
-      url = "git+file:///home/keewai/dynamic-island?ref=main";
+      url = "git+https://github.com/keewai704/hypr-island.git?ref=main";
       inputs.nixpkgs.follows = "nixpkgs";
     };
 
@@ -67,6 +67,11 @@
         };
         chatgpt-desktop = packagePkgs.callPackage ./pkgs/chatgpt-desktop { };
         cua-driver = packagePkgs.callPackage ./pkgs/cua-driver { };
+        # Preserve the upstream Steam package's override interface.
+        millennium-steam = import ./pkgs/millennium-steam {
+          inherit (packagePkgs) lib stdenv;
+          inherit (inputs) millennium;
+        };
       };
 
       mkHost =
@@ -92,9 +97,21 @@
         ./hosts/citrus
       ];
 
+      nixosConfigurations.citrus-vm = mkHost [
+        inputs.chaotic.nixosModules.default
+        inputs.stylix.nixosModules.stylix
+        ./hosts/citrus-vm
+      ];
+
       packages.${system} = localPackages;
 
       checks.${system} = {
+        citrus-vm = import ./checks/citrus-vm.nix {
+          inherit (nixpkgs) lib;
+          pkgs = packagePkgs;
+          config = inputs.self.nixosConfigurations.citrus-vm.config;
+        };
+
         orange-health-monitor =
           inputs.self.nixosConfigurations.orange.config.system.build.orangeHealthMonitorCheck;
 
