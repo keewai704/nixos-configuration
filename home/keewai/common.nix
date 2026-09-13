@@ -2,6 +2,8 @@
 {
   imports = [ ./shared ];
 
+  programs.gh.enable = true;
+
   home.packages = [
     pkgs.git
     pkgs.gws
