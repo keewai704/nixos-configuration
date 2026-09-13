@@ -19,6 +19,13 @@ assert lib.assertMsg
     && builtins.elem "hv_storvsc" config.boot.initrd.kernelModules
     && !(builtins.elem "nvidia" config.boot.initrd.kernelModules)
     && config.services.xserver.videoDrivers == [ "modesetting" ]
+    && lib.any (
+      dependency:
+      builtins.elem "aquamarine-gbm.patch" (map builtins.baseNameOf (dependency.patches or [ ]))
+    ) config.programs.hyprland.package.buildInputs
+    && builtins.elem "hyprland-ime-modifiers.patch" (
+      map builtins.baseNameOf config.programs.hyprland.package.patches
+    )
     && !config.services.fprintd.enable
     && !config.hardware.bluetooth.enable
     && config.home-manager.users.keewai.programs.dynamic-island.enable

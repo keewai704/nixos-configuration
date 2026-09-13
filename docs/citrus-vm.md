@@ -40,7 +40,13 @@ to populate this desktop image. This does not change the guest's RAM setting.
 
 The desktop uses Mesa software rendering with expensive Hyprland effects
 disabled and Dynamic Island's reduced-motion setting enabled. GPU passthrough
-is not configured. Verify the graphical session on the real Hyper-V guest.
+is not configured. A VM-only Aquamarine patch uses its existing GBM renderer
+for the synthetic display and skips unsupported hardware color matrices.
+Hyprpaper is pinned to 0.7.6, which can draw wallpapers through shared memory
+without a GPU render node. A small CLI adapter lets Dynamic Island keep its
+wallpaper selection and restoration using that version's text IPC.
+Hardware brightness, Bluetooth, audio devices, and hardware color-temperature
+adjustment are unavailable in this basic Hyper-V console configuration.
 
 ## Access and deployment
 
@@ -54,3 +60,6 @@ follow the repository's test, health-check, and switch workflow using
 `--flake .#citrus-vm`. Check `hostnamectl --static`, `/etc/hostname`, networking,
 `sshd`, `greetd`, and the user desktop session. Confirm that the running and
 boot-default system links agree after switching and rebooting.
+
+After a fresh graphical login, run `bash checks/citrus-vm-desktop.sh` as `keewai`
+to check services, networking, monitor state, wallpaper IPC, and renderer errors.

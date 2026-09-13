@@ -42,6 +42,7 @@ separates machine integration from user applications and settings.
 ├── pkgs/                           # one directory per local package
 │   ├── chatgpt-desktop/
 │   ├── millennium-steam/          # reproducible dependency layout for Millennium
+│   ├── hyprpaper-shm/             # Hyper-V wallpaper renderer and Island IPC adapter
 │   └── cua-driver/
 ├── skills/                         # personal Codex skills
 ├── checks/                         # package ownership and integration regression check

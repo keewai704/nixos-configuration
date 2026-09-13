@@ -1,5 +1,18 @@
-{ lib, ... }:
+{ inputs, lib, ... }:
 {
+  nixpkgs.overlays = lib.mkAfter [
+    (_final: previous: {
+      hyprland = previous.hyprland.override {
+        aquamarine =
+          inputs.hyprland.inputs.aquamarine.packages.${previous.stdenv.hostPlatform.system}.aquamarine.overrideAttrs
+            (old: {
+              # Hyper-V has no EGL device/render node or hardware color matrix.
+              patches = (old.patches or [ ]) ++ [ ./aquamarine-gbm.patch ];
+            });
+      };
+    })
+  ];
+
   services.xserver.videoDrivers = lib.mkForce [ "modesetting" ];
   environment.sessionVariables = {
     AQ_DRM_DEVICES = lib.mkForce null;

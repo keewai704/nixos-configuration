@@ -11,6 +11,7 @@ let
   };
 in
 {
+  imports = [ ./wallpaper.nix ];
   disabledModules = [ ../citrus/hyprland.nix ];
   xdg.configFile."hypr/hyprland.lua".source = pkgs.writeTextFile {
     name = "citrus-vm-hyprland.lua";
