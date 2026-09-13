@@ -3,7 +3,6 @@
 ''
   @import url("https://refact0r.github.io/system24/build/system24.css");
 
-  /* Use System24's own variables so its layout and component styles stay intact. */
   html:root {
     --text-0: #${colors.base00};
     --text-1: #${colors.base05};
@@ -62,7 +61,6 @@
     letter-spacing: normal;
   }
 
-  /* Keep Legcord's HTML controls in the toolbar as System24 moves it. */
   #app-mount .trailing_c38106 {
     anchor-name: --system24-toolbar;
     margin-right: 0;
@@ -105,7 +103,6 @@
     }
   }
 
-  /* Midnight removes the bottom border from these otherwise framed headers. */
   #app-mount :is(.container__133bf, .container_f391e3, .homeWrapper__0920e, .container__01ae2, .container_fb64c9) > .container__9293f {
     border-bottom: var(--border-thickness) solid var(--border-subtle);
 

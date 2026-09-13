@@ -34,14 +34,10 @@ in
 
   home = {
     file = skillEntries // {
-      # sadjow's wrapper advertises this stable executable path to Codex.
       ".local/bin/codex".source = "${config.programs.codex.package}/bin/codex";
     };
     packages = [ pkgs.rtk ];
 
-    # A user-level entry wins over /etc/codex/config.toml. Remove only
-    # model, reasoning, and subagent overrides and duplicate MCP names,
-    # while preserving bundled helpers and unrelated preferences.
     activation.removeUserCodexOverrides = lib.hm.dag.entryAfter [ "writeBoundary" ] ''
       user_config=${lib.escapeShellArg userCodexConfig}
       if [[ -f "$user_config" && -w "$user_config" ]]; then
@@ -67,7 +63,6 @@ in
   programs = {
     mcp.enable = true;
 
-    # Install the CLI without generating a user config that shadows /etc/codex.
     codex = {
       enable = true;
       package = inputs.codex-cli-nix.packages.${pkgs.stdenv.hostPlatform.system}.default;

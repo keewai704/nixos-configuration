@@ -1,11 +1,7 @@
--- Hyprland behavior for citrus. The generated configuration prepends
--- the shared theme table.
-
 local main_mod = "SUPER"
 local terminal = "uwsm app -- kitty"
 local file_manager = "uwsm app -- thunar"
 
--- Lock once after login, including greetd's automatic initial session.
 hl.on("hyprland.start", function()
     hl.exec_cmd("island-action lock")
 end)
@@ -24,7 +20,7 @@ hl.monitor({
     scale = 1,
     bitdepth = 10,
     cm = "srgb",
-    vrr = 2, -- Enable adaptive sync for fullscreen applications.
+    vrr = 2,
 })
 
 hl.env("XCURSOR_SIZE", tostring(theme.cursor.size))
@@ -34,13 +30,11 @@ hl.env("MOZ_ENABLE_WAYLAND", "1")
 
 hl.config({
     debug = {
-        -- Avoid intermittent black/stale regions with NVIDIA and live blur.
-        -- Repaint the whole output when it changes, but retain idle frame skipping.
         damage_tracking = "monitor",
     },
 
     render = {
-        cm_auto_hdr = 1, -- Switch to HDR for fullscreen HDR content.
+        cm_auto_hdr = 1,
     },
 
     general = {
@@ -80,7 +74,6 @@ hl.config({
         },
         blur = {
             enabled = true,
-            -- Keep reloads valid on the old compositor until the next login.
             variant = hl.get_config("decoration:blur:variant") and "acrylic" or nil,
             acrylic = {
                 clarity = 0.1,
@@ -132,7 +125,6 @@ hl.config({
     },
 })
 
--- XWayland uses Steam app IDs; native Wayland Proton windows expose an xdg tag.
 hl.window_rule({ match = { class = "^steam_app_[0-9]+$" }, tag = "+proton-game" })
 hl.window_rule({ match = { xdg_tag = "^proton-game$" }, tag = "+proton-game" })
 hl.window_rule({

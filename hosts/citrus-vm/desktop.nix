@@ -6,7 +6,6 @@
         aquamarine =
           inputs.hyprland.inputs.aquamarine.packages.${previous.stdenv.hostPlatform.system}.aquamarine.overrideAttrs
             (old: {
-              # Hyper-V has no EGL device/render node or hardware color matrix.
               patches = (old.patches or [ ]) ++ [ ./aquamarine-gbm.patch ];
             });
       };

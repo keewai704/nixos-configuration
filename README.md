@@ -23,6 +23,12 @@ separates machine integration from user applications and settings.
 │       ├── common.nix             # entry point for every host
 │       ├── shared/                # common CLI, shell, Codex, Remote, MCP, and skills
 │       └── desktop/               # GUI apps, desktop services, CUA, IME, and themes
+│           ├── applications.nix   # desktop tools without additional configuration
+│           ├── apple-music.nix    # Apple Music client, authentication, and theme
+│           ├── file-manager.nix   # Thunar, archive tools, directory handlers, and XDG folders
+│           ├── kitty.nix          # terminal and font settings
+│           ├── legcord.nix        # Discord client and System24 integration
+│           ├── steam.nix          # Millennium's SpaceTheme overrides
 │           ├── hyperv.nix         # rendering adaptations when Hyper-V is enabled
 │           ├── theme.nix          # palette, fonts, cursor, and shared theme values
 │           ├── hyprland.lua       # Hyprland behavior and key bindings
@@ -30,8 +36,13 @@ separates machine integration from user applications and settings.
 ├── hosts/
 │   ├── citrus/
 │   │   ├── default.nix            # host entry point
+│   │   ├── audio.nix              # PipeWire and Bluetooth LE Audio
+│   │   ├── boot.nix               # bootloader and kernel selection
 │   │   ├── hardware-configuration.nix
-│   │   ├── desktop.nix            # desktop environment
+│   │   ├── desktop.nix            # desktop services and Steam/Gamescope integration
+│   │   ├── hyprland.nix           # compositor, portal, and greetd login session
+│   │   ├── nvidia.nix             # NVIDIA driver and stable device path
+│   │   ├── stylix.nix             # system theme integration
 │   │   ├── browser.nix            # WebHID hardware access rules
 │   │   └── assets/                # desktop localization files
 │   ├── citrus-vm/                 # Citrus base with Hyper-V hardware overrides
@@ -49,13 +60,14 @@ separates machine integration from user applications and settings.
 │           └── maintenance.nix
 ├── pkgs/                           # one directory per local package
 │   ├── chatgpt-desktop/
+│   │   ├── default.nix            # package recipe
+│   │   ├── launch-chatgpt.sh      # runtime environment and writable plugin resources
+│   │   └── patch-asar.py          # application bundle patches and integrity checks
 │   ├── millennium-steam/          # reproducible dependency layout for Millennium
 │   ├── hyprpaper-shm/             # Hyper-V wallpaper renderer and Island IPC adapter
 │   └── cua-driver/
 ├── skills/                         # personal Codex skills
-├── checks/                         # package, desktop, and Codex hook regression checks
-├── secrets/                        # Agenix declarations and ciphertext
-└── docs/                           # operational detail
+└── secrets/                        # Agenix declarations and ciphertext
 ```
 
 The ownership rules are intentionally small:
@@ -82,20 +94,19 @@ uses fingerprint authentication only where fprintd is enabled. Desktop sessions,
 drivers, USB access, and other hardware integration remain NixOS-owned.
 
 Prefer Home Manager for personal packages. Keep system scope only for a
-concrete integration requirement; see the complete [package audit](docs/package-audit.md).
-`nix flake check` also checks the migrated package boundaries and user launch
-integration.
+concrete integration requirement. Repository policy and validation requirements
+live in [`AGENTS.md`](AGENTS.md).
 
 Citrus uses Brave Origin as its sole configured browser and default URL handler,
 managed by `home/keewai/desktop/browser.nix`.
 
 ## Hosts
 
-| Host | Role | Entry point | Guide |
-| --- | --- | --- | --- |
-| `citrus` | Hyprland desktop and local ChatGPT/Codex client | [`hosts/citrus/default.nix`](hosts/citrus/default.nix) | [Citrus](docs/citrus.md) |
-| `citrus-vm` | Citrus desktop on Hyper-V | [`hosts/citrus-vm/default.nix`](hosts/citrus-vm/default.nix) | [Hyper-V](docs/citrus-vm.md) |
-| `orange` | Tailnet server, storage, media, password manager, and Minecraft | [`hosts/orange/default.nix`](hosts/orange/default.nix) | [Orange](docs/orange.md) |
+| Host | Role | Entry point |
+| --- | --- | --- |
+| `citrus` | Hyprland desktop and local ChatGPT/Codex client | [`hosts/citrus/default.nix`](hosts/citrus/default.nix) |
+| `citrus-vm` | Citrus desktop on Hyper-V | [`hosts/citrus-vm/default.nix`](hosts/citrus-vm/default.nix) |
+| `orange` | Tailnet server, storage, media, password manager, and Minecraft | [`hosts/orange/default.nix`](hosts/orange/default.nix) |
 
 ## Non-activating quick start
 
@@ -124,11 +135,9 @@ These commands evaluate and build locally; they do not activate a generation.
 Do not substitute another host when the runtime host has no matching flake
 output.
 
-See [development and deployment](docs/development.md) for the mandatory commit
-and scope-dependent activation workflow. Automated contributors must also
-follow [`AGENTS.md`](AGENTS.md).
+Follow [`AGENTS.md`](AGENTS.md) for the mandatory commit and scope-dependent
+local activation workflow.
 
 The native Codex CLI comes from the pinned `sadjow/codex-cli-nix` input and is
-installed through Home Manager on all three hosts. See
-[Codex Remote Control](docs/codex-remote.md) for the shared settings, automatic
-user service, and device pairing.
+installed through Home Manager on all three hosts. Its automatic user service
+is configured in [`home/keewai/shared/codex-remote.nix`](home/keewai/shared/codex-remote.nix).

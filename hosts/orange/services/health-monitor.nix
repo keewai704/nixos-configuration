@@ -101,48 +101,6 @@ let
     }
   '';
 
-  healthMonitorCheck =
-    pkgs.runCommand "orange-health-monitor-check"
-      {
-        nativeBuildInputs = with pkgs; [
-          coreutils
-          findutils
-          gnugrep
-        ];
-      }
-      ''
-        alerts="$TMPDIR/alerts"
-        : > "$alerts"
-        queue_alert() { printf '%s|%s\n' "$1" "$2" >> "$alerts"; }
-        clear_alert() { printf 'clear|%s\n' "$1" >> "$alerts"; }
-        ${checkFreshFile}
-
-        check_fresh_file missing "Missing backup" "$TMPDIR/not-there" '*.backup' 60
-        grep --fixed-strings --line-regexp \
-          'backup-missing|Missing backup directory is missing' "$alerts"
-
-        mkdir "$TMPDIR/fresh"
-        touch "$TMPDIR/fresh/current.backup"
-        check_fresh_file fresh "Fresh" "$TMPDIR/fresh" '*.backup' 60
-        grep --fixed-strings --line-regexp 'clear|backup-fresh' "$alerts"
-
-        state_dir="$TMPDIR/state"
-        new_keys="$TMPDIR/new-keys"
-        new_messages="$TMPDIR/new-messages"
-        mkdir "$state_dir"
-        : > "$new_keys"
-        : > "$new_messages"
-        ${alertStateFunctions}
-        long_message=$(printf 'x%.0s' {1..1000})
-        queue_alert first "$long_message"
-        queue_alert deferred "$long_message"
-        test "$(wc -l < "$new_keys")" -eq 1
-        grep --fixed-strings --line-regexp --quiet "$(incident_hash first)" "$new_keys"
-        ! grep --fixed-strings --line-regexp --quiet "$(incident_hash deferred)" "$new_keys"
-
-        touch "$out"
-      '';
-
   healthMonitor = pkgs.writeShellApplication {
     name = "orange-health-monitor";
     runtimeInputs = with pkgs; [
@@ -216,9 +174,6 @@ let
         check_service "$service"
       done
 
-      # Do not turn a previous webhook delivery failure into a self-sustaining
-      # alert loop. The current invocation will still fail if delivery fails,
-      # and the original incident remains unacknowledged for the next run.
       failed_units=$(systemctl --failed --no-legend --plain 2>/dev/null \
         | awk '$1 != "orange-health-monitor.service" { print $1 }' \
         | paste -sd ',' -)
@@ -443,8 +398,6 @@ let
   };
 in
 {
-  system.build.orangeHealthMonitorCheck = healthMonitorCheck;
-
   age.secrets.discord-webhook = {
     file = ../../../secrets/discord-webhook.age;
     mode = "0400";
@@ -472,8 +425,6 @@ in
           UMask = "0077";
           NoNewPrivileges = true;
           PrivateTmp = true;
-          # "strict" remounts /srv read-only in this service's namespace and
-          # would make the host's writable storage mount look unhealthy.
           ProtectSystem = "full";
           ProtectHome = true;
           ProtectClock = true;

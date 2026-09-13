@@ -15,8 +15,6 @@ let
     "mkdir -p $out\n"
     "sha256-iPdEl5GH0cXjn1EUdYutqxdMwdRXms+eXCEIwZ3xeLY="
   ];
-  # Avoid Bun's isolated-linker nondeterminism (oven-sh/bun#30209).
-  # Keep workspace manifests so hoisted dependency symlinks have valid targets.
   to = [
     "bun install --linker hoisted --frozen-lockfile"
     "bun ../node_modules/.bin/rollup -c"

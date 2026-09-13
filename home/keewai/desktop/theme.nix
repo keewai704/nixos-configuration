@@ -41,7 +41,6 @@ let
     size = 24;
   };
   wallpaper = ./assets/videoframe_150744_10240x4320_clean-faithful.png;
-  # Pure black with cool gray surfaces and softened Tokyo Night accents.
   base16Scheme = {
     scheme = "Tokyo Night Black";
     slug = "tokyo-night-black";

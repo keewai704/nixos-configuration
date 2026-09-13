@@ -61,7 +61,6 @@ in
   };
   programs.rbw.enable = true;
 
-  # Keep account details writable and outside the Nix store.
   home = {
     sessionVariables.SSH_AUTH_SOCK = socket;
     activation.initializeBitwardenLauncher = lib.hm.dag.entryAfter [ "writeBoundary" ] ''
@@ -70,7 +69,6 @@ in
       fi
     '';
 
-    # Bitwarden manages this writable file when its startup setting changes.
     activation.initializeBitwardenAutostart = lib.hm.dag.entryAfter [ "writeBoundary" ] ''
       if [[ ! -e ${lib.escapeShellArg "${config.xdg.configHome}/autostart/bitwarden.desktop"} ]]; then
         install -Dm644 ${

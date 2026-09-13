@@ -29,7 +29,6 @@ let
 
 in
 {
-  # Preserve the CLI as well as the user service when removing the NixOS module.
   home.packages = [ config.services.hypridle.package ];
   imports = [ inputs.dynamic-island.homeManagerModules.default ];
   programs.dynamic-island = {

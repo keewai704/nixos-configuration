@@ -109,12 +109,8 @@ stdenv.mkDerivation {
   dontBuild = true;
 
   autoPatchelfIgnoreMissingDeps = [
-    # Optional prebuilt modules for non-glibc Linux variants are not loaded on
-    # this x86_64 glibc package.
     "libc.musl-x86_64.so.1"
 
-    # These optional KDE shims are loaded only when a matching Qt desktop is
-    # detected. Pulling Qt 5 and Qt 6 into one derivation would conflict.
     "libQt5Core.so.5"
     "libQt5Gui.so.5"
     "libQt5Widgets.so.5"
@@ -132,85 +128,20 @@ stdenv.mkDerivation {
     chmod u+rw "$appAsar"
     ${python3}/bin/python3 ${./patch-asar.py} "$appAsar"
 
-    cat > "$out/lib/chatgpt/launch-chatgpt" <<'EOF'
-    #!${lib.getExe bash}
-    set -euo pipefail
-
-    # NixOS exposes the configured GL/DRI driver through this runtime profile.
-    # Keep it ahead of the store closure so libGLX can find the active driver;
-    # the packaged Mesa/libGL dependencies provide a deterministic fallback.
-    export LD_LIBRARY_PATH="/run/opengl-driver/lib:${lib.makeLibraryPath runtimeLibraries}''${LD_LIBRARY_PATH:+:$LD_LIBRARY_PATH}"
-    export PATH="${
-      lib.makeBinPath [
-        coreutils
-        git
-        glib
-        trash-cli
-        xdg-utils
-      ]
-    }''${PATH:+:$PATH}"
-
-    sourceResources="@out@/lib/chatgpt/resources"
-    sourceMarketplace="$sourceResources/plugins/openai-bundled"
-    cacheHome="''${XDG_CACHE_HOME:-$HOME/.cache}"
-    cacheRoot="$cacheHome/chatgpt/bundled-plugin-resources/@version@-resources-v1"
-    marker="$cacheRoot/.source"
-    cachedSource=""
-    if [[ -L "$marker" ]]; then
-      cachedSource="$(readlink "$marker")"
-    fi
-
-    # Nix store files are intentionally read-only. The app patches bundled
-    # plugin manifests while materializing them, so provide a versioned resource
-    # overlay with writable plugins and immutable siblings linked from the store.
-    if [[ -d "$cacheRoot" && "$cachedSource" != "$sourceResources" ]]; then
-      rm -rf "$cacheRoot"
-    fi
-
-    if [[ "$cachedSource" != "$sourceResources" ]]; then
-      cacheParent="''${cacheRoot%/*}"
-      mkdir -p "$cacheParent"
-      staging="$(mktemp -d "$cacheParent/.@version@.XXXXXX")"
-      trap 'rm -rf "$staging"' EXIT
-
-      for resource in "$sourceResources"/*; do
-        resourceName="''${resource##*/}"
-        if [[ "$resourceName" != plugins ]]; then
-          ln -s "$resource" "$staging/$resourceName"
-        fi
-      done
-
-      mkdir -p "$staging/plugins"
-      cp -R "$sourceMarketplace" "$staging/plugins/openai-bundled"
-      chmod -R u+rwX "$staging"
-      ln -s "$sourceResources" "$staging/.source"
-
-      if mv -T "$staging" "$cacheRoot" 2>/dev/null; then
-        trap - EXIT
-      fi
-    fi
-
-    [[ -L "$marker" && "$(readlink "$marker")" == "$sourceResources" ]]
-    export CODEX_ELECTRON_BUNDLED_PLUGINS_RESOURCES_PATH="$cacheRoot"
-
-    # Unlike nixpkgs-wrapped Electron applications, the upstream prebuilt
-    # ChatGPT binary does not translate NIXOS_OZONE_WL into Chromium flags.
-    # Without these flags it chooses X11/XWayland even in the Wayland session,
-    # which bypasses the Wayland text-input protocol used by Fcitx5 for inline
-    # preedit. Keep native Wayland opt-in through the existing NixOS variable,
-    # and require a live Wayland display so X11 sessions retain the fallback.
-    ozoneFlags=()
-    if [[ -n "''${NIXOS_OZONE_WL:-}" && -n "''${WAYLAND_DISPLAY:-}" ]]; then
-      ozoneFlags=(--ozone-platform=wayland --enable-wayland-ime=true)
-    fi
-
-    # User arguments come last so an explicit --ozone-platform=x11 remains a
-    # supported escape hatch when native Wayland is unsuitable.
-    exec "@out@/lib/chatgpt/ChatGPT" "''${ozoneFlags[@]}" "$@"
-    EOF
-    substituteInPlace "$out/lib/chatgpt/launch-chatgpt" \
-      --replace-fail '@out@' "$out" \
-      --replace-fail '@version@' "$version"
+    substitute ${./launch-chatgpt.sh} "$out/lib/chatgpt/launch-chatgpt" \
+      --replace-fail '#!/usr/bin/env bash' '#!${lib.getExe bash}' \
+      --subst-var-by runtimeLibraries '${lib.makeLibraryPath runtimeLibraries}' \
+      --subst-var-by runtimePath '${
+        lib.makeBinPath [
+          coreutils
+          git
+          glib
+          trash-cli
+          xdg-utils
+        ]
+      }' \
+      --subst-var out \
+      --subst-var version
     chmod 0755 "$out/lib/chatgpt/launch-chatgpt"
     ln -s ../lib/chatgpt/launch-chatgpt "$out/bin/chatgpt"
     ln -s chatgpt "$out/bin/codex-desktop"

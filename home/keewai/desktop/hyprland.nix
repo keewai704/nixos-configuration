@@ -26,4 +26,5 @@ in
 {
   xdg.configFile."hypr/hyprland.lua".source = hyprlandConfig;
 
+  stylix.targets.hyprland.enable = false;
 }

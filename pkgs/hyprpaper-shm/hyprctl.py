@@ -1,5 +1,4 @@
 #!@PYTHON@
-"""Bridge legacy hyprpaper text IPC while delegating other hyprctl calls."""
 
 import os
 import socket
@@ -37,8 +36,6 @@ def run_hyprpaper(command):
         print("hyprctl: hyprpaper requires a command", file=sys.stderr)
         return 2
 
-    # v0.7.6's reload command preloads the path before applying it.  This is
-    # required for wallpapers selected after startup.
     if command[0] == "wallpaper":
         command = ["reload", *command[1:]]
 

@@ -106,14 +106,12 @@ in
       mediaLocation = immichMediaRoot;
       group = "immich-media";
 
-      # Disable both the NixOS ML worker and every ML feature in Immich itself.
       machine-learning.enable = false;
       environment = {
         IMMICH_MACHINE_LEARNING_ENABLED = "false";
         LIBVA_DRIVER_NAME = "iHD";
       };
 
-      # The Alder Lake-N iGPU handles only on-demand playback transcoding.
       accelerationDevices = [ "/dev/dri/renderD128" ];
       settings = {
         backup.database = {
@@ -140,8 +138,6 @@ in
       };
     };
 
-    # Pin the database major version so an ordinary flake update cannot perform
-    # an implicit PostgreSQL major upgrade on the SSD.
     postgresql.package = postgresqlPackage;
   };
 

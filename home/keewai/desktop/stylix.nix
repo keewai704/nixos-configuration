@@ -13,8 +13,30 @@ in
 {
   imports = [ inputs.stylix.homeModules.stylix ];
 
-  # Personal themes also work on hosts without the NixOS Stylix module.
   stylix = theme.stylix // {
-    overlays.enable = false; # NixOS owns pkgs with useGlobalPkgs = true.
+    overlays.enable = false;
+    targets = {
+      font-packages.enable = true;
+      gtk = {
+        enable = true;
+        flatpakSupport.enable = false;
+      };
+      qt = {
+        enable = true;
+        standardDialogs = "xdgdesktopportal";
+      };
+    };
+  };
+
+  home.packages = [ pkgs.noto-fonts ];
+
+  fonts.fontconfig = {
+    enable = true;
+    defaultFonts.sansSerif = [ config.stylix.fonts.sansSerif.name ];
+  };
+
+  gtk = {
+    colorScheme = "dark";
+    gtk2.enable = false;
   };
 }

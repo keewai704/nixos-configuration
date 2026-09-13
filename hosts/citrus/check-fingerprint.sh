@@ -1,5 +1,4 @@
 #!/usr/bin/env bash
-# Run with the screen unlocked and no finger on the reader.
 set -euo pipefail
 
 runtime_host=$(hostnamectl --static 2>/dev/null || hostname)

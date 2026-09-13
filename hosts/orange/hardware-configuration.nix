@@ -1,4 +1,3 @@
-# Generated for this machine by nixos-generate-config.
 {
   config,
   lib,

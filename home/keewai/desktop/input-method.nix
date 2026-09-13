@@ -35,17 +35,21 @@ in
     fcitx5 = {
       waylandFrontend = true;
       systemd.enable = false;
-
     };
   };
 
-  # Keep the existing user profile writable; provide defaults below it in lookup order.
-  xdg.systemDirs.config = [
-    "${profileDefaults}"
-    "/etc/xdg"
-  ];
+  xdg = {
+    systemDirs.config = [
+      "${profileDefaults}"
+      "/etc/xdg"
+    ];
 
-  # UWSM already starts XDG autostart entries; do not start a second daemon.
-  xdg.configFile."autostart/org.fcitx.Fcitx5.desktop".source =
-    "${config.i18n.inputMethod.package}/share/applications/org.fcitx.Fcitx5.desktop";
+    configFile = {
+      "autostart/org.fcitx.Fcitx5.desktop".source =
+        "${config.i18n.inputMethod.package}/share/applications/org.fcitx.Fcitx5.desktop";
+
+      fcitx5.recursive = true;
+    };
+  };
+  stylix.targets.fcitx5.enable = true;
 }

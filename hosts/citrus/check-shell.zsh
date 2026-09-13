@@ -1,4 +1,3 @@
-# Run after activation: zsh -i hosts/citrus/check-shell.zsh
 setopt errexit
 
 [[ -o interactive ]]
@@ -19,7 +18,6 @@ starship prompt --path /tmp >/dev/null
 [[ $aliases[ls] == eza && $aliases[cat] == 'bat --paging=never' ]]
 [[ $aliases[tree] == 'eza --tree' && $aliases[ff] == fd ]]
 [[ $aliases[du] == dust && $aliases[df] == duf && $aliases[top] == btop ]]
-# Replacing cat must preserve plain text when output is piped.
 [[ $(printf 'modern CLI\n' | cat) == 'modern CLI' ]]
 eza --version >/dev/null
 fd --version >/dev/null
@@ -27,7 +25,6 @@ dust --version >/dev/null
 duf --version >/dev/null
 btop --version >/dev/null
 
-# Capture candidates without requiring an interactive ZLE completion widget.
 _arguments() { candidates="$*"; }
 typeset candidates
 words=(yt-dlp --)

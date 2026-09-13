@@ -1,13 +1,3 @@
-"""Patch the Linux Git watcher and text selection in the ChatGPT ASAR bundle.
-
-The bundled @parcel/watcher native module crashes during worker startup on
-NixOS. The worker already contains an fs.watch implementation for the other
-platforms, and Node's native recursive watcher is suitable for local Git
-working trees here. The shared selection style uses blue with white text for
-readability in both themes. Keep each replacement byte-for-byte the same size
-so ASAR offsets remain valid and update the corresponding integrity entries.
-"""
-
 import hashlib
 import json
 import mmap
@@ -42,8 +32,6 @@ PATCHES = {
 
 
 def entry_metadata(mapping: mmap.mmap, path: str) -> tuple[bytearray, dict, int, int]:
-    """Read the ASAR header and return the entry's metadata and byte range."""
-
     header_size = struct.unpack_from("<I", mapping, 4)[0]
     header_start = 8
     header_end = header_start + header_size
@@ -69,8 +57,6 @@ def entry_metadata(mapping: mmap.mmap, path: str) -> tuple[bytearray, dict, int,
 
 
 def verify_entry_integrity(entry_bytes: bytes, entry: dict) -> str:
-    """Check ASAR's whole-file and block SHA-256 integrity metadata."""
-
     integrity = entry.get("integrity")
     if not isinstance(integrity, dict) or integrity.get("algorithm") != "SHA256":
         raise RuntimeError("ASAR entry does not have SHA256 integrity metadata")
@@ -98,8 +84,6 @@ def integrity_block_hashes(entry_bytes: bytes, block_size: int) -> list[str]:
 
 
 def check_archive(archive: Path) -> None:
-    """Validate every replacement and its whole-file and block SHA-256."""
-
     with (
         archive.open("rb") as stream,
         mmap.mmap(stream.fileno(), 0, access=mmap.ACCESS_READ) as mapping,

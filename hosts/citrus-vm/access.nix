@@ -1,6 +1,5 @@
 { lib, ... }:
 {
-  # The VM is attached to Hyper-V's internal NAT switch.
   services.openssh = {
     openFirewall = lib.mkForce true;
     settings = {

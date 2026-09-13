@@ -1,7 +1,6 @@
 { pkgs, ... }:
 
 let
-  # Upstream libfprint does not support the attached 2541:0236 reader yet.
   libfprint = pkgs.libfprint.overrideAttrs (old: {
     version = "1.94.10-cs9711";
     src = pkgs.fetchFromGitHub {
@@ -28,6 +27,5 @@ in
   };
 
   security.pam.services.sshd.fprintAuth = false;
-  # Hyprlock talks to fprintd directly; keep PAM for parallel password auth.
   security.pam.services.hyprlock.fprintAuth = false;
 }

@@ -76,8 +76,8 @@ its package list away merely to move its executables. Replacing a system
 module is appropriate only after explicitly preserving every required
 integration (for example, user-managed hyprlock still needs NixOS PAM).
 
-Document the concrete feature that requires each system-scoped application in
-`docs/package-audit.md`, and update that audit when package ownership changes.
+When package ownership changes, explain in the task result the concrete
+feature that requires each affected system-scoped application.
 Check evaluated package lists and launching/session integration after a move;
 preserve profiles, plugins, native messaging, MIME handlers, autostart, and
 hardware access. Build-only dependencies and private service runtime inputs
@@ -96,8 +96,16 @@ This file owns repository layout, package ownership, validation, commits, and
 local activation. `modules/codex.nix` owns cross-project model preferences,
 decision boundaries, and skill selection; `skills/` owns task-specific methods.
 Change Nix-managed sources, not generated files under `/etc/codex` or
-`/home/keewai/.agents/skills`. Consult `docs/package-audit.md` for package-scope
-changes and `docs/development.md` for check and activation command examples.
+`/home/keewai/.agents/skills`.
+
+Do not create or use `checks/` or `docs/`, add files under them, or recreate
+their removed contents elsewhere. Do not add standalone repository check
+suites or documentation files. Keep repository policy and entry-point guidance
+in the existing `AGENTS.md` and `README.md`. Run required validation with
+disposable commands and build tools; existing package-owned and upstream build
+tests may still run. Do not add code comments; use clear names and structure.
+Preserve interpreter directives, completion directives, and other functional
+syntax.
 
 A request to change this repository authorizes the necessary local edits,
 disposable checks, repairs, task commits, and the applicable local activation
@@ -159,7 +167,7 @@ whether it was applied to the running system and persisted as the boot default.
 
 | Change | Checks and explicit builds |
 | --- | --- |
-| Undeployed documentation, including this file | Whitespace, links, and instruction consistency; no Nix build or activation |
+| Existing README and agent instructions | Whitespace, links, and instruction consistency; no Nix build or activation |
 | Undeployed repository tooling | Relevant syntax and behavioral checks; Nix checks only if its integration changed |
 | Nix declarations or deployed files, including personal skills | Format changed Nix files, analyze changed code, run `nix flake check --no-write-lock-file` once, and build every affected host |
 | `flake.nix` or shared modules used by all hosts | `citrus`, `citrus-vm`, and `orange` |
@@ -172,9 +180,11 @@ whether it was applied to the running system and persisted as the boot default.
 
 A normal flake check includes evaluation; a separate `--no-build` pass is useful
 for diagnosis, not an additional completion gate. Build success also includes
-evaluation of that output. Read the affected host's verification section only
-when choosing live checks. New failures or regressions block `switch`; report
-pre-existing limitations separately and never use them to waive behavior the
+evaluation of that output. Select live checks from the affected imports,
+evaluated services, and recorded baseline. Verify local network connectivity,
+failed system/user units, and the behavior of each affected service. New
+failures or regressions block `switch`; report pre-existing limitations
+separately and never use them to waive behavior the
 requested change needs. A failed or unavailable push does not erase completed
 local work: report implementation, activation, and publication status separately.
 

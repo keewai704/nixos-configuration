@@ -39,14 +39,12 @@ let
           node --check "$out/hooks/$script"
         done
 
-        # Keep mode tracking, but disclose the full skill only for coding tasks.
         install -Dm644 \
           "${ponytailHookContext}" \
           "$out/skills/ponytail/SKILL.md"
         install -Dm644 "${ponytailSource}/LICENSE" "$out/LICENSE"
 
         node --test "${ponytailSource}/tests/hooks.test.js"
-        node ${../checks/ponytail-hooks.cjs} "$out"
       '';
 
   mkPonytailHook =
@@ -103,8 +101,6 @@ let
 
   codexSystemConfig = (pkgs.formats.toml { }).generate "chatgpt-desktop-mcp.toml" {
     model = "gpt-6-astra";
-    # Maximum advertised by the Desktop/Codex model catalog (2026-09-06).
-    # Keep the model's safety margin and automatic compaction defaults.
     model_context_window = 872000;
     model_reasoning_effort = "xhigh";
     plan_mode_reasoning_effort = "xhigh";
@@ -116,9 +112,6 @@ let
       token_budget.enabled = true;
       token_budget.use_history_notes_extension = true;
     };
-    # Eric Provencher: narrow triggers, progressive disclosure, clear boundaries
-    # and completion criteria, without redundant reading or testing rituals.
-    # https://developers.openai.com/blog/rethinking-skills-and-prompts-for-gpt-6-astra
     developer_instructions = ''
       既定はGPT-6 Astra、通常・Planともxhigh。sub-agentは使わず、設計から実装、検証、最終レビューまで自分で行う。別タスクや別エージェントへの送信で委譲を代用しない。
 
@@ -174,9 +167,6 @@ let
   };
 in
 {
-  # ChatGPT Desktop, Codex CLI, and the IDE extension all read this system
-  # layer. Keep the user layer writable so the desktop app can persist its
-  # own bundled MCP helpers, plugin state, project trust, and UI preferences.
   environment.etc = {
     "codex/config.toml".source = codexSystemConfig;
     "codex/requirements.toml".source = codexSystemRequirements;

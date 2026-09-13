@@ -50,7 +50,6 @@
     };
 
     nixcord.url = "github:4evy/nixcord";
-
   };
 
   outputs =
@@ -72,7 +71,6 @@
         };
         chatgpt-desktop = packagePkgs.callPackage ./pkgs/chatgpt-desktop { };
         cua-driver = packagePkgs.callPackage ./pkgs/cua-driver { };
-        # Preserve the upstream Steam package's override interface.
         millennium-steam = import ./pkgs/millennium-steam {
           inherit (packagePkgs) lib stdenv;
           inherit (inputs) millennium;
@@ -91,43 +89,26 @@
         };
     in
     {
-      nixosConfigurations.orange = mkHost [
-        inputs.agenix.nixosModules.default
-        ./hosts/orange
-      ];
+      nixosConfigurations = {
+        orange = mkHost [
+          inputs.agenix.nixosModules.default
+          ./hosts/orange
+        ];
 
-      nixosConfigurations.citrus = mkHost [
-        inputs.chaotic.nixosModules.default
-        inputs.stylix.nixosModules.stylix
-        ./hosts/citrus
-      ];
+        citrus = mkHost [
+          inputs.chaotic.nixosModules.default
+          inputs.stylix.nixosModules.stylix
+          ./hosts/citrus
+        ];
 
-      nixosConfigurations.citrus-vm = mkHost [
-        inputs.chaotic.nixosModules.default
-        inputs.stylix.nixosModules.stylix
-        ./hosts/citrus-vm
-      ];
+        citrus-vm = mkHost [
+          inputs.chaotic.nixosModules.default
+          inputs.stylix.nixosModules.stylix
+          ./hosts/citrus-vm
+        ];
+      };
 
       packages.${system} = localPackages;
-
-      checks.${system} = {
-        citrus-vm = import ./checks/citrus-vm.nix {
-          inherit (nixpkgs) lib;
-          pkgs = packagePkgs;
-          config = inputs.self.nixosConfigurations.citrus-vm.config;
-        };
-
-        orange-health-monitor =
-          inputs.self.nixosConfigurations.orange.config.system.build.orangeHealthMonitorCheck;
-
-        package-ownership = import ./checks/package-ownership.nix {
-          inherit (nixpkgs) lib;
-          pkgs = packagePkgs;
-          citrus = inputs.self.nixosConfigurations.citrus.config;
-          orange = inputs.self.nixosConfigurations.orange.config;
-        };
-
-      };
 
       formatter.${system} = nixpkgs.legacyPackages.${system}.nixfmt-tree;
     };

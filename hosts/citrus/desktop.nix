@@ -1,7 +1,6 @@
 {
   config,
   inputs,
-  lib,
   pkgs,
   ...
 }:
@@ -10,14 +9,6 @@
     ../../modules/desktop.nix
     ./bitwarden.nix
   ];
-
-  nixpkgs.config.allowUnfreePredicate =
-    package:
-    builtins.elem (lib.getName package) [
-      "cuda_nvml_dev"
-      "nvidia-x11"
-      "nvidia-settings"
-    ];
 
   programs = {
     gamescope = {
@@ -28,12 +19,10 @@
     steam = {
       enable = true;
       package = inputs.self.packages.${pkgs.stdenv.hostPlatform.system}.millennium-steam;
-      # Preserve Steam's FHS font set when personal fonts move to Home Manager.
       fontPackages = config.stylix.fonts.packages ++ [ pkgs.noto-fonts ] ++ config.fonts.packages;
       extraPackages = [ pkgs.gamescope ];
       extraCompatPackages = [ pkgs.proton-ge-bin ];
     };
-
   };
 
   services = {
@@ -42,5 +31,4 @@
     gvfs.enable = true;
     tumbler.enable = true;
   };
-
 }

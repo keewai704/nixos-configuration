@@ -16,7 +16,6 @@
   image.baseName = "citrus-vm";
   virtualisation.diskSize = 128 * 1024;
 
-  # cptofs defaults to 100 MiB, which exhausts memory while populating this image.
   nixpkgs.overlays = [
     (_final: prev: {
       lkl = prev.lkl.overrideAttrs (old: {
@@ -32,7 +31,6 @@
     loader = {
       limine.enable = lib.mkForce false;
       grub.enable = lib.mkForce false;
-      # Citrus forces this off for Limine; the VM uses the UEFI fallback path.
       systemd-boot.enable = lib.mkOverride 40 true;
       efi.canTouchEfiVariables = lib.mkForce false;
     };

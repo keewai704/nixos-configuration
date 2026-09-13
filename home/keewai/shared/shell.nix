@@ -50,7 +50,7 @@
     };
     eza = {
       enable = true;
-      enableZshIntegration = true; # ls, ll, la, lla, lt
+      enableZshIntegration = true;
       extraOptions = [ "--group-directories-first" ];
     };
 

@@ -150,8 +150,6 @@ firewall changes before ending diagnostics; preserve pairing records and never
 print their private keys. Do not switch to wireless pairing merely because USB
 needs a different port.
 
-The local verified setup and diagnostic history are in
-[/home/keewai/nixos-configuration/docs/ipad.md](/home/keewai/nixos-configuration/docs/ipad.md).
 The Nix-owned launcher is declared in
 [/home/keewai/nixos-configuration/home/keewai/shared/ipad.nix](/home/keewai/nixos-configuration/home/keewai/shared/ipad.nix).
 For version-specific commands, use the installed `--help` and upstream

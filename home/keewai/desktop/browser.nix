@@ -6,8 +6,6 @@
 }:
 
 let
-  # Use the current official binary until the pinned nixpkgs package catches up.
-  # This only repackages the binary for NixOS; Chromium is not compiled locally.
   braveOriginVersion = "1.94.121";
   braveOriginBase = pkgs.brave-origin.override {
     commandLineArgs = "--lang=ja --accept-lang=ja-JP,ja,en-US,en";
@@ -38,8 +36,6 @@ in
 
   xdg = {
     configFile."mimeapps.list".force = true;
-    # ChatGPT registers regular Brave only. Follow its generated manifest so
-    # Origin also receives native-host path updates from the Browser plugin.
     configFile."BraveSoftware/Brave-Origin/NativeMessagingHosts/com.openai.codexextension.json".source =
       config.lib.file.mkOutOfStoreSymlink "${config.xdg.configHome}/BraveSoftware/Brave-Browser/NativeMessagingHosts/com.openai.codexextension.json";
 

@@ -22,7 +22,6 @@ in
           "local theme = ${lib.generators.toLua { } theme.hyprland}\n"
           + builtins.readFile ./hyprland.lua
           + ''
-            -- Hyper-V provides a synthetic display; use CPU rendering and simple effects.
             hl.config({
               cursor = { no_hardware_cursors = true },
               render = { cm_auto_hdr = 0 },
@@ -41,7 +40,6 @@ in
       }
     );
 
-    # The SHM renderer works without a GPU render node or DMA-BUF protocol.
     services.hyprpaper = {
       package = wallpaper;
       settings = {

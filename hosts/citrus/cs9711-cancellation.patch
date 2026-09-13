@@ -2,30 +2,29 @@ Keep USB callbacks alive until their scan state machine finishes, and reset queu
 
 --- a/libfprint/drivers/cs9711/cs9711.c
 +++ b/libfprint/drivers/cs9711/cs9711.c
-@@ -95,0 +96 @@
+@@ -95,0 +96,1 @@
 +             GCancellable *cancellable,
-@@ -113 +114 @@
+@@ -113,1 +114,1 @@
 -  fpi_usb_transfer_submit (transfer, timeout_in_ms, NULL, callback, user_data);
 +  fpi_usb_transfer_submit (transfer, timeout_in_ms, cancellable, callback, user_data);
-@@ -131 +132 @@
+@@ -131,1 +132,1 @@
 -      fp_err ("Read failed: %s, aborting", error->message);
 +      fp_dbg ("Read failed: %s, aborting", error->message);
-@@ -195 +196,2 @@
+@@ -195,1 +196,2 @@
 -      usb_read_in (_dev, ssm, CS9711_FP_CMD_LEN_1, FALSE, CS9711_DEFAULT_WAIT_TIMEOUT, m_init_read_cb_check_expected, NULL);
 +      usb_read_in (_dev, ssm, CS9711_FP_CMD_LEN_1, FALSE, CS9711_DEFAULT_WAIT_TIMEOUT,
 +                   fpi_device_get_cancellable (_dev), m_init_read_cb_check_expected, NULL);
-@@ -205 +207,2 @@
+@@ -205,1 +207,2 @@
 -      usb_read_in (_dev, ssm, CS9711_FP_CMD_LEN_1, FALSE, CS9711_DEFAULT_WAIT_TIMEOUT, m_init_read_cb_check_expected, self);
 +      usb_read_in (_dev, ssm, CS9711_FP_CMD_LEN_1, FALSE, CS9711_DEFAULT_WAIT_TIMEOUT,
 +                   fpi_device_get_cancellable (_dev), m_init_read_cb_check_expected, self);
-@@ -214 +217,2 @@
+@@ -214,1 +217,2 @@
 -      usb_read_in (_dev, ssm, CS9711_FP_CMD_LEN_1, TRUE, CS9711_DEFAULT_WAIT_TIMEOUT, m_init_read_cb_check_expected, NULL);
 +      usb_read_in (_dev, ssm, CS9711_FP_CMD_LEN_1, TRUE, CS9711_DEFAULT_WAIT_TIMEOUT,
 +                   fpi_device_get_cancellable (_dev), m_init_read_cb_check_expected, NULL);
-@@ -256,0 +261 @@
+@@ -256,0 +261,1 @@
 +  self->scan_transfer_pending = FALSE;
-@@ -278,0 +284,16 @@
-+  /* A completed read can win the race against cancellation after a write error. */
+@@ -278,0 +284,15 @@
 +  if (self->scan_error)
 +    {
 +      g_clear_error (&error);
@@ -41,23 +40,22 @@ Keep USB callbacks alive until their scan state machine finishes, and reset queu
 +      return;
 +    }
 +
-@@ -281 +302 @@
+@@ -281,1 +301,1 @@
 -      fp_err ("Read failed: %s, aborting", error->message);
 +      fp_dbg ("Read failed: %s, aborting", error->message);
-@@ -327,0 +349 @@
+@@ -327,0 +348,1 @@
 +  FpDeviceCs9711 *self = FPI_DEVICE_CS9711 (_dev);
-@@ -338 +360,4 @@
+@@ -338,1 +359,4 @@
 -      usb_read_in (_dev, ssm, CS9711_FP_RECV_LEN_1, FALSE, 0, m_scan_read_cb_bulk, M_SCAN_READ_CB_BULK_UD_FIRST_BLOCK);
 +      self->scan_transfer_pending = TRUE;
 +      usb_read_in (_dev, ssm, CS9711_FP_RECV_LEN_1, FALSE, 0,
 +                   self->scan_cancellable, m_scan_read_cb_bulk,
 +                   M_SCAN_READ_CB_BULK_UD_FIRST_BLOCK);
-@@ -340,2 +365,11 @@
+@@ -340,2 +364,10 @@
 -      fpi_image_device_report_finger_status (image_device, TRUE);
 -      m_util_fail_if_error_or_next (ssm, error);
 +      if (error)
 +        {
-+          /* The read owns the SSM until its cancellation callback runs. */
 +          self->scan_error = g_steal_pointer (&error);
 +          g_cancellable_cancel (self->scan_cancellable);
 +        }
@@ -66,13 +64,13 @@ Keep USB callbacks alive until their scan state machine finishes, and reset queu
 +          fpi_image_device_report_finger_status (image_device, TRUE);
 +          fpi_ssm_next_state (ssm);
 +        }
-@@ -349 +383,4 @@
+@@ -349,1 +381,4 @@
 -      usb_read_in (_dev, ssm, CS9711_FP_RECV_LEN_2, TRUE, CS9711_DEFAULT_WAIT_TIMEOUT, m_scan_read_cb_bulk, M_SCAN_READ_CB_BULK_UD_SECOND_BLOCK);
 +      self->scan_transfer_pending = TRUE;
 +      usb_read_in (_dev, ssm, CS9711_FP_RECV_LEN_2, TRUE,
 +                   CS9711_DEFAULT_WAIT_TIMEOUT, self->scan_cancellable,
 +                   m_scan_read_cb_bulk, M_SCAN_READ_CB_BULK_UD_SECOND_BLOCK);
-@@ -358 +395,9 @@
+@@ -358,1 +393,7 @@
 -      m_scan_submit_image (ssm, image_device);
 +      if (m_scan_submit_image (ssm, image_device) != 0)
 +        {
@@ -80,12 +78,10 @@ Keep USB callbacks alive until their scan state machine finishes, and reset queu
 +          break;
 +        }
 +
-+      /* Complete the SSM before report_finger_status() can synchronously
-+       * request deactivation. */
 +      fpi_ssm_mark_completed (ssm);
-@@ -360 +404,0 @@
+@@ -360,1 +400,0 @@
 -      fpi_ssm_mark_completed (ssm);
-@@ -367,0 +412,29 @@
+@@ -367,0 +408,27 @@
 +static void
 +m_scan_complete (FpiSsm *ssm, FpDevice *_dev, GError *error)
 +{
@@ -103,8 +99,6 @@ Keep USB callbacks alive until their scan state machine finishes, and reset queu
 +    {
 +      GError *reset_error = NULL;
 +
-+      /* Stop any frame that the device may still have queued before the
-+       * interface is released and a later activation reads its init reply. */
 +      usb_send_out_sync (_dev, CS9711_FP_CMD_TYPE_RESET, &reset_error);
 +      g_clear_error (&reset_error);
 +    }
@@ -115,16 +109,16 @@ Keep USB callbacks alive until their scan state machine finishes, and reset queu
 +    fpi_image_device_session_error (dev, error);
 +}
 +
-@@ -373,0 +447 @@
+@@ -373,0 +441,1 @@
 +  FpDeviceCs9711 *self = FPI_DEVICE_CS9711 (dev);
-@@ -374,0 +449,6 @@
+@@ -374,0 +443,6 @@
 +
 +  g_assert (self->scan_ssm == NULL);
 +  g_assert (!self->scan_transfer_pending);
 +  g_clear_object (&self->scan_cancellable);
 +  g_clear_error (&self->scan_error);
 +  self->deactivating = FALSE;
-@@ -385 +465,20 @@
+@@ -385,1 +459,19 @@
 -  fpi_image_device_deactivate_complete (dev, NULL);
 +  FpDeviceCs9711 *self = FPI_DEVICE_CS9711 (dev);
 +
@@ -143,23 +137,21 @@ Keep USB callbacks alive until their scan state machine finishes, and reset queu
 +      return;
 +    }
 +
-+  /* The capture loop can be waiting in M_SCAN_INIT_SLEEP. */
 +  fpi_ssm_cancel_delayed_state_change (self->scan_ssm);
 +  fpi_ssm_mark_completed (self->scan_ssm);
-@@ -390,0 +490 @@
+@@ -390,0 +483,1 @@
 +  FpDeviceCs9711 *self = FPI_DEVICE_CS9711 (dev);
-@@ -396,0 +497,4 @@
+@@ -396,0 +490,4 @@
 +  g_assert (self->scan_ssm == NULL);
 +  g_assert (!self->scan_transfer_pending);
 +  g_clear_object (&self->scan_cancellable);
 +  self->scan_cancellable = g_cancellable_new ();
-@@ -398 +502,2 @@
+@@ -398,1 +495,2 @@
 -  fpi_ssm_start (ssm_loop, NULL);
 +  self->scan_ssm = ssm_loop;
 +  fpi_ssm_start (ssm_loop, m_scan_complete);
-@@ -405,0 +511,7 @@
+@@ -405,0 +504,6 @@
 +
-+  /* A cancelled scan can leave a reply queued on the USB endpoint. */
 +  if (!g_usb_device_reset (fpi_device_get_usb_device (FP_DEVICE (dev)), &error))
 +    {
 +      fpi_image_device_open_complete (dev, error);

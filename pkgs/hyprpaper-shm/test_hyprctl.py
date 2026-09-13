@@ -32,7 +32,7 @@ def run_with_socket(args, reply):
                         chunks.append(chunk)
                     received.append(b"".join(chunks).decode())
                     connection.sendall(reply.encode())
-            except BaseException as error:  # make thread failures visible below
+            except BaseException as error:
                 failures.append(error)
 
         thread = threading.Thread(target=serve)
