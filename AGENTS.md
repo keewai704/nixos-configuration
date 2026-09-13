@@ -1,235 +1,193 @@
-# Runtime host boundary
+# このリポジトリで作業するときの約束
 
-At the start of a task, before repository or live-system work, confirm that
-`hostnamectl --static` (fallback: `hostname`) matches `/etc/hostname`. Stop on a
-mismatch. Reuse this result while the execution environment is unchanged;
-reconfirm after an environment change or when the host identity is uncertain.
+このファイルは、ファイル配置、パッケージの所有範囲、検証、コミット、ローカル適用を定めます。
+プロジェクトをまたぐモデル選択・判断基準・スキル選択は `modules/codex.nix`、
+個別の作業方法は `skills/` で管理します。全体の読み方と編集先は [README.md](README.md) を参照してください。
 
-Treat the confirmed local runtime host as the only live system in scope. Do not
-infer the live host from the repository path, a flake target mentioned in these
-instructions, earlier conversation context, or the host whose declarative
-configuration is being edited.
+## 1. 最初に実行ホストを確認する
 
-Do not use SSH, mosh, a remote shell, or any other remote-execution mechanism to
-enter another host's workspace, inspect or change its checkout, run checks or
-rebuilds there, deploy to it, or perform live health checks there. A remote
-operation is allowed only when the user explicitly requests that specific
-remote host and operation in the current request. General repository workflow
-instructions never authorize remote access.
+リポジトリや稼働中のシステムを調べる前に、`hostnamectl --static` の結果と
+`/etc/hostname` が一致することを確認します。`hostnamectl` が使えない場合は `hostname` を使います。
+一致しなければ停止します。実行環境が変わらない間は確認結果を再利用し、
+環境が変わった場合やホストの同一性が不確かな場合に再確認します。
 
-It is acceptable to edit another host's declarative configuration in the
-current local checkout when the task requires it. In that case, restrict work
-for that other host to local formatting, evaluation, and builds; do not contact
-the host or apply the result there.
+稼働中のシステムとして扱えるのは、この確認で特定したローカルホストだけです。
+リポジトリのパス、flake の対象名、このファイルの記述、以前の会話、編集中の設定から
+実行ホストを推測してはいけません。
 
-# File names and responsibilities
+SSH、mosh、リモートシェルなどで別ホストに入り、作業場所・チェックアウトの確認や変更、
+チェック、再構築、デプロイ、稼働確認を行ってはいけません。
+例外は、今回の依頼でユーザーが対象ホストとそのリモート操作を明示した場合だけです。
+一般的なリポジトリ作業の許可は、リモート接続の許可にはなりません。
 
-Keep each file's contents predictable from its name and directory. This rule
-applies to configuration, scripts, documentation, and agent instructions.
+別ホストの宣言的な設定を、このローカルチェックアウトで編集することはできます。
+その場合はローカルでの整形・評価・ビルドまでとし、対象ホストへの接続や適用は行いません。
 
-1. Read the target and the callers or imports needed to understand the affected
-   behavior. Consult the layout in `README.md` when choosing a new location or
-   when file ownership is unclear; reuse already-read, unchanged context.
-   Check that the proposed content belongs in the target file.
-2. Reuse an existing file only when its responsibility matches. Do not append
-   unrelated settings merely because the file is already imported, has access
-   to a needed value, or produces a smaller diff. Existing misplaced content
-   is not a precedent for adding more.
-3. If no existing file fits, create a clearly named file in the owning
-   directory and wire up its imports or references. Split distinct concerns;
-   rename a file when its cohesive responsibility has changed. Do not hide a
-   mismatch with a broader, vague name such as `misc` or `utils`.
-4. Keep `hosts/<host>/default.nix` focused on imports and small host-wide
-   settings, and `modules/common.nix` on settings used by every host. Put
-   substantial feature or service configuration in a file named for it.
-   Keep tightly coupled implementation details together; do not split files
-   solely to satisfy a line-count limit or one-setting-per-file rule.
-5. Limit moves and renames to what the current task needs, update all affected
-   references, and preserve behavior when relocating existing content. Leave
-   unrelated cleanup for a separate task.
-6. Before committing, review every changed file: would someone looking only at
-   its name and directory expect the added content there? Fix mismatches and
-   briefly explain any non-obvious placement in the final response. Treat
-   newly introduced responsibility mismatches as findings in code reviews too.
+## 2. ファイル名と内容を一致させる
 
-# Package ownership: Home Manager first
+ファイルの名前とディレクトリだけで、何が書かれているか予測できるようにします。
+設定、スクリプト、文書、エージェント向け指示のすべてが対象です。
 
-Prefer Home Manager for personal applications, command-line tools, shell
-configuration, user services, and user files. Use an existing Home Manager
-`programs.*` or `services.*` module when it preserves the required behavior;
-otherwise use `home.packages`. Put these declarations in
-`home/<user>/common.nix`, `home/<user>/shared/`, or `home/<user>/desktop/`,
-not inside `hosts/`. Every host uses the common profile; desktop hosts also
-import the shared desktop profile through `modules/desktop.nix`. Keep GUI
-applications, session services, themes, and desktop-only MCP servers there.
-Apply necessary hardware adaptations by capability within the desktop profile.
-`modules/home-manager.nix` owns the NixOS/Home Manager integration.
+1. 編集対象と、影響を理解するために必要な呼び出し元・import を読みます。
+   新しい配置先を選ぶときや担当範囲が不明なときは `README.md` を確認します。
+   すでに読んだ未変更の内容は再利用し、追加内容がそのファイルの役割に合うか判断します。
+2. 役割が一致する場合だけ既存ファイルを使います。「すでに import されている」
+   「必要な値が使える」「差分が小さくなる」という理由で無関係な設定を追加しません。
+   既存の不適切な配置も、同じ配置を増やす根拠にはなりません。
+3. 適切なファイルがなければ、担当ディレクトリに具体的な名前で作り、import・参照を接続します。
+   異なる役割は分け、一つの役割自体が変わった場合は名前を変更します。
+   `misc` や `utils` のような広く曖昧な名前で、役割の不一致を隠しません。
+4. `hosts/<host>/default.nix` には import と小さなホスト共通設定を置きます。
+   `modules/common.nix` には全ホストが使う設定だけを置きます。
+   大きな機能・サービス設定は、その機能名のファイルに置きます。
+   強く結び付いた実装は一緒にし、行数制限や「一設定一ファイル」のためだけに分割しません。
+5. 移動・名前変更は今回の作業に必要な範囲に限ります。関連参照をすべて更新し、移動前の動作を保ちます。
+   無関係な整理は別の作業に残します。
+6. コミット前に、変更した全ファイルについて「名前と場所から追加内容を予測できるか」を確認します。
+   不一致を修正し、わかりにくい配置には最終報告で短い理由を添えます。
+   コードレビューでも、新しく持ち込まれた役割の不一致を指摘します。
 
-Before choosing the system scope, inspect the pinned NixOS and Home Manager
-modules and the package's upstream requirements. Check boot/login availability,
-system daemons, kernel/driver support, udev, PAM, polkit, D-Bus activation,
-capability/setuid wrappers, graphics layers, and system font consumers. Keep
-required machine integration under `hosts/<host>/` (or a genuinely shared
-system module). A client may still belong in Home Manager while its daemon or
-hardware rules remain in NixOS. Do not disable an integration module or force
-its package list away merely to move its executables. Replacing a system
-module is appropriate only after explicitly preserving every required
-integration (for example, user-managed hyprlock still needs NixOS PAM).
+## 3. 個人のアプリは Home Manager を優先する
 
-When package ownership changes, explain in the task result the concrete
-feature that requires each affected system-scoped application.
-Check evaluated package lists and launching/session integration after a move;
-preserve profiles, plugins, native messaging, MIME handlers, autostart, and
-hardware access. Build-only dependencies and private service runtime inputs
-are not interactive package installations and stay with their consumer.
+個人のアプリ、CLI、シェル設定、ユーザーサービス、ユーザーファイルは Home Manager を優先します。
+必要な動作を保てる `programs.*` / `services.*` があれば使い、なければ `home.packages` を使います。
+宣言先は `home/<user>/common.nix`、`shared/`、`desktop/` とし、`hosts/` の中には置きません。
 
-Home Manager controls ownership and availability, not application sandboxing.
-`environment.systemPackages` does not run applications as root, and moving a
-package to `home.packages` does not remove its runtime permissions. This repo
-uses NixOS-integrated Home Manager with `useUserPackages = true`; packages live
-under `/etc/profiles/per-user/<user>` and deployment still uses the NixOS
-activation workflow. Do not claim that these changes make deployment rootless.
+全ホストが共通プロフィールを使います。デスクトップホストは `modules/desktop.nix` を通して
+共通のデスクトッププロフィールも読み込みます。GUI アプリ、セッションサービス、テーマ、
+デスクトップ専用 MCP はそこに置き、ハードウェア差分はデスクトッププロフィール内で機能の有無に応じて適用します。
+NixOS と Home Manager の接続は `modules/home-manager.nix` が担当します。
 
-# Repository workflow
+システム側に置く前に、固定した NixOS・Home Manager モジュールと上流の要件を調べます。
+起動・ログイン時の利用、システムデーモン、カーネル・ドライバー、udev、PAM、polkit、
+D-Bus activation、capability/setuid ラッパー、描画基盤、システムのフォント利用を確認します。
+必要な機器・OS 統合は `hosts/<host>/`、または本当に共有するシステムモジュールに残します。
+クライアントを Home Manager、デーモンや機器ルールを NixOS に分けても構いません。
 
-This file owns repository layout, package ownership, validation, commits, and
-local activation. `modules/codex.nix` owns cross-project model preferences,
-decision boundaries, and skill selection; `skills/` owns task-specific methods.
-Change Nix-managed sources, not generated files under `/etc/codex` or
-`/home/keewai/.agents/skills`.
+実行ファイルを移すためだけに、統合モジュールを無効化したり、そのパッケージ一覧を強制的に空にしたりしません。
+モジュールの置き換えは、必要な統合をすべて明示的に維持できる場合だけ行います。
+たとえば、ユーザー管理の Hyprlock にも NixOS 側の PAM が必要です。
 
-Do not create or use `checks/` or `docs/`, add files under them, or recreate
-their removed contents elsewhere. Do not add standalone repository check
-suites or documentation files. Keep repository policy and entry-point guidance
-in the existing `AGENTS.md` and `README.md`. Run required validation with
-disposable commands and build tools; existing package-owned and upstream build
-tests may still run. Do not add code comments; use clear names and structure.
-Preserve interpreter directives, completion directives, and other functional
-syntax.
+所有範囲を変えたら、評価後のパッケージ一覧と起動・セッション連携を確認します。
+プロフィール、プラグイン、native messaging、MIME ハンドラー、自動起動、機器へのアクセスを保ちます。
+最終報告では、影響するシステム側アプリごとに、どの具体的な機能がシステム配置を必要とするか説明します。
+ビルド専用の依存関係とサービス内部だけで使う実行時依存関係は、個人の対話的なアプリではなく、利用元に置きます。
 
-A request to change this repository authorizes the necessary local edits,
-disposable checks, repairs, task commits, and the applicable local activation
-gates below. Do not pause for approval at each of those steps. This does not
-authorize unrelated changes, remote operations, or push. An audit-only request
-authorizes inspection and advice, plus any changes separately requested.
+Home Manager が管理するのは所有範囲と利用可能なパッケージです。サンドボックスではありません。
+`environment.systemPackages` のアプリが root で動くわけではなく、`home.packages` へ移しても実行権限は減りません。
+このリポジトリは `useUserPackages = true` の NixOS 統合を使い、パッケージは
+`/etc/profiles/per-user/<user>` に配置されます。適用は引き続き NixOS の activation を使います。
+所有範囲の変更を「root 権限なしでデプロイできるようになった」と説明しません。
 
-For every task that changes this repository, complete the applicable part of
-this workflow before ending the work or reporting it as complete:
+## 4. 編集元と作業範囲を守る
 
-1. Record the locally confirmed runtime hostname and verify that the flake has a
-   matching `nixosConfigurations.<runtime-host>` output. If it does not, stop
-   instead of substituting another host.
-   Inspect Git status, the worktree diff, and the staged diff before editing.
-   Preserve unrelated changes without formatting, staging, stashing, resetting,
-   or deleting them. If the index is occupied or unrelated edits can affect
-   evaluation or activation, use an isolated worktree. If isolation is not
-   possible, report the concrete blocker.
-2. Run the formatting, static-analysis, evaluation, and build checks appropriate
-   to the change. Configuration-only checks for another host may be run locally,
-   but do not treat that host as the live system.
-   Format only task files. Stage new task files before flake checks so Git
-   flakes include them, and inspect the task-only staged diff. Use
-   `--no-write-lock-file` unless updating inputs is part of the request.
-   Reuse passing results for unchanged inputs; repeat or broaden checks when
-   edits, failures, or unresolved concerns justify it. The separate activation
-   and health gates below remain mandatory when applicable.
-3. Commit every intended change for the task. Do not include unrelated user
-   changes, and confirm that no task-related change remains uncommitted.
-4. Determine whether the committed change affects the confirmed runtime host's
-   evaluated NixOS configuration, deployed files, or services. If it does, run
-   `sudo nixos-rebuild test --flake .#<runtime-host>` locally against the
-   committed state. Never use a different host's flake output for this live
-   test. Record the expected store path and relevant live health baseline first.
-   Determine affected hosts from imports and evaluated values, not a hardcoded
-   desktop hostname. Codex and skills are shared by every host; `citrus-vm` also
-   inherits Citrus's machine integration.
-5. When step 4 applies, verify networking and every affected service on the
-   local live system.
-6. When step 4 applies, only after the test and health checks pass, run
-   `sudo nixos-rebuild switch --flake .#<runtime-host>` locally.
-7. When step 4 applies, verify networking and every affected service again
-   after `switch`, and confirm that the running system and boot-default system
-   match the tested committed configuration.
+Nix が管理する編集元を変更し、`/etc/codex` や `/home/keewai/.agents/skills` の生成物を直接編集しません。
 
-Formatting, appropriate checks, and a clean task commit are always mandatory.
-The live `test`, health-check, `switch`, and post-switch gates are mandatory
-only when the change affects the confirmed runtime host. Documentation-only
-changes, repository tooling that is not deployed, and configuration used only
-by another host stop after their appropriate checks and commit; build another
-host locally when applicable, but do not activate an unrelated generation on
-the runtime host. Report that the live gates were not applicable. If an
-applicable test or health check fails, do not run `switch` or report the task as
-complete; fix the problem and repeat the workflow, or report the work as
-blocked. Always report whether the change was committed and, when applicable,
-whether it was applied to the running system and persisted as the boot default.
+`checks/` と `docs/` は作成・使用せず、その中へファイルを追加しません。
+削除済みの内容を別の場所に再作成することも、独立したリポジトリ用チェック集や文書ファイルを追加することも禁止します。
+方針と入口の説明は既存の `AGENTS.md` と `README.md` に置きます。
+検証には使い捨てのコマンドとビルドツールを使います。既存のパッケージ付属テストと上流のビルドテストは実行できます。
+コードコメントは追加せず、名前と構成で意図を伝えます。shebang、補完用ディレクティブなど、機能を持つ構文は維持します。
 
-## Select the required checks
+このリポジトリの変更依頼は、必要なローカル編集、使い捨ての検証、修復、作業のコミット、
+以下の適用条件に合うローカル activation を許可します。工程ごとの承認確認は不要です。
+無関係な変更、リモート操作、push は許可されません。
+監査だけの依頼では調査・助言を行い、別途指定された変更だけ実装します。
 
-| Change | Checks and explicit builds |
+## 5. 変更後は検証・コミット・必要なローカル適用まで完了する
+
+リポジトリを変更するすべての作業で、完了報告の前に次を実施します。
+
+1. 確認済みのローカルホスト名を記録し、対応する `nixosConfigurations.<runtime-host>` があることを確認します。
+   なければ停止し、別ホストの出力で代用しません。
+   編集前に Git の状態、作業ツリーの差分、ステージ済みの差分を確認します。
+   無関係な変更は、整形・ステージ・stash・reset・削除せず保ちます。
+   index が使用中、または無関係な変更が評価・適用に影響し得る場合は、独立した worktree を使います。
+   分離できなければ、具体的な障害を報告します。
+2. 変更に応じた整形・静的解析・評価・ビルドを行います。整形するのは今回の作業ファイルだけです。
+   新規ファイルは Git flake に含めるためチェック前にステージし、作業分だけのステージ済み差分を確認します。
+   入力の更新が依頼に含まれない限り `--no-write-lock-file` を使います。
+   未変更の入力に対する合格結果は再利用し、変更・失敗・未解決の懸念がある場合に検証を繰り返すか広げます。
+   別ホストの設定もローカルで検証できますが、そのホストを稼働確認の対象にはしません。
+   以下の activation と稼働確認は、それぞれ独立した必須条件です。
+3. 意図した変更をすべてコミットします。無関係なユーザー変更を含めず、作業分が未コミットで残っていないことを確認します。
+4. コミットした変更が、現在のホストの評価結果・配置ファイル・サービスに影響するか判断します。
+   影響する場合は、期待する store path と関連する稼働状態を記録してから、コミット済みの状態に対して
+   `sudo nixos-rebuild test --flake .#<runtime-host>` をローカルで実行します。
+   実行ホスト以外の出力で live test をしません。
+   影響先は固定したデスクトップ名で決めず、import と評価値から判断します。
+   Codex とスキルは全ホスト共通で、`citrus-vm` は Citrus の機器統合も継承します。
+5. 手順 4 が適用される場合、ローカルのネットワークと影響するすべてのサービスを確認します。
+6. `test` と稼働確認が通った場合だけ、ローカルで `sudo nixos-rebuild switch --flake .#<runtime-host>` を実行します。
+7. `switch` 後にネットワークと影響するすべてのサービスを再確認し、稼働中のシステムと起動時の既定システムが、
+   テストしたコミット済み設定の store path に一致することを確認します。
+
+整形、適切なチェック、作業分を残さないコミットは常に必須です。
+`test`、稼働確認、`switch`、適用後の再確認が必須になるのは、現在のホストに影響する変更だけです。
+文書のみの変更、配布されないリポジトリ用ツール、別ホストだけの設定は、必要な検証とコミットまで行います。
+別ホストの必要なビルドはローカルで実行し、現在のホストへ無関係な世代を適用しません。
+この場合は、稼働中のシステムへの適用が対象外だったことを報告します。
+
+適用対象の `test` や稼働確認が失敗したら `switch` をせず、完了と報告しません。
+修正して手順をやり直すか、作業が止まっている具体的な理由を報告します。
+最終報告には、コミットの有無、適用対象なら稼働中の反映と起動時の既定値への保存の有無を必ず含めます。
+
+### 必須チェックとビルド対象
+
+| 変更内容 | 検証・明示的なビルド |
 | --- | --- |
-| Existing README and agent instructions | Whitespace, links, and instruction consistency; no Nix build or activation |
-| Undeployed repository tooling | Relevant syntax and behavioral checks; Nix checks only if its integration changed |
-| Nix declarations or deployed files, including personal skills | Format changed Nix files, analyze changed code, run `nix flake check --no-write-lock-file` once, and build every affected host |
-| `flake.nix` or shared modules used by all hosts | `citrus`, `citrus-vm`, and `orange` |
-| Common Home Manager files, Codex, common MCP, skills, or all-host package selection | `citrus`, `citrus-vm`, and `orange` |
-| Desktop Home Manager files, desktop-only MCP, or desktop integration | `citrus` and `citrus-vm` |
-| Citrus system modules | `citrus` and `citrus-vm`; exclude a host only when evaluation proves an override removes the effect |
-| VM-only overrides | `citrus-vm` |
-| Orange-only configuration | `orange` |
-| Package changes | Changed package outputs and all hosts consuming them |
+| 既存 README・エージェント向け指示 | 空白、リンク、指示の整合性。Nix ビルド・activation は不要 |
+| 配布されないリポジトリ用ツール | 対象の構文・動作確認。Nix への統合を変えた場合だけ Nix の検証も行う |
+| Nix 宣言・配布ファイル・個人スキル | 変更した Nix の整形、変更コードの解析、`nix flake check --no-write-lock-file` を一度実行、影響する全ホストのビルド |
+| `flake.nix`・全ホスト共通モジュール | `citrus`、`citrus-vm`、`orange` |
+| 共通 Home Manager・Codex・共通 MCP・スキル・全ホストのパッケージ選択 | `citrus`、`citrus-vm`、`orange` |
+| デスクトップ Home Manager・デスクトップ専用 MCP・デスクトップ統合 | `citrus`、`citrus-vm` |
+| Citrus のシステムモジュール | `citrus`、`citrus-vm`。上書きによって影響が消えると評価で証明できたホストだけ除外できる |
+| VM 専用の上書き | `citrus-vm` |
+| Orange 専用の設定 | `orange` |
+| パッケージ変更 | 変更したパッケージ出力と、それを使う全ホスト |
 
-A normal flake check includes evaluation; a separate `--no-build` pass is useful
-for diagnosis, not an additional completion gate. Build success also includes
-evaluation of that output. Select live checks from the affected imports,
-evaluated services, and recorded baseline. Verify local network connectivity,
-failed system/user units, and the behavior of each affected service. New
-failures or regressions block `switch`; report pre-existing limitations
-separately and never use them to waive behavior the
-requested change needs. A failed or unavailable push does not erase completed
-local work: report implementation, activation, and publication status separately.
+通常の flake check は評価を含みます。別途 `--no-build` を使うのは原因調査のためで、追加の完了条件ではありません。
+出力のビルド成功にも、その出力の評価成功が含まれます。
+稼働確認の対象は、影響する import、評価されたサービス、記録した変更前の状態から選びます。
+ローカルのネットワーク接続、失敗している system/user unit、影響する各サービスの動作を確認します。
 
-## Package sources owned by `keewai704`
+新しい失敗や退行があれば `switch` を止めます。
+既存の制約は分けて報告し、今回必要な動作を確認しなくてよい理由にはしません。
+push の失敗・利用不可によって、済んだローカル作業まで未完了にはしません。
+実装、ローカル適用、公開の成否を分けて報告します。
 
-For packages sourced from GitHub repositories owned by `keewai704`, explicitly
-select the `main` branch (for Git flake inputs, use `?ref=main`). Keep revisions
-and hashes pinned for reproducibility; refresh them from `main` when updating
-the package. Do not rely on the repository's default branch.
-When working outside the repository root, use `git -C` and absolute flake
-references for the actual checkout. For the default checkout these are
-`git -C /home/keewai/nixos-configuration` and
-`/home/keewai/nixos-configuration#<runtime-host>`.
+## 6. パッケージの取得元と作業ディレクトリ
 
-## Publishing web services on `orange`
+`keewai704` 所有の GitHub リポジトリから取得するパッケージは `main` を明示します。
+Git flake 入力では `?ref=main` を使い、再現できるようリビジョンとハッシュを固定します。
+更新するときは `main` から取得し直し、リポジトリの既定ブランチには依存しません。
 
-For every HTTP, HTTPS, or WebSocket service that should be reachable by a user,
-use this topology:
+リポジトリのルート以外で作業する場合は、実際のチェックアウトを指定する `git -C` と絶対パスの flake 参照を使います。
+通常のチェックアウトでは `git -C /home/keewai/nixos-configuration` と
+`/home/keewai/nixos-configuration#<runtime-host>` です。
+
+## 7. Orange の Web 公開経路
+
+ユーザーがアクセスする HTTP・HTTPS・WebSocket サービスは、必ず次の経路にします。
 
 `tailnet client -> Tailscale Serve HTTPS -> loopback nginx -> loopback application`
 
-1. Port 443 is the only permitted user-facing web ingress. Do not expose HTTP,
-   HTTPS, WebSocket, TLS-terminated TCP, or an application backend on any other
-   external port. Loopback-only ports are permitted solely as internal proxy
-   hops.
-2. Bind the application backend to `127.0.0.1` or a Unix socket. Do not bind it
-   to the LAN or all interfaces.
-3. Add the service to the existing nginx virtual host for
-   `orange.tail1e65cd.ts.net`, normally under a dedicated path, and reuse the
-   existing Tailscale Serve mapping from HTTPS port 443 to nginx at
-   `127.0.0.1:8000`.
-4. Do not point Tailscale Serve directly at an application backend or open the
-   backend port in the global firewall or on `tailscale0`.
-5. Configure the application's external/base URL for its canonical tailnet
-   HTTPS URL when supported. Preserve the forwarded host, scheme, and client IP;
-   enable nginx WebSocket proxying when required.
-6. If an application does not support a subpath, patch it, rebuild its client,
-   or add a safe adapter. Never work around the limitation with another
-   externally reachable port. If no safe port-443 solution is viable, stop and
-   report the service as blocked instead of publishing it.
-7. Verify the canonical tailnet URL, redirects, static assets, and WebSockets as
-   applicable. Also verify with `ss` that the backend is loopback-only and that
-   `tailscale serve status` contains exactly one web listener: HTTPS port 443.
+1. 外部から利用できる Web の入口は 443 だけです。それ以外の外部ポートで HTTP、HTTPS、WebSocket、
+   TLS 終端済み TCP、アプリのバックエンドを公開しません。
+   ループバック専用ポートは、内部のプロキシ間接続にだけ使えます。
+2. アプリは `127.0.0.1` または Unix socket で待ち受けます。LAN や全インターフェースには bind しません。
+3. 既存の `orange.tail1e65cd.ts.net` の nginx virtual host に、通常は専用パスで追加します。
+   HTTPS 443 から `127.0.0.1:8000` の nginx へ転送する既存の Tailscale Serve 設定を再利用します。
+4. Tailscale Serve をアプリへ直接接続せず、バックエンドのポートを全体の firewall や `tailscale0` で開けません。
+5. アプリが対応する場合は、外部 URL / base URL に正規の tailnet HTTPS URL を設定します。
+   転送元の host、scheme、client IP を維持し、必要なら nginx の WebSocket 転送を有効にします。
+6. アプリがサブパスに対応しない場合は、パッチ、クライアントの再ビルド、安全なアダプターで対応します。
+   別の外部ポートを公開して回避しません。安全な 443 の解決策がなければ、公開せず停止理由を報告します。
+7. 正規の tailnet URL、リダイレクト、静的ファイル、必要な WebSocket の動作を確認します。
+   `ss` でバックエンドがループバック専用であることを確認し、`tailscale serve status` の
+   Web listener が HTTPS 443 の一つだけであることも確認します。
 
-Declarative web-service changes remain subject to the test, live health-check,
-and switch workflow above only when the confirmed runtime host is `orange`. On
-any other runtime host, validate the Orange configuration locally and do not
-SSH to Orange or deploy it remotely.
+これらの宣言的な変更に対する `test`、稼働確認、`switch` が適用されるのは、
+確認済みの実行ホストが `orange` の場合だけです。
+他の実行ホストでは Orange の設定をローカルで検証し、SSH やリモートデプロイは行いません。

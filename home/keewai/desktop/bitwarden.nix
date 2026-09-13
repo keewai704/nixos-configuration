@@ -5,15 +5,15 @@
   ...
 }:
 let
-  server = "https://orange.tail1e65cd.ts.net/vault";
+  vaultwardenUrl = "https://orange.tail1e65cd.ts.net/vault";
   initialRbwConfig = pkgs.writeText "rbw-initial-config.json" (
     builtins.toJSON {
-      base_url = server;
+      base_url = vaultwardenUrl;
       pinentry = "pinentry-gnome3";
       lock_timeout = 300;
     }
   );
-  setup = pkgs.writeShellApplication {
+  setupLauncher = pkgs.writeShellApplication {
     name = "island-bitwarden-setup";
     runtimeInputs = [
       pkgs.kitty
@@ -24,7 +24,7 @@ let
       if [[ "''${1:-}" != --inside ]]; then
         exec kitty --class bitwarden-setup --title "Bitwarden setup" "$0" --inside
       fi
-      printf 'Bitwarden launcher setup\nServer: %s\n\n' ${lib.escapeShellArg server}
+      printf 'Bitwarden launcher setup\nServer: %s\n\n' ${lib.escapeShellArg vaultwardenUrl}
       printf 'Passwords and verification codes are entered in the separate authentication dialog.\n\n'
       email=$(rbw config show | jq -r '.email // ""')
       printf 'Email [%s]: ' "$email"
@@ -44,25 +44,25 @@ let
       read -r -p 'Press Enter to close.'
     '';
   };
-  socket = "${config.home.homeDirectory}/.bitwarden-ssh-agent.sock";
+  sshAgentSocket = "${config.home.homeDirectory}/.bitwarden-ssh-agent.sock";
 in
 {
   home.packages = [
     pkgs.bitwarden-desktop
     pkgs.pinentry-gnome3
-    setup
+    setupLauncher
   ];
 
-  systemd.user.sessionVariables.SSH_AUTH_SOCK = socket;
+  systemd.user.sessionVariables.SSH_AUTH_SOCK = sshAgentSocket;
   programs.ssh = {
     enable = true;
     enableDefaultConfig = false;
-    settings."*".IdentityAgent = socket;
+    settings."*".IdentityAgent = sshAgentSocket;
   };
   programs.rbw.enable = true;
 
   home = {
-    sessionVariables.SSH_AUTH_SOCK = socket;
+    sessionVariables.SSH_AUTH_SOCK = sshAgentSocket;
     activation.initializeBitwardenLauncher = lib.hm.dag.entryAfter [ "writeBoundary" ] ''
       if [[ ! -e ${lib.escapeShellArg "${config.xdg.configHome}/rbw/config.json"} ]]; then
         install -Dm600 ${initialRbwConfig} ${lib.escapeShellArg "${config.xdg.configHome}/rbw/config.json"}

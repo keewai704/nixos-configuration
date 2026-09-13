@@ -7,7 +7,7 @@
   ...
 }:
 let
-  wallpaper = pkgs.callPackage ../../../pkgs/hyprpaper-shm { };
+  legacyHyprpaper = pkgs.callPackage ../../../pkgs/hyprpaper-shm { };
   theme = import ../../../themes/tokyo-night-black {
     inherit pkgs;
     colors = config.lib.stylix.colors;
@@ -41,7 +41,7 @@ in
     );
 
     services.hyprpaper = {
-      package = wallpaper;
+      package = legacyHyprpaper;
       settings = {
         preload = [ config.stylix.image ];
         wallpaper = lib.mkForce [ ",${config.stylix.image}" ];
@@ -50,7 +50,7 @@ in
     programs.dynamic-island = {
       settings.reducedMotion = lib.mkForce true;
       package = pkgs.callPackage "${inputs.dynamic-island}/package.nix" {
-        hyprland = wallpaper.hyprctl;
+        hyprland = legacyHyprpaper.hyprctl;
       };
     };
   };

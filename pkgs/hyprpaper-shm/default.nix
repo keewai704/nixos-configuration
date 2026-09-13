@@ -43,10 +43,10 @@ let
     };
   };
 in
-hyprpaper.overrideAttrs (old: {
+hyprpaper.overrideAttrs (previousAttrs: {
   version = "0.7.6";
   src = source;
-  passthru = (old.passthru or { }) // {
+  passthru = (previousAttrs.passthru or { }) // {
     inherit hyprctl;
   };
 })

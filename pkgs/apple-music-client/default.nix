@@ -27,6 +27,10 @@ rustPlatform.buildRustPackage {
     cp ${./tui/queue.rs} src/tui/queue.rs
     cp ${./tui/controls.rs} src/tui/controls.rs
     cp ${./tui/cover.rs} src/tui/cover.rs
+    cp ${./tui/events.rs} src/tui/events.rs
+    cp ${./tui/navigation.rs} src/tui/navigation.rs
+    cp ${./tui/playback.rs} src/tui/playback.rs
+    cp ${./tui/settings.rs} src/tui/settings.rs
     cp ${./tui/render.rs} src/tui/render.rs
   '';
 

@@ -1,293 +1,294 @@
 # nixos-configuration
 
-Flake-based NixOS configurations for three `x86_64-linux` machines. The layout
-separates machine integration from user applications and settings.
+`citrus`、`citrus-vm`、`orange` の NixOS 設定を管理するリポジトリです。
+3 台とも `x86_64-linux` で、機器・OS の設定は NixOS、個人のアプリと設定は Home Manager が担当します。
 
-## Layout
+## 最初に読む場所
 
-```text
-.
-├── flake.nix
-├── devshell/
-│   ├── default.nix                # repository development tools and Neovim extension
-│   └── neovim.lua                 # Nix, Lua, and shell language servers and formatting
-├── modules/
-│   ├── common.nix                 # system settings used by every host
-│   ├── home-manager.nix           # shared NixOS/Home Manager integration
-│   ├── desktop.nix                # opt-in desktop profile and system integration
-│   ├── codex.nix                  # Codex model preferences, instructions, and MCP conversion
-│   ├── codex-ponytail.nix         # managed Ponytail hooks and system skill publication
-│   ├── codex-remote.nix           # user server startup before login
-│   ├── dconf.nix                  # D-Bus/GIO integration for user GTK settings
-│   ├── hyprland-package.nix       # shared Hyprland package selection
-│   ├── hyprlock.nix               # PAM authentication for the user-owned locker
-│   └── shell.nix                  # login-shell integration
-├── home/keewai/
-│   ├── common.nix                 # common profile and CLI tools
-│   ├── shared/
-│   │   ├── codex.nix              # Codex CLI and user override cleanup
-│   │   ├── codex-remote.nix       # Codex Remote user service
-│   │   ├── mcp.nix                # common MCP server registry
-│   │   ├── neovim.nix             # Neovim and pinned lazy.nvim plugins
-│   │   ├── neovim.lua             # general editing, search, Git, completion, and key bindings
-│   │   ├── skills.nix             # personal skill publication and filters
-│   │   ├── apple-device-usb.nix   # pymobiledevice3 launcher and completion
-│   │   ├── shell.nix              # interactive shell and CLI integration
-│   │   ├── check-shell.zsh        # manual diagnostics for the common shell
-│   │   └── starship.toml          # shell prompt
-│   └── desktop/
-│       ├── applications.nix       # desktop tools without additional configuration
-│       ├── apple-music.nix        # Apple Music terminal client and authentication
-│       ├── bitwarden.nix          # desktop client, launcher setup, and SSH agent
-│       ├── browser.nix            # Brave Origin, native messaging, and URL handlers
-│       ├── codex.nix              # Codex desktop client and protocol handler
-│       ├── cua.nix                # desktop computer-use driver and MCP server
-│       ├── dynamic-island.nix     # desktop shell appearance and preferences
-│       ├── file-manager.nix       # Thunar, archives, directory handlers, and XDG folders
-│       ├── firefox.nix            # Firefox, Sine/Natsumi, Japanese localization, and profile setup
-│       ├── hyperv-rendering.nix    # rendering adaptations when Hyper-V is enabled
-│       ├── hyprland.nix           # compositor configuration generation
-│       ├── hyprland.lua           # compositor behavior and key bindings
-│       ├── input-method.nix       # Fcitx5 and Hazkey integration
-│       ├── kitty.nix              # terminal and font settings
-│       ├── legcord.nix            # Discord client and theme selection
-│       ├── legcord-system24.nix   # System24 CSS for Legcord
-│       ├── screen-lock.nix        # Hyprlock appearance and idle/suspend locking
-│       ├── steam-theme.nix        # Millennium SpaceTheme CSS
-│       └── stylix.nix             # user theme, font, and toolkit integration
-├── themes/tokyo-night-black/
-│   ├── default.nix                # shared NixOS/Home Manager theme values
-│   └── astronaut-and-angel.png    # desktop and lock-screen wallpaper
-├── hosts/
-│   ├── citrus/
-│   │   ├── default.nix            # host entry point
-│   │   ├── audio.nix              # PipeWire and Bluetooth LE Audio
-│   │   ├── boot.nix               # bootloader and kernel selection
-│   │   ├── hardware-configuration.nix
-│   │   ├── desktop.nix            # desktop profile and session services
-│   │   ├── steam.nix              # Steam/Millennium and Gamescope system integration
-│   │   ├── hyprland.nix           # compositor, portal, and greetd login session
-│   │   ├── fingerprint.nix        # CS9711 fprintd selection and PAM policy
-│   │   ├── check-fingerprint.sh   # local CS9711 cancellation diagnostics
-│   │   ├── apple-device-usb.nix   # usbmuxd system service
-│   │   ├── nvidia.nix             # NVIDIA driver and stable device path
-│   │   ├── stylix.nix             # system theme integration
-│   │   └── webhid.nix             # keyboard and mouse hardware access rules
-│   ├── citrus-vm/
-│   │   ├── default.nix            # Citrus imports and VM host settings
-│   │   ├── hardware-configuration.nix
-│   │   ├── image.nix              # Hyper-V image format, size, and image-builder fix
-│   │   ├── graphics.nix           # Hyper-V graphics package and environment
-│   │   └── ssh.nix                # SSH access and authorized key
-│   └── orange/
-│       ├── default.nix            # host entry point
-│       ├── hardware-configuration.nix
-│       ├── settings.nix           # values shared inside this host
-│       └── services/
-│           ├── storage.nix        # HDD mount and shared service-directory preparation
-│           ├── samba.nix          # SMB share, firewall, and mount dependencies
-│           ├── immich.nix         # media service, database import, and directory permissions
-│           ├── vaultwarden.nix    # password service, legacy import, and backup permissions
-│           ├── web.nix            # nginx and Tailscale Serve
-│           ├── tailscale-exit-node.nix # exit routing and UDP offload
-│           ├── minecraft.nix
-│           ├── health-monitor.nix
-│           ├── local-backup.nix   # versioned Minecraft and Vaultwarden backups
-│           ├── smart-tests.nix    # scheduled drive self-tests
-│           └── maintenance.nix    # log cleanup, TRIM, and Nix Store maintenance
-├── pkgs/                           # package recipes and their patches/runtime helpers
-│   ├── apple-music-client/
-│   ├── aquamarine-hyperv/
-│   ├── brave-origin/
-│   ├── chatgpt-desktop/
-│   ├── cua-driver/
-│   ├── fprintd-cs9711/
-│   ├── hyprland/
-│   ├── hyprpaper-shm/
-│   ├── millennium-steam/
-│   └── ponytail-hooks/
-├── skills/                         # personal Codex skills
-└── secrets/                        # Agenix declarations and ciphertext
-```
+1. [flake.nix](flake.nix) で、外部の依存関係と各ホストの入口を確認します。
+2. 対象ホストの `default.nix` を開き、`imports` をたどります。
+3. アプリや操作環境を変える場合は、[home/keewai/common.nix](home/keewai/common.nix) と
+   [デスクトップ設定の入口](home/keewai/desktop/default.nix) を確認します。
+4. 変更前に [AGENTS.md](AGENTS.md) の検証・コミット・ローカル適用の手順を読みます。
 
-The ownership rules are intentionally small:
-
-1. Put a setting in `modules/common.nix` only when every host uses it.
-2. Put system integration under `hosts/<name>/`, and user applications and
-   configuration under `home/<user>/shared/` or `home/<user>/desktop/` according
-   to whether they need a desktop session.
-3. Put build recipes, skills, and encrypted secrets in their matching top-level
-   directory. Shared visual values and assets belong in `themes/`; NixOS and
-   Home Manager integration stays in their respective profiles.
-
-Physical host entry points import only files from their own directory.
-`citrus-vm` imports Citrus and applies VM-specific hardware and desktop overrides.
-Orange modules read `settings.nix` directly, so there is no hidden host-specific
-argument injection from `flake.nix`. Its storage module prepares the mounted HDD
-directories used by Immich and Vaultwarden; each service owns its application
-permissions and import lifecycle.
-
-All three hosts receive the common Home Manager profile: CLI tools, shell,
-Codex CLI and Remote, common MCP servers, skills, and the Apple device USB CLI.
-Citrus and its VM also import the same desktop profile through
-`modules/desktop.nix`: GUI applications, Bitwarden desktop/launcher integration,
-CUA, IME, desktop services, and themes. Orange imports only the common profile.
-The desktop profile applies Hyper-V rendering adaptations by capability and
-uses fingerprint authentication only where fprintd is enabled. Desktop sessions,
-drivers, USB access, and other hardware integration remain NixOS-owned.
-
-Prefer Home Manager for personal packages. Keep system scope only for a
-concrete integration requirement. Repository policy and validation requirements
-live in [`AGENTS.md`](AGENTS.md).
-
-Citrus and its VM use Brave Origin as the default URL handler, managed by
-`home/keewai/desktop/browser.nix`. Firefox is also managed by Home Manager in
-`home/keewai/desktop/firefox.nix`, which adapts the pinned `main` branch of
-`keewai704/my-firefox-nix` without enabling its system-wide Firefox module.
-It preserves the upstream Sine/Natsumi configuration, Japanese localization,
-Bitwarden/uBlock Origin policies, and locked preferences. Preferences are locked
-through AutoConfig so custom Sine settings also apply. The default profile is
-initialized before Sine deployment, so the first activation installs the
-theme without requiring a preliminary Firefox launch. Stylix's Firefox target
-is disabled to leave styling to Sine/Natsumi. Fetching the private input requires
-GitHub read authentication.
-
-Siora (`apple-music-client`) runs entirely in a terminal. Start `siora`, use
-`Ctrl+f` for Apple Music search, `/` to filter the loaded list, `Enter` to open
-or play, `Space` to pause, `e`/`E` to append/play next, and `q` for the editable
-queue. `Tab` changes focus, `Backspace` restores the previous page and position,
-`a` opens item actions, `?` shows help, and `Ctrl+c` exits. Queue, lyrics, and
-details share an optional panel; narrow terminals show one active pane.
-`:login` and `:code` handle account authentication, and `,` opens audio settings.
-The terminal controls colors and fonts. Existing `alac-room` library, downloads,
-and authentication sessions remain compatible. Music videos play audio only.
-Selected items show their cover above the list, and the playing track has its
-own thumbnail in the playback bar. Images load asynchronously into the private
-cache. Kitty uses its graphics protocol; other terminals and tmux use character
-block previews. Missing covers leave text controls usable.
-The package keeps the pinned upstream media/authentication backend and applies
-the terminal frontend in `pkgs/apple-music-client/tui/`; GPUI, browser assets,
-and the legacy Python frontend are removed from its build and installation.
-
-## Hosts
-
-| Host | Role | Entry point |
+| ホスト | 用途 | 設定の入口 |
 | --- | --- | --- |
-| `citrus` | Hyprland desktop and local ChatGPT/Codex client | [`hosts/citrus/default.nix`](hosts/citrus/default.nix) |
-| `citrus-vm` | Citrus desktop on Hyper-V | [`hosts/citrus-vm/default.nix`](hosts/citrus-vm/default.nix) |
-| `orange` | Tailnet server, storage, media, password manager, and Minecraft | [`hosts/orange/default.nix`](hosts/orange/default.nix) |
+| `citrus` | Hyprland を使う実機デスクトップ | [hosts/citrus/default.nix](hosts/citrus/default.nix) |
+| `citrus-vm` | Citrus のデスクトップを使う Hyper-V 仮想マシン | [hosts/citrus-vm/default.nix](hosts/citrus-vm/default.nix) |
+| `orange` | ストレージ、写真、パスワード管理、Minecraft を提供するサーバー | [hosts/orange/default.nix](hosts/orange/default.nix) |
 
-## Non-activating quick start
+全ホストに [modules/common.nix](modules/common.nix) と
+[modules/home-manager.nix](modules/home-manager.nix) が読み込まれます。
+前者はネットワークやユーザーなどの共通 OS 設定、後者は Home Manager と NixOS の接続を担当します。
 
-To check the current host's configuration without activating it, this example
-can be run from the repository root. For task-specific checks, use the scope
-table in `AGENTS.md`; this is not a prerequisite for every edit.
+`citrus-vm` は `citrus` の設定を読み込んでから、実機のハードウェア設定を無効化し、
+VM 用のカーネル・起動方法・描画設定に置き換えます。
+Citrus の変更が VM にも届くことに注意してください。
 
-```console
+## ディレクトリの役割
+
+| 場所 | 管理するもの |
+| --- | --- |
+| [flake.nix](flake.nix) / [flake.lock](flake.lock) | 外部入力、固定したバージョン、ホスト・パッケージ・開発環境の公開 |
+| [modules/](modules/) | 複数ホストで共有する NixOS の機能と統合 |
+| [hosts/](hosts/) | ホスト固有のハードウェア、サービス、起動設定 |
+| [home/keewai/shared/](home/keewai/shared/) | 全ホストで使う個人の CLI、シェル、エディター、Codex |
+| [home/keewai/desktop/](home/keewai/desktop/) | デスクトップ用アプリ、キー操作、ユーザーサービス、表示設定 |
+| [pkgs/](pkgs/) | パッケージのビルド定義、パッチ、実行時に必要な補助コード |
+| [themes/](themes/) | NixOS と Home Manager が共有する色、フォント、画像 |
+| [skills/](skills/) | Nix で配布する個人用 Codex スキルの編集元 |
+| [secrets/](secrets/) | Agenix の公開鍵設定と暗号化済みシークレット |
+| [devshell/](devshell/) | このリポジトリを編集するための開発環境 |
+
+`default.nix` は、そのディレクトリの入口です。NixOS・Home Manager の入口では
+`imports` に機能別のファイルを並べ、個々の設定をそのファイルに置きます。
+`pkgs/<名前>/default.nix` は、そのパッケージの作り方を定義します。
+
+Nix の `let ... in` は、後ろの設定で使う値に名前を付ける構文です。
+`${...}` は値を文字列へ埋め込みます。`lib.mkDefault` は上書き可能な既定値、
+`lib.mkForce` は通常の設定より優先する指定です。VM の上書きを読むときは、
+元の設定とこの優先順位を合わせて確認します。
+
+## 変更したい内容から探す
+
+| 変更したい内容 | 主な編集先 |
+| --- | --- |
+| 全ホストの OS 設定 | [modules/common.nix](modules/common.nix) |
+| 全ホストで使う CLI | [home/keewai/common.nix](home/keewai/common.nix) |
+| シェル、補完、プロンプト | [shared/shell.nix](home/keewai/shared/shell.nix)、[starship.toml](home/keewai/shared/starship.toml) |
+| エディターとプラグイン | [shared/neovim.nix](home/keewai/shared/neovim.nix)、[neovim.lua](home/keewai/shared/neovim.lua) |
+| 設定を伴わないデスクトップ用ツール | [desktop/applications.nix](home/keewai/desktop/applications.nix) |
+| ウィンドウ、モニター、キー操作 | [desktop/hyprland.lua](home/keewai/desktop/hyprland.lua) |
+| Hyprland のログイン・ポータル統合 | [hosts/citrus/hyprland.nix](hosts/citrus/hyprland.nix) |
+| 画面ロックとアイドル時の動作 | [desktop/screen-lock.nix](home/keewai/desktop/screen-lock.nix) |
+| 日本語入力 | [desktop/input-method.nix](home/keewai/desktop/input-method.nix) |
+| 端末 | [desktop/kitty.nix](home/keewai/desktop/kitty.nix) |
+| ブラウザーと既定の URL ハンドラー | [desktop/browser.nix](home/keewai/desktop/browser.nix)、[firefox.nix](home/keewai/desktop/firefox.nix) |
+| ファイル管理、圧縮、XDG フォルダー | [desktop/file-manager.nix](home/keewai/desktop/file-manager.nix) |
+| Bitwarden と SSH エージェント | [desktop/bitwarden.nix](home/keewai/desktop/bitwarden.nix) |
+| デスクトップのパネルとランチャー | [desktop/dynamic-island.nix](home/keewai/desktop/dynamic-island.nix) |
+| Discord クライアントとテーマ | [desktop/legcord.nix](home/keewai/desktop/legcord.nix)、[legcord-system24.nix](home/keewai/desktop/legcord-system24.nix) |
+| Steam と Millennium | [hosts/citrus/steam.nix](hosts/citrus/steam.nix)、[desktop/steam-theme.nix](home/keewai/desktop/steam-theme.nix) |
+| 共通の色、フォント、壁紙 | [themes/tokyo-night-black/default.nix](themes/tokyo-night-black/default.nix) |
+| VM の描画 | [hosts/citrus-vm/graphics.nix](hosts/citrus-vm/graphics.nix)、[desktop/hyperv-rendering.nix](home/keewai/desktop/hyperv-rendering.nix) |
+| Hyper-V イメージ | [hosts/citrus-vm/image.nix](hosts/citrus-vm/image.nix) |
+| Orange の保存先、ポート、URL | [hosts/orange/settings.nix](hosts/orange/settings.nix) |
+
+個人のアプリには、まず Home Manager の `programs.*` / `services.*` を使います。
+対応モジュールが必要な動作を満たさない場合は `home.packages` に置きます。
+ログイン、PAM、ドライバー、USB のアクセス権、システムデーモンなどは NixOS 側で管理します。
+
+たとえば、Hyprlock の見た目と起動は Home Manager、認証に必要な PAM は
+[modules/hyprlock.nix](modules/hyprlock.nix) にあります。
+Apple USB CLI は [shared/apple-device-usb.nix](home/keewai/shared/apple-device-usb.nix)、
+実機の usbmuxd は [hosts/citrus/apple-device-usb.nix](hosts/citrus/apple-device-usb.nix) が担当します。
+指紋認証は fprintd が有効な環境でだけ使います。
+
+Home Manager は `useUserPackages = true` で NixOS に統合されています。
+ユーザーのパッケージは `/etc/profiles/per-user/keewai` に入り、適用には NixOS の再構築を使います。
+パッケージの所有場所を変えても、アプリの実行権限やサンドボックスは変わりません。
+
+## Codex・MCP・スキル
+
+| 場所 | 役割 |
+| --- | --- |
+| [modules/codex.nix](modules/codex.nix) | モデル、共通指示、MCP 設定の Codex 形式への変換 |
+| [modules/codex-ponytail.nix](modules/codex-ponytail.nix) | Ponytail のフックとシステムスキルの配布 |
+| [shared/codex.nix](home/keewai/shared/codex.nix) | 固定した Codex CLI の導入と、ユーザー設定に残った管理対象の上書きの除去 |
+| [shared/codex-remote.nix](home/keewai/shared/codex-remote.nix) | 認証付き Remote Control のユーザーサービス |
+| [modules/codex-remote.nix](modules/codex-remote.nix) | ログイン前にもユーザーサービスを起動するための linger |
+| [desktop/codex.nix](home/keewai/desktop/codex.nix) | デスクトップアプリと `codex:` URL ハンドラー |
+| [shared/mcp.nix](home/keewai/shared/mcp.nix) | 全ホストで使う MCP サーバー |
+| [desktop/cua.nix](home/keewai/desktop/cua.nix) | デスクトップ操作用ドライバーと MCP |
+| [shared/skills.nix](home/keewai/shared/skills.nix) | 個人スキルの公開と配布対象の選別 |
+
+Codex CLI は固定した `sadjow/codex-cli-nix` 入力から導入します。
+設定を変える場合は、このリポジトリの編集元を変更してください。
+生成先の `/etc/codex` や `/home/keewai/.agents/skills` は直接編集しません。
+
+## Orange のサービスを読む
+
+各サービスは [settings.nix](hosts/orange/settings.nix) を直接読みます。
+`flake.nix` からホスト専用の値を暗黙に注入する構成ではありません。
+
+Web の入口は Tailscale Serve の HTTPS 443 です。
+そこからループバックの nginx（`127.0.0.1:8000`）を経由して、アプリへ転送します。
+設定は [web.nix](hosts/orange/services/web.nix) にまとめています。
+
+| サービス | アクセス先・用途 | 編集先 |
+| --- | --- | --- |
+| Immich | `https://orange.tail1e65cd.ts.net/` | [immich.nix](hosts/orange/services/immich.nix) |
+| Vaultwarden | `https://orange.tail1e65cd.ts.net/vault/` | [vaultwarden.nix](hosts/orange/services/vaultwarden.nix) |
+| Samba | HDD の共有 | [samba.nix](hosts/orange/services/samba.nix) |
+| Minecraft | LAN・tailnet 向け Fabric サーバー | [minecraft.nix](hosts/orange/services/minecraft.nix) |
+| Tailscale Exit Node | 経路と UDP オフロード | [tailscale-exit-node.nix](hosts/orange/services/tailscale-exit-node.nix) |
+
+ストレージの起動順序は、HDD のマウント、共有ディレクトリの準備、既存データの取り込み、
+アプリ起動の順です。[storage.nix](hosts/orange/services/storage.nix) がマウントと準備を担当し、
+各アプリのファイル権限と取り込み条件はアプリ側で管理します。
+
+長い実行処理は、サービス設定の隣のシェルファイルに置いています。
+Nix ファイルを読むと依存関係・権限・起動条件がわかり、シェルファイルを読むと処理の順番がわかります。
+シェル内の `@名前@` は、対応する Nix ファイルの `substitutions` で置き換えます。
+これらのシェルファイルはサービス用のテンプレートなので、直接実行するものではありません。
+
+| 処理 | サービス設定 | 実行処理 |
+| --- | --- | --- |
+| Immich の既存 DB 取り込み | [immich.nix](hosts/orange/services/immich.nix) | [import-immich-database.sh](hosts/orange/services/import-immich-database.sh) |
+| Vaultwarden の既存データ取り込み | [vaultwarden.nix](hosts/orange/services/vaultwarden.nix) | [import-vaultwarden-data.sh](hosts/orange/services/import-vaultwarden-data.sh) |
+| バックアップの世代保存 | [local-backup.nix](hosts/orange/services/local-backup.nix) | [local-backup.sh](hosts/orange/services/local-backup.sh) |
+| 異常検出と通知 | [health-monitor.nix](hosts/orange/services/health-monitor.nix) | [health-monitor.sh](hosts/orange/services/health-monitor.sh) |
+
+監視は 15 分間隔で実行し、新しい異常を検出したときに Discord へ通知します。
+同じ異常を毎回通知しないよう、通知済みの状態を保存します。
+[smart-tests.nix](hosts/orange/services/smart-tests.nix) はドライブの定期自己診断、
+[maintenance.nix](hosts/orange/services/maintenance.nix) はログ掃除・TRIM・Nix Store の保守を担当します。
+
+## パッケージの独自変更
+
+[pkgs/default.nix](pkgs/default.nix) は `nix build .#<名前>` で公開するパッケージの一覧です。
+ホスト内だけで使うパッケージは、その機能の設定から `callPackage` で読み込みます。
+
+| ディレクトリ | 独自変更の目的 |
+| --- | --- |
+| [apple-music-client/](pkgs/apple-music-client/) | 上流の認証・再生基盤を使う端末 UI |
+| [aquamarine-hyperv/](pkgs/aquamarine-hyperv/) | Hyper-V 用の描画対応 |
+| [brave-origin/](pkgs/brave-origin/) | Brave Origin のバージョン選択と日本語設定 |
+| [chatgpt-desktop/](pkgs/chatgpt-desktop/) | 公式 Linux 配布物の NixOS 対応、起動処理、ASAR のパッチ |
+| [cua-driver/](pkgs/cua-driver/) | デスクトップ操作用ドライバーの実行環境 |
+| [fprintd-cs9711/](pkgs/fprintd-cs9711/) | CS9711 指紋センサーと認証キャンセルの修正 |
+| [hyprland/](pkgs/hyprland/) | 入力メソッドの修飾キー処理の修正 |
+| [hyprpaper-shm/](pkgs/hyprpaper-shm/) | VM 用の壁紙描画と旧 IPC の橋渡し |
+| [millennium-steam/](pkgs/millennium-steam/) | Millennium の依存関係の配置修正 |
+| [ponytail-hooks/](pkgs/ponytail-hooks/) | Ponytail の管理用フック |
+
+パッチは対象パッケージと同じディレクトリに置きます。
+上流を更新するときは、パッチの前提と付属のテストも確認してください。
+`keewai704` 所有の GitHub 入力は `main` ブランチを明示し、リビジョンとハッシュを固定します。
+
+### Apple Music（Siora）
+
+`siora` で起動します。検索は `Ctrl+f`、読み込み済み一覧の絞り込みは `/`、
+開く・再生は `Enter`、一時停止は `Space` です。
+`e` でキュー末尾へ、`E` で次の曲へ追加し、`q` でキューを開きます。
+`Tab` はペイン移動、`Backspace` は前のページと選択位置の復元、`a` は項目の操作、
+`?` はヘルプ、`Ctrl+c` は終了です。
+
+`:login` と `:code` で認証し、`,` で音声設定を開きます。
+キュー・歌詞・詳細は切り替え式のパネルを使い、狭い端末では一つのペインを表示します。
+色とフォントは端末の設定に従います。
+既存の `alac-room` のライブラリ・ダウンロード・認証セッションを引き継ぎ、
+ミュージックビデオは音声のみ再生します。
+選択中の項目の上と再生バーにアルバム画像を表示します。画像は専用キャッシュへ非同期で読み込み、
+Kitty では画像プロトコル、それ以外の端末や tmux では文字ブロックで表示します。
+画像が取得できない場合も、テキストの操作は利用できます。
+
+実装を読む順番は次のとおりです。
+
+| ファイル | 役割 |
+| --- | --- |
+| [main.rs](pkgs/apple-music-client/tui/main.rs) | 引数を読み、保存先を準備して起動 |
+| [mod.rs](pkgs/apple-music-client/tui/mod.rs) | アプリの状態、端末の開始・終了、認証、バックグラウンド処理の起動 |
+| [controls.rs](pkgs/apple-music-client/tui/controls.rs) | キー入力、入力欄、項目の操作、コマンド |
+| [navigation.rs](pkgs/apple-music-client/tui/navigation.rs) | 検索、ページ移動、履歴、追加読み込み |
+| [browse.rs](pkgs/apple-music-client/tui/browse.rs) | 表示するページのデータと、API 応答の変換 |
+| [playback.rs](pkgs/apple-music-client/tui/playback.rs) | 再生、停止、先読み、ラジオ、音量 |
+| [queue.rs](pkgs/apple-music-client/tui/queue.rs) | キューの順番と選択、編集の取り消し |
+| [events.rs](pkgs/apple-music-client/tui/events.rs) | 非同期結果、音声イベント、MPRIS との連携 |
+| [settings.rs](pkgs/apple-music-client/tui/settings.rs) | 音声設定の入力・検証・保存 |
+| [cover.rs](pkgs/apple-music-client/tui/cover.rs) | アルバム画像の取得、サイズ制限、端末への表示方式 |
+| [render.rs](pkgs/apple-music-client/tui/render.rs) | 画面の配置と描画 |
+
+認証とメディア処理には固定した上流コードを使います。
+ビルド時に端末 UI を組み込み、GPUI、ブラウザー用資産、旧 Python UI を除去します。
+
+### ブラウザー
+
+既定の URL ハンドラーは Brave Origin です。Firefox も Home Manager で管理します。
+Firefox は固定した `keewai704/my-firefox-nix` の `main` を利用し、Sine/Natsumi、
+日本語化、Bitwarden/uBlock Origin のポリシーを引き継ぎます。
+設定は AutoConfig で固定し、最初の適用時にプロフィールを準備してから Sine を配置します。
+Firefox の見た目は Sine/Natsumi が担当するため、Stylix の Firefox 対応は無効です。
+この非公開入力の取得には GitHub の読み取り認証が必要です。
+
+## 適用せずに設定を確認する
+
+次の例は、リポジトリのルートで、現在のホストの設定だけを評価・ビルドします。
+ホスト名が一致しない場合は終了します。別のホスト名で代用しません。
+
+```sh
 runtime_host="$(hostnamectl --static 2>/dev/null || hostname)"
-etc_host="$(tr -d '\r\n' < /etc/hostname)"
-test "$runtime_host" = "$etc_host"
+configured_host="$(cat /etc/hostname)"
+test "$runtime_host" = "$configured_host" || exit 1
 
-flake_host="$(
-  nix eval --raw --no-write-lock-file \
-    ".#nixosConfigurations.$runtime_host.config.networking.hostName"
-)"
-test "$runtime_host" = "$flake_host"
+flake_host="$(nix eval --raw --no-write-lock-file \
+  ".#nixosConfigurations.$runtime_host.config.networking.hostName")" || exit 1
+test "$runtime_host" = "$flake_host" || exit 1
 
-nix flake show --no-write-lock-file
 nix build ".#nixosConfigurations.$runtime_host.config.system.build.toplevel" \
-  --no-link \
-  --no-write-lock-file
+  --no-link --no-write-lock-file
 ```
 
-These commands evaluate and build locally; they do not activate a generation.
-Do not substitute another host when the runtime host has no matching flake
-output.
+全体の出力を確認するには `nix flake show --no-write-lock-file` を使います。
+変更時の必須チェックは [AGENTS.md](AGENTS.md) の対象表から選びます。
+設定変更を実機へ適用する場合は、コミット後に現在のホストで `test`、稼働確認、
+`switch`、再確認の順に進めます。別ホストへの接続・適用は、その操作の明示的な依頼がある場合に限ります。
 
-Follow [`AGENTS.md`](AGENTS.md) for the mandatory commit and scope-dependent
-local activation workflow.
+## Neovim と開発環境
 
-The native Codex CLI comes from the pinned `sadjow/codex-cli-nix` input and is
-installed through Home Manager on all three hosts. Its automatic user service
-is configured in [`home/keewai/shared/codex-remote.nix`](home/keewai/shared/codex-remote.nix).
+全ホストで `nvim`、`vim`、`vi` が利用でき、新しいセッションでは `EDITOR` と `VISUAL` にも設定されます。
+一般の編集設定は [shared/neovim.lua](home/keewai/shared/neovim.lua)、
+Nix で固定するプラグインは [shared/neovim.nix](home/keewai/shared/neovim.nix) にあります。
+`lazy.nvim` の管理画面は `:Lazy` で開きます。プラグインと Tree-sitter のパーサーは
+Nix で導入するため、初回起動時のダウンロードは不要です。
+更新は Nixpkgs の固定バージョンを変更して行い、パーサーの追加は `neovim.nix` で行います。
+Wayland のクリップボード連携も含みます。
 
-## Neovim and repository development
-
-Home Manager installs Neovim as `nvim`, `vim`, and `vi` on all three hosts and
-sets it as `EDITOR` and `VISUAL` for new sessions. The common configuration in
-[`home/keewai/shared/neovim.nix`](home/keewai/shared/neovim.nix) uses
-[lazy.nvim](https://lazy.folke.io/) to load Nix-pinned plugins. Inspect them with
-`:Lazy`; update their versions through the repository's pinned Nixpkgs input.
-Plugins are available without a first-launch download, and Wayland clipboard
-integration is included.
-
-The editor uses absolute line numbers. Its home screen links to file search,
-the file explorer, recent files, workspace restoration, the terminal, and help.
-Neo-tree provides a sidebar for browsing, creating, renaming, copying, moving,
-and deleting files, plus a view of Git changes. In the tree, use `Enter` to open,
-`a` / `A` to create a file / directory, `r` to rename, `y` / `x` then `p` to copy /
-move, `d` to delete, `H` to toggle hidden entries, and `?` for the full key guide.
-
-bufferline displays open files as tabs. ToggleTerm opens a floating terminal,
-and persistence saves open files and window layouts per working directory and
-Git branch on exit; restoration is manual. Trouble provides diagnostic and
-document-symbol panels. Tree-sitter supplies syntax highlighting for common
-configuration and programming languages, with parsers also pinned and installed
-by Nix. Change the parser list in `neovim.nix` instead of running `:TSInstall`.
-
-mini.nvim provides file and text search, Git history and diffs, completion, a
-status line, comment toggling, text objects, paired delimiters, surrounding-text
-edits, moving selected lines, alignment, and splitting/joining argument lists.
-which-key shows available key bindings after a pause. nvim-lspconfig and
-conform.nvim provide the language-server and formatter integration used by
-project extensions. Outside a development shell, completion works with buffer
-text without requiring a language server.
-
-From this repository's root, start the development environment and open a file:
-
-```console
+```sh
 nix develop --no-write-lock-file
 nvim flake.nix
 ```
 
-The shell supplies nixd, nixfmt, statix, deadnix, Lua Language Server, StyLua,
-Bash Language Server, ShellCheck, and shfmt. It sets `NVIM_PROJECT_CONFIG` to
-the Nix-store copy of [`devshell/neovim.lua`](devshell/neovim.lua), which extends
-the same Home Manager editor with Nix, Lua, and Bash completion, diagnostics,
-navigation, and manual formatting. nixd uses the edited flake's pinned Nixpkgs
-and exposes NixOS and Home Manager options for the local hostname. To inspect
-another declared configuration, set `NVIM_NIXOS_HOST=orange` before starting
-Neovim. This only selects completion data and does not contact or deploy a host.
-Zsh files retain general editing and highlighting; Bash diagnostics and shfmt
-are not applied to Zsh syntax. statix and deadnix are available as CLI checks.
+開発環境には Nix・Lua・Bash の言語サーバー、フォーマッター、静的解析ツールが入っています。
+[devshell/neovim.lua](devshell/neovim.lua) が共通のエディター設定に補完・診断・定義移動を追加します。
+`NVIM_PROJECT_CONFIG` に設定された信頼できる Lua ファイルだけを追加で読み込みます。
+開発環境の外で起動した Neovim には共通設定が適用されます。
+拡張設定を変更したら `nix develop` に入り直してください。
 
-The extension is loaded only by Neovim processes started with
-`NVIM_PROJECT_CONFIG`; starting Neovim outside the shell restores the common
-setup. Re-enter `nix develop` after changing the extension. Another project's
-devShell can set the same variable to its own trusted Lua configuration.
+nixd は編集中の flake が固定した Nixpkgs と現在のホスト名を使い、NixOS と Home Manager の設定候補を表示します。
+別ホストの候補を調べる場合は、Neovim 起動前に `NVIM_NIXOS_HOST=orange` などを指定します。
+これは補完対象の選択であり、そのホストへの接続・適用は行いません。
+Zsh には一般の編集と構文強調を使い、Bash 専用の診断・整形は適用しません。
+statix と deadnix はコマンドとして利用できます。
 
-| Keys | Action |
+画面は絶対行番号、ファイル一覧、開いているファイルのタブ、フローティング端末を備えます。
+作業ディレクトリと Git ブランチごとに開いたファイルとウィンドウ配置を終了時に保存し、復元は手動で行います。
+ホーム画面からファイル検索・最近のファイル・作業の復元・ヘルプへ移動できます。
+言語サーバーがない環境でも、編集中のテキストを使った補完が動作します。
+
+| キー | 操作 |
 | --- | --- |
-| `Space ff` / `Space fg` | Find files / search contents |
-| `Space fb` / `Space fh` | Find buffers / search help |
-| `Space fr` | Find recent files |
-| `Space e` | Toggle the file explorer |
-| `Space h` / `Space ?` | Home screen / key guide |
-| `Space t` or `Ctrl-\` | Toggle the floating terminal |
-| `Esc Esc` in a terminal | Leave terminal input mode |
-| `[b` / `]b` / `Space bd` | Previous file / next file / close file |
-| `Space ws` / `Space wv` / `Space wc` | Horizontal split / vertical split / close window |
-| `Space sr` / `Space ss` / `Space sd` | Restore workspace / select workspace / stop saving this session |
-| `Space gd` / `Space gg` | Toggle Git diff overlay / show Git status |
-| `Space gc` / `Space ge` | Git history / Git changes explorer |
-| `Space l` | Open the plugin manager |
-| `Space cf` | Format the buffer or selection when a formatter is available |
-| `Space cd` / `Space cq` | Show diagnostic / list diagnostics |
-| `Space xx` / `Space xb` / `Space cs` | Workspace diagnostics / buffer diagnostics / document symbols |
-| `gd` / `gr` / `K` | Definition / references / documentation with an attached LSP |
-| `Space cr` / `Space ca` | Rename symbol / code action with an attached LSP |
-| `gcc` / `gc` in Visual mode | Toggle comments |
-| `Alt-h/j/k/l` in Visual mode | Move selected text |
-| `ga` in Visual mode | Align selected text interactively |
-| `gS` | Split or join an argument list |
-| `Ctrl-n` / `Ctrl-p` / `Ctrl-y` | Next / previous / accept completion |
+| `Space ff` / `Space fg` | ファイル検索 / 内容検索 |
+| `Space fb` / `Space fh` / `Space fr` | 開いているファイル / ヘルプ / 最近のファイル |
+| `Space e` / `Space h` / `Space ?` | ファイル一覧 / ホーム画面 / キーガイド |
+| `Space t` または `Ctrl-\` | 端末の表示切り替え |
+| 端末内の `Esc Esc` | 端末入力モードを終了 |
+| `[b` / `]b` / `Space bd` | 前のファイル / 次のファイル / 閉じる |
+| `Space ws` / `Space wv` / `Space wc` | 上下分割 / 左右分割 / ウィンドウを閉じる |
+| `Space sr` / `Space ss` / `Space sd` | 作業を復元 / 保存済み作業を選択 / 今回の保存を停止 |
+| `Space gd` / `Space gg` | Git 差分の表示 / 状態の表示 |
+| `Space gc` / `Space ge` | Git 履歴 / 変更ファイル一覧 |
+| `Space l` | プラグイン管理 |
+| `Space cf` | フォーマッターがある場合にファイル・選択範囲を整形 |
+| `Space cd` / `Space cq` | 診断を表示 / 診断一覧 |
+| `Space xx` / `Space xb` / `Space cs` | 作業全体の診断 / ファイルの診断 / シンボル一覧 |
+| `gd` / `gr` / `K` | 定義 / 参照 / 説明（言語サーバー接続時） |
+| `Space cr` / `Space ca` | 名前変更 / コードアクション（言語サーバー接続時） |
+| `gcc` / 選択中の `gc` | コメントの切り替え |
+| 選択中の `Alt-h/j/k/l` | 選択したテキストの移動 |
+| 選択中の `ga` / `gS` | 整列 / 引数リストの分割・結合 |
+| `Ctrl-n` / `Ctrl-p` / `Ctrl-y` | 次の補完候補 / 前の候補 / 確定 |
+
+ファイル一覧では `Enter` で開き、`a` / `A` でファイル / ディレクトリを作成します。
+`r` は名前変更、`y` / `x` の後に `p` でコピー / 移動、`d` は削除、
+`H` は隠しファイルの表示切り替え、`?` は操作ガイドです。
