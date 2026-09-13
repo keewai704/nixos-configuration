@@ -43,6 +43,8 @@
 
     millennium.url = "github:SteamClientHomebrew/Millennium?dir=packages/nix";
 
+    my-firefox-nix.url = "git+https://github.com/keewai704/my-firefox-nix.git?ref=main";
+
     nix-hazkey = {
       url = "github:aster-void/nix-hazkey";
       inputs.home-manager.follows = "home-manager";

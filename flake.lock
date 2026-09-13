@@ -789,6 +789,22 @@
         "type": "github"
       }
     },
+    "my-firefox-nix": {
+      "locked": {
+        "lastModified": 1788685307,
+        "narHash": "sha256-aXwvYINtbUdoUOugtpmH1UHIDWeF507tf8uIR+poCJo=",
+        "ref": "main",
+        "rev": "80226bc8a2fa443ab686fcad0e521244681c720a",
+        "revCount": 8,
+        "type": "git",
+        "url": "https://github.com/keewai704/my-firefox-nix.git"
+      },
+      "original": {
+        "ref": "main",
+        "type": "git",
+        "url": "https://github.com/keewai704/my-firefox-nix.git"
+      }
+    },
     "nix-hazkey": {
       "inputs": {
         "home-manager": [
@@ -1018,6 +1034,7 @@
         "hyprland": "hyprland",
         "mcp-servers-nix": "mcp-servers-nix",
         "millennium": "millennium",
+        "my-firefox-nix": "my-firefox-nix",
         "nix-hazkey": "nix-hazkey",
         "nixcord": "nixcord",
         "nixpkgs": "nixpkgs_6",

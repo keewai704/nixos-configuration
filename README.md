@@ -39,6 +39,7 @@ separates machine integration from user applications and settings.
 │       ├── cua.nix                # desktop computer-use driver and MCP server
 │       ├── dynamic-island.nix     # desktop shell appearance and preferences
 │       ├── file-manager.nix       # Thunar, archives, directory handlers, and XDG folders
+│       ├── firefox.nix            # Firefox, Sine/Natsumi, Japanese localization, and profile setup
 │       ├── hyperv-rendering.nix    # rendering adaptations when Hyper-V is enabled
 │       ├── hyprland.nix           # compositor configuration generation
 │       ├── hyprland.lua           # compositor behavior and key bindings
@@ -134,8 +135,16 @@ Prefer Home Manager for personal packages. Keep system scope only for a
 concrete integration requirement. Repository policy and validation requirements
 live in [`AGENTS.md`](AGENTS.md).
 
-Citrus uses Brave Origin as its sole configured browser and default URL handler,
-managed by `home/keewai/desktop/browser.nix`.
+Citrus and its VM use Brave Origin as the default URL handler, managed by
+`home/keewai/desktop/browser.nix`. Firefox is also managed by Home Manager in
+`home/keewai/desktop/firefox.nix`, which adapts the pinned `main` branch of
+`keewai704/my-firefox-nix` without enabling its system-wide Firefox module.
+It preserves the upstream Sine/Natsumi configuration, Japanese localization,
+Bitwarden/uBlock Origin policies, and locked preferences. The default profile
+is initialized before Sine deployment, so the first activation installs the
+theme without requiring a preliminary Firefox launch. Stylix's Firefox target
+is disabled to leave styling to Sine/Natsumi. Fetching the private input requires
+GitHub read authentication.
 
 ## Hosts
 

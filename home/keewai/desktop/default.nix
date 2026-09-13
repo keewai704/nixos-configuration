@@ -8,6 +8,7 @@
     ./cua.nix
     ./dynamic-island.nix
     ./file-manager.nix
+    ./firefox.nix
     ./hyprland.nix
     ./hyperv-rendering.nix
     ./input-method.nix
