@@ -32,6 +32,7 @@ let
     name = "import-existing-vaultwarden-data";
     runtimeInputs = [
       pkgs.coreutils
+      pkgs.diffutils
       pkgs.findutils
       pkgs.rsync
       pkgs.sqlite
