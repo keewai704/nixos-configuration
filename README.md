@@ -198,7 +198,6 @@ Nix ファイルを読むと依存関係・権限・起動条件がわかり、�
 
 | ディレクトリ | 独自変更の目的 |
 | --- | --- |
-| [apple-music-client/](pkgs/apple-music-client/) | 上流の認証・再生基盤を使う端末 UI |
 | [aquamarine-hyperv/](pkgs/aquamarine-hyperv/) | Hyper-V 用の描画対応 |
 | [brave-origin/](pkgs/brave-origin/) | Brave Origin のバージョン選択と日本語設定 |
 | [chatgpt-desktop/](pkgs/chatgpt-desktop/) | 公式 Linux 配布物の NixOS 対応、起動処理、ASAR のパッチ |
@@ -206,49 +205,17 @@ Nix ファイルを読むと依存関係・権限・起動条件がわかり、�
 | [fprintd-cs9711/](pkgs/fprintd-cs9711/) | CS9711 指紋センサーと認証キャンセルの修正 |
 | [hyprland/](pkgs/hyprland/) | 入力メソッドの修飾キー処理の修正 |
 | [hyprpaper-shm/](pkgs/hyprpaper-shm/) | VM 用の壁紙描画と旧 IPC の橋渡し |
-| [millennium-steam/](pkgs/millennium-steam/) | Millennium の依存関係の配置修正 |
 | [ponytail-hooks/](pkgs/ponytail-hooks/) | Ponytail の管理用フック |
 
 パッチは対象パッケージと同じディレクトリに置きます。
 上流を更新するときは、パッチの前提と付属のテストも確認してください。
 `keewai704` 所有の GitHub 入力は `main` ブランチを明示し、リビジョンとハッシュを固定します。
 
-### Apple Music の実装を読む
+### Apple Music クライアント
 
-端末 UI は [main.rs](pkgs/apple-music-client/main.rs) から始まります。
-画面を描く処理、操作を受け取る処理、状態を更新する処理を分けています。
-
-| 読む順番・目的 | ファイル |
-| --- | --- |
-| 引数、保存先、一重起動の確認 | [main.rs](pkgs/apple-music-client/main.rs) |
-| アプリ全体の状態とバックグラウンド処理 | [tui/mod.rs](pkgs/apple-music-client/tui/mod.rs) |
-| 端末の開始・終了、入力と再描画のループ | [terminal.rs](pkgs/apple-music-client/tui/terminal.rs) |
-| 認証ヘルパーへの接続と接続失敗時の処理 | [authentication.rs](pkgs/apple-music-client/tui/authentication.rs) |
-| キー操作、ペイン移動、メニュー選択 | [controls.rs](pkgs/apple-music-client/tui/controls.rs) |
-| 入力欄の編集、検索・ログイン入力の確定 | [input.rs](pkgs/apple-music-client/tui/input.rs) |
-| `:` から実行するコマンド | [commands.rs](pkgs/apple-music-client/tui/commands.rs) |
-| 項目の操作、ダウンロード、プレイリスト作成 | [item_actions.rs](pkgs/apple-music-client/tui/item_actions.rs) |
-| クリック、ドラッグ、スクロール | [mouse.rs](pkgs/apple-music-client/tui/mouse.rs) |
-| 検索、ページ移動、履歴、追加読み込み | [navigation.rs](pkgs/apple-music-client/tui/navigation.rs) |
-| ページのデータと API 応答の変換 | [browse.rs](pkgs/apple-music-client/tui/browse.rs) |
-| 再生、停止、先読み、ラジオ、音量 | [playback.rs](pkgs/apple-music-client/tui/playback.rs) |
-| キューの順番、選択、編集の取り消し | [queue.rs](pkgs/apple-music-client/tui/queue.rs) |
-| 非同期結果、音声イベント、MPRIS 連携 | [events.rs](pkgs/apple-music-client/tui/events.rs) |
-| 音声設定の入力・検証・保存 | [settings.rs](pkgs/apple-music-client/tui/settings.rs) |
-| アルバム画像の取得と端末への表示 | [cover.rs](pkgs/apple-music-client/tui/cover.rs) |
-| 画面全体の配置と共通の描画部品 | [render/mod.rs](pkgs/apple-music-client/tui/render/mod.rs) |
-| 一覧と選択中の曲 | [render/browser.rs](pkgs/apple-music-client/tui/render/browser.rs) |
-| キュー・歌詞・詳細のパネル | [render/panels.rs](pkgs/apple-music-client/tui/render/panels.rs) |
-| 再生バー | [render/player_bar.rs](pkgs/apple-music-client/tui/render/player_bar.rs) |
-| ダイアログと入力欄 | [render/dialogs.rs](pkgs/apple-music-client/tui/render/dialogs.rs) |
-
-たとえば検索では、`controls` が入力欄を開き、`input` が入力を確定します。
-`navigation` が取得処理を開始し、`events` が結果を受け取り、`render` が表示します。
-ページ、再生、先読み、認証はそれぞれの世代番号で古い応答を見分けます。
-`ShutdownBehavior::Wait` は、アプリ終了時に完了を待つ必要があるバックグラウンド処理を示します。
-
-認証とメディア処理には固定した上流コードを使います。
-ビルド時に端末 UI を組み込み、GPUI、ブラウザー用資産、旧 Python UI を除去します。
+Apple Music クライアントの実装、Nix パッケージ、Home Manager モジュールは
+[keewai704/siora](https://github.com/keewai704/siora) で管理します。
+このリポジトリでは [apple-music.nix](home/keewai/desktop/apple-music.nix) からそのモジュールを取り込みます。
 
 ## 適用せずに設定を確認する
 
@@ -282,31 +249,12 @@ nix build ".#nixosConfigurations.$runtime_host.config.system.build.toplevel" \
 
 ### Apple Music（Siora）
 
-`siora` で起動します。検索は `Ctrl+f`、読み込み済み一覧の絞り込みは `/`、
-開く・再生は `Enter`、一時停止は `Space` です。
-`e` でキュー末尾へ、`E` で次の曲へ追加し、`q` でキューを開きます。
-`Tab` はペイン移動、`Backspace` は前のページと選択位置の復元、`a` は項目の操作、
-`?` はヘルプ、`Ctrl+c` は終了です。
-
-マウスでもナビゲーション、検索、設定、再生ボタンを操作できます。
-行をクリックすると選択、ダブルクリックで開く・再生、右クリックで項目の操作、
-中クリックでキューへ追加します。ホイールは一覧のスクロール、再生バーのクリック・ドラッグは再生位置の移動です。
-キューのボタンでは順番の変更・削除・取り消しができます。
-
-`:login` と `:code` で認証し、`,` で音声設定を開きます。
+`siora` でネイティブアプリを起動します。
 認証には Apple Music 3.6.0-beta（1109）の x86_64 ライブラリを
 `alac-room-auth-import /path/to/apple-music.apkm` で取り込みます。
 既定の配置先は `~/.local/share/alac-room/auth/rootfs` です。
 認証データの配置先を変える場合は `ALAC_ROOM_AUTH_DATA_DIR` を設定します。
-取り込み後は `:connect` でヘルパーの起動を再試行できます。
-ログイン入力欄は、ヘルパーから応答があった後に開きます。
-キュー・歌詞・詳細は切り替え式のパネルを使い、狭い端末では一つのペインを表示します。
-色とフォントは端末の設定に従います。
-既存の `alac-room` のライブラリ・ダウンロード・認証セッションを引き継ぎ、
-ミュージックビデオは音声のみ再生します。
-選択中の項目の上と再生バーにアルバム画像を表示します。画像は専用キャッシュへ非同期で読み込み、
-Kitty では画像プロトコル、それ以外の端末や tmux では文字ブロックで表示します。
-画像が取得できない場合も、テキストの操作は利用できます。
+APK 由来のライブラリは再配布せず、各ユーザーが所有する APK からこの場所へ取り込みます。
 
 </details>
 

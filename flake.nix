@@ -4,7 +4,7 @@
   inputs = {
     nixpkgs.url = "github:NixOS/nixpkgs/nixos-unstable";
 
-    apple-music-client.url = "git+https://github.com/keewai704/apple-music-client.git?ref=main";
+    siora.url = "git+https://github.com/keewai704/siora.git?ref=main";
 
     dynamic-island = {
       url = "git+https://github.com/keewai704/hypr-island.git?ref=main";
@@ -98,7 +98,7 @@
         ];
       };
 
-      packages.${system} = import ./pkgs { inherit inputs pkgs; };
+      packages.${system} = import ./pkgs { inherit pkgs; };
 
       devShells.${system}.default = import ./devshell { inherit pkgs; };
 
