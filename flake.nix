@@ -6,7 +6,7 @@
 
     siora.url = "git+https://github.com/keewai704/siora.git?ref=main";
 
-    dynamic-island = {
+    hypr-island = {
       url = "git+https://github.com/keewai704/hypr-island.git?ref=main";
       inputs.nixpkgs.follows = "nixpkgs";
     };

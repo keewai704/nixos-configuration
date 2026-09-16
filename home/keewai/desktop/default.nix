@@ -6,7 +6,7 @@
     ./browser.nix
     ./codex.nix
     ./cua.nix
-    ./dynamic-island.nix
+    ./hypr-island.nix
     ./file-manager.nix
     ./firefox.nix
     ./hyprland.nix
@@ -15,7 +15,6 @@
     ./kitty.nix
     ./legcord.nix
     ./paseo-tailscale.nix
-    ./screen-lock.nix
     ./steam-theme.nix
     ./stylix.nix
   ];

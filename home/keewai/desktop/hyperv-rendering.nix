@@ -20,6 +20,7 @@ in
         name = "citrus-vm-hyprland.lua";
         text =
           "local theme = ${lib.generators.toLua { } theme.hyprland}\n"
+          + config.programs.dynamic-island.hyprland.config
           + builtins.readFile ./hyprland.lua
           + ''
             hl.config({
@@ -49,7 +50,7 @@ in
     };
     programs.dynamic-island = {
       settings.reducedMotion = lib.mkForce true;
-      package = pkgs.callPackage "${inputs.dynamic-island}/package.nix" {
+      package = pkgs.callPackage "${inputs.hypr-island}/package.nix" {
         hyprland = legacyHyprpaper.hyprctl;
       };
     };

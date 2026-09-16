@@ -12,7 +12,9 @@ let
   hyprlandConfig = pkgs.writeTextFile {
     name = "hyprland.lua";
     text =
-      "local theme = ${lib.generators.toLua { } theme.hyprland}\n" + builtins.readFile ./hyprland.lua;
+      "local theme = ${lib.generators.toLua { } theme.hyprland}\n"
+      + config.programs.dynamic-island.hyprland.config
+      + builtins.readFile ./hyprland.lua;
     checkPhase = ''
       cp "$target" "$TMPDIR/check.lua"
       echo 'assert(hl.get_config("decoration:blur:variant") == 8, "acrylic blur must be enabled")' >> "$TMPDIR/check.lua"

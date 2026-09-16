@@ -102,13 +102,13 @@ VM の設定は、継承元と `mkForce` などの優先順位を合わせて読
 | 設定を伴わないデスクトップ用ツール | [desktop/applications.nix](home/keewai/desktop/applications.nix) |
 | ウィンドウ、モニター、キー操作 | [desktop/hyprland.lua](home/keewai/desktop/hyprland.lua) |
 | Hyprland のログイン・ポータル統合 | [hosts/citrus/hyprland.nix](hosts/citrus/hyprland.nix) |
-| 画面ロックとアイドル時の動作 | [desktop/screen-lock.nix](home/keewai/desktop/screen-lock.nix) |
+| 画面ロックとアイドル時の動作 | [desktop/hypr-island.nix](home/keewai/desktop/hypr-island.nix) |
 | 日本語入力 | [desktop/input-method.nix](home/keewai/desktop/input-method.nix) |
 | 端末 | [desktop/kitty.nix](home/keewai/desktop/kitty.nix) |
 | ブラウザーと既定の URL ハンドラー | [desktop/browser.nix](home/keewai/desktop/browser.nix)、[firefox.nix](home/keewai/desktop/firefox.nix) |
 | ファイル管理、圧縮、XDG フォルダー | [desktop/file-manager.nix](home/keewai/desktop/file-manager.nix) |
 | Bitwarden と SSH エージェント | [desktop/bitwarden.nix](home/keewai/desktop/bitwarden.nix) |
-| デスクトップのパネルとランチャー | [desktop/dynamic-island.nix](home/keewai/desktop/dynamic-island.nix) |
+| デスクトップのパネルとランチャー | [desktop/hypr-island.nix](home/keewai/desktop/hypr-island.nix) |
 | Discord クライアントとテーマ | [desktop/legcord.nix](home/keewai/desktop/legcord.nix)、[legcord-system24.nix](home/keewai/desktop/legcord-system24.nix) |
 | Steam と Millennium | [hosts/citrus/steam.nix](hosts/citrus/steam.nix)、[desktop/steam-theme.nix](home/keewai/desktop/steam-theme.nix) |
 | 共通の色、フォント、壁紙 | [themes/tokyo-night-black/default.nix](themes/tokyo-night-black/default.nix) |
@@ -120,11 +120,17 @@ VM の設定は、継承元と `mkForce` などの優先順位を合わせて読
 対応モジュールが必要な動作を満たさない場合は `home.packages` に置きます。
 ログイン、PAM、ドライバー、USB のアクセス権、システムデーモンなどは NixOS 側で管理します。
 
-たとえば、Hyprlock の見た目と起動は Home Manager、認証に必要な PAM は
-[modules/hyprlock.nix](modules/hyprlock.nix) にあります。
+たとえば、Hyprlock の見た目と起動は hypr-island の Home Manager モジュール、
+認証に必要な PAM は [hosts/citrus/hypr-island.nix](hosts/citrus/hypr-island.nix) が読み込む
+hypr-island の NixOS モジュールが担当します。
 Apple USB CLI は [shared/apple-device-usb.nix](home/keewai/shared/apple-device-usb.nix)、
 実機の usbmuxd は [hosts/citrus/apple-device-usb.nix](hosts/citrus/apple-device-usb.nix) が担当します。
 指紋認証は fprintd が有効な環境でだけ使います。
+
+パネル本体、Island のキー操作、ロックとアイドル制御、Stylix 連携、Bitwarden の初期設定ランチャーは
+外部入力の [hypr-island](https://github.com/keewai704/hypr-island) が管理します。
+このリポジトリには有効化、テーマの元データ、接続先 URL、機器・VM の差分を置きます。
+公開済みの Nix オプション名 `programs.dynamic-island` は互換性のため維持しています。
 
 Home Manager は `useUserPackages = true` で NixOS に統合されています。
 ユーザーのパッケージは `/etc/profiles/per-user/keewai` に入り、適用には NixOS の再構築を使います。
