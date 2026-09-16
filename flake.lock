@@ -198,11 +198,11 @@
         ]
       },
       "locked": {
-        "lastModified": 1788857991,
-        "narHash": "sha256-JfGg2beIkfWy5Y26dV5kkAAFsUhYFtn4cge90s7JSz8=",
+        "lastModified": 1789561277,
+        "narHash": "sha256-3HfDidrtd/rvnB1IIz1c+j0EgXmSti0YKS6NPK38yms=",
         "ref": "main",
-        "rev": "abcfd590e6dabb7b8ed619f87bc19908d3c1ddd3",
-        "revCount": 33,
+        "rev": "e6fe7b8a6794f48320d5a3313d678725a762bc43",
+        "revCount": 34,
         "type": "git",
         "url": "https://github.com/keewai704/hypr-island.git"
       },

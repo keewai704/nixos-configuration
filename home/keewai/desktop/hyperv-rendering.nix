@@ -51,7 +51,6 @@ in
       settings.reducedMotion = lib.mkForce true;
       package = pkgs.callPackage "${inputs.dynamic-island}/package.nix" {
         hyprland = legacyHyprpaper.hyprctl;
-        quickshell = pkgs.callPackage ../../../pkgs/quickshell { };
       };
     };
   };

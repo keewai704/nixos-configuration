@@ -1,7 +1,6 @@
 {
   config,
   inputs,
-  lib,
   pkgs,
   ...
 }:
@@ -27,11 +26,6 @@ in
   imports = [ inputs.dynamic-island.homeManagerModules.default ];
   programs.dynamic-island = {
     enable = true;
-    package = lib.mkDefault (
-      pkgs.callPackage "${inputs.dynamic-island}/package.nix" {
-        quickshell = pkgs.callPackage ../../../pkgs/quickshell { };
-      }
-    );
     theme = islandTheme;
     defaultWallpaper = config.stylix.image;
     settings = {
