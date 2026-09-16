@@ -263,7 +263,7 @@ APK 由来のライブラリは再配布せず、各ユーザーが所有する 
 
 ### ブラウザー
 
-既定の URL ハンドラーは Brave Origin です。Firefox も Home Manager で管理します。
+既定の URL・HTML ハンドラーは Firefox です。Brave Origin も Home Manager で管理します。
 Firefox は固定した `keewai704/my-firefox-nix` の `main` を利用し、Sine/Natsumi、
 日本語化、Bitwarden/uBlock Origin のポリシーを引き継ぎます。
 設定は AutoConfig で固定し、最初の適用時にプロフィールを準備してから Sine を配置します。

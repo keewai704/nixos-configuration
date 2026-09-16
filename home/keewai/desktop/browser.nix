@@ -40,12 +40,12 @@ in
     mimeApps = {
       enable = true;
       defaultApplications = {
-        "application/xhtml+xml" = [ "brave-origin.desktop" ];
-        "text/html" = [ "brave-origin.desktop" ];
-        "x-scheme-handler/about" = [ "brave-origin.desktop" ];
-        "x-scheme-handler/http" = [ "brave-origin.desktop" ];
-        "x-scheme-handler/https" = [ "brave-origin.desktop" ];
-        "x-scheme-handler/unknown" = [ "brave-origin.desktop" ];
+        "application/xhtml+xml" = [ "firefox.desktop" ];
+        "text/html" = [ "firefox.desktop" ];
+        "x-scheme-handler/about" = [ "firefox.desktop" ];
+        "x-scheme-handler/http" = [ "firefox.desktop" ];
+        "x-scheme-handler/https" = [ "firefox.desktop" ];
+        "x-scheme-handler/unknown" = [ "firefox.desktop" ];
       };
     };
   };
