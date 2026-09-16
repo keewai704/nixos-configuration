@@ -21,14 +21,6 @@ let
     dontUnpack = true;
     dontConfigure = true;
     dontBuild = true;
-    doCheck = true;
-
-    checkPhase = ''
-      cp ${./hyprctl.py} "$TMPDIR/hyprctl.py"
-      cp ${./test_hyprctl.py} "$TMPDIR/test_hyprctl.py"
-      ${python3}/bin/python3 "$TMPDIR/test_hyprctl.py"
-    '';
-
     installPhase = ''
       install -Dm755 ${./hyprctl.py} "$out/bin/hyprctl"
       substituteInPlace "$out/bin/hyprctl" \

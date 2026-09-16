@@ -1,160 +1,119 @@
 ---
 name: apple-device-usb
 description: >-
-  Operate USB-connected iPhones and iPads with pymobiledevice3: verify connection,
-  capture screenshots, and send touch gestures or hardware-button events. Use
-  for real iOS/iPadOS device interaction, not simulators, macOS desktop control,
-  or firmware restore.
+  Operate USB-connected iPhones and iPads with compact screenshots, touch,
+  keyboard HID, and Unicode paste through a reusable CoreDevice session.
+  Use for real iOS/iPadOS devices, not simulators or macOS desktop control.
 ---
 
 # Apple device control over USB
 
-Use the installed `pymobiledevice3` CLI. Start with the user's requested device
-and operation; a connectivity check does not require changing Nix configuration.
-This workflow uses 11.5.0; connection, screenshots, taps, and the Home button
-were verified on iPadOS 27.0. Check installed command help when the version
-or device differs.
+Use the installed `apple-device-usb` helper (pymobiledevice3 11.5.0). It reuses
+the USB tunnel, screenshot channel, screen-sharing media/HID session, and virtual
+keyboard. Each input releases keys/touches and returns a fresh image.
+RTCP receiver reports keep the media session alive while waiting for input.
+No root tunnel, network listener, device app, or repeated coordinate arithmetic
+is needed. Source: [scripts/control.py](scripts/control.py).
+This transport needs iOS/iPadOS 17.4+; the hardware verification is iPadOS 27.0.
+For older devices, inspect the installed `pymobiledevice3 --help` and upstream
+transport guidance instead of forcing this helper's connection path.
 
-## Establish the connection
+## Connect once
 
-Confirm the local runtime host with `hostnamectl --static` (fall back to
-`hostname`) and compare it with `/etc/hostname`; stop on a mismatch. Operate the
-locally attached device, not a different computer's USB connection.
+Confirm `hostnamectl --static` (fallback `hostname`) matches `/etc/hostname`;
+stop on mismatch. Use only this host's USB device. Reuse a host check already
+completed in this environment.
 
-```bash
-pymobiledevice3 version
+```sh
 systemctl is-active usbmuxd
-timeout -k 3 15 pymobiledevice3 usbmux list --simple
 timeout -k 3 20 pymobiledevice3 usbmux list
 ```
 
-Identify the device by its observed UDID, name, and connection type. If several
-devices are present and the intended one is unclear, ask the user. Set
-`apple_udid` to that observed identifier in each shell tool call. The examples
-pass it as `PYMOBILEDEVICE3_UDID` to every device command and fail if it is unset.
-Shell variables do not automatically persist into the next tool call.
+Identify the observed UDID, name, and USB connection. Ask which device when
+ambiguous. Unlock/trust only if needed. Before the first developer connection,
+check Developer Mode and mount the DDI once per device boot:
 
-Ask for unlocking and **Trust This Computer** only when needed. Then check:
-
-```bash
-PYMOBILEDEVICE3_UDID="${apple_udid:?}" timeout -k 3 20 pymobiledevice3 amfi developer-mode-status
+```sh
+PYMOBILEDEVICE3_UDID='<observed-UDID>' pymobiledevice3 amfi developer-mode-status
+PYMOBILEDEVICE3_UDID='<observed-UDID>' pymobiledevice3 mounter auto-mount
 ```
 
-If Developer Mode is disabled, run `amfi reveal-developer-mode` with the same
-device selector to reveal its entry. The user enables it in **Settings > Privacy & Security >
-Developer Mode**, restarts the device, and completes the on-device confirmation.
-Mount the Developer Disk Image once per device boot:
+If disabled, `amfi reveal-developer-mode` reveals the setting; the user enables
+it, restarts, and confirms on-device. Allow the initial DDI download to finish.
 
-```bash
-PYMOBILEDEVICE3_UDID="${apple_udid:?}" pymobiledevice3 mounter auto-mount
+Start this in a persistent terminal tool session with stdin open (`tty: true`):
+
+```sh
+apple-device-usb --udid '<observed-UDID>'
 ```
 
-The first mount may download an image; allow the download to finish. On iOS
-17.4+ the installed CLI can use an unprivileged userspace tunnel automatically.
-Use `--userspace` explicitly on developer commands if needed. Do not introduce
-a persistent root tunnel or open firewall ports for this working USB path.
-Older iOS versions may need a different transport; consult current upstream
-instructions instead of treating this version's path as universal.
+Keep the returned terminal session ID. The helper emits one JSON line with
+`frame`, `image`, `size`, `original`, `orientation`, and `touch_rotation`.
+Inspect `image` with the image-viewing tool; use its returned pixel dimensions.
+The default longest edge is 1280px, and the full original is retained. Output
+defaults to `~/Pictures/apple-device`; `--output` accepts an absolute directory.
 
-## Capture and inspect
+## Operate with short commands
 
-Use the user's absolute output path, or a fresh file under
-`/home/keewai/Pictures/apple-device`. Capture to a previously nonexistent file;
-if the requested path already exists, use a fresh sibling and replace the
-original only when overwriting was requested. For example:
+Send one JSON line through the same terminal's stdin. Replace `frame` with the
+latest inspected frame number and coordinates/text with the intended target:
 
-```bash
-mkdir -p /home/keewai/Pictures/apple-device
-apple_capture="/home/keewai/Pictures/apple-device/screen-$(date +%Y%m%d-%H%M%S).png"
-test ! -e "$apple_capture" || exit 1
-PYMOBILEDEVICE3_UDID="${apple_udid:?}" timeout -k 3 40 pymobiledevice3 developer dvt screenshot "$apple_capture"
-test -s "$apple_capture" || exit 1
-PYMOBILEDEVICE3_UDID="${apple_udid:?}" pymobiledevice3 developer core-device get-display-info
+```json
+{"frame":1,"tap":[240,180]}
+{"frame":2,"drag":[900,700,900,300]}
+{"frame":3,"type":"hello"}
+{"frame":4,"key":[227,4]}
+{"frame":5,"paste":"日本語"}
+{"frame":6,"home":true}
 ```
 
-Some CLI failures log `ERROR` but exit with status zero. Verify that a **new,
-nonempty image** exists, then inspect it with the image-viewing tool. Select a
-target from that actual image. Read the primary display's dimensions and
-orientation from `get-display-info`; inactive external displays can also appear
-in its output. Do not confuse a tool's resized preview with the original pixels.
+These are separate examples, not a script to replay. Every input returns the
+next screenshot. Inspect it before a dependent action; `sent` means dispatched,
+not visually successful. If an animation is unfinished, request another image.
+Batch a known string/chord in one `type`, `paste`, or `key` command; do not
+request screenshots per keystroke or stream video frames into model context.
 
-## Map coordinates and operate
+- `drag` uses touch contact (30 steps, 0.6s). Upstream `swipe` is pointer motion.
+- `type` sends ASCII keyboard HID using the device's active keyboard layout.
+- `key` is a simultaneous chord of HID Keyboard/Keypad usage codes:
+  Enter `[40]`, Backspace `[42]`, Escape `[41]`, Cmd+A `[227,4]`.
+- `paste` replaces the device clipboard and sends Cmd+V; use for Unicode.
+- `{"shot":1280}` refreshes without input; `{"shot":0}` returns full size
+  for small text. Use the new frame and its own pixel dimensions afterwards.
+- `{"quit":true}` closes the session. Close it when finished; restart after
+  disconnect/reboot. Do not automatically replay an input after a failure.
 
-HID coordinates are integers from 0 to 65535 in the digitizer's native
-orientation. The CLI sends them unchanged; screenshot orientation matters.
-For a pixel target `(x, y)` in a screenshot of width `w` and height `h`, compute:
+Old frame IDs, out-of-bounds coordinates, and changed display geometry are
+rejected. For **iPad17,3 / landscapeLeft**, the verified mapping is automatic:
+image-normalized `(u,v)` becomes HID `(1-v,u)`. Other orientations require
+`{"frame":1,"calibrate":90}` (0/90/180/270 clockwise from image to HID).
+Calibration is tied to the observed display geometry. Verify with harmless
+off-center targets before consequential input; it is not proof by itself.
+Recheck after device rotation or display changes. Do not operate while someone
+else is changing the device's screen.
 
-```text
-u = round(x * 65535 / w)
-v = round(y * 65535 / h)
-```
+## Screen Sharing and failures
 
-On the verified iPad17,3 in **landscapeLeft**, the working mapping is
-**`hid_x = 65535 - v`, `hid_y = u`**. Direct `(u, v)` taps missed the target.
-This was verified with two different targets, not just the screen center.
-Other device/orientation combinations were not tested: establish the mapping
-with a harmless, visibly verifiable target before consequential interaction.
-Choose a control away from the screen center, such as a Settings category,
-and confirm that the intended page opens in a fresh screenshot.
-Recompute after rotation, resolution changes, or a changed screen layout.
-Reject out-of-bounds targets rather than clamping them to another control.
+The macOS Screen Sharing demo path is upstream
+[`display serve-vnc`](https://github.com/doronz88/pymobiledevice3/blob/v11.5.0/pymobiledevice3/cli/developer/core_device.py):
+CoreDevice video becomes VNC, and VNC input becomes virtual HID. For an explicitly
+requested viewer, use `--bind 127.0.0.1 --port 5901` (macOS `vnc://127.0.0.1:5901`).
+The server is unauthenticated despite its password prompt; never expose it.
 
-After assigning the calculated integer coordinates in the same shell call:
+On citrus/iPad17,3, Linux PyAV VNC frames were visibly corrupted in 11.5.0.
+The helper therefore uses reliable DVT screenshots and the same underlying
+media/HID services directly. Do not select targets from damaged VNC frames.
 
-```bash
-PYMOBILEDEVICE3_UDID="${apple_udid:?}" timeout -k 3 30 pymobiledevice3 developer core-device universal-hid-service tap -- "$hid_x" "$hid_y"
-```
+An empty USB list, failed developer connection, and wrong touch coordinates
+are different failures. Check the relevant layer once rather than retrying
+blindly. For `RX transfer stalled`, inspect `journalctl -u usbmuxd` and USB
+topology: citrus's rear DP-capable USB-C port worked on a different controller
+than the earlier failing ports. Bus numbers are not stable identifiers.
+Preserve pairing records; do not print their keys or change firewall/daemon
+settings to work around a physical USB issue.
+If the stock `display get-media-stream-server-status` also times out while USB
+and DVT screenshots still work, stop retrying HID and request a device restart.
 
-Capture and inspect the result before the next dependent action. A successful
-send is not proof that the intended control was activated. During a connection
-demo, opening Settings or selecting a settings category is sufficient; changing
-a setting is unnecessary.
-
-For a touch swipe or scroll, use **`drag`**, converting both endpoints:
-
-```bash
-PYMOBILEDEVICE3_UDID="${apple_udid:?}" timeout -k 3 30 pymobiledevice3 developer core-device universal-hid-service drag --steps 30 --duration 0.6 -- "$hid_x1" "$hid_y1" "$hid_x2" "$hid_y2"
-```
-
-In 11.5.0 the command named `swipe` sends pointer motion **without touch
-contact**, so it is not interchangeable with a finger swipe. `tap` and `drag`
-automatically open the media stream needed for touch delivery. For a known
-sequence, `universal-hid-service session` accepts `tap`, `drag`, and `sleep`
-lines through stdin or `--script` with an absolute file path, sharing one
-stream. Keep actions that depend on a new screen separated by visual checks.
-
-The Home button has its own working path:
-
-```bash
-PYMOBILEDEVICE3_UDID="${apple_udid:?}" timeout -k 3 30 pymobiledevice3 developer core-device hid button home press
-```
-
-## Diagnose without repeating failed experiments
-
-An empty USB list, a stalled lockdown query, and a touch that misses despite
-working screenshots are different failures. Check `journalctl -u usbmuxd` and
-the USB topology before changing packages or repeatedly rebooting devices.
-
-On **citrus's ROG STRIX B850-I GAMING WIFI**, the rear **DP-capable USB-C** port
-worked with stock usbmuxd and GVFS enabled. Earlier ports all used the chipset
-controller (`bus 6`, `xhci-pci-prom21`) and produced `RX transfer stalled`;
-the working port used another controller (`bus 1`). Both reported 480 Mbps.
-Bus numbers are session observations, not permanent identifiers. If this error
-recurs, try a different controller path, not merely another connector on the
-same controller. The exact hardware-versus-driver cause was not established.
-
-Do not repeat the failed daemon/library/protocol variants as routine setup.
-For persistent failures, report the observed layer and required physical action
-instead of an unbounded retry loop. Restore any temporary service overrides or
-firewall changes before ending diagnostics; preserve pairing records and never
-print their private keys. Do not switch to wireless pairing merely because USB
-needs a different port.
-
-The Nix-owned launcher is declared in
-[/home/keewai/nixos-configuration/home/keewai/shared/apple-device-usb.nix](/home/keewai/nixos-configuration/home/keewai/shared/apple-device-usb.nix).
-For version-specific commands, use the installed `--help` and upstream
-[CLI recipes](https://doronz88.github.io/pymobiledevice3/guides/cli-recipes/)
-and [tunnel guide](https://doronz88.github.io/pymobiledevice3/guides/ios17-tunnels/).
-
-Report what was actually verified and display captured images with an absolute
-filesystem path. Do not claim touch success from an exit code alone.
+Report only visually verified operations and display relevant captures using
+absolute file paths. The Nix launcher is managed in
+[apple-device-usb.nix](/home/keewai/nixos-configuration/home/keewai/shared/apple-device-usb.nix).

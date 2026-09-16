@@ -65,6 +65,7 @@ flake.nix
 | [pkgs/](pkgs/) | パッケージのビルド定義、パッチ、実行時に必要な補助コード |
 | [themes/](themes/) | NixOS と Home Manager が共有する色、フォント、画像 |
 | [skills/](skills/) | Nix で配布する個人用 Codex スキルの編集元 |
+| [.agents/skills/](.agents/skills/) | このリポジトリ専用の Codex スキル |
 | [secrets/](secrets/) | Agenix の公開鍵設定と暗号化済みシークレット |
 | [devshell/](devshell/) | このリポジトリを編集するための開発環境 |
 
@@ -103,7 +104,7 @@ VM の設定は、継承元と `mkForce` などの優先順位を合わせて読
 | ウィンドウ、モニター、キー操作 | [desktop/hyprland.lua](home/keewai/desktop/hyprland.lua) |
 | Hyprland のログイン・ポータル統合 | [hosts/citrus/hyprland.nix](hosts/citrus/hyprland.nix) |
 | 画面ロックとアイドル時の動作 | [desktop/screen-lock.nix](home/keewai/desktop/screen-lock.nix) |
-| 日本語入力 | [desktop/input-method.nix](home/keewai/desktop/input-method.nix) |
+| 日本語入力と切り替えキー | [desktop/input-method.nix](home/keewai/desktop/input-method.nix)、[modules/input-method-shortcut.nix](modules/input-method-shortcut.nix) |
 | 端末 | [desktop/kitty.nix](home/keewai/desktop/kitty.nix) |
 | ブラウザーと既定の URL ハンドラー | [desktop/browser.nix](home/keewai/desktop/browser.nix)、[firefox.nix](home/keewai/desktop/firefox.nix) |
 | ファイル管理、圧縮、XDG フォルダー | [desktop/file-manager.nix](home/keewai/desktop/file-manager.nix) |
@@ -139,6 +140,7 @@ Home Manager は `useUserPackages = true` で NixOS に統合されています�
 | [shared/codex.nix](home/keewai/shared/codex.nix) | 固定した Codex CLI の導入と、ユーザー設定に残った管理対象の上書きの除去 |
 | [shared/codex-remote.nix](home/keewai/shared/codex-remote.nix) | 認証付き Remote Control のユーザーサービス |
 | [shared/paseo.nix](home/keewai/shared/paseo.nix) | Paseo の CLI、Web UI、Codex 接続とユーザーサービス |
+| [desktop/paseo-tailscale.nix](home/keewai/desktop/paseo-tailscale.nix)、[citrus/paseo-tailscale.nix](hosts/citrus/paseo-tailscale.nix) | Paseo の tailnet ホスト名と Tailscale Serve による HTTPS 公開 |
 | [modules/codex-remote.nix](modules/codex-remote.nix) | ログイン前にもユーザーサービスを起動するための linger |
 | [desktop/codex.nix](home/keewai/desktop/codex.nix) | デスクトップアプリと `codex:` URL ハンドラー |
 | [shared/mcp.nix](home/keewai/shared/mcp.nix) | 全ホストで使う MCP サーバー |
@@ -199,19 +201,25 @@ Nix ファイルを読むと依存関係・権限・起動条件がわかり、�
 
 | ディレクトリ | 独自変更の目的 |
 | --- | --- |
-| [aquamarine-hyperv/](pkgs/aquamarine-hyperv/) | Hyper-V 用の描画対応 |
-| [brave-origin/](pkgs/brave-origin/) | Brave Origin のバージョン選択と日本語設定 |
-| [chatgpt-desktop/](pkgs/chatgpt-desktop/) | 公式 Linux 配布物の NixOS 対応、起動処理、ASAR のパッチ |
+| [aquamarine-hyperv/](pkgs/aquamarine-hyperv/) | Hyper-V の GBM 描画と、未対応 CTM プロパティの送信防止 |
+| [brave-origin/](pkgs/brave-origin/) | Nixpkgs の Brave Origin に日本語設定を追加 |
+| [chatgpt-desktop/](pkgs/chatgpt-desktop/) | 公式 Linux 配布物の NixOS 対応、ワーカーの監視回避、ブラウザー標準の選択色 |
 | [cua-driver/](pkgs/cua-driver/) | デスクトップ操作用ドライバーの実行環境 |
 | [fprintd-cs9711/](pkgs/fprintd-cs9711/) | CS9711 指紋センサーと認証キャンセルの修正 |
 | [hyprland/](pkgs/hyprland/) | 入力メソッドの修飾キー処理の修正 |
 | [hyprpaper-shm/](pkgs/hyprpaper-shm/) | VM 用の壁紙描画と旧 IPC の橋渡し |
+| [lkl-image/](pkgs/lkl-image/) | 上流の `cptofs --mb` を使った VM イメージ作成時のメモリー指定 |
 | [paseo/](pkgs/paseo/) | 配布パッケージで欠落する node-pty のネイティブ部品を同じ固定バージョンから補完 |
 | [ponytail-hooks/](pkgs/ponytail-hooks/) | Ponytail の管理用フック |
 
 パッチは対象パッケージと同じディレクトリに置きます。
 上流を更新するときは、パッチの前提と付属のテストも確認してください。
 `keewai704` 所有の GitHub 入力は `main` ブランチを明示し、リビジョンとハッシュを固定します。
+
+ChatGPT の監視処理は、同梱 Electron のワーカースレッド内で確認します。
+通常の Node.js だけで動いても、アプリ内で動くとは限りません。
+VM の壁紙は SHM で描画できることに加え、Island からの切替・状態取得・復元を維持します。
+現在の hyprpaper の代替には、その描画条件と操作をともに満たす必要があります。
 
 ### Apple Music クライアント
 
@@ -221,24 +229,16 @@ Apple Music クライアントの実装、Nix パッケージ、Home Manager モ
 
 ## 適用せずに設定を確認する
 
-次の例は、リポジトリのルートで、現在のホストの設定だけを評価・ビルドします。
-ホスト名が一致しない場合は終了します。別のホスト名で代用しません。
+通常は変更したファイルの整形・構文確認と、変更箇所に必要な確認だけを行います。
+`nix flake check` や全ホストのビルド、変更前後の評価比較を毎回実行する必要はありません。
+ローカル適用時には `nixos-rebuild test` のビルドを利用し、同じ出力を事前にビルドし直しません。
 
-```sh
-runtime_host="$(hostnamectl --static 2>/dev/null || hostname)"
-configured_host="$(cat /etc/hostname)"
-test "$runtime_host" = "$configured_host" || exit 1
+検証範囲の選び方と、エラー時だけ必要な評価値を前後比較する手順は、
+リポジトリ専用スキル [nixos-validation](.agents/skills/nixos-validation/SKILL.md) にまとめています。
+`$nixos-validation` で呼び出せます。全ホストへ配布する `skills/` には含めません。
+配置は Codex の[リポジトリ内スキルの仕様](https://learn.chatgpt.com/docs/build-skills#where-codex-loads-local-skills)に従っています。
 
-flake_host="$(nix eval --raw --no-write-lock-file \
-  ".#nixosConfigurations.$runtime_host.config.networking.hostName")" || exit 1
-test "$runtime_host" = "$flake_host" || exit 1
-
-nix build ".#nixosConfigurations.$runtime_host.config.system.build.toplevel" \
-  --no-link --no-write-lock-file
-```
-
-全体の出力を確認するには `nix flake show --no-write-lock-file` を使います。
-変更時の必須チェックは [AGENTS.md](AGENTS.md) の対象表から選びます。
+適用手順は [AGENTS.md](AGENTS.md) に従います。
 設定変更を実機へ適用する場合は、コミット後に現在のホストで `test`、稼働確認、
 `switch`、再確認の順に進めます。別ホストへの接続・適用は、その操作の明示的な依頼がある場合に限ります。
 
@@ -254,11 +254,20 @@ Paseo はユーザーサービスとして起動します。ブラウザーで
 既存の Codex CLI と `~/.codex` の認証を使います。未認証のホストでは `codex login` を実行してください。
 CLI では作業ディレクトリから `paseo run --provider codex "依頼内容"` で開始できます。
 
+`citrus` には、同じ tailnet に接続した端末から
+[Tailscale 経由の Web UI](https://citrus.tail1e65cd.ts.net/) でもアクセスできます。
+Paseo アプリの直接接続では、ホストに `citrus.tail1e65cd.ts.net`、ポートに `443` を指定し、SSL を有効にします。
+Tailscale Serve が HTTPS 443 を `127.0.0.1:6767` へ転送します。
+`citrus-vm` も同じ設定を継承し、適用した場合はホスト名が `citrus-vm.tail1e65cd.ts.net` になります。
+公開状態は `tailscale serve status`、サービス状態は `systemctl status tailscale-serve-paseo` で確認します。
+
 状態確認は `systemctl --user status paseo`、再起動は `systemctl --user restart paseo`、
 Codex の検出確認は `paseo provider diagnostic codex` を使います。
 `~/.paseo/config.json` は Home Manager が管理するため、接続設定は
 [shared/paseo.nix](home/keewai/shared/paseo.nix) で変更します。
-待受けはループバックだけで、リレーは無効です。別ホストへの適用と端末のペアリングは個別に行います。
+Paseo 本体の待受けはループバックだけで、Paseo のリレーは無効です。
+Tailscale 側の公開設定は [citrus/paseo-tailscale.nix](hosts/citrus/paseo-tailscale.nix)、
+アプリの許可ホスト名と外部 URL は [desktop/paseo-tailscale.nix](home/keewai/desktop/paseo-tailscale.nix) で管理します。
 音声機能は無効にしており、音声モデルの自動ダウンロードは行いません。
 
 </details>
