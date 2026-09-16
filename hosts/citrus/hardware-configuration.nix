@@ -67,6 +67,12 @@
       ];
     };
 
+    "/data" = {
+      device = "/dev/disk/by-label/Data";
+      fsType = "xfs";
+      options = [ "noatime" ];
+    };
+
     "/swap" = {
       device = "/dev/disk/by-label/citrus-root";
       fsType = "btrfs";
