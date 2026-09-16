@@ -25,6 +25,11 @@
       ];
       waylandFrontend = true;
       systemd.enable = false;
+      settings.globalOptions."Hotkey/TriggerKeys" = {
+        "0" = "Control+grave";
+        "1" = "Zenkaku_Hankaku";
+        "2" = "Hangul";
+      };
       settings.inputMethod = {
         "Groups/0" = {
           Name = "Default";
