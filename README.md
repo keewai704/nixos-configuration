@@ -65,6 +65,7 @@ flake.nix
 | [pkgs/](pkgs/) | パッケージのビルド定義、パッチ、実行時に必要な補助コード |
 | [themes/](themes/) | NixOS と Home Manager が共有する色、フォント、画像 |
 | [skills/](skills/) | Nix で配布する個人用 Codex スキルの編集元 |
+| [.agents/skills/](.agents/skills/) | このリポジトリ専用の Codex スキル |
 | [secrets/](secrets/) | Agenix の公開鍵設定と暗号化済みシークレット |
 | [devshell/](devshell/) | このリポジトリを編集するための開発環境 |
 
@@ -222,24 +223,16 @@ Apple Music クライアントの実装、Nix パッケージ、Home Manager モ
 
 ## 適用せずに設定を確認する
 
-次の例は、リポジトリのルートで、現在のホストの設定だけを評価・ビルドします。
-ホスト名が一致しない場合は終了します。別のホスト名で代用しません。
+通常は変更したファイルの整形・構文確認と、変更箇所に必要な確認だけを行います。
+`nix flake check` や全ホストのビルド、変更前後の評価比較を毎回実行する必要はありません。
+ローカル適用時には `nixos-rebuild test` のビルドを利用し、同じ出力を事前にビルドし直しません。
 
-```sh
-runtime_host="$(hostnamectl --static 2>/dev/null || hostname)"
-configured_host="$(cat /etc/hostname)"
-test "$runtime_host" = "$configured_host" || exit 1
+検証範囲の選び方と、エラー時だけ必要な評価値を前後比較する手順は、
+リポジトリ専用スキル [nixos-validation](.agents/skills/nixos-validation/SKILL.md) にまとめています。
+`$nixos-validation` で呼び出せます。全ホストへ配布する `skills/` には含めません。
+配置は Codex の[リポジトリ内スキルの仕様](https://learn.chatgpt.com/docs/build-skills#where-codex-loads-local-skills)に従っています。
 
-flake_host="$(nix eval --raw --no-write-lock-file \
-  ".#nixosConfigurations.$runtime_host.config.networking.hostName")" || exit 1
-test "$runtime_host" = "$flake_host" || exit 1
-
-nix build ".#nixosConfigurations.$runtime_host.config.system.build.toplevel" \
-  --no-link --no-write-lock-file
-```
-
-全体の出力を確認するには `nix flake show --no-write-lock-file` を使います。
-変更時の必須チェックは [AGENTS.md](AGENTS.md) の対象表から選びます。
+適用手順は [AGENTS.md](AGENTS.md) に従います。
 設定変更を実機へ適用する場合は、コミット後に現在のホストで `test`、稼働確認、
 `switch`、再確認の順に進めます。別ホストへの接続・適用は、その操作の明示的な依頼がある場合に限ります。
 
