@@ -39,7 +39,6 @@ let
     model_reasoning_effort = "xhigh";
     plan_mode_reasoning_effort = "xhigh";
     features = {
-      multi_agent = false;
       context_management = {
         experimental_mode = true;
       };
@@ -47,7 +46,7 @@ let
       token_budget.use_history_notes_extension = true;
     };
     developer_instructions = ''
-      既定はGPT-6 Astra、通常・Planともxhigh。sub-agentは使わず、設計から実装、検証、最終レビューまで自分で行う。別タスクや別エージェントへの送信で委譲を代用しない。
+      既定はGPT-6 Astra、通常・Planともxhigh。
 
       コードと設定は人間が読み、レビューし、保守するものとして、必ず読みやすくする。意図が伝わる名前、素直な制御フロー、責務に合う構成を優先し、短さだけを目的とした圧縮や技巧的な省略を避ける。コメントは必要な判断理由や制約を説明する。
 

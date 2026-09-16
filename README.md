@@ -150,7 +150,7 @@ Codex CLI は固定した `sadjow/codex-cli-nix` 入力から導入します。
 設定を変える場合は、このリポジトリの編集元を変更してください。
 生成先の `/etc/codex` や `/home/keewai/.agents/skills` は直接編集しません。
 Ponytail は `/etc/codex/skills/ponytail`、配布対象の個人スキルは `~/.agents/skills` に配置されます。
-`skills/luna-delegation` は配布対象から外れており、現在の共通指示はサブエージェントを使わない設定です。
+`skills/luna-delegation` は配布対象から外れています。
 
 ## Orange のサービスを読む
 
