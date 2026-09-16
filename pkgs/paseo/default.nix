@@ -30,6 +30,7 @@ stdenvNoCC.mkDerivation {
     runHook preInstall
     cp -a ${paseo} "$out"
     chmod -R u+w "$out"
+    patch -d "$out" -p1 < ${./web-ui-default-port.patch}
     node_pty="$out/lib/paseo/packages/server/node_modules/node-pty"
     ${nodejs_22}/bin/node -e \
       'if (require(process.argv[1]).version !== process.argv[2]) throw new Error("Update the pinned node-pty version");' \
