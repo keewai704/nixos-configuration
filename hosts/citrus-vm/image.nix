@@ -7,12 +7,9 @@
 
   nixpkgs.overlays = [
     (_final: previousPackages: {
-      lkl = previousPackages.lkl.overrideAttrs (previousAttrs: {
-        postPatch = previousAttrs.postPatch + ''
-          substituteInPlace tools/lkl/cptofs.c \
-            --replace-fail 'lkl_start_kernel("mem=100M")' 'lkl_start_kernel("mem=1024M")'
-        '';
-      });
+      lkl = previousPackages.callPackage ../../pkgs/lkl-image {
+        inherit (previousPackages) lkl;
+      };
     })
   ];
 }

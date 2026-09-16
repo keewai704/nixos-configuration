@@ -201,19 +201,25 @@ Nix ファイルを読むと依存関係・権限・起動条件がわかり、�
 
 | ディレクトリ | 独自変更の目的 |
 | --- | --- |
-| [aquamarine-hyperv/](pkgs/aquamarine-hyperv/) | Hyper-V 用の描画対応 |
-| [brave-origin/](pkgs/brave-origin/) | Brave Origin のバージョン選択と日本語設定 |
-| [chatgpt-desktop/](pkgs/chatgpt-desktop/) | 公式 Linux 配布物の NixOS 対応、起動処理、ASAR のパッチ |
+| [aquamarine-hyperv/](pkgs/aquamarine-hyperv/) | Hyper-V の GBM 描画と、未対応 CTM プロパティの送信防止 |
+| [brave-origin/](pkgs/brave-origin/) | Nixpkgs の Brave Origin に日本語設定を追加 |
+| [chatgpt-desktop/](pkgs/chatgpt-desktop/) | 公式 Linux 配布物の NixOS 対応、ワーカーの監視回避、ブラウザー標準の選択色 |
 | [cua-driver/](pkgs/cua-driver/) | デスクトップ操作用ドライバーの実行環境 |
-| [fprintd-cs9711/](pkgs/fprintd-cs9711/) | CS9711 指紋センサーと認証キャンセルの修正 |
+| [fprintd-cs9711/](pkgs/fprintd-cs9711/) | CS9711 指紋センサー、認証キャンセル、テストの文字列出力の修正 |
 | [hyprland/](pkgs/hyprland/) | 入力メソッドの修飾キー処理の修正 |
 | [hyprpaper-shm/](pkgs/hyprpaper-shm/) | VM 用の壁紙描画と旧 IPC の橋渡し |
+| [lkl-image/](pkgs/lkl-image/) | 上流の `cptofs --mb` を使った VM イメージ作成時のメモリー指定 |
 | [paseo/](pkgs/paseo/) | 配布パッケージで欠落する node-pty のネイティブ部品を同じ固定バージョンから補完 |
 | [ponytail-hooks/](pkgs/ponytail-hooks/) | Ponytail の管理用フック |
 
 パッチは対象パッケージと同じディレクトリに置きます。
 上流を更新するときは、パッチの前提と付属のテストも確認してください。
 `keewai704` 所有の GitHub 入力は `main` ブランチを明示し、リビジョンとハッシュを固定します。
+
+ChatGPT の監視処理は、同梱 Electron のワーカースレッド内で確認します。
+通常の Node.js だけで動いても、アプリ内で動くとは限りません。
+VM の壁紙は SHM で描画できることに加え、Island からの切替・状態取得・復元を維持します。
+現在の hyprpaper の代替には、その描画条件と操作をともに満たす必要があります。
 
 ### Apple Music クライアント
 

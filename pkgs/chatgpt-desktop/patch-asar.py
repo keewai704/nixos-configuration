@@ -22,7 +22,7 @@ WATCHER_PATCHES = tuple(
 
 
 SELECTION_NEEDLE = b"::selection{background-color:var(--color-background-text-selection);color:var(--color-text)}"
-SELECTION_STYLE = b"::selection{background-color:#2563eb;color:#fff}"
+SELECTION_STYLE = b"::selection{background-color:Highlight;color:HighlightText}"
 PATCHES = {
     ".vite/build/worker.js": WATCHER_PATCHES,
     "webview/assets/app-initial-5b0a474bff5e.css": (

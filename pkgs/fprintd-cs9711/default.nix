@@ -24,5 +24,5 @@ let
 in
 (fprintd.override { libfprint = cs9711Libfprint; }).overrideAttrs (previousAttrs: {
   doCheck = true;
-  patches = (previousAttrs.patches or [ ]) ++ [ ./fprintd-test-error-message.patch ];
+  patches = (previousAttrs.patches or [ ]) ++ [ ./fprintd-test-text-output.patch ];
 })
