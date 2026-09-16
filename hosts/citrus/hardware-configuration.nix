@@ -59,7 +59,7 @@
     };
 
     "/boot" = {
-      device = "/dev/disk/by-uuid/CC6E-5D4E";
+      device = "/dev/disk/by-label/CITRUS_EFI";
       fsType = "vfat";
       options = [
         "fmask=0077"
