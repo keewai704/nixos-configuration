@@ -46,7 +46,7 @@ export CODEX_ELECTRON_BUNDLED_PLUGINS_RESOURCES_PATH="$cacheRoot"
 
 ozoneFlags=()
 if [[ -n "${NIXOS_OZONE_WL:-}" && -n "${WAYLAND_DISPLAY:-}" ]]; then
-  ozoneFlags=(--ozone-platform=wayland --enable-wayland-ime=true)
+  ozoneFlags=(--ozone-platform=wayland --enable-wayland-ime=true --wayland-text-input-version=3)
 fi
 
 exec "@out@/lib/chatgpt/ChatGPT" "${ozoneFlags[@]}" "$@"
