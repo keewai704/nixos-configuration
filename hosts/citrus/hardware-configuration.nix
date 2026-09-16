@@ -29,8 +29,33 @@
 
   fileSystems = {
     "/" = {
-      device = "/dev/disk/by-uuid/c751e1e4-4e57-4683-af63-66e3e39fdefc";
-      fsType = "ext4";
+      device = "/dev/disk/by-label/citrus-root";
+      fsType = "btrfs";
+      options = [
+        "subvol=@root"
+        "compress=zstd:3"
+        "noatime"
+      ];
+    };
+
+    "/home" = {
+      device = "/dev/disk/by-label/citrus-root";
+      fsType = "btrfs";
+      options = [
+        "subvol=@home"
+        "compress=zstd:3"
+        "noatime"
+      ];
+    };
+
+    "/nix" = {
+      device = "/dev/disk/by-label/citrus-root";
+      fsType = "btrfs";
+      options = [
+        "subvol=@nix"
+        "compress=zstd:3"
+        "noatime"
+      ];
     };
 
     "/boot" = {
@@ -42,15 +67,30 @@
       ];
     };
 
-    "/data" = {
-      device = "/dev/disk/by-uuid/d8f1e5d1-774f-4b3d-85ac-6d4f938e8a51";
-      fsType = "xfs";
+    "/swap" = {
+      device = "/dev/disk/by-label/citrus-root";
+      fsType = "btrfs";
+      options = [
+        "subvol=@swap"
+        "noatime"
+      ];
     };
   };
 
   swapDevices = [
-    { device = "/dev/disk/by-uuid/8ad5ac3d-46a7-431a-9568-077dec33aa91"; }
+    {
+      device = "/swap/swapfile";
+      size = 16 * 1024;
+      priority = 10;
+    }
   ];
+
+  zramSwap = {
+    enable = true;
+    algorithm = "zstd";
+    memoryPercent = 50;
+    priority = 100;
+  };
 
   nixpkgs.hostPlatform = lib.mkDefault "x86_64-linux";
   hardware.cpu.amd.updateMicrocode = lib.mkDefault config.hardware.enableRedistributableFirmware;
