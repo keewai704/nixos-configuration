@@ -104,7 +104,7 @@ VM の設定は、継承元と `mkForce` などの優先順位を合わせて読
 | ウィンドウ、モニター、キー操作 | [desktop/hyprland.lua](home/keewai/desktop/hyprland.lua) |
 | Hyprland のログイン・ポータル統合 | [hosts/citrus/hyprland.nix](hosts/citrus/hyprland.nix) |
 | 画面ロックとアイドル時の動作 | [desktop/screen-lock.nix](home/keewai/desktop/screen-lock.nix) |
-| 日本語入力 | [desktop/input-method.nix](home/keewai/desktop/input-method.nix) |
+| 日本語入力と切り替えキー | [desktop/input-method.nix](home/keewai/desktop/input-method.nix)、[modules/input-method-shortcut.nix](modules/input-method-shortcut.nix) |
 | 端末 | [desktop/kitty.nix](home/keewai/desktop/kitty.nix) |
 | ブラウザーと既定の URL ハンドラー | [desktop/browser.nix](home/keewai/desktop/browser.nix)、[firefox.nix](home/keewai/desktop/firefox.nix) |
 | ファイル管理、圧縮、XDG フォルダー | [desktop/file-manager.nix](home/keewai/desktop/file-manager.nix) |
