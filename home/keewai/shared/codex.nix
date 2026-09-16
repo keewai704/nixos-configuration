@@ -22,7 +22,7 @@ in
       user_config=${lib.escapeShellArg userCodexConfig}
       if [[ -f "$user_config" && -w "$user_config" ]]; then
         ${lib.getExe pkgs.yq-go} -i -p=toml -o=toml \
-          'del(.model, .model_reasoning_effort, .plan_mode_reasoning_effort, .features.multi_agent)' \
+          'del(.model, .model_reasoning_effort, .plan_mode_reasoning_effort)' \
           "$user_config"
         for server_name in ${managedMcpNameArgs}; do
           export NIX_MANAGED_MCP_SERVER="$server_name"
