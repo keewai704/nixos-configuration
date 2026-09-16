@@ -191,27 +191,6 @@
         "type": "github"
       }
     },
-    "dynamic-island": {
-      "inputs": {
-        "nixpkgs": [
-          "nixpkgs"
-        ]
-      },
-      "locked": {
-        "lastModified": 1789561277,
-        "narHash": "sha256-3HfDidrtd/rvnB1IIz1c+j0EgXmSti0YKS6NPK38yms=",
-        "ref": "main",
-        "rev": "e6fe7b8a6794f48320d5a3313d678725a762bc43",
-        "revCount": 34,
-        "type": "git",
-        "url": "https://github.com/keewai704/hypr-island.git"
-      },
-      "original": {
-        "ref": "main",
-        "type": "git",
-        "url": "https://github.com/keewai704/hypr-island.git"
-      }
-    },
     "firefox-gnome-theme": {
       "flake": false,
       "locked": {
@@ -394,6 +373,27 @@
         "ref": "release-26.05",
         "repo": "home-manager",
         "type": "github"
+      }
+    },
+    "hypr-island": {
+      "inputs": {
+        "nixpkgs": [
+          "nixpkgs"
+        ]
+      },
+      "locked": {
+        "lastModified": 1789570315,
+        "narHash": "sha256-VSXq22+1o7Jun3JnWvn+G2GxUSUOX7XHHaMd9HVvnQ0=",
+        "ref": "main",
+        "rev": "e9aca40805771ee45ab4ccfa65353ad715aef952",
+        "revCount": 35,
+        "type": "git",
+        "url": "https://github.com/keewai704/hypr-island.git"
+      },
+      "original": {
+        "ref": "main",
+        "type": "git",
+        "url": "https://github.com/keewai704/hypr-island.git"
       }
     },
     "hyprcursor": {
@@ -1018,8 +1018,8 @@
         "agenix": "agenix",
         "chaotic": "chaotic",
         "codex-cli-nix": "codex-cli-nix",
-        "dynamic-island": "dynamic-island",
         "home-manager": "home-manager_2",
+        "hypr-island": "hypr-island",
         "hyprland": "hyprland",
         "mcp-servers-nix": "mcp-servers-nix",
         "millennium": "millennium",

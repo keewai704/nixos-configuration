@@ -3,7 +3,6 @@
     ./dconf.nix
     ./desktop-scheduling.nix
     ./hyprland-package.nix
-    ./hyprlock.nix
     ./input-method-shortcut.nix
   ];
 

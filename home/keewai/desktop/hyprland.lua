@@ -2,10 +2,6 @@ local main_mod = "SUPER"
 local terminal = "uwsm app -- kitty"
 local file_manager = "uwsm app -- thunar"
 
-hl.on("hyprland.start", function()
-    hl.exec_cmd("island-action lock")
-end)
-
 hl.monitor({
     output = "",
     mode = "preferred",
@@ -164,45 +160,6 @@ end
 bind(main_mod .. " + Return", hl.dsp.exec_cmd(terminal), "Open terminal")
 bind(main_mod .. " + E", hl.dsp.exec_cmd(file_manager), "Open file manager")
 bind(main_mod .. " + Q", hl.dsp.window.close(), "Close window")
-bind(main_mod .. " + D", hl.dsp.exec_cmd("islandctl toggle"), "Toggle Dynamic Island")
-bind("Print", hl.dsp.exec_cmd("island-action screenshot-region"), "Take region screenshot")
-bind("SHIFT + Print", hl.dsp.exec_cmd("island-action screenshot-all"), "Take full-screen screenshot")
-bind("CTRL + Print", hl.dsp.exec_cmd("island-action screenshot-active"), "Take active window screenshot")
-bind(
-    main_mod .. " + Space",
-    hl.dsp.exec_cmd("islandctl launcher"),
-    "Open application launcher"
-)
-bind(
-    main_mod .. " + SHIFT + Space",
-    hl.dsp.exec_cmd("islandctl wallpaper"),
-    "Open wallpaper picker"
-)
-bind(
-    main_mod .. " + I",
-    hl.dsp.exec_cmd("islandctl controls"),
-    "Open Island Control Center"
-)
-bind(
-    main_mod .. " + N",
-    hl.dsp.exec_cmd("islandctl notifications"),
-    "Open notification history"
-)
-bind(
-    main_mod .. " + V",
-    hl.dsp.exec_cmd("islandctl clipboard"),
-    "Open clipboard history"
-)
-bind(
-    main_mod .. " + ALT + C",
-    hl.dsp.exec_cmd("islandctl session"),
-    "Open session menu"
-)
-bind(
-    main_mod .. " + ALT + L",
-    hl.dsp.exec_cmd("islandctl lock"),
-    "Lock session"
-)
 bind(
     main_mod .. " + F",
     hl.dsp.window.fullscreen({ mode = "fullscreen", action = "toggle" }),
@@ -267,7 +224,6 @@ bind(
     hl.dsp.focus({ workspace = "previous_per_monitor" }),
     "Previous workspace"
 )
-bind("ALT + Tab", hl.dsp.exec_cmd("islandctl windows"), "Switch windows")
 
 for workspace = 1, 10 do
     local key = workspace % 10
@@ -287,80 +243,6 @@ bind(main_mod .. " + mouse_down", hl.dsp.focus({ workspace = "e+1" }), "Next wor
 bind(main_mod .. " + mouse_up", hl.dsp.focus({ workspace = "e-1" }), "Previous workspace")
 bind(main_mod .. " + mouse:272", hl.dsp.window.drag(), "Drag window", { mouse = true })
 bind(main_mod .. " + mouse:273", hl.dsp.window.resize(), "Resize window", { mouse = true })
-
-bind(
-    "XF86AudioRaiseVolume",
-    hl.dsp.exec_cmd("islandctl volumeUp"),
-    "Raise volume",
-    { locked = true, repeating = true }
-)
-bind(
-    "XF86AudioLowerVolume",
-    hl.dsp.exec_cmd("islandctl volumeDown"),
-    "Lower volume",
-    { locked = true, repeating = true }
-)
-bind(
-    "XF86AudioMute",
-    hl.dsp.exec_cmd("islandctl mute"),
-    "Toggle audio mute",
-    { locked = true }
-)
-bind(
-    "XF86AudioMicMute",
-    hl.dsp.exec_cmd("islandctl micMute"),
-    "Toggle microphone mute",
-    { locked = true }
-)
-bind(
-    "XF86AudioPlay",
-    hl.dsp.exec_cmd("islandctl playPause"),
-    "Toggle media playback",
-    { locked = true }
-)
-bind(
-    "XF86AudioPause",
-    hl.dsp.exec_cmd("islandctl playPause"),
-    "Toggle media playback",
-    { locked = true }
-)
-bind(
-    "XF86AudioNext",
-    hl.dsp.exec_cmd("islandctl next"),
-    "Play next track",
-    { locked = true }
-)
-bind(
-    "XF86AudioPrev",
-    hl.dsp.exec_cmd("islandctl previous"),
-    "Play previous track",
-    { locked = true }
-)
-
-bind(
-    "ALT + bracketleft",
-    hl.dsp.exec_cmd("islandctl brightnessDown"),
-    "Lower brightness",
-    { locked = true, repeating = true }
-)
-bind(
-    "ALT + bracketright",
-    hl.dsp.exec_cmd("islandctl brightnessUp"),
-    "Raise brightness",
-    { locked = true, repeating = true }
-)
-bind(
-    "XF86MonBrightnessDown",
-    hl.dsp.exec_cmd("islandctl brightnessDown"),
-    "Lower brightness",
-    { locked = true, repeating = true }
-)
-bind(
-    "XF86MonBrightnessUp",
-    hl.dsp.exec_cmd("islandctl brightnessUp"),
-    "Raise brightness",
-    { locked = true, repeating = true }
-)
 
 bind(main_mod .. " + F1", function()
     hl.notification.create({

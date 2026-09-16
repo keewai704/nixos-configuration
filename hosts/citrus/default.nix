@@ -4,7 +4,7 @@
     ./boot.nix
     ./webhid.nix
     ./desktop.nix
-    ./dynamic-island.nix
+    ./hypr-island.nix
     ./fingerprint.nix
     ./hardware-configuration.nix
     ./hyprland.nix
