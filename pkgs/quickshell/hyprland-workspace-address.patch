@@ -1,0 +1,36 @@
+diff --git a/src/wayland/hyprland/ipc/connection.cpp b/src/wayland/hyprland/ipc/connection.cpp
+--- a/src/wayland/hyprland/ipc/connection.cpp
++++ b/src/wayland/hyprland/ipc/connection.cpp
+@@ -631,7 +631,7 @@ void HyprlandIpc::refreshWorkspaces(bool canCreate) {
+ 		for (auto entry: json) {
+ 			auto object = entry.toObject().toVariantMap();
+ 
+-			auto id = object.value("id").toInt();
++			auto id = object.value("id", object.value("address")).toInt();
+ 
+ 			auto workspaceIter = std::ranges::find_if(mList, [&](HyprlandWorkspace* m) {
+ 				return m->bindableId().value() == id;
+diff --git a/src/wayland/hyprland/ipc/monitor.cpp b/src/wayland/hyprland/ipc/monitor.cpp
+--- a/src/wayland/hyprland/ipc/monitor.cpp
++++ b/src/wayland/hyprland/ipc/monitor.cpp
+@@ -28,7 +28,7 @@ HyprlandMonitor::HyprlandMonitor(HyprlandIpc* ipc): QObject(ipc), ipc(ipc) {
+ 
+ void HyprlandMonitor::updateFromObject(QVariantMap object) {
+ 	auto activeWorkspaceObj = object.value("activeWorkspace").value<QVariantMap>();
+-	auto activeWorkspaceId = activeWorkspaceObj.value("id").value<qint32>();
++	auto activeWorkspaceId = activeWorkspaceObj.value("id", activeWorkspaceObj.value("address")).toInt();
+ 	auto activeWorkspaceName = activeWorkspaceObj.value("name").value<QString>();
+ 	auto focused = object.value("focused").value<bool>();
+ 
+diff --git a/src/wayland/hyprland/ipc/workspace.cpp b/src/wayland/hyprland/ipc/workspace.cpp
+--- a/src/wayland/hyprland/ipc/workspace.cpp
++++ b/src/wayland/hyprland/ipc/workspace.cpp
+@@ -51,7 +51,7 @@ void HyprlandWorkspace::updateFromObject(QVariantMap object) {
+ 
+ 	// ID cannot be updated after creation
+ 	if (initial) {
+-		this->bId = object.value("id").value<qint32>();
++		this->bId = object.value("id", object.value("address")).toInt();
+ 	}
+ 
+ 	// No events we currently handle give a workspace id but not a name,
