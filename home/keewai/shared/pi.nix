@@ -1,0 +1,71 @@
+{
+  config,
+  lib,
+  pkgs,
+  ...
+}:
+let
+  mcpServerNames = [
+    "context7"
+    "nixos"
+    "openaiDeveloperDocs"
+  ];
+  mcpServers = lib.genAttrs mcpServerNames (
+    name:
+    builtins.intersectAttrs {
+      command = null;
+      args = null;
+      env = null;
+      url = null;
+      headers = null;
+    } config.programs.mcp.servers.${name}
+    // {
+      lifecycle = "lazy";
+    }
+  );
+in
+{
+  programs.pi-coding-agent = {
+    enable = true;
+    extraPackages = [ pkgs.nodejs ];
+    settings = {
+      defaultProvider = "openai-codex";
+      defaultModel = "gpt-6-astra";
+      defaultThinkingLevel = "xhigh";
+      enabledModels = [ "openai-codex/gpt-6-astra" ];
+      showCacheMissNotices = true;
+      enableInstallTelemetry = false;
+      enableAnalytics = false;
+      npmCommand = [
+        "npm"
+        "--ignore-scripts"
+        "--no-audit"
+        "--no-fund"
+      ];
+      packages = [ "npm:pi-mcp-adapter@2.34.0" ];
+      skills = [ "/etc/codex/skills/ponytail" ];
+      compaction = {
+        enabled = true;
+        reserveTokens = 131072;
+        keepRecentTokens = 32768;
+      };
+    };
+    models.providers.openai-codex.modelOverrides.gpt-6-astra.contextWindow = 872000;
+  };
+
+  home.file = {
+    ".pi/agent/APPEND_SYSTEM.md".source = ./pi/APPEND_SYSTEM.md;
+    ".pi/agent/extensions/cache-audit.ts".source = ./pi/cache-audit.ts;
+    ".pi/agent/prompts/review.md".source = ./pi/review.md;
+    ".pi/agent/mcp.json".text = builtins.toJSON {
+      inherit mcpServers;
+      settings = {
+        hostConfigDiscovery = "off";
+        directTools = false;
+        scriptMode = false;
+        mcpFooterStatus = "compact";
+        notifyOnStartupConnect = false;
+      };
+    };
+  };
+}

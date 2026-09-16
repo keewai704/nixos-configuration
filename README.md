@@ -146,6 +146,7 @@ Home Manager は `useUserPackages = true` で NixOS に統合されています�
 | [shared/codex.nix](home/keewai/shared/codex.nix) | 固定した Codex CLI の導入と、ユーザー設定に残った管理対象の上書きの除去 |
 | [shared/codex-remote.nix](home/keewai/shared/codex-remote.nix) | 認証付き Remote Control のユーザーサービス |
 | [shared/paseo.nix](home/keewai/shared/paseo.nix) | Paseo の CLI、Web UI、Codex 接続とユーザーサービス |
+| [shared/pi.nix](home/keewai/shared/pi.nix)、[shared/pi/](home/keewai/shared/pi/) | Pi の Astra 設定、MCP 接続、追加システム指示、キャッシュ監視フックとレビュー用プロンプト |
 | [desktop/paseo-tailscale.nix](home/keewai/desktop/paseo-tailscale.nix)、[citrus/paseo-tailscale.nix](hosts/citrus/paseo-tailscale.nix) | Paseo の tailnet ホスト名と Tailscale Serve による HTTPS 公開 |
 | [modules/codex-remote.nix](modules/codex-remote.nix) | ログイン前にもユーザーサービスを起動するための linger |
 | [desktop/codex.nix](home/keewai/desktop/codex.nix) | デスクトップアプリと `codex:` URL ハンドラー |
@@ -158,6 +159,47 @@ Codex CLI は固定した `sadjow/codex-cli-nix` 入力から導入します。
 生成先の `/etc/codex` や `/home/keewai/.agents/skills` は直接編集しません。
 Ponytail は `/etc/codex/skills/ponytail`、配布対象の個人スキルは `~/.agents/skills` に配置されます。
 `skills/luna-delegation` は配布対象から外れています。
+
+### Pi で Astra を使う
+
+`pi` をプロジェクト内で起動し、初回は `/login` から OpenAI (ChatGPT Plus/Pro) を選びます。
+認証は Pi の `~/.pi/agent/auth.json` に保存されます。
+継続は `pi -c`、過去のセッションを選ぶ場合は `pi -r` です。
+プロジェクトの設定や `.agents/skills` は、Pi のプロジェクト信頼確認後に読み込まれます。
+
+モデルは `openai-codex/gpt-6-astra`、推論は `xhigh`、コンテキスト上限は既存 Codex と同じ 872,000 です。
+自動コンパクションを有効にし、応答用に 131,072 トークン、要約時の直近履歴に 32,768 トークンを確保します。
+Pi 本体は flake.lock の Nixpkgs に固定された 0.85.1 を使います。
+`pi-mcp-adapter@2.34.0` は Pi 標準のパッケージ管理で初回起動時に取得し、npm の lifecycle scripts を無効にします。
+拡張のバージョン指定は Nix 管理で、取得した依存関係とロックは `~/.pi/agent/npm/` に保存されます。
+この npm 依存関係のロックは flake.lock には含まれません。
+
+MCP は Codex と同じ宣言から `context7`、`nixos`、`openaiDeveloperDocs` を読み、必要時に接続します。
+常時公開する追加ツールは `mcp` プロキシだけです。`/mcp` で接続状況を確認できます。
+個人スキルは Pi 標準の `~/.agents/skills` 探索で共有し、Ponytail は `/etc/codex/skills/ponytail` を参照します。
+追加のシステム指示は `APPEND_SYSTEM.md` に置き、Pi 標準のツール説明とプロジェクトの AGENTS.md を維持します。
+`/review` または `/review <対象>` で変更のレビューを依頼できます。
+管理対象の設定・指示・拡張を変更するときは、このリポジトリの編集元を直します。
+
+キャッシュのためにシステム指示とツール定義を固定し、毎ターンの日付・Git 状態の注入、履歴の書き換え、定期的な空要求は行いません。
+同じ仕事は `pi -c` で続け、モデル・推論レベル・拡張の変更や `/compact` は必要な場合に使います。
+フッターの `CH` は直近要求の再利用率、`/cache` は選択ブランチの入力トークンで重み付けした再利用率を表示します。
+`cache-audit` は送信直前の指示・ツール・推論設定の変化をハッシュで検出して画面に知らせます。
+要求や会話を書き換えず、プロンプト本文やハッシュをログに保存しません。
+設定が同じでも会話の変更、コンパクション、キャッシュ期限、サーバーの割り当てでミスが起こるため、再利用率は保証しません。
+表示されるトークンや費用見積もりは、ChatGPT 契約の実請求や残り利用枠ではありません。
+
+選定では [Pi の公式設定](https://pi.dev/docs/latest/settings)、
+[拡張仕様](https://pi.dev/docs/latest/extensions)、
+[pi-mcp-adapter の仕様](https://github.com/nicobailon/pi-mcp-adapter)、
+[Astra の公式ガイド](https://developers.openai.com/api/docs/guides/latest-model)、
+[OpenAI のキャッシュ仕様](https://developers.openai.com/api/docs/guides/prompt-caching)を確認しました。
+Astra の API では `prompt_cache_options.ttl = "30m"` が現行仕様ですが、
+ChatGPT 用の接続には API 専用パラメーターを追加せず、Pi 標準のセッション ID と要求形式を使います。
+[oh-my-pi の設定](https://github.com/can1357/oh-my-pi/blob/main/docs/settings.md)からは履歴の追記とキャッシュ維持の考え方を参考にしました。
+[Armin Ronacher の利用記](https://lucumr.pocoo.org/2026/1/31/pi/)にある、小さいツール構成、必要時だけ読むスキル、レビュー操作も取り入れています。
+[利用者の拡張構成の報告](https://www.reddit.com/r/PiCodingAgent/comments/1wgg6bx/my_pi_config_and_extensions/)では、
+UI の改善とモデル性能の改善は区別されており、多数の拡張で性能が上がるとは判断していません。
 
 ## Orange のサービスを読む
 

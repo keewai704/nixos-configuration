@@ -6,6 +6,7 @@
     ./mcp.nix
     ./neovim.nix
     ./paseo.nix
+    ./pi.nix
     ./shell.nix
     ./skills.nix
   ];
