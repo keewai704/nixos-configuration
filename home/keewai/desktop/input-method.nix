@@ -26,7 +26,7 @@
       waylandFrontend = true;
       systemd.enable = false;
       settings.globalOptions."Hotkey/TriggerKeys" = {
-        "0" = "Control+grave";
+        "0" = "Alt+grave";
         "1" = "Zenkaku_Hankaku";
         "2" = "Hangul";
       };
