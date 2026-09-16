@@ -26,7 +26,7 @@
       waylandFrontend = true;
       systemd.enable = false;
       settings.globalOptions."Hotkey/TriggerKeys" = {
-        "0" = "F13";
+        "0" = "Henkan_Mode";
         "1" = "Zenkaku_Hankaku";
         "2" = "Hangul";
       };

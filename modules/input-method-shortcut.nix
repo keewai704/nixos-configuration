@@ -4,8 +4,8 @@
     keyboards.input-method = {
       ids = [ "*" ];
       settings = {
-        alt.grave = "f13";
-        altgr.grave = "f13";
+        alt.grave = "henkan";
+        altgr.grave = "henkan";
         "alt+control".grave = "A-C-grave";
         "alt+shift".grave = "A-S-grave";
         "alt+meta".grave = "A-M-grave";

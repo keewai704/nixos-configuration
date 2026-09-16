@@ -8,6 +8,7 @@
     ./fingerprint.nix
     ./hardware-configuration.nix
     ./hyprland.nix
+    ./input-method-shortcut.nix
     ./apple-device-usb.nix
     ./nvidia.nix
     ./paseo-tailscale.nix
