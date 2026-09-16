@@ -10,11 +10,11 @@ WATCHER_PATCHES = tuple(
     for needle in (
         (
             b"startMetadataWatch:(t,n)=>t.isLocal?process.platform===`linux`&&n.recursive!==!1?"
-            b"F9(n,{ignoredPaths:[]}):e.startFileWatch(n):t.startFileWatch(n)"
+            b"j9(n,{ignoredPaths:[]}):e.startFileWatch(n):t.startFileWatch(n)"
         ),
         (
             b"startWorkingTreeWatch:(t,n,r)=>t.isLocal?process.platform===`linux`?"
-            b"F9(n,{ignoredPaths:[E.posix.join(n.path,`.git`),...r]}):e.startFileWatch(n):"
+            b"j9(n,{ignoredPaths:[E.posix.join(n.path,`.git`),...r]}):e.startFileWatch(n):"
             b"t.startFileWatch(n)"
         ),
     )
@@ -25,7 +25,7 @@ SELECTION_NEEDLE = b"::selection{background-color:var(--color-background-text-se
 SELECTION_STYLE = b"::selection{background-color:Highlight;color:HighlightText}"
 PATCHES = {
     ".vite/build/worker.js": WATCHER_PATCHES,
-    "webview/assets/app-initial-5b0a474bff5e.css": (
+    "webview/assets/app-dddf03d14541.css": (
         (SELECTION_NEEDLE, SELECTION_STYLE.ljust(len(SELECTION_NEEDLE))),
     ),
 }

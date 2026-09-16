@@ -9,12 +9,12 @@
   writeText,
 }:
 let
-  ponytailVersion = "4.9.0";
+  ponytailVersion = "4.10.0";
   ponytailSource = fetchFromGitHub {
     owner = "DietrichGebert";
     repo = "ponytail";
-    rev = "2ed6c52c9d7e5e56942508591085fd45dea277d3";
-    hash = "sha256-bGdXvzhWPwGdz3T2Yh2h6lf+3PBRFAfdBxP5pESmCHI=";
+    rev = "e3ba2aa6f1e6f0bc4d69eb09c9f0d0a93af56156";
+    hash = "sha256-PES5XrSYx0VBXWVHEDRykGy0SAmJfV/luzy8Gfg0aAQ=";
   };
   ponytailHookContext = writeText "ponytail-hook-context.md" ''
     Ponytail applies to coding work only. When coding or explicitly asked to

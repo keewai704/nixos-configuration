@@ -12,11 +12,11 @@
 
 stdenv.mkDerivation (finalAttrs: {
   pname = "cua-driver";
-  version = "0.23.2";
+  version = "0.28.2";
 
   src = fetchurl {
     url = "https://github.com/trycua/cua/releases/download/cua-driver-rs-v${finalAttrs.version}/cua-driver-rs-${finalAttrs.version}-linux-x86_64-binary.tar.gz";
-    hash = "sha256-Ab+DOewSnMAPS0ssYFbvGnxbUt85/4OtF8mxaBiuxQA=";
+    hash = "sha256-odmf0Eu0kn71/9vmDrke2LUaK6tg4Q/GBKdb1ZzmnD4=";
   };
 
   nativeBuildInputs = [
