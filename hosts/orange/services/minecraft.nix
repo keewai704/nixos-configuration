@@ -11,7 +11,7 @@ let
     minecraftPort
     ;
   dataDir = minecraftDataDir;
-  minecraftVersion = "26.2";
+  minecraftVersion = "26.3";
   fabricLoaderVersion = "0.19.5";
   fabricInstallerVersion = "1.1.2";
 
@@ -19,22 +19,22 @@ let
     pname = "fabric-server-launcher";
     version = "mc.${minecraftVersion}-loader.${fabricLoaderVersion}-installer.${fabricInstallerVersion}";
     url = "https://meta.fabricmc.net/v2/versions/loader/${minecraftVersion}/${fabricLoaderVersion}/${fabricInstallerVersion}/server/jar";
-    hash = "sha256-8dK6/Qs7l2MLDN2OiQzRAts9vmCHejilyBOqkp5pESc=";
+    hash = "sha256-C1atVNdiFy6Lh0jkZ/WE8HHk3t7Nk9wzbPLGiDfnkL4=";
   };
 
   minecraftServer = pkgs.fetchurl {
     pname = "minecraft-server";
     version = minecraftVersion;
-    url = "https://piston-data.mojang.com/v1/objects/823e2250d24b3ddac457a60c92a6a941943fcd6a/server.jar";
-    hash = "sha1-gj4iUNJLPdrEV6YMkqapQZQ/zWo=";
+    url = "https://piston-data.mojang.com/v1/objects/33680f5f2ac32864d6d7cf5e56a705fdb3e05f4c/server.jar";
+    hash = "sha1-M2gPXyrDKGTW189eVqcF/bPgX0w=";
   };
 
   mods = {
     lithium = pkgs.fetchurl {
       pname = "lithium-fabric";
-      version = "0.25.3+mc26.2";
-      url = "https://cdn.modrinth.com/data/gvQqBUqZ/versions/f7vZ0VWU/lithium-fabric-0.25.3%2Bmc26.2.jar";
-      hash = "sha512-FItjjzxiKfuvSHEgojRKCvXkEaWqZTPV25112gqMDYME9j60zKE/TQOyybTCPVWd10wdgyQi74owh70AXmKovQ==";
+      version = "0.26.0+mc26.3";
+      url = "https://cdn.modrinth.com/data/gvQqBUqZ/versions/UnOXzpHc/lithium-fabric-0.26.0%2Bmc26.3.jar";
+      hash = "sha512-uXYJup/f8qF/XR3yNgBCCkKKtlsrSz/gxWEKpxzFNazhGeRkd2mPfC7AoW/nRg0X1vS8i5oaosIWoo6pt4W48g==";
     };
 
     krypton = pkgs.fetchurl {
@@ -110,6 +110,9 @@ in
       if [ ! -e ${dataDir}/server.properties ]; then
         printf 'motd=Minecraft ${minecraftVersion} Fabric server\nserver-port=${toString minecraftPort}\n' \
           > ${dataDir}/server.properties
+      else
+        sed -i -E 's/^motd=Minecraft [0-9]+(\.[0-9]+)* Fabric server$/motd=Minecraft ${minecraftVersion} Fabric server/' \
+          ${dataDir}/server.properties
       fi
     '';
 
