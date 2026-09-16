@@ -205,7 +205,7 @@ Nix ファイルを読むと依存関係・権限・起動条件がわかり、�
 | [brave-origin/](pkgs/brave-origin/) | Nixpkgs の Brave Origin に日本語設定を追加 |
 | [chatgpt-desktop/](pkgs/chatgpt-desktop/) | 公式 Linux 配布物の NixOS 対応、ワーカーの監視回避、ブラウザー標準の選択色 |
 | [cua-driver/](pkgs/cua-driver/) | デスクトップ操作用ドライバーの実行環境 |
-| [fprintd-cs9711/](pkgs/fprintd-cs9711/) | CS9711 指紋センサー、認証キャンセル、テストの文字列出力の修正 |
+| [fprintd-cs9711/](pkgs/fprintd-cs9711/) | CS9711 指紋センサーと認証キャンセルの修正 |
 | [hyprland/](pkgs/hyprland/) | 入力メソッドの修飾キー処理の修正 |
 | [hyprpaper-shm/](pkgs/hyprpaper-shm/) | VM 用の壁紙描画と旧 IPC の橋渡し |
 | [lkl-image/](pkgs/lkl-image/) | 上流の `cptofs --mb` を使った VM イメージ作成時のメモリー指定 |

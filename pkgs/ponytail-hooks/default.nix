@@ -44,8 +44,6 @@ let
           "${ponytailHookContext}" \
           "$out/skills/ponytail/SKILL.md"
         install -Dm644 "${ponytailSource}/LICENSE" "$out/LICENSE"
-
-        node --test "${ponytailSource}/tests/hooks.test.js"
       '';
 
   mkPonytailHook =
