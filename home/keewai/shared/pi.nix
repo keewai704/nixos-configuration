@@ -10,19 +10,24 @@ let
     "nixos"
     "openaiDeveloperDocs"
   ];
-  mcpServers = lib.genAttrs mcpServerNames (
-    name:
-    builtins.intersectAttrs {
-      command = null;
-      args = null;
-      env = null;
-      url = null;
-      headers = null;
-    } config.programs.mcp.servers.${name}
-    // {
-      lifecycle = "lazy";
-    }
-  );
+  mcpServers = lib.mapAttrs (
+    name: server:
+    if lib.elem name mcpServerNames then
+      lib.filterAttrs (_: value: value != null) (
+        builtins.intersectAttrs {
+          command = null;
+          args = null;
+          env = null;
+          url = null;
+          headers = null;
+        } server
+      )
+      // {
+        lifecycle = "lazy";
+      }
+    else
+      { disabled = true; }
+  ) config.programs.mcp.servers;
 in
 {
   programs.pi-coding-agent = {
@@ -42,7 +47,12 @@ in
         "--no-audit"
         "--no-fund"
       ];
-      packages = [ "npm:pi-mcp-adapter@2.34.0" ];
+      packages = [
+        {
+          source = "npm:pi-mcp-adapter@2.34.0";
+          skills = [ ];
+        }
+      ];
       skills = [ "/etc/codex/skills/ponytail" ];
       compaction = {
         enabled = true;

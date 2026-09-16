@@ -174,7 +174,8 @@ Pi 本体は flake.lock の Nixpkgs に固定された 0.85.1 を使います。
 拡張のバージョン指定は Nix 管理で、取得した依存関係とロックは `~/.pi/agent/npm/` に保存されます。
 この npm 依存関係のロックは flake.lock には含まれません。
 
-MCP は Codex と同じ宣言から `context7`、`nixos`、`openaiDeveloperDocs` を読み、必要時に接続します。
+MCP は Codex と同じ宣言から `context7`、`nixos`、`openaiDeveloperDocs` を読みます。
+初回はツール情報を取得し、以降は必要時に接続します。共有設定の他のサーバーは Pi 側で無効にします。
 常時公開する追加ツールは `mcp` プロキシだけです。`/mcp` で接続状況を確認できます。
 個人スキルは Pi 標準の `~/.agents/skills` 探索で共有し、Ponytail は `/etc/codex/skills/ponytail` を参照します。
 追加のシステム指示は `APPEND_SYSTEM.md` に置き、Pi 標準のツール説明とプロジェクトの AGENTS.md を維持します。
