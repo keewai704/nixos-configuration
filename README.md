@@ -138,6 +138,7 @@ Home Manager は `useUserPackages = true` で NixOS に統合されています�
 | [modules/codex-ponytail.nix](modules/codex-ponytail.nix) | Ponytail のフックとシステムスキルの配布 |
 | [shared/codex.nix](home/keewai/shared/codex.nix) | 固定した Codex CLI の導入と、ユーザー設定に残った管理対象の上書きの除去 |
 | [shared/codex-remote.nix](home/keewai/shared/codex-remote.nix) | 認証付き Remote Control のユーザーサービス |
+| [shared/paseo.nix](home/keewai/shared/paseo.nix) | Paseo の CLI、Web UI、Codex 接続とユーザーサービス |
 | [modules/codex-remote.nix](modules/codex-remote.nix) | ログイン前にもユーザーサービスを起動するための linger |
 | [desktop/codex.nix](home/keewai/desktop/codex.nix) | デスクトップアプリと `codex:` URL ハンドラー |
 | [shared/mcp.nix](home/keewai/shared/mcp.nix) | 全ホストで使う MCP サーバー |
@@ -205,6 +206,7 @@ Nix ファイルを読むと依存関係・権限・起動条件がわかり、�
 | [fprintd-cs9711/](pkgs/fprintd-cs9711/) | CS9711 指紋センサーと認証キャンセルの修正 |
 | [hyprland/](pkgs/hyprland/) | 入力メソッドの修飾キー処理の修正 |
 | [hyprpaper-shm/](pkgs/hyprpaper-shm/) | VM 用の壁紙描画と旧 IPC の橋渡し |
+| [paseo/](pkgs/paseo/) | 配布パッケージで欠落する node-pty のネイティブ部品を同じ固定バージョンから補完 |
 | [ponytail-hooks/](pkgs/ponytail-hooks/) | Ponytail の管理用フック |
 
 パッチは対象パッケージと同じディレクトリに置きます。
@@ -243,6 +245,23 @@ nix build ".#nixosConfigurations.$runtime_host.config.system.build.toplevel" \
 ## アプリの使い方と開発環境
 
 日常操作を確認するときに開いてください。構成や編集先は上の一覧からたどれます。
+
+<details>
+<summary>Paseo で Codex を使う</summary>
+
+Paseo はユーザーサービスとして起動します。ブラウザーで
+[ローカルの Web UI](http://127.0.0.1:6767) を開き、プロバイダーに Codex を選びます。
+既存の Codex CLI と `~/.codex` の認証を使います。未認証のホストでは `codex login` を実行してください。
+CLI では作業ディレクトリから `paseo run --provider codex "依頼内容"` で開始できます。
+
+状態確認は `systemctl --user status paseo`、再起動は `systemctl --user restart paseo`、
+Codex の検出確認は `paseo provider diagnostic codex` を使います。
+`~/.paseo/config.json` は Home Manager が管理するため、接続設定は
+[shared/paseo.nix](home/keewai/shared/paseo.nix) で変更します。
+待受けはループバックだけで、リレーは無効です。別ホストへの適用と端末のペアリングは個別に行います。
+音声機能は無効にしており、音声モデルの自動ダウンロードは行いません。
+
+</details>
 
 <details>
 <summary>Apple Music（Siora）の操作と認証</summary>
