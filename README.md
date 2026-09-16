@@ -139,6 +139,7 @@ Home Manager は `useUserPackages = true` で NixOS に統合されています�
 | [shared/codex.nix](home/keewai/shared/codex.nix) | 固定した Codex CLI の導入と、ユーザー設定に残った管理対象の上書きの除去 |
 | [shared/codex-remote.nix](home/keewai/shared/codex-remote.nix) | 認証付き Remote Control のユーザーサービス |
 | [shared/paseo.nix](home/keewai/shared/paseo.nix) | Paseo の CLI、Web UI、Codex 接続とユーザーサービス |
+| [desktop/paseo-tailscale.nix](home/keewai/desktop/paseo-tailscale.nix)、[citrus/paseo-tailscale.nix](hosts/citrus/paseo-tailscale.nix) | Paseo の tailnet ホスト名と Tailscale Serve による HTTPS 公開 |
 | [modules/codex-remote.nix](modules/codex-remote.nix) | ログイン前にもユーザーサービスを起動するための linger |
 | [desktop/codex.nix](home/keewai/desktop/codex.nix) | デスクトップアプリと `codex:` URL ハンドラー |
 | [shared/mcp.nix](home/keewai/shared/mcp.nix) | 全ホストで使う MCP サーバー |
@@ -254,11 +255,20 @@ Paseo はユーザーサービスとして起動します。ブラウザーで
 既存の Codex CLI と `~/.codex` の認証を使います。未認証のホストでは `codex login` を実行してください。
 CLI では作業ディレクトリから `paseo run --provider codex "依頼内容"` で開始できます。
 
+`citrus` には、同じ tailnet に接続した端末から
+[Tailscale 経由の Web UI](https://citrus.tail1e65cd.ts.net/) でもアクセスできます。
+Paseo アプリの直接接続では、ホストに `citrus.tail1e65cd.ts.net`、ポートに `443` を指定し、SSL を有効にします。
+Tailscale Serve が HTTPS 443 を `127.0.0.1:6767` へ転送します。
+`citrus-vm` も同じ設定を継承し、適用した場合はホスト名が `citrus-vm.tail1e65cd.ts.net` になります。
+公開状態は `tailscale serve status`、サービス状態は `systemctl status tailscale-serve-paseo` で確認します。
+
 状態確認は `systemctl --user status paseo`、再起動は `systemctl --user restart paseo`、
 Codex の検出確認は `paseo provider diagnostic codex` を使います。
 `~/.paseo/config.json` は Home Manager が管理するため、接続設定は
 [shared/paseo.nix](home/keewai/shared/paseo.nix) で変更します。
-待受けはループバックだけで、リレーは無効です。別ホストへの適用と端末のペアリングは個別に行います。
+Paseo 本体の待受けはループバックだけで、Paseo のリレーは無効です。
+Tailscale 側の公開設定は [citrus/paseo-tailscale.nix](hosts/citrus/paseo-tailscale.nix)、
+アプリの許可ホスト名と外部 URL は [desktop/paseo-tailscale.nix](home/keewai/desktop/paseo-tailscale.nix) で管理します。
 音声機能は無効にしており、音声モデルの自動ダウンロードは行いません。
 
 </details>

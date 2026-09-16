@@ -10,6 +10,7 @@
     ./hyprland.nix
     ./apple-device-usb.nix
     ./nvidia.nix
+    ./paseo-tailscale.nix
     ./stylix.nix
   ];
 
