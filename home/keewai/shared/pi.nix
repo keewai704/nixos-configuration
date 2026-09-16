@@ -63,6 +63,16 @@ in
     models.providers.openai-codex.modelOverrides.gpt-6-astra.contextWindow = 872000;
   };
 
+  home.packages = [
+    (pkgs.writeShellApplication {
+      name = "pi-astra";
+      runtimeInputs = [ pkgs.nodejs ];
+      text = ''
+        exec ${lib.getExe config.programs.pi-coding-agent.package} --tools read,bash,edit,write,mcp "$@"
+      '';
+    })
+  ];
+
   home.file = {
     ".pi/agent/APPEND_SYSTEM.md".source = ./pi/APPEND_SYSTEM.md;
     ".pi/agent/extensions/cache-audit.ts".source = ./pi/cache-audit.ts;

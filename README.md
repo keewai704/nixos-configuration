@@ -162,9 +162,10 @@ Ponytail は `/etc/codex/skills/ponytail`、配布対象の個人スキルは `~
 
 ### Pi で Astra を使う
 
-`pi` をプロジェクト内で起動し、初回は `/login` から OpenAI (ChatGPT Plus/Pro) を選びます。
+`pi-astra` をプロジェクト内で起動し、初回は `/login` から OpenAI (ChatGPT Plus/Pro) を選びます。
 認証は Pi の `~/.pi/agent/auth.json` に保存されます。
-継続は `pi -c`、過去のセッションを選ぶ場合は `pi -r` です。
+継続は `pi-astra -c`、過去のセッションを選ぶ場合は `pi-astra -r` です。
+パッケージ管理や `auth check` などの CLI サブコマンドには `pi` を使います。
 プロジェクトの設定や `.agents/skills` は、Pi のプロジェクト信頼確認後に読み込まれます。
 
 モデルは `openai-codex/gpt-6-astra`、推論は `xhigh`、コンテキスト上限は既存 Codex と同じ 872,000 です。
@@ -176,14 +177,16 @@ Pi 本体は flake.lock の Nixpkgs に固定された 0.85.1 を使います。
 
 MCP は Codex と同じ宣言から `context7`、`nixos`、`openaiDeveloperDocs` を読みます。
 初回はツール情報を取得し、以降は必要時に接続します。共有設定の他のサーバーは Pi 側で無効にします。
-常時公開する追加ツールは `mcp` プロキシだけです。`/mcp` で接続状況を確認できます。
+`pi-astra` は公開ツールを `read / bash / edit / write / mcp` に固定します。
+MCP アダプターが情報取得後にサーバー別の補助ツールを追加しても、モデルに送るツール定義は増えません。
+`/mcp` で接続状況を確認できます。
 個人スキルは Pi 標準の `~/.agents/skills` 探索で共有し、Ponytail は `/etc/codex/skills/ponytail` を参照します。
 追加のシステム指示は `APPEND_SYSTEM.md` に置き、Pi 標準のツール説明とプロジェクトの AGENTS.md を維持します。
 `/review` または `/review <対象>` で変更のレビューを依頼できます。
 管理対象の設定・指示・拡張を変更するときは、このリポジトリの編集元を直します。
 
 キャッシュのためにシステム指示とツール定義を固定し、毎ターンの日付・Git 状態の注入、履歴の書き換え、定期的な空要求は行いません。
-同じ仕事は `pi -c` で続け、モデル・推論レベル・拡張の変更や `/compact` は必要な場合に使います。
+同じ仕事は `pi-astra -c` で続け、モデル・推論レベル・拡張の変更や `/compact` は必要な場合に使います。
 フッターの `CH` は直近要求の再利用率、`/cache` は選択ブランチの入力トークンで重み付けした再利用率を表示します。
 `cache-audit` は送信直前の指示・ツール・推論設定の変化をハッシュで検出して画面に知らせます。
 要求や会話を書き換えず、プロンプト本文やハッシュをログに保存しません。
