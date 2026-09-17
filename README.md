@@ -135,7 +135,7 @@ Home Manager は `useUserPackages = true` で NixOS に統合されています�
 
 | 場所 | 役割 |
 | --- | --- |
-| [shared/pi.nix](home/keewai/shared/pi.nix)、[shared/pi/](home/keewai/shared/pi/) | Pi の Astra 設定、MCP 接続、追加システム指示、キャッシュ監視・状態確認とレビュー用プロンプト |
+| [shared/pi.nix](home/keewai/shared/pi.nix)、[shared/pi/](home/keewai/shared/pi/) | Pi の Astra 設定、MCP 接続、追加システム指示、キャッシュ監視フックとレビュー用プロンプト |
 | [shared/pi-web.nix](home/keewai/shared/pi-web.nix) | Pi Web の導入、ユーザーサービス、ホストごとの tailnet 許可 |
 | [modules/common.nix](modules/common.nix) | ログイン前にも Pi Web などのユーザーサービスを起動するための linger |
 | [citrus/web.nix](hosts/citrus/web.nix)、[orange/services/web.nix](hosts/orange/services/web.nix) | 既存の Tailscale Serve と nginx による HTTPS 公開 |
@@ -198,15 +198,6 @@ Ponytail のモードは会話中に `ponytail lite`、`ponytail full`、`ponyta
 対象を省略した場合は、追跡済みの差分に加え、関連する未追跡の新規ソースも確認します。
 生成物・無視対象・秘密情報は除外し、レビュー中に編集やステージはしません。
 管理対象の設定・指示・拡張を変更するときは、このリポジトリの編集元を直します。
-
-`/harness-status` は、現在のモデル・推論・プロジェクト信頼・主要ツールの有効状態と、
-保存済みグローバル設定を読み取り専用で表示します。`mcpScript` の状態差や、保存済みの
-`APPEND_SYSTEM.md` が現在のPiプロンプトに含まれるかを確認できます。
-差異は未再読込だけでなく、プロジェクト設定や起動オプションでも生じます。自動変更は行いません。
-Piのプロンプト比較は送信前フックによるAPIペイロード変更を検査せず、スキル数は本文を読んだ数ではありません。
-コマンド実行時だけ動作し、設定値全体・認証情報・プロンプト本文を出力せず、追加のモデル要求も送りません。
-UIがないモードでは標準エラーへ表示します。ツールの有効状態と、MCP接続・認証・実行承認は別です。
-実装は [harness-status.ts](home/keewai/shared/pi/harness-status.ts) にあります。
 
 [pi-web-access](https://github.com/nicobailon/pi-web-access) が `web_search`、`fetch_content`、
 `get_search_content`、`source_check` を提供します。以前の `pi-web-search` 拡張は使いません。
