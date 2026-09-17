@@ -14,6 +14,7 @@ let
     searchRouting = {
       providers = [ "openai" ];
       useCurrentModel = true;
+      fallbackOn = [ "transient" ];
     };
     workflow = "none";
     allowBrowserCookies = false;
