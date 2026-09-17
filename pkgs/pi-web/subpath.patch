@@ -839,14 +839,16 @@ index b3aeb8e..5aee7eb 100644
      } catch {
        setDeleting(false);
 diff --git a/components/SettingsPanel.test.mjs b/components/SettingsPanel.test.mjs
-index d8670ea..74cd5ed 100644
+index d8670ea..8dd8638 100644
 --- a/components/SettingsPanel.test.mjs
 +++ b/components/SettingsPanel.test.mjs
-@@ -142,7 +142,7 @@ test("keeps password authentication to one login field and one settings action",
+@@ -141,8 +141,8 @@ test("keeps password authentication to one login field and one settings action",
+   assert.equal((loginSource.match(/type="password"/g) ?? []).length, 1);
    assert.doesNotMatch(loginSource, /type="(?:text|email)"/);
    assert.match(loginSource, /autoComplete="current-password"/);
-   assert.match(loginSource, /!destination\.startsWith\("\/\/"\)/);
+-  assert.match(loginSource, /!destination\.startsWith\("\/\/"\)/);
 -  assert.match(panelSource, /fetch\("\/api\/web-auth", \{ method: "DELETE" \}\)/);
++  assert.match(loginSource, /destination\?\.startsWith\("\/pi\/"\)/);
 +  assert.match(panelSource, /fetch\("\/pi\/api\/web-auth", \{ method: "DELETE" \}\)/);
    assert.match(panelSource, /t\("auth\.logOut"\)/);
    assert.match(loginSource, /className="web-login-composer"[\s\S]*?type="password"[\s\S]*?<button type="submit"/);
@@ -1465,6 +1467,35 @@ index f850aca..d429f47 100644
  });
  
  test("accepts a signed session for pages", () => {
+diff --git a/lib/web-push.test.mjs b/lib/web-push.test.mjs
+index 1468955..d0d83d2 100644
+--- a/lib/web-push.test.mjs
++++ b/lib/web-push.test.mjs
+@@ -103,13 +103,13 @@ test("notifySessionComplete sends localized payloads with the session name", asy
+   assert.deepEqual(JSON.parse(en.payload), {
+     title: "My session",
+     body: "Task finished.",
+-    url: "/?session=session-1",
++    url: "/pi/?session=session-1",
+     tag: "pi-session-complete:session-1",
+   });
+   assert.deepEqual(JSON.parse(zh.payload), {
+     title: "My session",
+     body: "任务已完成。",
+-    url: "/?session=session-1",
++    url: "/pi/?session=session-1",
+     tag: "pi-session-complete:session-1",
+   });
+ });
+@@ -123,7 +123,7 @@ test("notifySessionComplete falls back to the localized generic title", async ()
+   assert.deepEqual(JSON.parse(sent[0].payload), {
+     title: "任务完成",
+     body: "任务已完成。",
+-    url: "/?session=unknown-session",
++    url: "/pi/?session=unknown-session",
+     tag: "pi-session-complete:unknown-session",
+   });
+ });
 diff --git a/lib/web-push.ts b/lib/web-push.ts
 index 1220927..c99925a 100644
 --- a/lib/web-push.ts
