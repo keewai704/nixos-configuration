@@ -31,6 +31,7 @@ hl.config({
 
     render = {
         cm_auto_hdr = 1,
+        direct_scanout = 1,
     },
 
     general = {
