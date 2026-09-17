@@ -58,6 +58,20 @@ in
           source = "npm:pi-mcp-adapter@2.34.0";
           skills = [ ];
         }
+        {
+          source = "npm:pi-web-search@1.6.0";
+          extensions = [ "src/index.ts" ];
+          skills = [ ];
+          prompts = [ ];
+          themes = [ ];
+        }
+        {
+          source = "npm:@narumitw/pi-lsp@0.49.7";
+          extensions = [ "dist/index.ts" ];
+          skills = [ ];
+          prompts = [ ];
+          themes = [ ];
+        }
       ];
       skills = [ "/etc/codex/skills/ponytail" ];
       compaction = {
@@ -74,7 +88,7 @@ in
       name = "pi-astra";
       runtimeInputs = runtimePackages;
       text = ''
-        exec ${lib.getExe config.programs.pi-coding-agent.package} --tools read,bash,edit,write,mcp "$@"
+        exec ${lib.getExe config.programs.pi-coding-agent.package} --tools read,bash,edit,write,mcp,web_search,lsp_diagnostics "$@"
       '';
     })
   ];
@@ -84,6 +98,47 @@ in
     ".pi/agent/extensions/astra-cache.ts".source = ./pi/astra-cache.ts;
     ".pi/agent/extensions/cache-audit.ts".source = ./pi/cache-audit.ts;
     ".pi/agent/prompts/review.md".source = ./pi/review.md;
+    ".pi/agent/pi-lsp.json".text = builtins.toJSON {
+      timeout = 20000;
+      servers = {
+        nixd = {
+          command = [ (lib.getExe pkgs.nixd) ];
+          extensions = [ ".nix" ];
+        };
+        typescript = {
+          command = [
+            (lib.getExe pkgs.typescript-language-server)
+            "--stdio"
+          ];
+          extensions = [
+            ".ts"
+            ".tsx"
+            ".mts"
+            ".cts"
+            ".js"
+            ".jsx"
+            ".mjs"
+            ".cjs"
+          ];
+        };
+        lua = {
+          command = [ (lib.getExe pkgs.lua-language-server) ];
+          extensions = [ ".lua" ];
+          pushDiagnosticsGraceMs = 3000;
+        };
+        bash = {
+          command = [
+            (lib.getExe pkgs.bash-language-server)
+            "start"
+          ];
+          extensions = [
+            ".sh"
+            ".bash"
+          ];
+          initialization.bashIde.shellcheckPath = lib.getExe pkgs.shellcheck;
+        };
+      };
+    };
     ".pi/agent/mcp.json".text = builtins.toJSON {
       inherit mcpServers;
       settings = {

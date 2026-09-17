@@ -174,19 +174,37 @@ MCP の大きな JSON 出力を処理するときに、補助コマンドが見�
 自動コンパクションを有効にし、応答用に 131,072 トークン、要約時の直近履歴に 32,768 トークンを確保します。
 Pi 本体は flake.lock の Nixpkgs に固定された 0.85.1 を使います。
 ChatGPT 接続のキャッシュ用ヘッダーを本文のキーに合わせる小さなパッチを適用しています。
-`pi-mcp-adapter@2.34.0` は Pi 標準のパッケージ管理で初回起動時に取得し、npm の lifecycle scripts を無効にします。
+`pi-mcp-adapter@2.34.0`、`pi-web-search@1.6.0`、`@narumitw/pi-lsp@0.49.7` は
+Pi 標準のパッケージ管理で初回起動時に取得し、npm の lifecycle scripts を無効にします。
 拡張のバージョン指定は Nix 管理で、取得した依存関係とロックは `~/.pi/agent/npm/` に保存されます。
 この npm 依存関係のロックは flake.lock には含まれません。
 
 MCP は Codex と同じ宣言から `context7`、`nixos`、`openaiDeveloperDocs` を読みます。
 初回はツール情報を取得し、以降は必要時に接続します。共有設定の他のサーバーは Pi 側で無効にします。
-`pi-astra` は公開ツールを `read / bash / edit / write / mcp` に固定します。
+`pi-astra` は公開ツールを `read / bash / edit / write / mcp / web_search / lsp_diagnostics` に固定します。
 MCP アダプターが情報取得後にサーバー別の補助ツールを追加しても、モデルに送るツール定義は増えません。
 `/mcp` で接続状況を確認できます。
 個人スキルは Pi 標準の `~/.agents/skills` 探索で共有し、Ponytail は `/etc/codex/skills/ponytail` を参照します。
 追加のシステム指示は `APPEND_SYSTEM.md` に置き、Pi 標準のツール説明とプロジェクトの AGENTS.md を維持します。
 `/review` または `/review <対象>` で変更のレビューを依頼できます。
 管理対象の設定・指示・拡張を変更するときは、このリポジトリの編集元を直します。
+
+[pi-web-search](https://github.com/ttttmr/pi-web-search) は一般の Web 調査を出典付きで行います。
+現在のモデルと認証を使うため、Astra では追加の検索 API キーは不要です。
+検索ごとにモデルへの追加要求が発生し、ChatGPT の利用枠を消費します。
+検索に渡すのは検索語と指定 URL で、会話全体やローカルファイルは自動送信しません。
+専門仕様の調査は引き続き既存の MCP を優先します。Gemini 専用の `url_context` は Astra では無効です。
+
+[@narumitw/pi-lsp](https://github.com/narumiruna/pi-extensions/tree/main/packages/pi-lsp) は
+必要時だけ `lsp_diagnostics` で診断し、呼び出し終了時に言語サーバーを停止します。
+Nix（nixd）、TypeScript/JavaScript、Lua、Bash を Nix の固定パッケージで設定し、Bash には ShellCheck を接続します。
+設定は `~/.pi/agent/pi-lsp.json` に配置します。`/lsp` で利用可能なサーバーを確認できます。
+対象の `paths` と `root` を明示し、全体走査や診断出力の膨張を避けます。
+診断はビルドやテストの代用ではなく、自動整形・自動修正は行いません。
+`pi-astra` では書き込み用の `lsp_fix` を公開しません。通常の `pi` と Pi Web では利用できますが、
+既定はプレビューで、書き込む場合は同じファイルへの他の編集と並列実行しません。
+追加拡張は過去の履歴を書き換えず、常駐の追加モデル要求も行いません。
+速度や成果物の品質向上率を測定したものではなく、調査と途中診断の手段を補う構成です。
 
 キャッシュのためにシステム指示とツール定義を固定し、毎ターンの日付・Git 状態の注入、履歴の書き換え、定期的な空要求は行いません。
 `astra-cache` フックは、作業ディレクトリとモデルから固定のキャッシュキーを作ります。
