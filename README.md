@@ -310,15 +310,17 @@ Nix ファイルを読むと依存関係・権限・起動条件がわかり、�
 | [chatgpt-desktop/](pkgs/chatgpt-desktop/) | 公式 Linux 配布物の NixOS 対応、ワーカーの監視回避、ブラウザー標準の選択色 |
 | [cua-driver/](pkgs/cua-driver/) | デスクトップ操作用ドライバーの実行環境 |
 | [fprintd-cs9711/](pkgs/fprintd-cs9711/) | CS9711 指紋センサーと認証キャンセルの修正 |
+| [hyprland/](pkgs/hyprland/) | 入力メソッドの修飾キー処理の修正 |
 | [hyprpaper-shm/](pkgs/hyprpaper-shm/) | VM 用の壁紙描画と旧 IPC の橋渡し |
 | [lkl-image/](pkgs/lkl-image/) | 上流の `cptofs --mb` を使った VM イメージ作成時のメモリー指定 |
 | [pi-coding-agent/](pkgs/pi-coding-agent/) | ChatGPT のキャッシュ用ヘッダーと会話・接続の識別子を分離 |
 | [pi-web/](pkgs/pi-web/) | 固定ソースからの Pi Web ビルド、`/pi/` 対応、同梱フォント、修正版 Pi SDK と端末の実行環境 |
 | [ponytail-hooks/](pkgs/ponytail-hooks/) | Ponytail の管理用フック |
 
-Hyprland の独自 IME パッチは使用せず、keyd でキーボード入力を集約します。
-[hyprland-package.nix](modules/hyprland-package.nix) のソース指定は、固定した上流の Nix 定義が
-ビルド準備で参照する `hyprtester/` を省かないために維持しています。
+keyd が集約するのは処理対象の入力だけです。Citrus ではマウス入力を保つため、
+[input-method-shortcut.nix](hosts/citrus/input-method-shortcut.nix) で Logitech の機器を対象外にしています。
+対象外の機器から届くキー入力にも、別デバイスで押している Shift・Ctrl を IME へ引き継ぐため、
+Hyprland の IME パッチを維持します。keyd による主キーボードの集約だけでは、このパッチを代替できません。
 
 パッチは対象パッケージと同じディレクトリに置きます。
 上流を更新するときは、パッチの前提と付属のテストも確認してください。
