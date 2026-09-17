@@ -1,7 +1,10 @@
 {
+  aquamarine,
   fetchFromGitHub,
   hyprland,
   hyprpaper,
+  hyprtoolkit,
+  hyprwire,
   lib,
   python3,
   stdenvNoCC,
@@ -38,6 +41,11 @@ in
 hyprpaper.overrideAttrs (previousAttrs: {
   version = "0.7.6";
   src = source;
+  nativeBuildInputs = lib.subtractLists [ hyprwire ] previousAttrs.nativeBuildInputs;
+  buildInputs = lib.subtractLists [
+    aquamarine
+    hyprtoolkit
+  ] previousAttrs.buildInputs;
   passthru = (previousAttrs.passthru or { }) // {
     inherit hyprctl;
   };
