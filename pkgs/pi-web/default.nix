@@ -6,6 +6,7 @@
   autoPatchelfHook,
   makeWrapper,
   nodejs,
+  git,
   libuv,
   stdenv,
   pi-coding-agent,
@@ -58,10 +59,12 @@ buildNpmPackage {
   '';
 
   postConfigure = ''
-    ln -s ${piRoot} node_modules/@earendil-works/pi-coding-agent
+    cp -r ${piRoot} node_modules/@earendil-works/pi-coding-agent
+    chmod -R u+w node_modules/@earendil-works/pi-coding-agent
   '';
 
   doCheck = true;
+  nativeCheckInputs = [ git ];
   checkPhase = ''
     runHook preCheck
     npm test
@@ -69,7 +72,7 @@ buildNpmPackage {
   '';
 
   preInstall = ''
-    rm node_modules/@earendil-works/pi-coding-agent
+    rm -r node_modules/@earendil-works/pi-coding-agent
   '';
 
   postInstall = ''
