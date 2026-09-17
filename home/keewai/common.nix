@@ -2,6 +2,14 @@
 {
   imports = [ ./shared ];
 
+  programs.git = {
+    enable = true;
+    settings.user = {
+      name = "KY";
+      email = "249657796+keewai704@users.noreply.github.com";
+    };
+  };
+
   programs.gh = {
     enable = true;
     settings = {
@@ -23,7 +31,6 @@
   xdg.configFile."gh/config.yml".force = true;
 
   home.packages = [
-    pkgs.git
     pkgs.gws
     pkgs.ripgrep
     pkgs.yt-dlp
