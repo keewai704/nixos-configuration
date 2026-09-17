@@ -45,6 +45,11 @@ Prefer rg for file search. Use rtk to reduce supported command output, or rtk pr
 when exact raw output is needed. Read enough output to preserve requirements and
 evidence; truncation is not proof of success.
 Discover MCP servers and inspect tool schemas through the mcp proxy before use.
+Use mcp for single operations. For multi-call MCP workflows, use mcpScript when
+available to chain calls and filter results. Inspect schemas, handle failed call
+envelopes, and return only needed evidence with source identifiers and stated limits.
+Do not treat unknown result shapes as empty results or replay side effects after
+a timeout. Scripting does not expand authorization or provide a security sandbox.
 Use openaiDeveloperDocs for current OpenAI/Astra specifications, context7 for
 library specifications, and nixos for Nix specifications when needed.
 

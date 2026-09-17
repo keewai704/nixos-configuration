@@ -48,7 +48,10 @@ in
       defaultModel = "gpt-6-astra";
       defaultThinkingLevel = "xhigh";
       defaultProjectTrust = "always";
-      shellCommandPrefix = ''export PATH=${lib.escapeShellArg osConfig.security.wrapperDir}:"$PATH"'';
+      shellCommandPrefix = ''
+        export PATH=${lib.escapeShellArg osConfig.security.wrapperDir}:"$PATH"
+        set -o pipefail
+      '';
       defaultTools = [
         "read"
         "bash"
@@ -70,7 +73,6 @@ in
       packages = [
         {
           source = "npm:pi-mcp-adapter@2.34.0";
-          skills = [ ];
         }
         {
           source = "npm:pi-web-access@0.29.0";
@@ -165,7 +167,7 @@ in
       settings = {
         hostConfigDiscovery = "off";
         directTools = false;
-        scriptMode = false;
+        scriptMode = true;
         mcpFooterStatus = "compact";
         notifyOnStartupConnect = false;
       };

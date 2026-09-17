@@ -19,6 +19,10 @@ or configuration snapshots. Format and check syntax only for changed files.
 - Changes affecting the local host: use the evaluation/build in the required
   `nixos-rebuild test`, not a duplicate prebuild or equivalent separate evaluation.
   Nix-distributed personal skills and Pi instructions count as deployed files.
+- Personal Pi extension TypeScript: use the scoped
+  `home/keewai/shared/pi/tsconfig.json` with the pinned TypeScript compiler or LSP.
+  It resolves Pi and Node types from the deployed user profile; a missing profile
+  is an environment limitation, not a reason to install mutable npm dependencies.
 - Another host only: locally evaluate the changed attributes, or build the affected
   output when package implementation or build logic changed. Shared settings do
   not require every host's build unless host-specific branches need validation.
