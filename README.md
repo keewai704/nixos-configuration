@@ -171,6 +171,7 @@ Ponytail は `/etc/codex/skills/ponytail`、配布対象の個人スキルは `~
 モデルは `openai-codex/gpt-6-astra`、推論は `xhigh`、コンテキスト上限は既存 Codex と同じ 872,000 です。
 自動コンパクションを有効にし、応答用に 131,072 トークン、要約時の直近履歴に 32,768 トークンを確保します。
 Pi 本体は flake.lock の Nixpkgs に固定された 0.85.1 を使います。
+ChatGPT 接続のキャッシュ用ヘッダーを本文のキーに合わせる小さなパッチを適用しています。
 `pi-mcp-adapter@2.34.0` は Pi 標準のパッケージ管理で初回起動時に取得し、npm の lifecycle scripts を無効にします。
 拡張のバージョン指定は Nix 管理で、取得した依存関係とロックは `~/.pi/agent/npm/` に保存されます。
 この npm 依存関係のロックは flake.lock には含まれません。
@@ -186,10 +187,14 @@ MCP アダプターが情報取得後にサーバー別の補助ツールを追�
 管理対象の設定・指示・拡張を変更するときは、このリポジトリの編集元を直します。
 
 キャッシュのためにシステム指示とツール定義を固定し、毎ターンの日付・Git 状態の注入、履歴の書き換え、定期的な空要求は行いません。
+`astra-cache` フックは、作業ディレクトリとモデルから固定のキャッシュキーを作ります。
+ChatGPT 接続では本文の `prompt_cache_key` と HTTP の `session-id` を揃え、同じアカウント・作業ディレクトリ・モデルの新規セッションでも共通部分を再利用できるようにします。
+会話の保存先、Pi のセッション ID、WebSocket 接続の管理、`x-client-request-id` は個々のセッションのままです。
+ディレクトリやモデルが異なる場合はキーを分けます。プロンプト内容が変わった部分は、同じキーでも再利用されません。
 同じ仕事は `pi-astra -c` で続け、モデル・推論レベル・拡張の変更や `/compact` は必要な場合に使います。
 フッターの `CH` は直近要求の再利用率、`/cache` は選択ブランチの入力トークンで重み付けした再利用率を表示します。
-`cache-audit` は送信直前の指示・ツール・推論設定の変化をハッシュで検出して画面に知らせます。
-要求や会話を書き換えず、プロンプト本文やハッシュをログに保存しません。
+`cache-audit` は送信直前の指示・ツール・推論設定・キャッシュキーなどの変化をハッシュで検出して画面に知らせます。
+監視フックは要求や会話を書き換えず、プロンプト本文やハッシュをログに保存しません。
 設定が同じでも会話の変更、コンパクション、キャッシュ期限、サーバーの割り当てでミスが起こるため、再利用率は保証しません。
 表示されるトークンや費用見積もりは、ChatGPT 契約の実請求や残り利用枠ではありません。
 
@@ -199,7 +204,9 @@ MCP アダプターが情報取得後にサーバー別の補助ツールを追�
 [Astra の公式ガイド](https://developers.openai.com/api/docs/guides/latest-model)、
 [OpenAI のキャッシュ仕様](https://developers.openai.com/api/docs/guides/prompt-caching)を確認しました。
 Astra の API では `prompt_cache_options.ttl = "30m"` が現行仕様ですが、
-ChatGPT 用の接続には API 専用パラメーターを追加せず、Pi 標準のセッション ID と要求形式を使います。
+ChatGPT 用の接続には API 専用の TTL パラメーターを追加しません。
+本文のキーだけではなく `session-id` ヘッダーもキャッシュに使われる挙動は、
+[上流の調査](https://github.com/earendil-works/pi/issues/6630)と実際の接続で確認しています。
 [oh-my-pi の設定](https://github.com/can1357/oh-my-pi/blob/main/docs/settings.md)からは履歴の追記とキャッシュ維持の考え方を参考にしました。
 [Armin Ronacher の利用記](https://lucumr.pocoo.org/2026/1/31/pi/)にある、小さいツール構成、必要時だけ読むスキル、レビュー操作も取り入れています。
 [利用者の拡張構成の報告](https://www.reddit.com/r/PiCodingAgent/comments/1wgg6bx/my_pi_config_and_extensions/)では、
@@ -262,6 +269,7 @@ Nix ファイルを読むと依存関係・権限・起動条件がわかり、�
 | [hyprpaper-shm/](pkgs/hyprpaper-shm/) | VM 用の壁紙描画と旧 IPC の橋渡し |
 | [lkl-image/](pkgs/lkl-image/) | 上流の `cptofs --mb` を使った VM イメージ作成時のメモリー指定 |
 | [paseo/](pkgs/paseo/) | 配布パッケージで欠落する node-pty のネイティブ部品を同じ固定バージョンから補完 |
+| [pi-coding-agent/](pkgs/pi-coding-agent/) | ChatGPT のキャッシュ用ヘッダーと会話・接続の識別子を分離 |
 | [ponytail-hooks/](pkgs/ponytail-hooks/) | Ponytail の管理用フック |
 
 パッチは対象パッケージと同じディレクトリに置きます。

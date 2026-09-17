@@ -21,6 +21,8 @@ export default function cacheAudit(pi: ExtensionAPI) {
 			.update(
 				JSON.stringify({
 					model: payload.model,
+					prompt_cache_key: payload.prompt_cache_key,
+					service_tier: payload.service_tier,
 					instructions: payload.instructions,
 					tools: payload.tools,
 					reasoning: payload.reasoning,
@@ -34,7 +36,7 @@ export default function cacheAudit(pi: ExtensionAPI) {
 			configurationChanges++;
 			if (ctx.hasUI) {
 				ctx.ui.notify(
-					"Astraの指示・ツール・推論設定が変わりました。キャッシュ再利用が減る場合があります。",
+					"Astraのキャッシュに影響する要求設定が変わりました。再利用が減る場合があります。",
 					"info",
 				);
 			}
@@ -77,7 +79,7 @@ export default function cacheAudit(pi: ExtensionAPI) {
 						`選択ブランチの入力トークン加重キャッシュ率: ${rate}`,
 						`cache read: ${cacheRead.toLocaleString()} / write: ${cacheWrite.toLocaleString()} / uncached: ${input.toLocaleString()}`,
 						`この起動以降のAstra要求設定の変更: ${configurationChanges}回`,
-						"設定の比較は指示・ツール・推論設定が対象です。会話本文、期限切れ、サーバーの割り当ては判定しません。",
+						"指示・ツール・推論設定・キャッシュキーなどを比較しています。会話本文、期限切れ、サーバーの割り当ては判定しません。",
 						"ChatGPT契約の実請求額や残り利用枠を表す数値ではありません。",
 					].join("\n"),
 					"info",

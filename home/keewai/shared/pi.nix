@@ -32,6 +32,7 @@ in
 {
   programs.pi-coding-agent = {
     enable = true;
+    package = pkgs.callPackage ../../../pkgs/pi-coding-agent { };
     extraPackages = [ pkgs.nodejs ];
     settings = {
       defaultProvider = "openai-codex";
@@ -75,6 +76,7 @@ in
 
   home.file = {
     ".pi/agent/APPEND_SYSTEM.md".source = ./pi/APPEND_SYSTEM.md;
+    ".pi/agent/extensions/astra-cache.ts".source = ./pi/astra-cache.ts;
     ".pi/agent/extensions/cache-audit.ts".source = ./pi/cache-audit.ts;
     ".pi/agent/prompts/review.md".source = ./pi/review.md;
     ".pi/agent/mcp.json".text = builtins.toJSON {
