@@ -33,6 +33,10 @@
 全ホストに [modules/common.nix](modules/common.nix) と
 [modules/home-manager.nix](modules/home-manager.nix) が読み込まれます。
 前者はネットワークやユーザーなどの共通 OS 設定、後者は Home Manager と NixOS の接続を担当します。
+ブートローダーとカーネルの選択は各ホストの `boot.nix` に置きます。
+[modules/desktop.nix](modules/desktop.nix) は dconf、キーリング、ファイル管理のシステム連携、
+スケジューラーと共通のデスクトッププロフィールをまとめます。
+Hyprland の独自パッケージとログイン・ポータル統合は [hosts/citrus/hyprland.nix](hosts/citrus/hyprland.nix) が担当します。
 
 設定は次の順に合流します。`imports` は別の設定を読み込む入口です。
 
@@ -94,7 +98,7 @@ Nix に慣れていない場合は、まず次の構文が分かれば読み進�
 | シェル、補完、プロンプト | [shared/shell.nix](home/keewai/shared/shell.nix)、[starship.toml](home/keewai/shared/starship.toml) |
 | 設定を伴わないデスクトップ用ツール | [desktop/applications.nix](home/keewai/desktop/applications.nix) |
 | ウィンドウ、モニター、キー操作 | [desktop/hyprland.lua](home/keewai/desktop/hyprland.lua) |
-| Hyprland のログイン・ポータル統合 | [hosts/citrus/hyprland.nix](hosts/citrus/hyprland.nix) |
+| Hyprland のパッケージ・ログイン・ポータル統合 | [hosts/citrus/hyprland.nix](hosts/citrus/hyprland.nix) |
 | 画面ロックとアイドル時の動作 | [desktop/hypr-island.nix](home/keewai/desktop/hypr-island.nix) |
 | 日本語入力と切り替えキー | [desktop/input-method.nix](home/keewai/desktop/input-method.nix)、[modules/input-method-shortcut.nix](modules/input-method-shortcut.nix) |
 | 端末 | [desktop/kitty.nix](home/keewai/desktop/kitty.nix) |
@@ -133,7 +137,7 @@ Home Manager は `useUserPackages = true` で NixOS に統合されています�
 | --- | --- |
 | [shared/pi.nix](home/keewai/shared/pi.nix)、[shared/pi/](home/keewai/shared/pi/) | Pi の Astra 設定、MCP 接続、追加システム指示、キャッシュ監視フックとレビュー用プロンプト |
 | [shared/pi-web.nix](home/keewai/shared/pi-web.nix) | Pi Web の導入、ユーザーサービス、ホストごとの tailnet 許可 |
-| [modules/pi-web.nix](modules/pi-web.nix) | ログイン前にも Pi Web を起動するための linger |
+| [modules/common.nix](modules/common.nix) | ログイン前にも Pi Web などのユーザーサービスを起動するための linger |
 | [citrus/web.nix](hosts/citrus/web.nix)、[orange/services/web.nix](hosts/orange/services/web.nix) | 既存の Tailscale Serve と nginx による HTTPS 公開 |
 | [shared/mcp.nix](home/keewai/shared/mcp.nix) | 全ホストで使う MCP サーバー |
 | [desktop/cua.nix](home/keewai/desktop/cua.nix) | デスクトップ操作用ドライバーと MCP |

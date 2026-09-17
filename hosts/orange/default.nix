@@ -1,10 +1,9 @@
-{ pkgs, ... }:
-
 let
   inherit (import ./settings.nix) hostName;
 in
 {
   imports = [
+    ./boot.nix
     ./hardware-configuration.nix
     ./services/health-monitor.nix
     ./services/immich.nix
@@ -18,8 +17,6 @@ in
     ./services/vaultwarden.nix
     ./services/web.nix
   ];
-
-  boot.kernelPackages = pkgs.linuxPackages_latest;
 
   networking.hostName = hostName;
 

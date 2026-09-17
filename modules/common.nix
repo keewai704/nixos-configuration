@@ -4,18 +4,7 @@
 }:
 
 {
-  imports = [
-    ./pi-web.nix
-    ./shell.nix
-  ];
-
-  boot.loader = {
-    systemd-boot = {
-      enable = true;
-      configurationLimit = 10;
-    };
-    efi.canTouchEfiVariables = true;
-  };
+  imports = [ ./shell.nix ];
 
   i18n.defaultLocale = "ja_JP.UTF-8";
   time.timeZone = "Asia/Tokyo";
@@ -75,6 +64,7 @@
   users.users.keewai = {
     isNormalUser = true;
     description = "keewai";
+    linger = true;
     extraGroups = [
       "networkmanager"
       "wheel"

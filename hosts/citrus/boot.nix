@@ -1,8 +1,8 @@
-{ lib, pkgs, ... }:
+{ pkgs, ... }:
 {
   boot = {
     loader = {
-      systemd-boot.enable = lib.mkForce false;
+      efi.canTouchEfiVariables = true;
       limine = {
         enable = true;
         maxGenerations = 10;
