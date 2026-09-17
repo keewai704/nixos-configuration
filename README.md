@@ -181,8 +181,9 @@ Pi 標準のパッケージ管理で初回起動時に取得し、npm の lifecy
 拡張のバージョン指定は Nix 管理で、取得した依存関係とロックは `~/.pi/agent/npm/` に保存されます。
 この npm 依存関係のロックは flake.lock には含まれません。
 
-MCP は Codex と同じ宣言から `context7`、`nixos`、`openaiDeveloperDocs` を読みます。
-初回はツール情報を取得し、以降は必要時に接続します。共有設定の他のサーバーは Pi 側で無効にします。
+MCP は Codex と同じ宣言から、そのホストに定義されたすべてのサーバーを有効にします。
+共通の `context7`、`nixos`、`openaiDeveloperDocs`、`serena` に加え、デスクトップでは `cua-driver` も使えます。
+初回はツール情報を取得し、以降は必要時に接続します。共有設定へ追加したサーバーも Pi 側に反映されます。
 `defaultTools` で Linux の全組み込みツール `read / bash / edit / write / grep / find / ls` を有効にします。
 拡張ツールも標準どおり有効にし、ラッパーの `--tools` による許可リストは設けません。
 MCP アダプターのサーバー別補助ツールも、登録されると利用できます。
