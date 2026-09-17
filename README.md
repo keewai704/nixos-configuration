@@ -148,8 +148,8 @@ Home Manager は `useUserPackages = true` で NixOS に統合されています�
 | [shared/paseo.nix](home/keewai/shared/paseo.nix) | Paseo の CLI、Web UI、Codex 接続とユーザーサービス |
 | [shared/pi.nix](home/keewai/shared/pi.nix)、[shared/pi/](home/keewai/shared/pi/) | Pi の Astra 設定、MCP 接続、追加システム指示、キャッシュ監視フックとレビュー用プロンプト |
 | [shared/pi-web.nix](home/keewai/shared/pi-web.nix) | Pi Web の導入とユーザーサービス |
-| [desktop/pi-web-tailscale.nix](home/keewai/desktop/pi-web-tailscale.nix)、[citrus/pi-web-tailscale.nix](hosts/citrus/pi-web-tailscale.nix) | Pi Web の tailnet ホスト許可と HTTPS 公開 |
-| [desktop/paseo-tailscale.nix](home/keewai/desktop/paseo-tailscale.nix)、[citrus/paseo-tailscale.nix](hosts/citrus/paseo-tailscale.nix) | Paseo の tailnet ホスト名と Tailscale Serve による HTTPS 公開 |
+| [desktop/pi-web-tailscale.nix](home/keewai/desktop/pi-web-tailscale.nix)、[citrus/web.nix](hosts/citrus/web.nix) | Pi Web の tailnet ホスト許可と HTTPS 公開 |
+| [desktop/paseo-tailscale.nix](home/keewai/desktop/paseo-tailscale.nix)、[citrus/web.nix](hosts/citrus/web.nix) | Paseo の tailnet ホスト名と Tailscale Serve による HTTPS 公開 |
 | [modules/codex-remote.nix](modules/codex-remote.nix) | ログイン前にもユーザーサービスを起動するための linger |
 | [desktop/codex.nix](home/keewai/desktop/codex.nix) | デスクトップアプリと `codex:` URL ハンドラー |
 | [shared/mcp.nix](home/keewai/shared/mcp.nix) | 全ホストで使う MCP サーバー |
@@ -219,10 +219,13 @@ UI の改善とモデル性能の改善は区別されており、多数の拡�
 ### Pi Web
 
 [Pi Web](https://github.com/agegr/pi-web) はユーザーサービスとして起動し、
-ローカルでは `http://127.0.0.1:30141`、Citrus の tailnet では
-[https://citrus.tail1e65cd.ts.net:8443](https://citrus.tail1e65cd.ts.net:8443) から使います。
+ローカルでは `http://127.0.0.1:30141/pi/`、Citrus の tailnet では
+[https://citrus.tail1e65cd.ts.net/pi/](https://citrus.tail1e65cd.ts.net/pi/) から使います。
 `citrus-vm` も同じ宣言を継承し、適用時はそのホスト名になります。
-アプリの待受けはループバックだけで、Tailscale Serve が HTTPS を終端します。
+Tailscale Serve の HTTPS 443 から、ループバックの nginx（`127.0.0.1:8000`）を通して公開します。
+nginx は `/pi/` を Pi Web、`/` を Paseo へ転送し、各アプリの待受けはループバックだけです。
+Pi Web は `/pi` を basePath として再ビルドし、API・静的ファイル・通知・PWA も同じパスを使います。
+PWA の登録範囲は `/pi/` に限定します。
 Orange ではインストールとローカル待受けだけで、Web 公開は追加しません。
 
 Web 版と CLI は `~/.pi/agent` の認証、設定、拡張、スキル、会話ファイルを共有します。
@@ -291,7 +294,7 @@ Nix ファイルを読むと依存関係・権限・起動条件がわかり、�
 | [lkl-image/](pkgs/lkl-image/) | 上流の `cptofs --mb` を使った VM イメージ作成時のメモリー指定 |
 | [paseo/](pkgs/paseo/) | 配布パッケージで欠落する node-pty のネイティブ部品を同じ固定バージョンから補完 |
 | [pi-coding-agent/](pkgs/pi-coding-agent/) | ChatGPT のキャッシュ用ヘッダーと会話・接続の識別子を分離 |
-| [pi-web/](pkgs/pi-web/) | 固定ソースからの Pi Web ビルド、同梱フォント、修正版 Pi SDK と端末の実行環境 |
+| [pi-web/](pkgs/pi-web/) | 固定ソースからの Pi Web ビルド、`/pi/` 対応、同梱フォント、修正版 Pi SDK と端末の実行環境 |
 | [ponytail-hooks/](pkgs/ponytail-hooks/) | Ponytail の管理用フック |
 
 パッチは対象パッケージと同じディレクトリに置きます。
@@ -339,16 +342,16 @@ CLI では作業ディレクトリから `paseo run --provider codex "依頼内�
 `citrus` には、同じ tailnet に接続した端末から
 [Tailscale 経由の Web UI](https://citrus.tail1e65cd.ts.net/) でもアクセスできます。
 Paseo アプリの直接接続では、ホストに `citrus.tail1e65cd.ts.net`、ポートに `443` を指定し、SSL を有効にします。
-Tailscale Serve が HTTPS 443 を `127.0.0.1:6767` へ転送します。
+Tailscale Serve が HTTPS 443 を nginx（`127.0.0.1:8000`）へ送り、nginx が `/` を `127.0.0.1:6767` へ転送します。
 `citrus-vm` も同じ設定を継承し、適用した場合はホスト名が `citrus-vm.tail1e65cd.ts.net` になります。
-公開状態は `tailscale serve status`、サービス状態は `systemctl status tailscale-serve-paseo` で確認します。
+公開状態は `tailscale serve status`、サービス状態は `systemctl status tailscale-serve-nginx nginx` で確認します。
 
 状態確認は `systemctl --user status paseo`、再起動は `systemctl --user restart paseo`、
 Codex の検出確認は `paseo provider diagnostic codex` を使います。
 `~/.paseo/config.json` は Home Manager が管理するため、接続設定は
 [shared/paseo.nix](home/keewai/shared/paseo.nix) で変更します。
 Paseo 本体の待受けはループバックだけで、Paseo のリレーは無効です。
-Tailscale 側の公開設定は [citrus/paseo-tailscale.nix](hosts/citrus/paseo-tailscale.nix)、
+Tailscale 側の公開設定は [citrus/web.nix](hosts/citrus/web.nix)、
 アプリの許可ホスト名と外部 URL は [desktop/paseo-tailscale.nix](home/keewai/desktop/paseo-tailscale.nix) で管理します。
 音声機能は無効にしており、音声モデルの自動ダウンロードは行いません。
 

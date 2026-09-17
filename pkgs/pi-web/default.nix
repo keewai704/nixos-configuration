@@ -38,6 +38,7 @@ buildNpmPackage {
   };
   patches = [
     ./local-font.patch
+    ./subpath.patch
   ];
   npmDepsHash = "sha256-lGsMOYY2rCQSw+hMLXv+aWq4991NnkhLJUipL1F843k=";
   npmRebuildFlags = [ "--ignore-scripts" ];

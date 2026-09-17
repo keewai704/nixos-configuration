@@ -11,8 +11,7 @@
     ./input-method-shortcut.nix
     ./apple-device-usb.nix
     ./nvidia.nix
-    ./paseo-tailscale.nix
-    ./pi-web-tailscale.nix
+    ./web.nix
     ./stylix.nix
   ];
 
