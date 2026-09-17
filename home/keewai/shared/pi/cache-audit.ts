@@ -1,12 +1,25 @@
 import { createHash } from "node:crypto";
 import type { ExtensionAPI } from "@earendil-works/pi-coding-agent";
 
+const requestFields = [
+	"model",
+	"prompt_cache_key",
+	"service_tier",
+	"instructions",
+	"tools",
+	"reasoning",
+	"text",
+	"parallel_tool_calls",
+] as const;
+
 export default function cacheAudit(pi: ExtensionAPI) {
-	let previousFingerprint: string | undefined;
+	let previousFingerprints: Map<string, string> | undefined;
+	let lastChangedFields: string[] = [];
 	let configurationChanges = 0;
 
 	pi.on("session_start", () => {
-		previousFingerprint = undefined;
+		previousFingerprints = undefined;
+		lastChangedFields = [];
 		configurationChanges = 0;
 	});
 
@@ -17,31 +30,33 @@ export default function cacheAudit(pi: ExtensionAPI) {
 		)
 			return;
 		const payload = event.payload as Record<string, unknown>;
-		const fingerprint = createHash("sha256")
-			.update(
-				JSON.stringify({
-					model: payload.model,
-					prompt_cache_key: payload.prompt_cache_key,
-					service_tier: payload.service_tier,
-					instructions: payload.instructions,
-					tools: payload.tools,
-					reasoning: payload.reasoning,
-					text: payload.text,
-					parallel_tool_calls: payload.parallel_tool_calls,
-				}),
-			)
-			.digest("hex");
+		const fingerprints = new Map<string, string>();
+		for (const field of requestFields) {
+			fingerprints.set(
+				field,
+				createHash("sha256")
+					.update(JSON.stringify(payload[field]) ?? "undefined")
+					.digest("hex"),
+			);
+		}
+		const previous = previousFingerprints;
+		const changedFields = previous
+			? requestFields.filter(
+					(field) => previous.get(field) !== fingerprints.get(field),
+				)
+			: [];
 
-		if (previousFingerprint && previousFingerprint !== fingerprint) {
+		if (changedFields.length > 0) {
 			configurationChanges++;
+			lastChangedFields = changedFields;
 			if (ctx.hasUI) {
 				ctx.ui.notify(
-					"Astraのキャッシュに影響する要求設定が変わりました。再利用が減る場合があります。",
+					`Astra要求設定の変更: ${changedFields.join(", ")}。キャッシュ再利用が減る場合があります。`,
 					"info",
 				);
 			}
 		}
-		previousFingerprint = fingerprint;
+		previousFingerprints = fingerprints;
 	});
 
 	pi.registerCommand("cache", {
@@ -78,7 +93,8 @@ export default function cacheAudit(pi: ExtensionAPI) {
 					[
 						`選択ブランチの入力トークン加重キャッシュ率: ${rate}`,
 						`cache read: ${cacheRead.toLocaleString()} / write: ${cacheWrite.toLocaleString()} / uncached: ${input.toLocaleString()}`,
-						`この起動以降のAstra要求設定の変更: ${configurationChanges}回`,
+						`このセッション読込以降のAstra要求設定の変更: ${configurationChanges}回`,
+						`直近の変更項目: ${lastChangedFields.join(", ") || "なし"}`,
 						"指示・ツール・推論設定・キャッシュキーなどを比較しています。会話本文、期限切れ、サーバーの割り当ては判定しません。",
 						"ChatGPT契約の実請求額や残り利用枠を表す数値ではありません。",
 					].join("\n"),

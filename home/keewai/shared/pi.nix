@@ -1,6 +1,7 @@
 {
   config,
   lib,
+  osConfig,
   pkgs,
   ...
 }:
@@ -47,6 +48,7 @@ in
       defaultModel = "gpt-6-astra";
       defaultThinkingLevel = "xhigh";
       defaultProjectTrust = "always";
+      shellCommandPrefix = ''export PATH=${lib.escapeShellArg osConfig.security.wrapperDir}:"$PATH"'';
       defaultTools = [
         "read"
         "bash"
