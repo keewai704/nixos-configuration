@@ -14,33 +14,31 @@ checkout or in an isolated worktree, use that checkout's absolute paths with
 
 ## Author and publish
 
-For a new or substantially revised skill, use the available `skill-creator`
-guidance, reusing it if already read. Keep one focused purpose, a concise
+For a new or substantially revised skill, read Pi's bundled `docs/skills.md`
+and use available skill-authoring guidance. Keep one focused purpose, a concise
 description, and only the references or scripts the workflow needs. Repository
 operational gates belong in AGENTS.md rather than being repeated in the skill.
 
-Home Manager publishes selected `skills/<name>` directories under
+Home Manager publishes `skills/<name>` directories, including Ponytail, under
 `~/.agents/skills` through
-[home/keewai/shared/skills.nix](/home/keewai/nixos-configuration/home/keewai/shared/skills.nix).
-[modules/codex-ponytail.nix](/home/keewai/nixos-configuration/modules/codex-ponytail.nix)
-publishes Ponytail under `/etc/codex/skills/ponytail`; its lifecycle hook injects
-a short reference instead of the full skill. Check publication filters when
-adding, renaming, or removing a skill.
+[shared/skills.nix](/home/keewai/nixos-configuration/home/keewai/shared/skills.nix).
+Pi discovers these directories natively. Check publication filters when adding,
+renaming, or removing a skill.
 
-Use `apply_patch` to edit the source. Do not reinitialize an existing skill or
-write into generated skill directories. Preserve application-managed system
-skills and plugin caches; cross-project routing preferences belong in
-`modules/codex.nix`. Add `agents/openai.yaml` when invocation policy or UI
-metadata needs to change, preserving other metadata.
+Use the available editing tools on the source. Do not reinitialize an existing
+skill or write into generated skill directories. Cross-project routing
+preferences belong in
+[shared/pi/APPEND_SYSTEM.md](/home/keewai/nixos-configuration/home/keewai/shared/pi/APPEND_SYSTEM.md).
+Preserve unrelated metadata and package-managed resources.
 
 ## Verify skill behavior
 
-Validate each changed skill with the available bundled `quick_validate.py`.
-If Python/PyYAML is unavailable, the pinned runtime for the default checkout is:
-
-```bash
-nix shell --impure --no-write-lock-file --expr 'with import (builtins.getFlake "/home/keewai/nixos-configuration").inputs.nixpkgs { system = builtins.currentSystem; }; python3.withPackages (pythonPackages: [ pythonPackages.pyyaml ])' --command python3 /home/keewai/.codex/skills/.system/skill-creator/scripts/quick_validate.py /home/keewai/nixos-configuration/skills/<skill-name>
-```
+Validate changed skills with the pinned Pi skill loader using temporary state,
+without making a model request. Confirm each intended skill is discovered and
+no validation diagnostics are returned. Check frontmatter, linked files, and
+relative paths against Pi's documented Agent Skills format. If the loader is
+unavailable, report that limit and validate the format with a temporary parser;
+do not add a permanent repository test suite.
 
 For material trigger or workflow changes, check realistic matching and
 non-matching requests against the new instructions. Verify decisions and
@@ -48,11 +46,10 @@ boundaries, not exact wording; report whether this was a manual scenario review
 or an executed model evaluation. Keep this check within the authorized
 resources and the user's delegation policy.
 
-In addition to AGENTS.md's checks, verify the evaluated Home Manager file set
-or Ponytail's `environment.etc` source. After applicable local `test` and
-`switch`, confirm Home Manager success and compare each deployed skill with
-its repository source. For changed hook behavior, exercise activation and
-mode changes with temporary state, leaving the active session untouched.
+In addition to AGENTS.md's checks, verify the Home Manager file set or built
+links. After applicable local `test` and `switch`, confirm Home Manager success
+and compare each deployed skill with its repository source. Keep tests of any
+mode controls isolated from the active session.
 
 Use AGENTS.md's evaluated-host impact rule for deployment. If the client has
 not reloaded a changed skill, tell the user to open a new task or restart the

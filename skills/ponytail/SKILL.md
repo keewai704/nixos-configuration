@@ -7,8 +7,7 @@ license: MIT
 # Ponytail
 
 Deliver the simplest correct solution for the requested coding scope. Apply
-this skill to coding work only; a hook reminder does not make it relevant to
-unrelated prose or research.
+this skill to coding work only, not unrelated prose or research.
 
 ## Choose the implementation
 
@@ -35,15 +34,16 @@ and deployment follow the user's instructions and the repository's AGENTS.md.
 
 ## Modes and scope
 
-The hook supplies a short mode reminder; default to `full` when none is supplied.
+Default to `full` unless the user has selected another mode in this session.
 `lite` favors the straightforward implementation and briefly notes a useful
 alternative. `full` follows the reuse order above. `ultra` scrutinizes new
 machinery more strictly while still completing every explicit requirement.
-Change level with `/ponytail lite|full|ultra`; `stop ponytail` or `normal mode`
-disables the mode. Retain the selected mode within the session until changed.
-`/ponytail default off|lite|full|ultra` changes the default for new sessions.
+Ask for `ponytail lite`, `ponytail full`, or `ponytail ultra` in the conversation
+to change level; `stop ponytail` or `normal mode` disables the mode. Retain the
+selected mode within the session until changed. These are conversational
+instructions, not registered Pi commands or persistent settings.
 Mode changes do not grant permission or replace repository operational gates.
 
 Locally adapted from Ponytail 4.9.0 using the
 [Astra prompting guidance](https://developers.openai.com/api/docs/guides/latest-model#prompting-best-practices),
-reviewed 2026-09-13. Lifecycle hooks refer to this file without injecting it.
+reviewed 2026-09-13. Pi loads this file on demand through native skill discovery.

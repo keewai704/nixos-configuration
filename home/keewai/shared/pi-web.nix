@@ -1,6 +1,7 @@
 {
   config,
   lib,
+  osConfig,
   pkgs,
   ...
 }:
@@ -20,6 +21,7 @@ in
       ExecStart = "${lib.getExe piWeb} --hostname 127.0.0.1 --port 30141 --no-open";
       WorkingDirectory = config.home.homeDirectory;
       Environment = [
+        "PI_WEB_ALLOWED_HOSTS=${osConfig.networking.hostName}.tail1e65cd.ts.net"
         "PI_CODING_AGENT_DIR=${config.home.homeDirectory}/.pi/agent"
         "PI_WEB_SKIP_VERSION_CHECK=1"
         "NEXT_TELEMETRY_DISABLED=1"

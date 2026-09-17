@@ -8,7 +8,7 @@ let
       source = skillRoot + "/${name}";
       force = true;
     }
-  ) (lib.removeAttrs (builtins.readDir skillRoot) [ "ponytail" ]);
+  ) (builtins.readDir skillRoot);
 
 in
 {

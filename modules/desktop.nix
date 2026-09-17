@@ -7,6 +7,4 @@
   ];
 
   home-manager.users.keewai.imports = [ ../home/keewai/desktop ];
-
-  nixpkgs.config.allowUnfreePackages = [ "chatgpt-desktop" ];
 }

@@ -33,6 +33,7 @@
   home.packages = [
     pkgs.gws
     pkgs.ripgrep
+    pkgs.rtk
     pkgs.yt-dlp
   ];
 }

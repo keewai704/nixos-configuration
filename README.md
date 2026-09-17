@@ -10,7 +10,7 @@
 - [設定の読み順とホストの違い](#設定の読み順とホストの違い)
 - [ディレクトリと Nix の基本](#ディレクトリの役割)
 - [変更したい内容から探す](#変更したい内容から探す)
-- [Codex・MCP・スキルの編集先](#codexmcpスキル)
+- [Pi・MCP・スキルの編集先](#pimcpスキル)
 - [Orange のサービスと保存先](#orange-のサービスを読む)
 - [独自パッケージと音楽クライアントの実装](#パッケージの独自変更)
 - [検証とローカル適用](#適用せずに設定を確認する)
@@ -39,7 +39,7 @@
 ```text
 flake.nix
 ├── 全ホスト: modules/common.nix
-│   └── Codex・ログインシェルなどの共通 OS 設定
+│   └── ユーザーサービスの linger・ログインシェルなどの共通 OS 設定
 ├── 全ホスト: modules/home-manager.nix
 │   └── home/keewai/common.nix → shared/ の個人設定
 └── 各ホスト: hosts/<host>/default.nix
@@ -54,12 +54,12 @@ flake.nix
 | [flake.nix](flake.nix) / [flake.lock](flake.lock) | 外部入力、固定したバージョン、ホスト・パッケージ・開発環境の公開 |
 | [modules/](modules/) | 複数ホストで共有する NixOS の機能と統合 |
 | [hosts/](hosts/) | ホスト固有のハードウェア、サービス、起動設定 |
-| [home/keewai/shared/](home/keewai/shared/) | 全ホストで使う個人の CLI、シェル、Codex |
+| [home/keewai/shared/](home/keewai/shared/) | 全ホストで使う個人の CLI、シェル、Pi |
 | [home/keewai/desktop/](home/keewai/desktop/) | デスクトップ用アプリ、キー操作、ユーザーサービス、表示設定 |
 | [pkgs/](pkgs/) | パッケージのビルド定義、パッチ、実行時に必要な補助コード |
 | [themes/](themes/) | NixOS と Home Manager が共有する色、フォント、画像 |
-| [skills/](skills/) | Nix で配布する個人用 Codex スキルの編集元 |
-| [.agents/skills/](.agents/skills/) | このリポジトリ専用の Codex スキル |
+| [skills/](skills/) | Nix で配布する個人用 Pi スキルの編集元 |
+| [.agents/skills/](.agents/skills/) | このリポジトリ専用の Pi スキル |
 | [secrets/](secrets/) | Agenix の公開鍵設定と暗号化済みシークレット |
 | [devshell/](devshell/) | このリポジトリを編集するための開発環境 |
 
@@ -127,27 +127,24 @@ Home Manager は `useUserPackages = true` で NixOS に統合されています�
 ユーザーのパッケージは `/etc/profiles/per-user/keewai` に入り、適用には NixOS の再構築を使います。
 パッケージの所有場所を変えても、アプリの実行権限やサンドボックスは変わりません。
 
-## Codex・MCP・スキル
+## Pi・MCP・スキル
 
 | 場所 | 役割 |
 | --- | --- |
-| [modules/codex.nix](modules/codex.nix) | モデル、共通指示、MCP 設定の Codex 形式への変換 |
-| [modules/codex-ponytail.nix](modules/codex-ponytail.nix) | Ponytail のフックとシステムスキルの配布 |
-| [shared/codex.nix](home/keewai/shared/codex.nix) | 固定した Codex CLI の導入と、ユーザー設定に残った管理対象の上書きの除去 |
-| [shared/codex-remote.nix](home/keewai/shared/codex-remote.nix) | 認証付き Remote Control のユーザーサービス |
 | [shared/pi.nix](home/keewai/shared/pi.nix)、[shared/pi/](home/keewai/shared/pi/) | Pi の Astra 設定、MCP 接続、追加システム指示、キャッシュ監視フックとレビュー用プロンプト |
-| [shared/pi-web.nix](home/keewai/shared/pi-web.nix) | Pi Web の導入とユーザーサービス |
-| [desktop/pi-web-tailscale.nix](home/keewai/desktop/pi-web-tailscale.nix)、[citrus/web.nix](hosts/citrus/web.nix) | Pi Web の tailnet ホスト許可と HTTPS 公開 |
-| [modules/codex-remote.nix](modules/codex-remote.nix) | ログイン前にもユーザーサービスを起動するための linger |
-| [desktop/codex.nix](home/keewai/desktop/codex.nix) | デスクトップアプリと `codex:` URL ハンドラー |
+| [shared/pi-web.nix](home/keewai/shared/pi-web.nix) | Pi Web の導入、ユーザーサービス、ホストごとの tailnet 許可 |
+| [modules/pi-web.nix](modules/pi-web.nix) | ログイン前にも Pi Web を起動するための linger |
+| [citrus/web.nix](hosts/citrus/web.nix)、[orange/services/web.nix](hosts/orange/services/web.nix) | 既存の Tailscale Serve と nginx による HTTPS 公開 |
 | [shared/mcp.nix](home/keewai/shared/mcp.nix) | 全ホストで使う MCP サーバー |
 | [desktop/cua.nix](home/keewai/desktop/cua.nix) | デスクトップ操作用ドライバーと MCP |
-| [shared/skills.nix](home/keewai/shared/skills.nix) | 個人スキルの公開と配布対象の選別 |
+| [shared/skills.nix](home/keewai/shared/skills.nix) | Ponytail を含む個人スキルの配布 |
 
-Codex CLI は固定した `sadjow/codex-cli-nix` 入力から導入します。
+Codex CLI、Remote Control、ChatGPT Desktop とそのブラウザー・URL 連携は導入しません。
+Pi の `openai-codex` は ChatGPT 契約で接続するプロバイダー名であり、Codex CLI は必要ありません。
+認証と過去の会話など、旧アプリのユーザーデータやロールバック用の旧世代は自動削除しません。
 設定を変える場合は、このリポジトリの編集元を変更してください。
-生成先の `/etc/codex` や `/home/keewai/.agents/skills` は直接編集しません。
-Ponytail は `/etc/codex/skills/ponytail`、配布対象の個人スキルは `~/.agents/skills` に配置されます。
+`~/.pi/agent` の Nix 管理対象ファイルや `~/.agents/skills` の生成物は直接編集しません。
+Ponytail も他の個人スキルと同じ `~/.agents/skills` に配置します。
 
 ### Pi で Astra を使う
 
@@ -161,7 +158,7 @@ MCP の大きな JSON 出力を処理するときに、補助コマンドが見�
 プロジェクトの設定・スキル・拡張は確認なしで読み込まれ、拡張コードはユーザー権限で実行されます。
 個別に保存した信頼拒否や明示的な `--no-approve` は Pi 標準の優先順位で適用されます。
 
-既定のモデルは `openai-codex/gpt-6-astra`、推論は `xhigh`、コンテキスト上限は既存 Codex と同じ 872,000 です。
+既定のモデルは `openai-codex/gpt-6-astra`、推論は `xhigh`、コンテキスト上限は 872,000 です。
 モデル選択は制限せず、必要なら Pi 標準の操作で変更できます。
 自動コンパクションを有効にし、応答用に 131,072 トークン、要約時の直近履歴に 32,768 トークンを確保します。
 Pi 本体は flake.lock の Nixpkgs に固定された 0.85.1 を使います。
@@ -171,14 +168,15 @@ Pi 標準のパッケージ管理で初回起動時に取得し、npm の lifecy
 拡張のバージョン指定は Nix 管理で、取得した依存関係とロックは `~/.pi/agent/npm/` に保存されます。
 この npm 依存関係のロックは flake.lock には含まれません。
 
-MCP は Codex と同じ宣言から、そのホストに定義されたすべてのサーバーを有効にします。
+MCP は共有レジストリから、そのホストに定義されたすべてのサーバーを有効にします。
 共通の `context7`、`nixos`、`openaiDeveloperDocs`、`serena` に加え、デスクトップでは `cua-driver` も使えます。
 初回はツール情報を取得し、以降は必要時に接続します。共有設定へ追加したサーバーも Pi 側に反映されます。
 `defaultTools` で Linux の全組み込みツール `read / bash / edit / write / grep / find / ls` を有効にします。
 拡張ツールも標準どおり有効にし、ラッパーの `--tools` による許可リストは設けません。
 MCP アダプターのサーバー別補助ツールも、登録されると利用できます。
 `/mcp` で接続状況を確認できます。
-個人スキルは Pi 標準の `~/.agents/skills` 探索で共有し、Ponytail は `/etc/codex/skills/ponytail` を参照します。
+個人スキルは Ponytail を含め、Pi 標準の `~/.agents/skills` 探索で共有します。
+Ponytail のモードは会話中に `ponytail lite`、`ponytail full`、`ponytail ultra` で指定します。
 追加のシステム指示は `APPEND_SYSTEM.md` に置き、Pi 標準のツール説明とプロジェクトの AGENTS.md を維持します。
 `/review` または `/review <対象>` で変更のレビューを依頼できます。
 管理対象の設定・指示・拡張を変更するときは、このリポジトリの編集元を直します。
@@ -224,7 +222,8 @@ Nix（nixd）、TypeScript/JavaScript、Lua、Bash を Nix の固定パッケー
 `researcher` と `evidence-auditor` は、導入済みの `pi-web-access` が提供する4ツールを使えます。
 この2役は上流の既定どおりバックグラウンド（`async: true`）で実行し、親の拡張を継承します。
 前景の子は親の拡張を自動では読み込まないため、そのまま `async: false` に変更しません。
-外部 CLI の役割は各 CLI の認証・実行環境が別途必要です。
+Codex CLI を使う `codex-exec` と `codex-exec-writer` は無効にします。
+その他の外部 CLI の役割は各 CLI の認証・実行環境が別途必要です。
 並列の編集は別 worktree へ分離し、子にローカル activation・公開・未承認のリモート操作を委ねません。
 
 システム指示とツール定義を不用意に変えず、毎ターンの日付・Git 状態の注入、履歴の書き換え、定期的な空要求は行いません。
@@ -256,14 +255,18 @@ UI の改善とモデル性能の改善は区別されており、多数の拡�
 ### Pi Web
 
 [Pi Web](https://github.com/agegr/pi-web) はユーザーサービスとして起動し、
-ローカルでは `http://127.0.0.1:30141/pi/`、Citrus の tailnet では
-[https://citrus.tail1e65cd.ts.net/pi/](https://citrus.tail1e65cd.ts.net/pi/) から使います。
+各ホストのローカルでは `http://127.0.0.1:30141/pi/`、tailnet では
+[https://citrus.tail1e65cd.ts.net/pi/](https://citrus.tail1e65cd.ts.net/pi/) または
+[https://orange.tail1e65cd.ts.net/pi/](https://orange.tail1e65cd.ts.net/pi/) から使います。
 Tailscale Serve の HTTPS 443 から、ループバックの nginx（`127.0.0.1:8000`）を通して公開します。
-nginx は `/pi/` を Pi Web へ転送し、`/` は `/pi/` へリダイレクトします。
+nginx は `/pi/` を Pi Web へ転送します。Citrus の `/` は `/pi/` へリダイレクトし、
+Orange の `/` は既存の Immich、`/vault/` は Vaultwarden のままです。
 アプリの待受けはループバックだけです。
 Pi Web は `/pi` を basePath として再ビルドし、API・静的ファイル・通知・PWA も同じパスを使います。
 PWA の登録範囲は `/pi/` に限定します。
-Orange ではインストールとローカル待受けだけで、Web 公開は追加しません。
+Pi のバージョン、モデル、拡張、LSP、スキル、ユーザーサービスは両ホストで共通です。
+MCP の CUA だけは GUI のあるデスクトップ専用です。ホストの許可名は各ホストから生成します。
+認証と会話はホストごとに保存し、複製しません。Orange も初回に Pi の `/login` で認証します。
 
 Web 版と CLI は `~/.pi/agent` の認証、設定、拡張、スキル、会話ファイルを共有します。
 Pi Web が内部で使う Pi SDK も、このリポジトリのキャッシュ修正版を使います。
@@ -286,6 +289,7 @@ Web の入口は Tailscale Serve の HTTPS 443 です。
 | --- | --- | --- |
 | Immich | `https://orange.tail1e65cd.ts.net/` | [immich.nix](hosts/orange/services/immich.nix) |
 | Vaultwarden | `https://orange.tail1e65cd.ts.net/vault/` | [vaultwarden.nix](hosts/orange/services/vaultwarden.nix) |
+| Pi Web | `https://orange.tail1e65cd.ts.net/pi/` | [shared/pi-web.nix](home/keewai/shared/pi-web.nix)、[web.nix](hosts/orange/services/web.nix) |
 | Samba | HDD の共有 | [samba.nix](hosts/orange/services/samba.nix) |
 | Minecraft | LAN・tailnet 向け Fabric サーバー | [minecraft.nix](hosts/orange/services/minecraft.nix) |
 | Tailscale Exit Node | 経路と UDP オフロード | [tailscale-exit-node.nix](hosts/orange/services/tailscale-exit-node.nix) |
@@ -322,13 +326,11 @@ Nix ファイルを読むと依存関係・権限・起動条件がわかり、�
 | ディレクトリ | 独自変更の目的 |
 | --- | --- |
 | [brave-origin/](pkgs/brave-origin/) | Nixpkgs の Brave Origin に日本語設定を追加 |
-| [chatgpt-desktop/](pkgs/chatgpt-desktop/) | 公式 Linux 配布物の NixOS 対応、ワーカーの監視回避、ブラウザー標準の選択色 |
 | [cua-driver/](pkgs/cua-driver/) | デスクトップ操作用ドライバーの実行環境 |
 | [fprintd-cs9711/](pkgs/fprintd-cs9711/) | CS9711 指紋センサーと認証キャンセルの修正 |
 | [hyprland/](pkgs/hyprland/) | 入力メソッドの修飾キー処理の修正 |
 | [pi-coding-agent/](pkgs/pi-coding-agent/) | ChatGPT のキャッシュ用ヘッダーと会話・接続の識別子を分離 |
 | [pi-web/](pkgs/pi-web/) | 固定ソースからの Pi Web ビルド、`/pi/` 対応、同梱フォント、修正版 Pi SDK と端末の実行環境 |
-| [ponytail-hooks/](pkgs/ponytail-hooks/) | Ponytail の管理用フック |
 
 keyd が集約するのは処理対象の入力だけです。Citrus ではマウス入力を保つため、
 [input-method-shortcut.nix](hosts/citrus/input-method-shortcut.nix) で Logitech の機器を対象外にしています。
@@ -339,8 +341,6 @@ Hyprland の IME パッチを維持します。keyd による主キーボード�
 上流を更新するときは、パッチの前提と付属のテストも確認してください。
 `keewai704` 所有の GitHub 入力は `main` ブランチを明示し、リビジョンとハッシュを固定します。
 
-ChatGPT の監視処理は、同梱 Electron のワーカースレッド内で確認します。
-通常の Node.js だけで動いても、アプリ内で動くとは限りません。
 Hyprland 本体は IME 修正のため独自ビルドしますが、Aquamarine などの依存関係は上流のパッケージ定義を使います。
 既存の NixOS 公式・`hyprland.cachix.org`・Chaotic のバイナリキャッシュを利用し、独自ビルドは必要な修正に限定します。
 
@@ -359,7 +359,7 @@ Apple Music クライアントの実装、Nix パッケージ、Home Manager モ
 検証範囲の選び方と、エラー時だけ必要な評価値を前後比較する手順は、
 リポジトリ専用スキル [nixos-validation](.agents/skills/nixos-validation/SKILL.md) にまとめています。
 `$nixos-validation` で呼び出せます。全ホストへ配布する `skills/` には含めません。
-配置は Codex の[リポジトリ内スキルの仕様](https://learn.chatgpt.com/docs/build-skills#where-codex-loads-local-skills)に従っています。
+配置は Pi の[スキル探索の仕様](https://pi.dev/docs/latest/skills)に従っています。
 
 適用手順は [AGENTS.md](AGENTS.md) に従います。
 設定変更を実機へ適用する場合は、コミット後に現在のホストで `test`、稼働確認、

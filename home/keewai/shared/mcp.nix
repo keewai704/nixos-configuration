@@ -17,7 +17,7 @@
 
       serena = {
         enable = true;
-        context = "codex";
+        context = "agent";
         enableWebDashboard = false;
         args = [ "--project-from-cwd" ];
         extraPackages = [
