@@ -1,13 +1,11 @@
 {
   config,
-  inputs,
   lib,
   osConfig,
   pkgs,
   ...
 }:
 let
-  legacyHyprpaper = pkgs.callPackage ../../../pkgs/hyprpaper-shm { };
   theme = import ../../../themes/tokyo-night-black {
     inherit pkgs;
     colors = config.lib.stylix.colors;
@@ -26,6 +24,7 @@ in
             hl.config({
               cursor = { no_hardware_cursors = true },
               render = { cm_auto_hdr = 0 },
+              misc = { disable_splash_rendering = true },
               decoration = {
                 blur = { enabled = false },
                 shadow = { enabled = false },
@@ -41,18 +40,16 @@ in
       }
     );
 
-    services.hyprpaper = {
-      package = legacyHyprpaper;
-      settings = {
-        preload = [ config.stylix.image ];
-        wallpaper = lib.mkForce [ ",${config.stylix.image}" ];
-      };
-    };
+    services.hyprpaper.enable = lib.mkForce false;
     programs.dynamic-island = {
+      defaultWallpaper = lib.mkForce null;
       settings.reducedMotion = lib.mkForce true;
-      package = pkgs.callPackage "${inputs.hypr-island}/package.nix" {
-        hyprland = legacyHyprpaper.hyprctl;
-      };
     };
+    programs.hyprlock.settings.background = lib.mkForce [
+      {
+        monitor = "";
+        color = "rgb(${config.lib.stylix.colors.base00})";
+      }
+    ];
   };
 }

@@ -324,7 +324,6 @@ Nix ファイルを読むと依存関係・権限・起動条件がわかり、�
 | [cua-driver/](pkgs/cua-driver/) | デスクトップ操作用ドライバーの実行環境 |
 | [fprintd-cs9711/](pkgs/fprintd-cs9711/) | CS9711 指紋センサーと認証キャンセルの修正 |
 | [hyprland/](pkgs/hyprland/) | 入力メソッドの修飾キー処理の修正 |
-| [hyprpaper-shm/](pkgs/hyprpaper-shm/) | VM 用の壁紙描画と旧 IPC の橋渡し |
 | [lkl-image/](pkgs/lkl-image/) | 上流の `cptofs --mb` を使った VM イメージ作成時のメモリー指定 |
 | [pi-coding-agent/](pkgs/pi-coding-agent/) | ChatGPT のキャッシュ用ヘッダーと会話・接続の識別子を分離 |
 | [pi-web/](pkgs/pi-web/) | 固定ソースからの Pi Web ビルド、`/pi/` 対応、同梱フォント、修正版 Pi SDK と端末の実行環境 |
@@ -341,8 +340,10 @@ Hyprland の IME パッチを維持します。keyd による主キーボード�
 
 ChatGPT の監視処理は、同梱 Electron のワーカースレッド内で確認します。
 通常の Node.js だけで動いても、アプリ内で動くとは限りません。
-VM の壁紙は SHM で描画できることに加え、Island からの切替・状態取得・復元を維持します。
-現在の hyprpaper の代替には、その描画条件と操作をともに満たす必要があります。
+VM は壁紙とその自動復元を無効化し、デスクトップとロック画面を単色にします。
+壁紙用の旧版 hyprpaper と IPC 互換処理は使わず、Island のパッケージも標準の定義を使います。
+既存の `hyprland.cachix.org` を利用しますが、Hyper-V の画面描画に必要な Aquamarine の GBM・CTM 修正と
+Hyprland の IME 修正は維持するため、これらの独自ビルドは引き続き必要です。
 
 ### Apple Music クライアント
 
