@@ -46,7 +46,7 @@ python3Packages.buildPythonApplication {
     nodejs
     python3Packages.pytestCheckHook
   ];
-  preCheck = ''
+  preBuild = ''
     export HOME=$(mktemp -d)
   '';
   postCheck = ''
