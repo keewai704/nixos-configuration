@@ -43,7 +43,16 @@ in
       defaultProvider = "openai-codex";
       defaultModel = "gpt-6-astra";
       defaultThinkingLevel = "xhigh";
-      enabledModels = [ "openai-codex/gpt-6-astra" ];
+      defaultProjectTrust = "always";
+      defaultTools = [
+        "read"
+        "bash"
+        "edit"
+        "write"
+        "grep"
+        "find"
+        "ls"
+      ];
       showCacheMissNotices = true;
       enableInstallTelemetry = false;
       enableAnalytics = false;
@@ -82,16 +91,6 @@ in
     };
     models.providers.openai-codex.modelOverrides.gpt-6-astra.contextWindow = 872000;
   };
-
-  home.packages = [
-    (pkgs.writeShellApplication {
-      name = "pi-astra";
-      runtimeInputs = runtimePackages;
-      text = ''
-        exec ${lib.getExe config.programs.pi-coding-agent.package} --tools read,bash,edit,write,mcp,web_search,lsp_diagnostics "$@"
-      '';
-    })
-  ];
 
   home.file = {
     ".pi/agent/APPEND_SYSTEM.md".source = ./pi/APPEND_SYSTEM.md;
