@@ -176,7 +176,7 @@ MCP の大きな JSON 出力を処理するときに、補助コマンドが見�
 自動コンパクションを有効にし、応答用に 131,072 トークン、要約時の直近履歴に 32,768 トークンを確保します。
 Pi 本体は flake.lock の Nixpkgs に固定された 0.85.1 を使います。
 ChatGPT 接続のキャッシュ用ヘッダーを本文のキーに合わせる小さなパッチを適用しています。
-`pi-mcp-adapter@2.34.0`、`pi-web-search@1.6.0`、`@narumitw/pi-lsp@0.49.7` は
+`pi-mcp-adapter@2.34.0`、`pi-web-search@1.6.0`、`@narumitw/pi-lsp@0.49.7`、`pi-subagents@0.68.0` は
 Pi 標準のパッケージ管理で初回起動時に取得し、npm の lifecycle scripts を無効にします。
 拡張のバージョン指定は Nix 管理で、取得した依存関係とロックは `~/.pi/agent/npm/` に保存されます。
 この npm 依存関係のロックは flake.lock には含まれません。
@@ -209,6 +209,19 @@ Nix（nixd）、TypeScript/JavaScript、Lua、Bash を Nix の固定パッケー
 書き込む場合は同じファイルへの他の編集と並列実行しません。
 追加拡張は過去の履歴を書き換えず、常駐の追加モデル要求も行いません。
 速度や成果物の品質向上率を測定したものではなく、調査と途中診断の手段を補う構成です。
+
+[pi-subagents](https://github.com/nicobailon/pi-subagents) は、依頼に応じた作業分担と独立レビューを提供します。
+組み込みの役割は変更せず、モデル・推論・ツール・文脈継承は上流定義に従います。
+通常の組み込み役割は親のモデルを継承し、推論は役割ごとの既定値を使います。
+親の Astra・`xhigh` と全ツール設定は維持します。
+`reviewer` は読み取り専用の調査役なので、テスト実行や修正は親または `worker` が担当します。
+「reviewer でこの差分を確認して」と依頼するか、`/parallel-review` で観点別レビューを実行できます。
+`/subagents-models` でモデルの割当、`/subagents-doctor` で構成、`/subagents-fleet` で実行状況を確認します。
+導入だけでは自動レビューを起動せず、実行した子の要求は ChatGPT の利用枠を消費します。
+`researcher` と `evidence-auditor` の上流定義は別拡張 `pi-web-access` のツールを要求するため、
+この構成ではそのまま実行できません。Web 調査は既存の親の `web_search` と MCP を使います。
+外部 CLI の役割は各 CLI の認証・実行環境が別途必要です。
+並列の編集は別 worktree へ分離し、子にローカル activation・公開・未承認のリモート操作を委ねません。
 
 システム指示とツール定義を不用意に変えず、毎ターンの日付・Git 状態の注入、履歴の書き換え、定期的な空要求は行いません。
 `astra-cache` フックは、作業ディレクトリとモデルから固定のキャッシュキーを作ります。

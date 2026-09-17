@@ -73,6 +73,9 @@ in
           prompts = [ ];
           themes = [ ];
         }
+        {
+          source = "npm:pi-subagents@0.68.0";
+        }
       ];
       skills = [ "/etc/codex/skills/ponytail" ];
       compaction = {
