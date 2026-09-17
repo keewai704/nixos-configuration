@@ -299,11 +299,11 @@
         ]
       },
       "locked": {
-        "lastModified": 1789482455,
-        "narHash": "sha256-pD3qVlQ4mUCFoTWrYtxecpSitQMsgJvJIN0FUIDZoEU=",
+        "lastModified": 1789618856,
+        "narHash": "sha256-OSqj7eOijvCZfN7owFWRxLWRhej5lZI+Kt82q3INLvc=",
         "owner": "nix-community",
         "repo": "home-manager",
-        "rev": "efa3ccb4c3cc90d832eab232976379058fa75aa3",
+        "rev": "afa6821c70560bb19d1a8c577bff398f7f239869",
         "type": "github"
       },
       "original": {
@@ -804,11 +804,11 @@
         "treefmt-nix": "treefmt-nix"
       },
       "locked": {
-        "lastModified": 1789564321,
-        "narHash": "sha256-i/ZiJtfhx9hL6CqPadzoN5LHxUB+pJXKFMu4mI4Q8dw=",
+        "lastModified": 1789614164,
+        "narHash": "sha256-LGXS9RslTbPOzhA36waZmVXzoR4S0pIE8droYjYNqY0=",
         "owner": "4evy",
         "repo": "nixcord",
-        "rev": "46aff5799b922c9a61cc4c85d8edbf971ed50bb6",
+        "rev": "ff5565690b35be6de647dc5c60da34745594d457",
         "type": "github"
       },
       "original": {
@@ -896,11 +896,11 @@
     },
     "nixpkgs_5": {
       "locked": {
-        "lastModified": 1789426278,
-        "narHash": "sha256-GnotcvKtbTMnoVx6G4E7ZdUX6487Dky74dqq3pU7iRk=",
+        "lastModified": 1789546076,
+        "narHash": "sha256-zVxLZiSnmaaPLwnhj7pwmqe3axBg/C6nG5JZsJMh2g4=",
         "owner": "NixOS",
         "repo": "nixpkgs",
-        "rev": "efe6f071ede9d21c37462d2d6682d5e670099684",
+        "rev": "b1b875982b17dabde9b4a37f3e229e74913e6db3",
         "type": "github"
       },
       "original": {
@@ -995,11 +995,11 @@
         "nixpkgs": "nixpkgs_6"
       },
       "locked": {
-        "lastModified": 1789480570,
-        "narHash": "sha256-TjelM0CVNcSrvas1zbSDK59Fak8Ck5k242VPzZ3+tJQ=",
+        "lastModified": 1789601624,
+        "narHash": "sha256-8ql3XQt0y+L14K4djJGiuJed+LY3YA6VaZdERFRdAHo=",
         "ref": "main",
-        "rev": "6e060d05cd27aa2f616d6d2196fe31cac62cb2a3",
-        "revCount": 65,
+        "rev": "95dc17b5cc4917474b523a2c3933e6b81b69a2fb",
+        "revCount": 66,
         "type": "git",
         "url": "https://github.com/keewai704/siora.git"
       },
