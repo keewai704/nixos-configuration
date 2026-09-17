@@ -54,7 +54,7 @@ flake.nix
 | [flake.nix](flake.nix) / [flake.lock](flake.lock) | 外部入力、固定したバージョン、ホスト・パッケージ・開発環境の公開 |
 | [modules/](modules/) | 複数ホストで共有する NixOS の機能と統合 |
 | [hosts/](hosts/) | ホスト固有のハードウェア、サービス、起動設定 |
-| [home/keewai/shared/](home/keewai/shared/) | 全ホストで使う個人の CLI、シェル、エディター、Codex |
+| [home/keewai/shared/](home/keewai/shared/) | 全ホストで使う個人の CLI、シェル、Codex |
 | [home/keewai/desktop/](home/keewai/desktop/) | デスクトップ用アプリ、キー操作、ユーザーサービス、表示設定 |
 | [pkgs/](pkgs/) | パッケージのビルド定義、パッチ、実行時に必要な補助コード |
 | [themes/](themes/) | NixOS と Home Manager が共有する色、フォント、画像 |
@@ -92,7 +92,6 @@ Nix に慣れていない場合は、まず次の構文が分かれば読み進�
 | 全ホストの OS 設定 | [modules/common.nix](modules/common.nix) |
 | 全ホストで使う CLI | [home/keewai/common.nix](home/keewai/common.nix) |
 | シェル、補完、プロンプト | [shared/shell.nix](home/keewai/shared/shell.nix)、[starship.toml](home/keewai/shared/starship.toml) |
-| エディターとプラグイン | [shared/neovim.nix](home/keewai/shared/neovim.nix)、[neovim.lua](home/keewai/shared/neovim.lua) |
 | 設定を伴わないデスクトップ用ツール | [desktop/applications.nix](home/keewai/desktop/applications.nix) |
 | ウィンドウ、モニター、キー操作 | [desktop/hyprland.lua](home/keewai/desktop/hyprland.lua) |
 | Hyprland のログイン・ポータル統合 | [hosts/citrus/hyprland.nix](hosts/citrus/hyprland.nix) |
@@ -387,65 +386,15 @@ Firefox の見た目は Sine/Natsumi が担当するため、Stylix の Firefox 
 </details>
 
 <details>
-<summary>Neovim の操作と開発環境</summary>
+<summary>開発環境</summary>
 
-### Neovim と開発環境
-
-全ホストで `nvim`、`vim`、`vi` が利用でき、新しいセッションでは `EDITOR` と `VISUAL` にも設定されます。
-一般の編集設定は [shared/neovim.lua](home/keewai/shared/neovim.lua)、
-Nix で固定するプラグインは [shared/neovim.nix](home/keewai/shared/neovim.nix) にあります。
-`lazy.nvim` の管理画面は `:Lazy` で開きます。プラグインと Tree-sitter のパーサーは
-Nix で導入するため、初回起動時のダウンロードは不要です。
-更新は Nixpkgs の固定バージョンを変更して行い、パーサーの追加は `neovim.nix` で行います。
-Wayland のクリップボード連携も含みます。
+### 開発環境
 
 ```sh
 nix develop --no-write-lock-file
-nvim flake.nix
 ```
 
-開発環境には Nix・Lua・Bash の言語サーバー、フォーマッター、静的解析ツールが入っています。
-[devshell/neovim.lua](devshell/neovim.lua) が共通のエディター設定に補完・診断・定義移動を追加します。
-`NVIM_PROJECT_CONFIG` に設定された信頼できる Lua ファイルだけを追加で読み込みます。
-開発環境の外で起動した Neovim には共通設定が適用されます。
-拡張設定を変更したら `nix develop` に入り直してください。
-
-nixd は編集中の flake が固定した Nixpkgs と現在のホスト名を使い、NixOS と Home Manager の設定候補を表示します。
-別ホストの候補を調べる場合は、Neovim 起動前に `NVIM_NIXOS_HOST=orange` などを指定します。
-これは補完対象の選択であり、そのホストへの接続・適用は行いません。
-Zsh には一般の編集と構文強調を使い、Bash 専用の診断・整形は適用しません。
-statix と deadnix はコマンドとして利用できます。
-
-画面は絶対行番号、ファイル一覧、開いているファイルのタブ、フローティング端末を備えます。
-作業ディレクトリと Git ブランチごとに開いたファイルとウィンドウ配置を終了時に保存し、復元は手動で行います。
-ホーム画面からファイル検索・最近のファイル・作業の復元・ヘルプへ移動できます。
-言語サーバーがない環境でも、編集中のテキストを使った補完が動作します。
-
-| キー | 操作 |
-| --- | --- |
-| `Space ff` / `Space fg` | ファイル検索 / 内容検索 |
-| `Space fb` / `Space fh` / `Space fr` | 開いているファイル / ヘルプ / 最近のファイル |
-| `Space e` / `Space h` / `Space ?` | ファイル一覧 / ホーム画面 / キーガイド |
-| `Space t` または `Ctrl-\` | 端末の表示切り替え |
-| 端末内の `Esc Esc` | 端末入力モードを終了 |
-| `[b` / `]b` / `Space bd` | 前のファイル / 次のファイル / 閉じる |
-| `Space ws` / `Space wv` / `Space wc` | 上下分割 / 左右分割 / ウィンドウを閉じる |
-| `Space sr` / `Space ss` / `Space sd` | 作業を復元 / 保存済み作業を選択 / 今回の保存を停止 |
-| `Space gd` / `Space gg` | Git 差分の表示 / 状態の表示 |
-| `Space gc` / `Space ge` | Git 履歴 / 変更ファイル一覧 |
-| `Space l` | プラグイン管理 |
-| `Space cf` | フォーマッターがある場合にファイル・選択範囲を整形 |
-| `Space cd` / `Space cq` | 診断を表示 / 診断一覧 |
-| `Space xx` / `Space xb` / `Space cs` | 作業全体の診断 / ファイルの診断 / シンボル一覧 |
-| `gd` / `gr` / `K` | 定義 / 参照 / 説明（言語サーバー接続時） |
-| `Space cr` / `Space ca` | 名前変更 / コードアクション（言語サーバー接続時） |
-| `gcc` / 選択中の `gc` | コメントの切り替え |
-| 選択中の `Alt-h/j/k/l` | 選択したテキストの移動 |
-| 選択中の `ga` / `gS` | 整列 / 引数リストの分割・結合 |
-| `Ctrl-n` / `Ctrl-p` / `Ctrl-y` | 次の補完候補 / 前の候補 / 確定 |
-
-ファイル一覧では `Enter` で開き、`a` / `A` でファイル / ディレクトリを作成します。
-`r` は名前変更、`y` / `x` の後に `p` でコピー / 移動、`d` は削除、
-`H` は隠しファイルの表示切り替え、`?` は操作ガイドです。
+[devshell/default.nix](devshell/default.nix) で Nix・Lua・Bash の言語サーバー、
+フォーマッター、静的解析ツールを提供します。エディター固有の設定は含みません。
 
 </details>

@@ -11,6 +11,4 @@ pkgs.mkShellNoCC {
     shellcheck
     shfmt
   ];
-
-  NVIM_PROJECT_CONFIG = toString ./neovim.lua;
 }
