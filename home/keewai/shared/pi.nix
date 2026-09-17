@@ -10,6 +10,17 @@ let
     pkgs.python3
     pkgs.jq
   ];
+  webSearchConfig = (pkgs.formats.json { }).generate "pi-web-search.json" {
+    searchRouting = {
+      providers = [ "openai" ];
+      useCurrentModel = true;
+      fallbackOn = [ ];
+    };
+    workflow = "none";
+    allowBrowserCookies = false;
+    fetchRouting.allowRemoteHostedProviders = false;
+    pdf.provider = "unpdf";
+  };
   mcpServers = lib.mapAttrs (
     _: server:
     lib.filterAttrs (_: value: value != null) (
@@ -60,8 +71,8 @@ in
           skills = [ ];
         }
         {
-          source = "npm:pi-web-search@1.6.0";
-          extensions = [ "src/index.ts" ];
+          source = "npm:pi-web-access@0.29.0";
+          extensions = [ "index.ts" ];
           skills = [ ];
           prompts = [ ];
           themes = [ ];
@@ -97,7 +108,10 @@ in
     models.providers.openai-codex.modelOverrides.gpt-6-astra.contextWindow = 872000;
   };
 
+  xdg.configFile."pi/web-search.json".source = webSearchConfig;
+
   home.file = {
+    ".pi/agent/web-search.json".source = webSearchConfig;
     ".pi/agent/APPEND_SYSTEM.md".source = ./pi/APPEND_SYSTEM.md;
     ".pi/agent/extensions/astra-cache.ts".source = ./pi/astra-cache.ts;
     ".pi/agent/extensions/cache-audit.ts".source = ./pi/cache-audit.ts;

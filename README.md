@@ -166,7 +166,7 @@ MCP の大きな JSON 出力を処理するときに、補助コマンドが見�
 自動コンパクションを有効にし、応答用に 131,072 トークン、要約時の直近履歴に 32,768 トークンを確保します。
 Pi 本体は flake.lock の Nixpkgs に固定された 0.85.1 を使います。
 ChatGPT 接続のキャッシュ用ヘッダーを本文のキーに合わせる小さなパッチを適用しています。
-`pi-mcp-adapter@2.34.0`、`pi-web-search@1.6.0`、`@narumitw/pi-lsp@0.49.7`、`pi-subagents@0.68.0` は
+`pi-mcp-adapter@2.34.0`、`pi-web-access@0.29.0`、`@narumitw/pi-lsp@0.49.7`、`pi-subagents@0.68.0` は
 Pi 標準のパッケージ管理で初回起動時に取得し、npm の lifecycle scripts を無効にします。
 拡張のバージョン指定は Nix 管理で、取得した依存関係とロックは `~/.pi/agent/npm/` に保存されます。
 この npm 依存関係のロックは flake.lock には含まれません。
@@ -183,11 +183,22 @@ MCP アダプターのサーバー別補助ツールも、登録されると利�
 `/review` または `/review <対象>` で変更のレビューを依頼できます。
 管理対象の設定・指示・拡張を変更するときは、このリポジトリの編集元を直します。
 
-[pi-web-search](https://github.com/ttttmr/pi-web-search) は一般の Web 調査を出典付きで行います。
-現在のモデルと認証を使うため、Astra では追加の検索 API キーは不要です。
-検索ごとにモデルへの追加要求が発生し、ChatGPT の利用枠を消費します。
-検索に渡すのは検索語と指定 URL で、会話全体やローカルファイルは自動送信しません。
-専門仕様の調査は引き続き既存の MCP を優先します。Gemini 専用の `url_context` は Astra では無効です。
+[pi-web-access](https://github.com/nicobailon/pi-web-access) が `web_search`、`fetch_content`、
+`get_search_content`、`source_check` を提供します。以前の `pi-web-search` 拡張は使いません。
+既定の検索経路は OpenAI のみで、現在のモデルと ChatGPT 認証を再利用します。
+親では Astra、通常の子では Luna を使い、検索のためのモデル変更や他社への自動フォールバックは行いません。
+OpenAI Responses の `web_search` を必須で呼び出し、ライブ取得を有効にした標準動作を使います。
+[OpenAI の仕様](https://developers.openai.com/api/docs/guides/tools-web-search#live-internet-access)では、
+`external_web_access` の未指定は `true` です。検索ごとの要求は ChatGPT の利用枠を消費します。
+`provider` を省略するとこの経路を使います。明示した `provider` は上流仕様どおり経路を上書きします。
+
+設定元は [shared/pi.nix](home/keewai/shared/pi.nix) です。`PI_CODING_AGENT_DIR` がある Pi Web と XDG 設定を使う CLI の双方に対応するため、
+`~/.pi/agent/web-search.json` と `~/.config/pi/web-search.json` を同じ Nix Store の設定へ接続します。
+通常の検索は `workflow = "none"` とし、検索のたびに確認用ブラウザーや追加要約を起動しません。
+必要なときは `/websearch` で確認用 UI を開けます。生成された設定ファイルは編集せず、変更は Nix 側で行います。
+ブラウザー Cookie の取得と第三者サービスによるページ取得代行は既定で無効、PDF はローカルの `unpdf` で抽出します（OCR なし）。
+`source_check` は原文のハッシュ・引用箇所と語句照合による補助判定を返します。判定だけを根拠にせず、
+重要な主張は `fetch_content` と `get_search_content` で原文を確認します。専門仕様には引き続き既存の MCP を使います。
 
 [@narumitw/pi-lsp](https://github.com/narumiruna/pi-extensions/tree/main/packages/pi-lsp) は
 必要時だけ `lsp_diagnostics` で診断し、呼び出し終了時に言語サーバーを停止します。
@@ -210,8 +221,9 @@ Nix（nixd）、TypeScript/JavaScript、Lua、Bash を Nix の固定パッケー
 「reviewer でこの差分を確認して」と依頼するか、`/parallel-review` で観点別レビューを実行できます。
 `/subagents-models` でモデルの割当、`/subagents-doctor` で構成、`/subagents-fleet` で実行状況を確認します。
 導入だけでは自動レビューを起動せず、実行した子の要求は ChatGPT の利用枠を消費します。
-`researcher` と `evidence-auditor` の上流定義は別拡張 `pi-web-access` のツールを要求するため、
-この構成ではそのまま実行できません。Web 調査は既存の親の `web_search` と MCP を使います。
+`researcher` と `evidence-auditor` は、導入済みの `pi-web-access` が提供する4ツールを使えます。
+この2役は上流の既定どおりバックグラウンド（`async: true`）で実行し、親の拡張を継承します。
+前景の子は親の拡張を自動では読み込まないため、そのまま `async: false` に変更しません。
 外部 CLI の役割は各 CLI の認証・実行環境が別途必要です。
 並列の編集は別 worktree へ分離し、子にローカル activation・公開・未承認のリモート操作を委ねません。
 
