@@ -5,6 +5,11 @@
   ...
 }:
 let
+  runtimePackages = [
+    pkgs.nodejs
+    pkgs.python3
+    pkgs.jq
+  ];
   mcpServerNames = [
     "context7"
     "nixos"
@@ -33,7 +38,7 @@ in
   programs.pi-coding-agent = {
     enable = true;
     package = pkgs.callPackage ../../../pkgs/pi-coding-agent { };
-    extraPackages = [ pkgs.nodejs ];
+    extraPackages = runtimePackages;
     settings = {
       defaultProvider = "openai-codex";
       defaultModel = "gpt-6-astra";
@@ -67,7 +72,7 @@ in
   home.packages = [
     (pkgs.writeShellApplication {
       name = "pi-astra";
-      runtimeInputs = [ pkgs.nodejs ];
+      runtimeInputs = runtimePackages;
       text = ''
         exec ${lib.getExe config.programs.pi-coding-agent.package} --tools read,bash,edit,write,mcp "$@"
       '';

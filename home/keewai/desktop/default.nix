@@ -15,6 +15,7 @@
     ./kitty.nix
     ./legcord.nix
     ./paseo-tailscale.nix
+    ./pi-web-tailscale.nix
     ./steam-theme.nix
     ./stylix.nix
   ];

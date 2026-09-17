@@ -12,6 +12,7 @@
     ./apple-device-usb.nix
     ./nvidia.nix
     ./paseo-tailscale.nix
+    ./pi-web-tailscale.nix
     ./stylix.nix
   ];
 
