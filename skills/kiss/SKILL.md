@@ -1,21 +1,20 @@
 ---
 name: kiss
-description: Apply Keep It Simple, Stupid to code, designs, plans, and explanations. Use when the user explicitly asks for KISS, the simplest approach, fewer moving parts, clearer code, or removal of over-engineering. Do not use to skip explicit requirements, safety, or verification.
+description: Simplify a solution when the user explicitly requests KISS or reduced complexity.
 ---
 
 # KISS
 
 Choose the easiest correct solution to understand, operate, and change.
+Use this lens for code, designs, plans, or explanations; it does not add a
+separate workflow when Ponytail is already active.
 
-- Understand the current requirement and trace the affected flow before
-  simplifying it.
-- Reuse an existing codebase pattern first, then the standard library, a native
-  platform feature, or an installed dependency before writing new machinery.
-- Prefer direct control flow, ordinary data structures, clear names, and the
-  fewest files and configuration knobs that satisfy the requirement.
-- Avoid cleverness, premature generalization, indirection with one
-  implementation, and configuration for values that do not vary.
-- Keep input validation, error handling that prevents data loss, security,
-  accessibility, and proportionate verification intact.
-- Complete the requested scope. Explain a simplification or omitted complexity
-  only when it affects the user's decision; match detail to the request.
+- Identify the complexity that obstructs the current requirement before changing it.
+- Prefer direct control flow, ordinary data structures, clear names, and fewer
+  independently configured parts. Reuse established solutions where they fit.
+- Remove indirection only when it does not serve a current responsibility or
+  preserve required behavior; fewer lines alone are not evidence of simplicity.
+- Keep trust-boundary validation, data-loss prevention, security, accessibility,
+  compatibility, and proportionate verification intact.
+- Complete the requested scope. Explain tradeoffs only when they affect the
+  user's decision, with detail appropriate to the request.

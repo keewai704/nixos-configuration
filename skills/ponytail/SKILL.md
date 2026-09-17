@@ -23,9 +23,8 @@ behavior. Keep the files and changes needed for a complete solution.
 
 Never trade away explicit requirements, compatibility, trust-boundary
 validation, data-loss prevention, security, accessibility, or required checks.
-Retain calibration controls when real hardware needs them. If a deliberate
-simplification has a material limit, document that limit and the evidence that
-would justify a different approach.
+If a deliberate simplification has a material limit, document that limit and
+the evidence that would justify a different approach.
 
 Use the project's existing checks and add regression coverage when changed
 logic or risk needs it. Do not impose a fixed test count, ban the project's
@@ -35,9 +34,10 @@ and deployment follow the user's instructions and the repository's AGENTS.md.
 ## Modes and scope
 
 Default to `full` unless the user has selected another mode in this session.
-`lite` favors the straightforward implementation and briefly notes a useful
-alternative. `full` follows the reuse order above. `ultra` scrutinizes new
-machinery more strictly while still completing every explicit requirement.
+`lite` favors the straightforward implementation and mentions an alternative
+only when it affects the user's decision. `full` follows the reuse order above.
+`ultra` scrutinizes new machinery more strictly while still completing every
+explicit requirement.
 Ask for `ponytail lite`, `ponytail full`, or `ponytail ultra` in the conversation
 to change level; `stop ponytail` or `normal mode` disables the mode. Retain the
 selected mode within the session until changed. These are conversational

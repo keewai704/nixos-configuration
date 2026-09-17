@@ -1,20 +1,19 @@
 ---
 name: apple-device-usb
-description: >-
-  Operate USB-connected iPhones and iPads with compact screenshots, touch,
-  keyboard HID, and Unicode paste through a reusable CoreDevice session.
-  Use for real iOS/iPadOS devices, not simulators or macOS desktop control.
+description: Operate a USB-connected iPhone or iPad using screenshots and input. Not for simulators or macOS desktop control.
 ---
 
 # Apple device control over USB
 
-Use the installed `apple-device-usb` helper (pymobiledevice3 11.5.0). It reuses
-the USB tunnel, screenshot channel, screen-sharing media/HID session, and virtual
-keyboard. Each input releases keys/touches and returns a fresh image.
+Use the installed `apple-device-usb` helper; its dependency is pinned in the
+Nix launcher linked below. It reuses the USB tunnel, screenshot channel,
+screen-sharing media/HID session, and virtual keyboard. Each input releases
+keys/touches and returns a fresh image.
 RTCP receiver reports keep the media session alive while waiting for input.
 No root tunnel, network listener, device app, or repeated coordinate arithmetic
 is needed. Source: [scripts/control.py](scripts/control.py).
-This transport needs iOS/iPadOS 17.4+; the hardware verification is iPadOS 27.0.
+This transport needs iOS/iPadOS 17.4+. The original hardware verification used
+pymobiledevice3 11.5.0 and iPadOS 27.0; that is not verification of later versions.
 For older devices, inspect the installed `pymobiledevice3 --help` and upstream
 transport guidance instead of forcing this helper's connection path.
 
@@ -41,22 +40,58 @@ PYMOBILEDEVICE3_UDID='<observed-UDID>' pymobiledevice3 mounter auto-mount
 If disabled, `amfi reveal-developer-mode` reveals the setting; the user enables
 it, restarts, and confirms on-device. Allow the initial DDI download to finish.
 
-Start this in a persistent terminal tool session with stdin open (`tty: true`):
+Pi's native `bash` tool has no `tty` parameter or terminal-session stdin API.
+Use a private FIFO and a transient local user service to keep one helper alive
+across tool calls. Use the absolute Nix launcher path as shown; user services do
+not inherit the interactive shell's PATH. This requires the local systemd user
+manager; if unavailable, report the transport limitation and continue only useful
+authorized diagnostics.
+Do not invent a terminal session ID or repeatedly reconnect for each input.
 
 ```sh
-apple-device-usb --udid '<observed-UDID>'
+set -e
+umask 077
+session=$(mktemp -d "${XDG_RUNTIME_DIR:?}/apple-device-usb.XXXXXX")
+unit="apple-device-usb-${session##*.}"
+mkfifo "$session/input"
+systemd-run --user --unit="$unit" --collect \
+  --property=UMask=0077 \
+  --property="StandardOutput=append:$session/events.jsonl" \
+  --property="StandardError=append:$session/stderr.log" \
+  "$(command -v bash)" -c \
+  'exec 3<>"$1/input"; exec "$2" --udid "$3" <&3' \
+  _ "$session" "$(command -v apple-device-usb)" '<observed-UDID>'
+printf 'session=%s\nunit=%s\n' "$session" "$unit"
 ```
 
-Keep the returned terminal session ID. The helper emits one JSON line with
+Record the printed absolute directory and unit name. Shell variables do not
+persist across tool calls; set them to these recorded values in later commands.
+Read complete new lines from `events.jsonl` with `read`. The initial event contains
 `frame`, `image`, `size`, `original`, `orientation`, and `touch_rotation`.
-Inspect `image` with the image-viewing tool; use its returned pixel dimensions.
-The default longest edge is 1280px, and the full original is retained. Output
-defaults to `~/Pictures/apple-device`; `--output` accepts an absolute directory.
+If it does not arrive, inspect this unit's status and `stderr.log`; launching a
+unit alone does not prove connection success.
+
+Open `image` with Pi's `read` tool and use its returned pixel dimensions. The
+default longest edge is 1280px, and the full original is retained. Screenshots
+default to `~/Pictures/apple-device`, separate from the transient session logs.
 
 ## Operate with short commands
 
-Send one JSON line through the same terminal's stdin. Replace `frame` with the
-latest inspected frame number and coordinates/text with the intended target:
+Send one JSON line to the existing FIFO, then read the new response event. For
+example, refresh the image without input:
+
+```sh
+systemctl --user is-active --quiet "$unit" &&
+  timeout 5 bash -c 'printf "%s\n" "$2" >"$1/input"' \
+    _ "$session" '{"shot":1280}'
+```
+
+Replace the JSON argument with one intended command. Track the consumed event
+lines so an old response cannot be mistaken for a new result. A successful write
+means queued, not completed. A timeout or missing response is not permission to
+replay input; inspect the logs and current state first.
+Replace `frame` with the latest inspected frame number and coordinates/text with
+the intended target:
 
 ```json
 {"frame":1,"tap":[240,180]}
@@ -80,8 +115,11 @@ request screenshots per keystroke or stream video frames into model context.
 - `paste` replaces the device clipboard and sends Cmd+V; use for Unicode.
 - `{"shot":1280}` refreshes without input; `{"shot":0}` returns full size
   for small text. Use the new frame and its own pixel dimensions afterwards.
-- `{"quit":true}` closes the session. Close it when finished; restart after
-  disconnect/reboot. Do not automatically replay an input after a failure.
+- `{"quit":true}` closes the session. Confirm the `closed` event and inactive
+  service before removing only this session's temporary directory. If the helper
+  is stuck, stop the recorded unit with `systemctl --user stop "$unit"` and
+  inspect its logs. Keep screenshots needed for the report. Restart after a
+  disconnect/reboot; do not automatically replay an input after a failure.
 
 Old frame IDs, out-of-bounds coordinates, and changed display geometry are
 rejected. For **iPad17,3 / landscapeLeft**, the verified mapping is automatic:

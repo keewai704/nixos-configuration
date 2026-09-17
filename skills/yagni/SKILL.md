@@ -1,11 +1,13 @@
 ---
 name: yagni
-description: Prevent speculative scope and future-proofing in software work. Use when the user explicitly asks for YAGNI, scope reduction, removal of unused code, or a check that proposed functionality is needed now. Do not use to remove explicit requirements or required safety measures.
+description: Assess speculative functionality when the user explicitly requests YAGNI or scope reduction.
 ---
 
 # YAGNI
 
-Implement only requirements with a current, concrete use case.
+Implement only requirements with a current, concrete use case. Focus on whether
+functionality is needed now, not how simply it is implemented. This lens does not
+add a separate workflow when Ponytail is already active.
 
 - Before adding a feature, option, abstraction, dependency, or extension point,
   identify its present caller or requirement. If none exists, defer it.
