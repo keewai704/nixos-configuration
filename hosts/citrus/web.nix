@@ -2,20 +2,6 @@
 let
   tailnetHostname = "${config.networking.hostName}.tail1e65cd.ts.net";
   tailscale = lib.getExe config.services.tailscale.package;
-  proxyLocation = port: {
-    proxyPass = "http://127.0.0.1:${toString port}";
-    proxyWebsockets = true;
-    recommendedProxySettings = false;
-    extraConfig = ''
-      proxy_buffering off;
-      proxy_request_buffering off;
-      proxy_set_header Host $host;
-      proxy_set_header X-Real-IP $tailscale_client_ip;
-      proxy_set_header X-Forwarded-For $tailscale_client_ip;
-      proxy_set_header X-Forwarded-Proto https;
-      proxy_set_header X-Forwarded-Host $host;
-    '';
-  };
 in
 {
   services.nginx = {
@@ -38,15 +24,31 @@ in
         }
       ];
       locations = {
+        "= /".return = "302 https://${tailnetHostname}/pi/$is_args$args";
         "= /pi".return = "308 https://${tailnetHostname}/pi/$is_args$args";
-        "^~ /pi/" = proxyLocation 30141;
-        "/" = proxyLocation 6767;
+        "= /pi/pi".return = "302 https://${tailnetHostname}/pi/$is_args$args";
+        "= /pi/pi/".return = "302 https://${tailnetHostname}/pi/$is_args$args";
+        "^~ /pi/" = {
+          proxyPass = "http://127.0.0.1:30141";
+          proxyWebsockets = true;
+          recommendedProxySettings = false;
+          extraConfig = ''
+            proxy_buffering off;
+            proxy_request_buffering off;
+            proxy_set_header Host $host;
+            proxy_set_header X-Real-IP $tailscale_client_ip;
+            proxy_set_header X-Forwarded-For $tailscale_client_ip;
+            proxy_set_header X-Forwarded-Proto https;
+            proxy_set_header X-Forwarded-Host $host;
+          '';
+        };
+        "/".return = "404";
       };
     };
   };
 
   systemd.services.tailscale-serve-nginx = {
-    description = "Publish Paseo and Pi Web through loopback nginx";
+    description = "Publish Pi Web through loopback nginx";
     requires = [
       "nginx.service"
       "tailscaled.service"

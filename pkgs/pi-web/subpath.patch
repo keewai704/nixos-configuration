@@ -212,7 +212,7 @@ index 411be67..c5b6c02 100644
          headers: { "Content-Type": "application/json" },
          body: JSON.stringify({ maxConcurrent: value }),
 diff --git a/components/AppShell.tsx b/components/AppShell.tsx
-index d1c8bb9..54446dc 100644
+index d1c8bb9..fd8d590 100644
 --- a/components/AppShell.tsx
 +++ b/components/AppShell.tsx
 @@ -529,7 +529,7 @@ export function AppShell() {
@@ -233,6 +233,24 @@ index d1c8bb9..54446dc 100644
        .then((r) => (r.ok ? (r.json() as Promise<{ sessions: SessionInfo[] }>) : null))
        .then((d) => {
          if (token !== workspaceRestoreTokenRef.current) return; // stale switch
+@@ -676,7 +676,7 @@ export function AppShell() {
+       // the default welcome page when none is remembered.
+       restoreWorkspaceContext(newProject, cwd);
+     }
+-    router.replace(typeof window !== "undefined" ? window.location.pathname : "/", { scroll: false });
++    router.replace("/", { scroll: false });
+   }, [activeCwd, activeFileTabId, invalidateWorkspaceRestore, newSessionCwd, router, selectedSession, restoreWorkspaceContext]);
+ 
+   const handleSelectSession = useCallback((session: SessionInfo, isRestore = false, entryId?: string, blockIndex?: number) => {
+@@ -751,7 +751,7 @@ export function AppShell() {
+     setSystemInfoLoading(false);
+     setActiveTopPanel(null);
+     if (isMobile) setSidebarOpen(false);
+-    router.replace(typeof window !== "undefined" ? window.location.pathname : "/", { scroll: false });
++    router.replace("/", { scroll: false });
+   }, [invalidateWorkspaceRestore, router, isMobile]);
+ 
+   // Global keyboard shortcuts (handles Esc, Ctrl+Alt+N etc.)
 @@ -765,7 +765,7 @@ export function AppShell() {
    // handleCwdChange relies on. Hydrate it from the session list so switching
    // worktrees right after creating a session doesn't close the chat.
@@ -269,6 +287,15 @@ index d1c8bb9..54446dc 100644
          method: "POST",
        });
        const body = (await response.json().catch(() => ({}))) as { title?: string; error?: string };
+@@ -965,7 +965,7 @@ export function AppShell() {
+       setSystemTools(null);
+       setSystemInfoLoading(false);
+       setActiveTopPanel(null);
+-      router.replace(typeof window !== "undefined" ? window.location.pathname : "/", { scroll: false });
++      router.replace("/", { scroll: false });
+     }
+   }, [invalidateWorkspaceRestore, selectedSession, router]);
+ 
 @@ -1031,7 +1031,7 @@ export function AppShell() {
    const handleViewFullHistory = useCallback(() => {
      if (!selectedSession) return;
