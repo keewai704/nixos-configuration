@@ -36,10 +36,9 @@ buildNpmPackage {
     hash = "sha256-izRVOsYwlY+r8prmaEQJkktk7N8TFwYlyaLbQy15XUc=";
   };
   patches = [
-    ./npm-integrities.patch
     ./local-font.patch
   ];
-  npmDepsHash = "sha256-EMlY/P+erLhiiUlX4mi0lgVWdqR/cEbfr4bc2607TgY=";
+  npmDepsHash = "sha256-lGsMOYY2rCQSw+hMLXv+aWq4991NnkhLJUipL1F843k=";
   npmRebuildFlags = [ "--ignore-scripts" ];
   npmPackFlags = [ "--ignore-scripts" ];
 
@@ -54,7 +53,12 @@ buildNpmPackage {
   env.NEXT_TELEMETRY_DISABLED = "1";
 
   postPatch = ''
+    ${lib.getExe nodejs} ${./use-packaged-pi-sdk.mjs}
     cp ${notoSansMono} app/noto-sans-mono.ttf
+  '';
+
+  postConfigure = ''
+    ln -s ${piRoot} node_modules/@earendil-works/pi-coding-agent
   '';
 
   doCheck = true;
@@ -64,9 +68,15 @@ buildNpmPackage {
     runHook postCheck
   '';
 
+  preInstall = ''
+    rm node_modules/@earendil-works/pi-coding-agent
+  '';
+
   postInstall = ''
     app_dir="$out/lib/node_modules/@agegr/pi-web"
-    rm -r "$app_dir/node_modules/@earendil-works/pi-coding-agent"
+    if [[ -e "$app_dir/node_modules/@earendil-works/pi-coding-agent" ]]; then
+      rm -r "$app_dir/node_modules/@earendil-works/pi-coding-agent"
+    fi
     ln -s ${piRoot} "$app_dir/node_modules/@earendil-works/pi-coding-agent"
     for package in pi-ai pi-agent-core pi-tui; do
       rm -r "$app_dir/node_modules/@earendil-works/$package"
