@@ -1,7 +1,7 @@
 # nixos-configuration
 
-`citrus`、`citrus-vm`、`orange` の NixOS 設定を管理するリポジトリです。
-3 台とも `x86_64-linux` で、機器・OS の設定は NixOS、個人のアプリと設定は Home Manager が担当します。
+`citrus`、`orange` の NixOS 設定を管理するリポジトリです。
+2 台とも `x86_64-linux` で、機器・OS の設定は NixOS、個人のアプリと設定は Home Manager が担当します。
 
 ## 読み方
 
@@ -28,16 +28,11 @@
 | ホスト | 用途 | 設定の入口 |
 | --- | --- | --- |
 | `citrus` | Hyprland を使う実機デスクトップ | [hosts/citrus/default.nix](hosts/citrus/default.nix) |
-| `citrus-vm` | Citrus のデスクトップを使う Hyper-V 仮想マシン | [hosts/citrus-vm/default.nix](hosts/citrus-vm/default.nix) |
 | `orange` | ストレージ、写真、パスワード管理、Minecraft を提供するサーバー | [hosts/orange/default.nix](hosts/orange/default.nix) |
 
 全ホストに [modules/common.nix](modules/common.nix) と
 [modules/home-manager.nix](modules/home-manager.nix) が読み込まれます。
 前者はネットワークやユーザーなどの共通 OS 設定、後者は Home Manager と NixOS の接続を担当します。
-
-`citrus-vm` は `citrus` の設定を読み込んでから、実機のハードウェア設定を無効化し、
-VM 用のカーネル・起動方法・描画設定に置き換えます。
-Citrus の変更が VM にも届くことに注意してください。
 
 設定は次の順に合流します。`imports` は別の設定を読み込む入口です。
 
@@ -49,7 +44,6 @@ flake.nix
 │   └── home/keewai/common.nix → shared/ の個人設定
 └── 各ホスト: hosts/<host>/default.nix
     ├── citrus → 機器設定 + modules/desktop.nix → home/keewai/desktop/
-    ├── citrus-vm → citrus を継承 + VM 用の上書き
     └── orange → ストレージとサーバーサービス
 ```
 
@@ -88,7 +82,6 @@ Nix に慣れていない場合は、まず次の構文が分かれば読み進�
 | `左 ++ 右` / `左 // 右` | 一覧を連結する / 属性を合わせ、同じ名前には右側の値を使う |
 | `pkgs.callPackage ./名前 { ... }` | パッケージ定義に必要な依存関係を渡す |
 
-VM の設定は、継承元と `mkForce` などの優先順位を合わせて読みます。
 `system.stateVersion` と `home.stateVersion` は互換性の基準です。
 パッケージの更新日を示すものではないため、入力の更新に合わせて変更しません。
 
@@ -113,8 +106,6 @@ VM の設定は、継承元と `mkForce` などの優先順位を合わせて読
 | Discord クライアントとテーマ | [desktop/legcord.nix](home/keewai/desktop/legcord.nix)、[legcord-system24.nix](home/keewai/desktop/legcord-system24.nix) |
 | Steam と Millennium | [hosts/citrus/steam.nix](hosts/citrus/steam.nix)、[desktop/steam-theme.nix](home/keewai/desktop/steam-theme.nix) |
 | 共通の色、フォント、壁紙 | [themes/tokyo-night-black/default.nix](themes/tokyo-night-black/default.nix) |
-| VM の描画 | [hosts/citrus-vm/graphics.nix](hosts/citrus-vm/graphics.nix)、[desktop/hyperv-rendering.nix](home/keewai/desktop/hyperv-rendering.nix) |
-| Hyper-V イメージ | [hosts/citrus-vm/image.nix](hosts/citrus-vm/image.nix) |
 | Orange の保存先、ポート、URL | [hosts/orange/settings.nix](hosts/orange/settings.nix) |
 
 個人のアプリには、まず Home Manager の `programs.*` / `services.*` を使います。
@@ -130,7 +121,7 @@ Apple USB CLI は [shared/apple-device-usb.nix](home/keewai/shared/apple-device-
 
 パネル本体、Island のキー操作、ロックとアイドル制御、Stylix 連携、Bitwarden の初期設定ランチャーは
 外部入力の [hypr-island](https://github.com/keewai704/hypr-island) が管理します。
-このリポジトリには有効化、テーマの元データ、接続先 URL、機器・VM の差分を置きます。
+このリポジトリには有効化、テーマの元データ、接続先 URL、機器の差分を置きます。
 公開済みの Nix オプション名 `programs.dynamic-island` は互換性のため維持しています。
 
 Home Manager は `useUserPackages = true` で NixOS に統合されています。
@@ -256,7 +247,6 @@ UI の改善とモデル性能の改善は区別されており、多数の拡�
 [Pi Web](https://github.com/agegr/pi-web) はユーザーサービスとして起動し、
 ローカルでは `http://127.0.0.1:30141/pi/`、Citrus の tailnet では
 [https://citrus.tail1e65cd.ts.net/pi/](https://citrus.tail1e65cd.ts.net/pi/) から使います。
-`citrus-vm` も同じ宣言を継承し、適用時はそのホスト名になります。
 Tailscale Serve の HTTPS 443 から、ループバックの nginx（`127.0.0.1:8000`）を通して公開します。
 nginx は `/pi/` を Pi Web へ転送し、`/` は `/pi/` へリダイレクトします。
 アプリの待受けはループバックだけです。
@@ -320,13 +310,11 @@ Nix ファイルを読むと依存関係・権限・起動条件がわかり、�
 
 | ディレクトリ | 独自変更の目的 |
 | --- | --- |
-| [aquamarine-hyperv/](pkgs/aquamarine-hyperv/) | Hyper-V の GBM 描画と、未対応 CTM プロパティの送信防止 |
 | [brave-origin/](pkgs/brave-origin/) | Nixpkgs の Brave Origin に日本語設定を追加 |
 | [chatgpt-desktop/](pkgs/chatgpt-desktop/) | 公式 Linux 配布物の NixOS 対応、ワーカーの監視回避、ブラウザー標準の選択色 |
 | [cua-driver/](pkgs/cua-driver/) | デスクトップ操作用ドライバーの実行環境 |
 | [fprintd-cs9711/](pkgs/fprintd-cs9711/) | CS9711 指紋センサーと認証キャンセルの修正 |
 | [hyprland/](pkgs/hyprland/) | 入力メソッドの修飾キー処理の修正 |
-| [lkl-image/](pkgs/lkl-image/) | 上流の `cptofs --mb` を使った VM イメージ作成時のメモリー指定 |
 | [pi-coding-agent/](pkgs/pi-coding-agent/) | ChatGPT のキャッシュ用ヘッダーと会話・接続の識別子を分離 |
 | [pi-web/](pkgs/pi-web/) | 固定ソースからの Pi Web ビルド、`/pi/` 対応、同梱フォント、修正版 Pi SDK と端末の実行環境 |
 | [ponytail-hooks/](pkgs/ponytail-hooks/) | Ponytail の管理用フック |
@@ -342,10 +330,8 @@ Hyprland の IME パッチを維持します。keyd による主キーボード�
 
 ChatGPT の監視処理は、同梱 Electron のワーカースレッド内で確認します。
 通常の Node.js だけで動いても、アプリ内で動くとは限りません。
-VM は壁紙とその自動復元を無効化し、デスクトップとロック画面を単色にします。
-壁紙用の旧版 hyprpaper と IPC 互換処理は使わず、Island のパッケージも標準の定義を使います。
-既存の `hyprland.cachix.org` を利用しますが、Hyper-V の画面描画に必要な Aquamarine の GBM・CTM 修正と
-Hyprland の IME 修正は維持するため、これらの独自ビルドは引き続き必要です。
+Hyprland 本体は IME 修正のため独自ビルドしますが、Aquamarine などの依存関係は上流のパッケージ定義を使います。
+既存の NixOS 公式・`hyprland.cachix.org`・Chaotic のバイナリキャッシュを利用し、独自ビルドは必要な修正に限定します。
 
 ### Apple Music クライアント
 

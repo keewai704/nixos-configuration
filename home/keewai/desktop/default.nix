@@ -10,7 +10,6 @@
     ./file-manager.nix
     ./firefox.nix
     ./hyprland.nix
-    ./hyperv-rendering.nix
     ./input-method.nix
     ./kitty.nix
     ./legcord.nix

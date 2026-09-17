@@ -1,5 +1,5 @@
 {
-  description = "NixOS configurations for orange, citrus, and citrus-vm";
+  description = "NixOS configurations for orange and citrus";
 
   inputs = {
     nixpkgs.url = "github:NixOS/nixpkgs/nixos-unstable";
@@ -89,12 +89,6 @@
           inputs.chaotic.nixosModules.default
           inputs.stylix.nixosModules.stylix
           ./hosts/citrus
-        ];
-
-        citrus-vm = mkNixosHost [
-          inputs.chaotic.nixosModules.default
-          inputs.stylix.nixosModules.stylix
-          ./hosts/citrus-vm
         ];
       };
 
