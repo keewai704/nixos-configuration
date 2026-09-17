@@ -86,6 +86,9 @@ buildNpmPackage {
       ln -s "${piRoot}/node_modules/@earendil-works/$package" \
         "$app_dir/node_modules/@earendil-works/$package"
     done
+    for package in sharp-linuxmusl-x64 sharp-libvips-linuxmusl-x64; do
+      rm -r "$app_dir/node_modules/@img/$package"
+    done
     mkdir -p "$out/share/licenses/pi-web"
     cp ${fontLicense} "$out/share/licenses/pi-web/NotoSansMono-OFL.txt"
   '';
