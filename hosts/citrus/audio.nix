@@ -15,6 +15,18 @@
       alsa.enable = true;
       alsa.support32Bit = true;
       pulse.enable = true;
+      wireplumber.extraConfig."51-fiio-k11" = {
+        "monitor.alsa.rules" = [
+          {
+            matches = [ { "node.name" = "~alsa_output\\.usb-FIIO_FiiO_K11-.*"; } ];
+            actions.update-props = {
+              "audio.format" = "S24LE";
+              "audio.rate" = 192000;
+              "node.force-rate" = 192000;
+            };
+          }
+        ];
+      };
       wireplumber.extraConfig."51-inzone-le-audio" = {
         "monitor.bluez.rules" = [
           {
