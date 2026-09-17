@@ -6,7 +6,7 @@
   python3Packages,
   browser-harness,
 }:
-python3Packages.buildPythonApplication {
+python3Packages.buildPythonApplication rec {
   pname = "jev-ultrafast";
   version = "0.1.0-unstable-2026-09-17";
   pyproject = true;
@@ -38,6 +38,7 @@ python3Packages.buildPythonApplication {
 
   makeWrapperArgs = [
     "--prefix PATH : ${lib.makeBinPath [ procps ]}"
+    "--prefix PYTHONPATH : $out/${python3Packages.python.sitePackages}:${python3Packages.makePythonPath dependencies}"
     "--set BH_TELEMETRY 0"
     "--set BH_UPDATE_CHECK 0"
   ];

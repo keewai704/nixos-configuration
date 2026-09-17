@@ -77,6 +77,7 @@ python3Packages.buildPythonPackage rec {
 
   makeWrapperArgs = [
     "--prefix PATH : ${lib.makeBinPath [ procps ]}"
+    "--prefix PYTHONPATH : $out/${python3Packages.python.sitePackages}:${python3Packages.makePythonPath dependencies}"
     "--set BH_TELEMETRY 0"
     "--set BH_UPDATE_CHECK 0"
   ];
