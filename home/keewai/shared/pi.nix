@@ -77,6 +77,16 @@ in
           source = "npm:pi-subagents@0.68.0";
         }
       ];
+      subagents = {
+        defaultModel = "openai-codex/gpt-5.6-luna";
+        agentOverrides = {
+          evidence-auditor.thinking = "max";
+          oracle.thinking = "max";
+          reviewer.thinking = "max";
+          scout.thinking = "high";
+          worker.thinking = "max";
+        };
+      };
       skills = [ "/etc/codex/skills/ponytail" ];
       compaction = {
         enabled = true;

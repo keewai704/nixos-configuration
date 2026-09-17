@@ -211,8 +211,10 @@ Nix（nixd）、TypeScript/JavaScript、Lua、Bash を Nix の固定パッケー
 速度や成果物の品質向上率を測定したものではなく、調査と途中診断の手段を補う構成です。
 
 [pi-subagents](https://github.com/nicobailon/pi-subagents) は、依頼に応じた作業分担と独立レビューを提供します。
-組み込みの役割は変更せず、モデル・推論・ツール・文脈継承は上流定義に従います。
-通常の組み込み役割は親のモデルを継承し、推論は役割ごとの既定値を使います。
+サブエージェントの既定モデルは `openai-codex/gpt-5.6-luna` です。
+組み込み役割の `high`（`evidence-auditor`、`oracle`、`reviewer`、`worker`）は `max`、
+`low`（`scout`）は `high` に設定します。`researcher` の `medium` と `delegate` の未指定は変更しません。
+役割のプロンプト・ツール・文脈継承は上流定義のままです。
 親の Astra・`xhigh` と全ツール設定は維持します。
 `reviewer` は読み取り専用の調査役なので、テスト実行や修正は親または `worker` が担当します。
 「reviewer でこの差分を確認して」と依頼するか、`/parallel-review` で観点別レビューを実行できます。
