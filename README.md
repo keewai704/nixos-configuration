@@ -326,6 +326,8 @@ Nix ファイルを読むと依存関係・権限・起動条件がわかり、�
 | ディレクトリ | 独自変更の目的 |
 | --- | --- |
 | [brave-origin/](pkgs/brave-origin/) | Nixpkgs の Brave Origin に日本語設定を追加 |
+| [browser-harness/](pkgs/browser-harness/) | Jev のブラウザー接続と Python 依存関係、Linux の Brave 検出 |
+| [jev-ultrafast/](pkgs/jev-ultrafast/) | 固定した Jev ソース、ローカル inspector、上流のオフラインテスト |
 | [cua-driver/](pkgs/cua-driver/) | デスクトップ操作用ドライバーの実行環境 |
 | [fprintd-cs9711/](pkgs/fprintd-cs9711/) | CS9711 指紋センサーと認証キャンセルの修正 |
 | [hyprland/](pkgs/hyprland/) | 入力メソッドの修飾キー処理の修正 |
@@ -394,6 +396,46 @@ Firefox は固定した `keewai704/my-firefox-nix` の `main` を利用し、Sin
 設定は AutoConfig で固定し、最初の適用時にプロフィールを準備してから Sine を配置します。
 Firefox の見た目は Sine/Natsumi が担当するため、Stylix の Firefox 対応は無効です。
 この非公開入力の取得には GitHub の読み取り認証が必要です。
+
+</details>
+
+<details>
+<summary>Jev Ultrafast の起動と認証</summary>
+
+### Jev Ultrafast
+
+デスクトップでは `jev` と `browser-harness` を Home Manager で導入します。
+[applications.nix](home/keewai/desktop/applications.nix) が導入先です。
+既存の Brave Origin を使い、既定の Firefox・URL ハンドラーは変更しません。
+サービスの自動起動、外部公開、Pi の MCP 登録は行いません。
+両コマンドでは Browser Harness のテレメトリーと更新通知を無効にしています。
+更新はこのリポジトリの Nix パッケージ定義で行います。
+
+```sh
+install -d -m 700 ~/.config/jev-ultrafast
+cp -n /etc/profiles/per-user/keewai/share/jev-ultrafast/env.example ~/.config/jev-ultrafast/.env
+chmod 600 ~/.config/jev-ultrafast/.env
+```
+
+この `.env` の `TYPESAFE_API_KEY` と `TEXT_MODEL_API_KEY` をローカルのエディターで設定します。
+テンプレートの文字生成先は OpenRouter の `inception/mercury-2.5` です。
+キーを Nix、Git、チャットに書かず、既存の認証ファイルを上書きしないでください。
+別の OpenAI 互換サービスを使う場合は `TEXT_MODEL_BASE_URL`、`TEXT_MODEL`、
+`TEXT_MODEL_REASONING` も合わせて変更します。API 呼び出しには料金が発生します。
+
+Brave Origin で `brave://inspect/#remote-debugging` を開き、必要な場合だけリモートデバッグを許可します。
+接続時の許可ダイアログも自分で確認してください。既存プロフィールのタブとログイン状態にアクセスでき、
+実行時にはページの内容や操作履歴がモデル提供元へ送られます。個人情報を含むタスクには注意してください。
+
+```sh
+cd ~/.config/jev-ultrafast
+jev
+```
+
+`http://127.0.0.1:8766` を開き、`Start demo` から操作します。終了は端末の `Ctrl-C` です。
+`.env` は起動ディレクトリから読み込み、キーなしでも画面表示までは確認できます。
+接続の診断は `browser-harness --doctor`、接続デーモンの停止は `browser-harness --reload` です。
+録画は Browser Harness の既定で無効です。モデルの `DONE` だけで成功とは判断せず、結果も確認してください。
 
 </details>
 
