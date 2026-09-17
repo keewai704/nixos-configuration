@@ -1,5 +1,4 @@
 {
-  config,
   lib,
   pkgs,
   ...
@@ -14,8 +13,6 @@ in
 
   xdg = {
     configFile."mimeapps.list".force = true;
-    configFile."BraveSoftware/Brave-Origin/NativeMessagingHosts/com.openai.codexextension.json".source =
-      config.lib.file.mkOutOfStoreSymlink "${config.xdg.configHome}/BraveSoftware/Brave-Browser/NativeMessagingHosts/com.openai.codexextension.json";
 
     desktopEntries = {
       everglide-web-driver = {

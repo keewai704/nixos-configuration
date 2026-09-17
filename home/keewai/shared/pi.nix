@@ -91,6 +91,8 @@ in
       subagents = {
         defaultModel = "openai-codex/gpt-5.6-luna";
         agentOverrides = {
+          codex-exec.disabled = true;
+          codex-exec-writer.disabled = true;
           evidence-auditor.thinking = "max";
           oracle.thinking = "max";
           reviewer.thinking = "max";
@@ -98,7 +100,6 @@ in
           worker.thinking = "max";
         };
       };
-      skills = [ "/etc/codex/skills/ponytail" ];
       compaction = {
         enabled = true;
         reserveTokens = 131072;

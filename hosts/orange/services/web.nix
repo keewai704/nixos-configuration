@@ -56,6 +56,14 @@ in
         send_timeout 600s;
       '';
       locations = {
+        "= /pi".return = "308 ${tailnetOrigin}/pi/$is_args$args";
+        "= /pi/pi".return = "302 ${tailnetOrigin}/pi/$is_args$args";
+        "= /pi/pi/".return = "302 ${tailnetOrigin}/pi/$is_args$args";
+        "^~ /pi/" = mkProxyLocation 30141 ''
+          client_max_body_size 0;
+          proxy_request_buffering off;
+        '';
+
         "= /vault".return = "308 ${tailnetOrigin}/vault/";
 
         "^~ /vault/" = mkProxyLocation vaultwardenPort "";

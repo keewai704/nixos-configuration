@@ -5,8 +5,7 @@
 
 {
   imports = [
-    ./codex.nix
-    ./codex-remote.nix
+    ./pi-web.nix
     ./shell.nix
   ];
 
