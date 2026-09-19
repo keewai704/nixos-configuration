@@ -5,7 +5,6 @@
   ...
 }:
 let
-  subagentResources = pkgs.callPackage ../../../../pkgs/pi-subagents-resources { };
   codexConversionHelpers = pkgs.callPackage ../../../../pkgs/pi-codex-conversion-helpers { };
 in
 {
@@ -69,26 +68,7 @@ in
           prompts = [ ];
           themes = [ ];
         }
-        {
-          source = "npm:pi-subagents@${subagentResources.version}";
-          skills = [ ];
-          prompts = [ "!prompts/council.md" ];
-        }
       ];
-      skills = [ "${subagentResources}/skills" ];
-      prompts = [ "${subagentResources}/prompts/council.md" ];
-      subagents = {
-        defaultModel = "openai-codex/gpt-5.6-luna";
-        agentOverrides = {
-          codex-exec.disabled = true;
-          codex-exec-writer.disabled = true;
-          evidence-auditor.thinking = "max";
-          oracle.thinking = "max";
-          reviewer.thinking = "max";
-          scout.thinking = "high";
-          worker.thinking = "max";
-        };
-      };
       compaction = {
         enabled = true;
         reserveTokens = 131072;

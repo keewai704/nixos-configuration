@@ -13,6 +13,7 @@ let
 in
 {
   home.packages = [ piWeb ];
+  home.file.".pi/agent/agents".source = ./web-agents;
 
   systemd.user.services.pi-web = {
     Unit.Description = "Pi Web coding agent interface";

@@ -37,7 +37,10 @@ approval request, link the exact SKILL.md, quote the instruction, and explain
 whether the blocker is explicit or your interpretation. Use available tool
 equivalents when a skill assumes another harness; never claim to have called an
 unavailable tool. Delegate only when the user or applicable instructions authorize
-it, not merely because a specialist is available.
+it, not merely because a specialist is available. When Pi Web's Agent tool is
+available, use background calls for independent parallel work, fresh-context
+read-only agents for independent reviews, and separate worktrees for concurrent
+writers. Leave integration, commits, activation, and publication with the parent.
 
 ## Tools and evidence
 
@@ -56,9 +59,8 @@ Use web_search for general research and verify sources. Omit provider for the
 configured OpenAI live-search route; do not switch models just to search. Keep
 secrets out of queries and URLs. For important claims, inspect original passages
 with fetch_content and get_search_content; source_check's phrase matching alone
-is not verification. When an authorized workflow uses researcher or
-evidence-auditor, run those children asynchronously so they inherit pi-web-access.
-This execution requirement does not authorize additional children.
+is not verification. Pi Web's configured child profiles use built-in tools only;
+keep web research and extension-dependent checks in the parent.
 
 Use lsp_diagnostics when intermediate diagnostics help, with explicit paths and
 root limited to affected files. It does not replace native project checks. Do not

@@ -136,12 +136,13 @@ Home Manager は `useUserPackages = true` で NixOS に統合されています�
 | 場所 | 役割 |
 | --- | --- |
 | [shared/pi/default.nix](home/keewai/shared/pi/default.nix) | 全ホスト共通の Pi 設定の入口 |
-| [shared/pi/agent.nix](home/keewai/shared/pi/agent.nix) | 本体・実行環境、モデル、サブエージェント、拡張バージョン、ローカル拡張と指示の配布 |
+| [shared/pi/agent.nix](home/keewai/shared/pi/agent.nix) | 本体・実行環境、モデル、拡張バージョン、ローカル拡張と指示の配布 |
 | [shared/pi/codex-conversion.nix](home/keewai/shared/pi/codex-conversion.nix) | Pi Codex conversion のツール・Remote context management・互換設定 |
 | [shared/pi/mcp.nix](home/keewai/shared/pi/mcp.nix) | 共通 MCP サーバーの登録と Pi アダプターへの変換 |
 | [shared/pi/lsp.nix](home/keewai/shared/pi/lsp.nix) | 言語サーバーと診断設定 |
 | [shared/pi/web-search.nix](home/keewai/shared/pi/web-search.nix) | Web 検索と取得経路、CLI / Web 共通の設定ファイル |
 | [shared/pi/web.nix](home/keewai/shared/pi/web.nix) | Pi Web の導入、ユーザーサービス、ホストごとの tailnet 許可 |
+| [shared/pi/web-agents/](home/keewai/shared/pi/web-agents/) | Pi Web 内蔵サブエージェントの有効化、役割、モデル、推論設定 |
 | [shared/pi/APPEND_SYSTEM.md](home/keewai/shared/pi/APPEND_SYSTEM.md) | 全プロジェクト共通の追加システム指示 |
 | [shared/pi/extensions/](home/keewai/shared/pi/extensions/)、[prompts/](home/keewai/shared/pi/prompts/) | キャッシュ監視・Jev 分析のローカル拡張、レビュー用プロンプト |
 | [desktop/pi/default.nix](home/keewai/desktop/pi/default.nix) | デスクトップ専用連携の入口 |
@@ -194,7 +195,7 @@ Web の別端末や、指定したシェルを使わない拡張プロセスは�
 Pi 本体は flake.lock の Nixpkgs に固定された 0.85.1 を使います。
 標準の ChatGPT 接続にはキャッシュ用ヘッダーを本文のキーに合わせる小さなパッチを適用しています。
 Pi Codex conversion が読み込まれる場合は、拡張自身の上流プロバイダー実装をそのまま使います。
-`@howaboua/pi-codex-conversion@3.0.34`、`pi-mcp-adapter@2.34.0`、`pi-web-access@0.29.0`、`@narumitw/pi-lsp@0.49.7`、`pi-subagents@0.68.0` は
+`@howaboua/pi-codex-conversion@3.0.34`、`pi-mcp-adapter@2.34.0`、`pi-web-access@0.29.0`、`@narumitw/pi-lsp@0.49.7` は
 Pi 標準のパッケージ管理で初回起動時に取得し、npm の lifecycle scripts を無効にします。
 拡張のバージョン指定は Nix 管理で、取得した依存関係とロックは `~/.pi/agent/npm/` に保存されます。
 この npm 依存関係のロックは flake.lock には含まれません。
@@ -285,27 +286,10 @@ Nixプロフィール内のPi SDKとNode型定義を参照します。このプ�
 追加拡張は過去の履歴を書き換えず、常駐の追加モデル要求も行いません。
 速度や成果物の品質向上率を測定したものではなく、調査と途中診断の手段を補う構成です。
 
-[pi-subagents](https://github.com/nicobailon/pi-subagents) は、依頼に応じた作業分担と独立レビューを提供します。
-サブエージェントの既定モデルは `openai-codex/gpt-5.6-luna` です。
-組み込み役割の `high`（`evidence-auditor`、`oracle`、`reviewer`、`worker`）は `max`、
-`low`（`scout`）は `high` に設定します。`researcher` の `medium` と `delegate` の未指定は変更しません。
-役割のプロンプト・ツール・文脈継承は上流定義のままです。
-スキルと `/council` は [pi-subagents-resources](pkgs/pi-subagents-resources/default.nix) で
-同じ固定バージョンの npm ソースから生成します。Council の自動選択を複数の助言者・council の
-明示的な依頼に限定し、スキル内の相対参照と `/council` の参照先を修正します。
-元パッケージの対応するスキル・プロンプトは読み込み対象から外し、二重登録を防ぎます。
-拡張のバージョンもこの定義から参照し、導入済みの npm ファイルは直接変更しません。
-親の Astra・`xhigh` と全ツール設定は維持します。
-`reviewer` は読み取り専用の調査役なので、テスト実行や修正は親または `worker` が担当します。
-「reviewer でこの差分を確認して」と依頼するか、`/parallel-review` で観点別レビューを実行できます。
-`/subagents-models` でモデルの割当、`/subagents-doctor` で構成、`/subagents-fleet` で実行状況を確認します。
-導入だけでは自動レビューを起動せず、実行した子の要求は ChatGPT の利用枠を消費します。
-`researcher` と `evidence-auditor` は、導入済みの `pi-web-access` が提供する4ツールを使えます。
-この2役は上流の既定どおりバックグラウンド（`async: true`）で実行し、親の拡張を継承します。
-前景の子は親の拡張を自動では読み込まないため、そのまま `async: false` に変更しません。
-Codex CLI を使う `codex-exec` と `codex-exec-writer` は無効にします。
-その他の外部 CLI の役割は各 CLI の認証・実行環境が別途必要です。
-並列の編集は別 worktree へ分離し、子にローカル activation・公開・未承認のリモート操作を委ねません。
+作業分担と独立レビューは [Pi Web 内蔵サブエージェント](#pi-web) に一本化します。
+`pi-subagents` 拡張と専用スキル・プロンプトは読み込まず、CLI の Pi にサブエージェント機能は追加しません。
+旧 `/council`、`/parallel-review`、`/subagents-*` コマンドや専用ワークフローは提供しません。
+通常の差分レビューには CLI / Web 共通の `/review` も使えます。
 
 システム指示とツール定義を不用意に変えず、毎ターンの日付・Git 状態の注入、履歴の書き換え、定期的な空要求は行いません。
 Pi Codex conversion の通信実装に合わせ、キャッシュキーは上流のセッション単位の扱いを使います。
@@ -360,6 +344,30 @@ MCP の CUA だけは GUI のあるデスクトップ専用です。ホストの
 Web 版と CLI は `~/.pi/agent` の認証、設定、拡張、スキル、会話ファイルを共有します。
 Pi Web が内部で使う Pi SDK も、このリポジトリのキャッシュ修正版を使います。
 Home Manager が管理する設定・モデル・スキルの変更は、Web 画面ではなく Nix の編集元で行います。
+
+内蔵サブエージェントは `Agent` で起動し、`get_subagent_result` で結果を確認、
+`steer_subagent` で実行中の子に追加指示を送ります。バックグラウンド実行、再開、
+モデル指定、文脈継承、worktree 分離は内蔵機能を使います。
+[web-agents/](home/keewai/shared/pi/web-agents/) で `builtInEnabled` と3役を管理します。
+
+| 役割 | 用途 | モデル | 推論 |
+| --- | --- | --- | --- |
+| `explore` | 読み取り専用のコード調査 | `openai-codex/gpt-5.6-luna` | `high` |
+| `plan` | 読み取り専用の計画・レビュー | `openai-codex/gpt-5.6-luna` | `max` |
+| `general-purpose` | 実装・検証 | `openai-codex/gpt-5.6-luna` | `max` |
+
+親の Astra・`xhigh` と全ツール設定は維持します。子は既定で独立した文脈と組み込みツールだけを使い、
+拡張・スキルを自動読み込みしません。Web 検索や MCP / LSP に依存する検証は親が担当します。
+子にも適用される AGENTS.md を読むよう指示し、実装役は Ponytail を必要時に読みます。
+ユーザーが委任を依頼した場合だけ起動し、並列編集は別 worktree に分離します。
+統合・コミット・ローカル適用・公開は親が担当します。子の要求も ChatGPT の利用枠を消費します。
+
+上流の役割検出は個別ファイルのシンボリックリンクを対象にしないため、
+`~/.pi/agent/agents` ディレクトリ全体を Home Manager からリンクします。
+役割や有効化設定を Web 画面から書き換えず、`web-agents/` を編集して適用します。
+初回移行時に既存の未管理ディレクトリがある場合は内容を確認して退避し、自動上書きしません。
+旧拡張の取得済み npm ファイル・実行履歴・認証情報は自動削除しません。
+既存セッションは `/reload`、または新規セッションの開始で新しい構成を読み込みます。
 
 状態確認は `systemctl --user status pi-web`、ログは `journalctl --user -u pi-web`、
 再起動は `systemctl --user restart pi-web` です。
@@ -422,7 +430,6 @@ Nix ファイルを読むと依存関係・権限・起動条件がわかり、�
 | [hyprland/](pkgs/hyprland/) | 入力メソッドの修飾キー処理の修正 |
 | [pi-coding-agent/](pkgs/pi-coding-agent/) | 標準 ChatGPT 接続のキャッシュ用ヘッダーと会話・接続の識別子を分離 |
 | [pi-codex-conversion-helpers/](pkgs/pi-codex-conversion-helpers/) | 上流拡張を改変せず使うための NixOS 用ネイティブ補助バイナリ |
-| [pi-subagents-resources/](pkgs/pi-subagents-resources/) | 固定した委任スキル・Council プロンプトの発動条件と参照先を修正 |
 | [pi-web/](pkgs/pi-web/) | 固定ソースからの Pi Web ビルド、`/pi/` 対応、同梱フォント、修正版 Pi SDK と端末の実行環境 |
 
 keyd が集約するのは処理対象の入力だけです。Citrus ではマウス入力を保つため、
