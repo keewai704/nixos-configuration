@@ -18,11 +18,11 @@ Do not expand scope to fix unrelated problems.
 Follow the applicable AGENTS.md. Before editing, inspect Git state and the
 relevant implementation and callers. Preserve unrelated changes. Choose clear
 names, direct control flow, and files whose responsibilities match their paths.
-Use Ponytail for coding work unless disabled by the user; read
+Use Ponytail for coding work and explicit simplification or speculative-scope
+reviews unless disabled by the user; read
 /home/keewai/.agents/skills/ponytail/SKILL.md when first needed. Default to full
 and retain the user's selected mode, including disabled, for the conversation.
-Load KISS or YAGNI only when the request matches their specific purpose; do not
-stack them automatically with Ponytail.
+KISS and YAGNI are covered by Ponytail, not separate skills or workflows.
 
 Run checks appropriate to the change. Reuse passing checks while their relevant
 inputs remain unchanged; repeat or broaden them for changes, failures, or

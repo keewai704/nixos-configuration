@@ -209,6 +209,7 @@ MCP アダプターのサーバー別補助ツールも、登録されると利�
 副作用を自動で再実行してよい根拠にもなりません。詳細は `/skill:mcp-scripting` で読み込めます。
 この上流スキルは手動専用のため、通常のスキル説明一覧には追加されません。
 個人スキルは Ponytail を含め、Pi 標準の `~/.agents/skills` 探索で共有します。
+単純化（KISS）と不要な先行実装の抑制（YAGNI）は Ponytail に統合し、独立したスキルは配布しません。
 Ponytail のモードは会話中に `ponytail lite`、`ponytail full`、`ponytail ultra` で指定します。
 追加のシステム指示は `APPEND_SYSTEM.md` に置き、Pi 標準のツール説明とプロジェクトの AGENTS.md を維持します。
 `/review` または `/review <対象>` で変更のレビューを依頼できます。
