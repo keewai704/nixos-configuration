@@ -24,6 +24,7 @@ in
         "PI_WEB_ALLOWED_HOSTS=${osConfig.networking.hostName}.tail1e65cd.ts.net"
         "PI_CODING_AGENT_DIR=${config.home.homeDirectory}/.pi/agent"
         "PI_WEB_SKIP_VERSION_CHECK=1"
+        "TYPESAFE_API_KEY_FILE=${config.home.sessionVariables.TYPESAFE_API_KEY_FILE}"
         "NEXT_TELEMETRY_DISABLED=1"
         "PATH=${config.home.profileDirectory}/bin:/run/current-system/sw/bin"
         "SHELL=${lib.getExe pkgs.bash}"

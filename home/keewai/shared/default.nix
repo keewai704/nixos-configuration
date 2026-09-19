@@ -6,5 +6,6 @@
     ./pi-web.nix
     ./shell.nix
     ./skills.nix
+    ./typesafe.nix
   ];
 }

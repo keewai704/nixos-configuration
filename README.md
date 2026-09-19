@@ -142,6 +142,7 @@ Home Manager は `useUserPackages = true` で NixOS に統合されています�
 | [shared/mcp.nix](home/keewai/shared/mcp.nix) | 全ホストで使う MCP サーバー |
 | [desktop/cua.nix](home/keewai/desktop/cua.nix) | デスクトップ操作用ドライバーと MCP |
 | [shared/skills.nix](home/keewai/shared/skills.nix) | Ponytail を含む個人スキルの配布 |
+| [shared/typesafe.nix](home/keewai/shared/typesafe.nix) | Jev と Pi プラグインが共有する TypeSafe 認証ファイルの場所 |
 
 Codex CLI、Remote Control、ChatGPT Desktop とそのブラウザー・URL 連携は導入しません。
 Pi の `openai-codex` は ChatGPT 契約で接続するプロバイダー名であり、Codex CLI は必要ありません。
@@ -423,6 +424,39 @@ Firefox の見た目は Sine/Natsumi が担当するため、Stylix の Firefox 
 </details>
 
 <details>
+<summary>TypeSafe の共有認証（Jev / Pi プラグイン）</summary>
+
+### TypeSafe の共有認証
+
+TypeSafe の API キーは `~/.config/typesafe/api-key` にキー本体だけを1行で保存します。
+`TYPESAFE_API_KEY=` のような変数名や引用符は付けません。
+キーはユーザーが管理する通常ファイルで、Git・Nix Store・Pi の設定 JSON には入れません。
+ホスト間でキーを同期しません。
+
+```sh
+install -d -m 700 ~/.config/typesafe
+touch ~/.config/typesafe/api-key
+chmod 600 ~/.config/typesafe/api-key
+```
+
+ローカルのエディターでキーを設定します。ディレクトリは `700`、ファイルは `600` を保ちます。
+Home Manager は秘密値ではなく `TYPESAFE_API_KEY_FILE` にファイルの絶対パスだけを設定します。
+新しいログインセッションの Pi CLI と Pi Web が同じ場所を参照できます。
+既存の端末・Pi は環境変数を引き継ぐため、再ログインしてから起動し直してください。
+
+今後の Pi プラグインは `process.env.TYPESAFE_API_KEY_FILE` を読み書き先に使います。
+未設定時は `${XDG_CONFIG_HOME:-~/.config}/typesafe/api-key` を使います。
+設定画面で受け取ったキーは、同じディレクトリの権限 `600` の一時ファイルへ書き、
+rename で置き換えてください。キーを会話・ツール引数・ログ・セッション履歴へ保存せず、
+API 呼び出しの都度読み直します。今回はプラグイン自体を追加していません。
+
+Jev も API 呼び出しの都度このファイルを読みます。プラグインが更新したキーは次の呼び出しから反映されます。
+明示的な `TYPESAFE_API_KEY` 環境変数や Jev の `.env` にキーがある場合は、そちらが優先されます。
+共有運用では古い値による上書きを避けるため、Jev の `.env` には TypeSafe キーを置きません。
+
+</details>
+
+<details>
 <summary>Jev Ultrafast の起動と認証</summary>
 
 ### Jev Ultrafast
@@ -441,7 +475,8 @@ cp -n "$jev_root/share/jev-ultrafast/env.example" ~/.config/jev-ultrafast/.env
 chmod 600 ~/.config/jev-ultrafast/.env
 ```
 
-この `.env` の `TYPESAFE_API_KEY` と `TEXT_MODEL_API_KEY` をローカルのエディターで設定します。
+TypeSafe キーは上の[共有認証](#typesafe-の共有認証)で設定します。
+この `.env` には文字生成用の `TEXT_MODEL_API_KEY` をローカルのエディターで設定します。
 テンプレートの文字生成先は OpenRouter の `inception/mercury-2.5` です。
 キーを Nix、Git、チャットに書かず、既存の認証ファイルを上書きしないでください。
 別の OpenAI 互換サービスを使う場合は `TEXT_MODEL_BASE_URL`、`TEXT_MODEL`、

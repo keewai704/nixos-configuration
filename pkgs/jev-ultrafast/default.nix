@@ -18,6 +18,8 @@ python3Packages.buildPythonApplication rec {
     hash = "sha256-D2BQZG3gMIG/goeJBikYxb5PMDibzttWnlZ2ccg3Exk=";
   };
 
+  patches = [ ./shared-typesafe-key.patch ];
+
   build-system = [ python3Packages.hatchling ];
   dependencies = [
     browser-harness
