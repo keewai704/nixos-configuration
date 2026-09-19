@@ -137,7 +137,7 @@ Home Manager は `useUserPackages = true` で NixOS に統合されています�
 | --- | --- |
 | [shared/pi/default.nix](home/keewai/shared/pi/default.nix) | 全ホスト共通の Pi 設定の入口 |
 | [shared/pi/agent.nix](home/keewai/shared/pi/agent.nix) | 本体・実行環境、モデル、サブエージェント、拡張バージョン、ローカル拡張と指示の配布 |
-| [shared/pi/codex-conversion.nix](home/keewai/shared/pi/codex-conversion.nix) | Pi Codex conversion の追加ツール・互換設定 |
+| [shared/pi/codex-conversion.nix](home/keewai/shared/pi/codex-conversion.nix) | Pi Codex conversion のツール・Remote context management・互換設定 |
 | [shared/pi/mcp.nix](home/keewai/shared/pi/mcp.nix) | 共通 MCP サーバーの登録と Pi アダプターへの変換 |
 | [shared/pi/lsp.nix](home/keewai/shared/pi/lsp.nix) | 言語サーバーと診断設定 |
 | [shared/pi/web-search.nix](home/keewai/shared/pi/web-search.nix) | Web 検索と取得経路、CLI / Web 共通の設定ファイル |
@@ -179,9 +179,11 @@ MCP の大きな JSON 出力を処理するときに、補助コマンドが見�
 Pi 標準の `shellCommandPrefix` で、シェルツールと `!` / `!!` の PATH の先頭に
 NixOS の権限ラッパーを置きます。Pi Web の非ログイン環境でも `sudo` が
 `/run/wrappers/bin/sudo` を使うようにし、sudo の認証・承認条件は変更しません。
-Web の別端末や拡張が直接起動するプロセスの PATH を変更する設定ではありません。
-同じシェル設定で `pipefail` を有効にし、パイプの前段で失敗した検証を後段の整形処理が
-成功として隠すことを防ぎます。`errexit` は強制せず、想定した失敗は呼び出し側で明示的に処理します。
+`exec_command` はこの prefix を使わないため、Pi の `shellPath` に Nix 管理の Bash ラッパーを設定し、
+同じ PATH と `pipefail` を維持します。Fish 環境でも存在しない `/bin/bash` にフォールバックしません。
+Web の別端末や、指定したシェルを使わない拡張プロセスは対象外です。
+`pipefail` により、パイプの前段で失敗した検証を後段の整形処理が成功として隠すことを防ぎます。
+`errexit` は強制せず、想定した失敗は呼び出し側で明示的に処理します。
 `defaultProjectTrust = "always"` により、すべてのディレクトリを既定で信頼します。
 プロジェクトの設定・スキル・拡張は確認なしで読み込まれ、拡張コードはユーザー権限で実行されます。
 個別に保存した信頼拒否や明示的な `--no-approve` は Pi 標準の優先順位で適用されます。
@@ -199,11 +201,24 @@ Pi 標準のパッケージ管理で初回起動時に取得し、npm の lifecy
 
 [Pi Codex conversion](https://github.com/IgorWarzocha/howaboua-pi-stuff/tree/main/packages/pi-codex-conversion) は
 公開 npm パッケージを改変せず、CLI と Pi Web の両方で読み込みます。Codex CLI の導入は不要です。
-既定は **Extra tools only** で、既存の基本ツール・MCP・検索・LSP・サブエージェントを残したまま
-`apply_patch` と、画像対応モデル用の `view_image` を追加します。
-Structured / Code / Notebook モードへの全面置換、システム指示の上書き、拡張独自の履歴管理・圧縮、
-自動推論レベル変更、Fast Mode、キャッシュ keepalive と強制 WebSocket は有効にしません。
-Pi 標準の自動コンパクションと既存のモデル・推論設定を維持します。
+Codex 対象モデルでは **Structured adapter** と実験的 **Context management: Remote** を使います。
+追加ツール専用モードでは context management が無効になるため、`read / bash / edit / write` は
+`exec_command / write_stdin / apply_patch / view_image` に置き換わります。
+`grep / find / ls`、MCP・検索・LSP・サブエージェントは維持します。非対象モデルでは通常の Pi ツールに戻ります。
+
+Remote は Codex のサーバー側 history / notes を暗号化された契約で利用し、
+`history / notes / new_context / get_context_remaining` でコンテキストの引き継ぎを行います。
+**Hybrid compaction** も有効にし、対応する Codex 接続では Responses compaction V2 の暗号化チェックポイントを
+ノートと併用します。単独の `responsesCompaction` は無効のままですが、Hybrid 経由で V2 を使用します。
+自動コンパクションは有効のままで、しきい値ではノート保存を促し、`new_context`・手動 `/compact`・
+コンテキスト超過の回復で圧縮します。既存の会話は有効化だけで切り捨てず、元の Pi JSONL も残します。
+Remote を利用したセッションの再開時は同じ設定を維持してください。途中で無効にすると分離した履歴が再結合し得ます。
+サーバー機能や認証に問題があっても、別の保存方式へ黙って切り替えません。
+非対応の接続には Remote は適用されず、暗号化チェックポイントの他プロバイダーへの可搬性も保証されません。
+Remote と独立した Parallel Pi summary は併用せず、追加のローカル要約要求は行いません。
+
+Code / Notebook、Heavy system prompt overwrite、自動推論レベル変更、Fast Mode、
+キャッシュ keepalive と強制 WebSocket は有効にしません。既存のモデル・推論設定を維持します。
 音声・GipPity LAN サーバーは起動せず、新しい待受け・ファイアウォール・外部公開も追加しません。
 特に Orange で `/codex voice server` による別ポート公開を行わないでください。
 
@@ -219,7 +234,8 @@ Nix 管理のグローバル設定を UI から保存したり、プロジェク
 MCP は共有レジストリから、そのホストに定義されたすべてのサーバーを有効にします。
 共通の `context7`、`nixos`、`openaiDeveloperDocs`、`serena` に加え、デスクトップでは `cua-driver` も使えます。
 初回はツール情報を取得し、以降は必要時に接続します。共有設定へ追加したサーバーも Pi 側に反映されます。
-`defaultTools` で Linux の全組み込みツール `read / bash / edit / write / grep / find / ls` を有効にします。
+`defaultTools` は Linux の全組み込みツール `read / bash / edit / write / grep / find / ls` を選びます。
+Codex adapter の対象モデルでは上記のツール置換が適用されます。
 拡張ツールも標準どおり有効にし、ラッパーの `--tools` による許可リストは設けません。
 MCP アダプターのサーバー別補助ツールも、登録されると利用できます。
 `/mcp` で接続状況を確認できます。
