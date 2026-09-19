@@ -436,7 +436,8 @@ Firefox の見た目は Sine/Natsumi が担当するため、Stylix の Firefox 
 
 ```sh
 install -d -m 700 ~/.config/jev-ultrafast
-cp -n /etc/profiles/per-user/keewai/share/jev-ultrafast/env.example ~/.config/jev-ultrafast/.env
+jev_root=$(dirname "$(dirname "$(readlink -f "$(command -v jev)")")")
+cp -n "$jev_root/share/jev-ultrafast/env.example" ~/.config/jev-ultrafast/.env
 chmod 600 ~/.config/jev-ultrafast/.env
 ```
 
