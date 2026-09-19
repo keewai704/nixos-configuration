@@ -18,7 +18,7 @@ let
             ;;
         esac
       done < <(systemctl --user show-environment)
-      exec ${lib.getExe python} -B ${./pi-jev/launch.py} ${lib.getExe brave} ${./pi-jev/runner.py} "$@"
+      exec ${lib.getExe python} -B ${./pi-jev/launch.py} ${lib.getExe' pkgs.systemd "systemd-run"} ${lib.getExe brave} ${./pi-jev/runner.py} "$@"
     '';
   };
 in

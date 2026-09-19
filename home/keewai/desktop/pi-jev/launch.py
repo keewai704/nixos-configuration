@@ -3,63 +3,84 @@ import os
 import subprocess
 import sys
 import time
+import uuid
 from pathlib import Path
 
 
+class StartupError(Exception):
+    def __init__(self, reason):
+        self.reason = reason
+
+
+def browser_running(profile):
+    try:
+        pid = int(os.readlink(profile / "SingletonLock").rsplit("-", 1)[1])
+        if pid <= 0:
+            return False
+        os.kill(pid, 0)
+        return True
+    except (OSError, ValueError, IndexError):
+        return False
+
+
 def main():
-    executable, runner, workspace = sys.argv[1:]
-    workspace = Path(workspace)
-    profile = workspace / "profile"
+    systemd_run, executable, runner, workspace = sys.argv[1:]
+    profile = (
+        Path(os.environ.get("XDG_CONFIG_HOME", Path.home() / ".config"))
+        / "BraveSoftware"
+        / "Brave-Origin"
+    )
     for key in tuple(os.environ):
         if key.startswith(("BU_", "BH_", "BROWSER_HARNESS_", "BROWSER_USE_")):
             del os.environ[key]
     os.environ.update(
-        BH_HOME=str(workspace / "harness"),
+        BH_HOME=str(Path(workspace) / "harness"),
         BU_NAME="pi-jev",
         BH_TELEMETRY="0",
         BH_UPDATE_CHECK="0",
         BH_TAB_MARKER="0",
     )
-    browser_environment = {
-        key: value
-        for key, value in os.environ.items()
-        if not key.startswith(("TYPESAFE_", "TEXT_MODEL_"))
-    }
-    arguments = [
-        executable,
-        f"--user-data-dir={profile}",
-        "--remote-debugging-address=127.0.0.1",
-        "--remote-debugging-port=0",
-        "--no-first-run",
-        "--no-default-browser-check",
-        "--disable-background-networking",
-        "--disable-component-update",
-        "--password-store=basic",
-    ]
-    if not (os.environ.get("WAYLAND_DISPLAY") or os.environ.get("DISPLAY")):
-        arguments.append("--headless=new")
-    browser = subprocess.Popen(
-        [*arguments, "about:blank"],
-        env=browser_environment,
-        stdin=subprocess.DEVNULL,
-        stdout=subprocess.DEVNULL,
-        stderr=subprocess.DEVNULL,
-    )
+    if not browser_running(profile):
+        if not (os.environ.get("WAYLAND_DISPLAY") or os.environ.get("DISPLAY")):
+            raise StartupError("desktop_session_required")
+        subprocess.run(
+            [
+                systemd_run,
+                "--user",
+                "--quiet",
+                "--collect",
+                "--service-type=exec",
+                f"--unit=app-pi-jev-brave-{uuid.uuid4()}",
+                executable,
+            ],
+            check=True,
+            stdin=subprocess.DEVNULL,
+            stdout=subprocess.DEVNULL,
+            stderr=subprocess.DEVNULL,
+            timeout=10,
+        )
     deadline = time.monotonic() + 15
     port_file = profile / "DevToolsActivePort"
     while time.monotonic() < deadline:
-        if browser.poll() is not None:
-            raise RuntimeError("browser_exited")
-        try:
-            port = int(port_file.read_text().splitlines()[0])
-        except (FileNotFoundError, IndexError, ValueError):
-            time.sleep(0.05)
-            continue
-        if not 1 <= port <= 65535:
-            raise ValueError("invalid_port")
-        os.environ["BU_CDP_URL"] = f"http://127.0.0.1:{port}"
-        os.execv(sys.executable, [sys.executable, "-B", runner])
-    raise TimeoutError("browser_startup_timeout")
+        if browser_running(profile):
+            try:
+                port_line, socket_path = port_file.read_text().splitlines()[:2]
+                port = int(port_line)
+            except (FileNotFoundError, ValueError):
+                time.sleep(0.1)
+                continue
+            if not 1 <= port <= 65535 or not socket_path.startswith(
+                "/devtools/browser/"
+            ):
+                raise StartupError("invalid_browser_endpoint")
+            os.environ["BU_CDP_WS"] = f"ws://127.0.0.1:{port}{socket_path}"
+            os.execv(sys.executable, [sys.executable, "-B", runner])
+        time.sleep(0.1)
+    raise StartupError(
+        "browser_setup_required"
+        if browser_running(profile)
+        else "browser_startup_failed"
+    )
 
 
 if __name__ == "__main__":
@@ -70,9 +91,12 @@ if __name__ == "__main__":
             json.dumps(
                 {
                     "event": "result",
-                    "stop_reason": "browser_startup_failed",
+                    "stop_reason": error.reason
+                    if isinstance(error, StartupError)
+                    else "browser_startup_failed",
                     "error_type": type(error).__name__,
                     "evidence": None,
+                    "hint": "Brave uses its normal profile with no added browser flags. If remote debugging is disabled, enable it yourself at brave://inspect/#remote-debugging and approve the connection when prompted. The launcher never changes browser preferences.",
                 }
             ),
             flush=True,

@@ -253,8 +253,11 @@ def run(request):
             value = None
             if action["kind"] == "fill":
                 phase = "text_generation"
-                if not os.environ.get("TEXT_MODEL_API_KEY"):
+                text_key = os.environ.get("TEXT_MODEL_API_KEY")
+                if not text_key:
                     raise StopRun("missing_text_model_key")
+                if text_key == os.environ.get("TYPESAFE_API_KEY"):
+                    raise StopRun("typesafe_key_is_not_a_text_model_key")
                 context = field_context(
                     state["goal"], action, state["page"], state["history"]
                 )

@@ -18,7 +18,7 @@ function display(value: string): string {
 	return value.replace(/[\p{Cc}\p{Cf}]/gu, " ");
 }
 
-async function closeBrowserScope(unit: string, workspace: string) {
+async function closeRunnerScope(unit: string, workspace: string) {
 	try {
 		await exec(SYSTEMCTL, ["--user", "stop", unit], { timeout: 6000 });
 	} catch {
@@ -34,7 +34,7 @@ async function closeBrowserScope(unit: string, workspace: string) {
 			{ timeout: 3000 },
 		);
 		if (!stdout.split("\n").includes("ActiveState=inactive")) {
-			throw new Error("The dedicated Jev browser scope is still active.");
+			throw new Error("The Jev runner scope is still active.");
 		}
 	}
 	await rm(workspace, { recursive: true, force: true });
@@ -49,7 +49,7 @@ export default function jevBrowser(pi: ExtensionAPI) {
 		name: "jev_browser",
 		label: "Jev browser",
 		description:
-			"Run a bounded browser task only when the user explicitly requests Jev. For public pages or isolated test environments, never private/account data or production mutations. Requires interactive consent: page content goes to TypeSafe and the configured text-model provider, with separate API charges. Automatically starts a dedicated Brave instance with a temporary profile after consent; no existing login/profile is reused. The browser is visible in a desktop session and headless without a display. Defaults to per-action approval; only the user can select automatic test execution. Same-origin observations only, not a network sandbox. Does not replace search, APIs, CLI, or deterministic tests. Do not operate the same browser concurrently through CUA. Returns at most 6,000 visible-text characters, 20 controls, and 30 actions; DONE is not verified success. Stops its browser and connection daemon and removes the temporary profile; uncertain actions must not be automatically retried.",
+			"Run a bounded browser task only when the user explicitly requests Jev. For public pages or isolated test environments, never private/account data or production mutations. Requires interactive consent: page content goes to TypeSafe and the configured text-model provider, with separate API charges. Starts or reuses normal Brave with its usual profile and no added browser flags. Existing login state is shared. Remote-debugging setup and connection approval must be performed by the user; never change browser preferences automatically. Defaults to per-action approval; only the user can select automatic test execution. Same-origin observations only, not a network sandbox. Does not replace search, APIs, CLI, or deterministic tests. Do not operate the same browser concurrently through CUA. Returns at most 6,000 visible-text characters, 20 controls, and 30 actions; DONE is not verified success. Closes only its owned tab and stops its connection daemon; leaves normal Brave, other tabs, and its profile in place. Uncertain actions must not be automatically retried.",
 		parameters: Type.Object({
 			url: Type.String({
 				minLength: 1,
@@ -117,7 +117,7 @@ export default function jevBrowser(pi: ExtensionAPI) {
 				: controller.signal;
 			try {
 				const mode = await ctx.ui.select(
-					`Jev: ${display(params.url)}\n${display(params.goal)}\n\nPage content and generated field values are sent to TypeSafe and the configured text model; API charges apply. A dedicated Brave instance will start with a temporary profile; existing logins are not reused. It and its profile will be removed on completion. Use only public content or non-sensitive test data. Origin checks do not sandbox network traffic. No production mutations.`,
+					`Jev: ${display(params.url)}\n${display(params.goal)}\n\nPage content and generated field values are sent to TypeSafe and the configured text model; API charges apply. Normal Brave will be started or reused without extra browser flags. Its usual profile and login state are shared. Only the owned task tab is closed afterward; the browser and profile are preserved. You must approve remote debugging yourself if required. Use only public content or non-sensitive test data. Origin checks do not sandbox network traffic. No production mutations.`,
 					["Cancel", REVIEW, AUTOMATIC],
 					{ signal: lifetime },
 				);
@@ -287,7 +287,8 @@ export default function jevBrowser(pi: ExtensionAPI) {
 									: "runner_exit",
 							confirmed_actions: actions,
 							evidence: null,
-							cleanup: "owned-tab cleanup unconfirmed before browser shutdown",
+							cleanup:
+								"owned-tab cleanup unconfirmed; normal Brave is left running",
 							warning:
 								"Execution may have occurred. Never automatically retry this task.",
 						};
@@ -305,15 +306,16 @@ export default function jevBrowser(pi: ExtensionAPI) {
 					lifetime.removeEventListener("abort", stop);
 					prompts.abort();
 					try {
-						await closeBrowserScope(unit, workspace);
+						await closeRunnerScope(unit, workspace);
 					} catch {
 						throw new Error(
-							`Jev browser cleanup could not be confirmed. Inspect ${unit} and ${workspace}; do not automatically retry.`,
+							`Jev runner cleanup could not be confirmed. Inspect ${unit} and ${workspace}; do not automatically retry.`,
 						);
 					}
 				}
 				if (!result) throw new Error("Jev returned no result.");
-				result.browser_cleanup = "stopped_and_profile_removed";
+				result.browser_cleanup = "normal_browser_and_profile_preserved";
+				result.runner_cleanup = "stopped_and_temporary_files_removed";
 				if (Buffer.byteLength(JSON.stringify(result)) > 48000) {
 					result = {
 						stop_reason: result.stop_reason,
@@ -322,6 +324,7 @@ export default function jevBrowser(pi: ExtensionAPI) {
 						verification: { status: "unknown" },
 						cleanup: result.cleanup,
 						browser_cleanup: result.browser_cleanup,
+						runner_cleanup: result.runner_cleanup,
 						warning:
 							"Result exceeded the 48 KB evidence limit; do not infer success.",
 					};
