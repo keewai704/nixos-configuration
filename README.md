@@ -141,6 +141,7 @@ Home Manager は `useUserPackages = true` で NixOS に統合されています�
 | [citrus/web.nix](hosts/citrus/web.nix)、[orange/services/web.nix](hosts/orange/services/web.nix) | 既存の Tailscale Serve と nginx による HTTPS 公開 |
 | [shared/mcp.nix](home/keewai/shared/mcp.nix) | 全ホストで使う MCP サーバー |
 | [desktop/cua.nix](home/keewai/desktop/cua.nix) | デスクトップ操作用ドライバーと MCP |
+| [desktop/pi-jev.nix](home/keewai/desktop/pi-jev.nix)、[pi-jev/](home/keewai/desktop/pi-jev/) | Jev と Browser Harness の導入、Pi の限定ブラウザー操作ツール |
 | [shared/skills.nix](home/keewai/shared/skills.nix) | Ponytail を含む個人スキルの配布 |
 | [shared/typesafe.nix](home/keewai/shared/typesafe.nix) | Jev と Pi プラグインが共有する TypeSafe 認証ファイルの場所 |
 
@@ -463,7 +464,7 @@ Jev 本体へのパッチはありません。プラグインからキーを変�
 ### Jev Ultrafast
 
 デスクトップでは `jev` と `browser-harness` を Home Manager で導入します。
-[applications.nix](home/keewai/desktop/applications.nix) が導入先です。
+[pi-jev.nix](home/keewai/desktop/pi-jev.nix) が導入先です。
 既存の Brave Origin を使い、既定の Firefox・URL ハンドラーは変更しません。
 サービスの自動起動、外部公開、Pi の MCP 登録は行いません。
 両コマンドでは Browser Harness のテレメトリーと更新通知を無効にしています。
@@ -496,6 +497,39 @@ jev
 `.env` は起動ディレクトリから読み込み、キーなしでも画面表示までは確認できます。
 接続の診断は `browser-harness --doctor`、接続デーモンの停止は `browser-harness --reload` です。
 録画は Browser Harness の既定で無効です。モデルの `DONE` だけで成功とは判断せず、結果も確認してください。
+
+### Pi から使う
+
+デスクトップの Pi には `jev_browser` ツールも配置します。既存の Pi は `/reload`、
+または新しいセッションで読み込みます。たとえば「Jev でこのテスト用ページの検索フォームを確認して」と
+明示して依頼します。通常の検索・API・CLI・回帰テストを置き換える用途ではありません。
+Orange には配置せず、常駐サービスや MCP サーバーも追加しません。
+
+開始時に URL、目的、外部送信と課金の説明を確認し、操作ごとの承認か、隔離したテスト環境向けの自動実行を選びます。
+自動実行はモデルの引数では選べません。確認 UI のない実行は拒否します。
+操作ごとの承認では、クリック先や文字生成後の実際の入力値を実行前に表示します。
+テスト環境かどうかは利用者が確認するもので、技術的なサンドボックスではありません。
+私的・ログイン済みアカウントの情報、秘密値、本番の購入・投稿・削除・権限変更には使わないでください。
+既存 Chromium プロフィールを共有するため、専用タブでもアカウント分離はありません。
+
+既定は最大12回の判断・120秒、上限は30回・300秒です。時間には操作承認待ちも含みます。
+Pi のキャンセルとセッション終了で停止し、作成したタブだけを閉じます。同じ利用者の Jev ツールは排他実行します。
+CUA やデモ版との排他は自動ではないため、同じブラウザーを同時操作しないでください。
+開始 URL と異なる origin を観測すると、以降のモデル送信と操作を停止します。
+リダイレクトそのもの、ページ内 JavaScript、第三者への通信を遮断する機能ではありません。
+
+`expect.urlContains` と `expect.textContains` は終了前に新しく観測した URL・表示本文への文字列検査です。
+`agent_status` と `verification.status` を別々に返し、検査を指定しなければ `not_requested`、
+最終観測がなければ `unknown` とします。検査成功もタスク全体の正しさを保証しません。
+証拠は現在の表示領域の本文6,000 UTF-8バイト・最大20要素（合計4 KiBまで）・最大30操作に限定し、
+スクリーンショットや生のモデル要求は保存しません。結果全体が48 KBを超えた場合は証拠を省略し、検査結果を `unknown` にします。
+本文・操作要約は Pi の通常のセッション履歴に残ります。失敗やキャンセル後は副作用が起きた可能性を確認し、
+自動で再実行しないでください。タブのクローズが確認できなければ `cleanup` にその旨を返します。
+
+ランナーは起動ディレクトリによらず `~/.config/jev-ultrafast/.env`（XDG_CONFIG_HOME に対応）を読みます。
+TypeSafe キーは既存の共有ファイルを利用し、明示的な環境変数、共有ファイル、`.env` の順に優先します。
+文字生成先・認証は上の Jev 設定を再利用し、Pi の ChatGPT 認証を流用しません。
+モデル呼び出し回数は結果に含めますが、実請求額や残高の表示ではありません。
 
 </details>
 
