@@ -14,6 +14,9 @@
       "@earendil-works/pi-coding-agent": [
         "/etc/profiles/per-user/keewai/lib/node_modules/pi-monorepo/dist/index.d.ts"
       ],
+      "@earendil-works/pi-tui": [
+        "/etc/profiles/per-user/keewai/lib/node_modules/pi-monorepo/node_modules/@earendil-works/pi-tui/dist/index.d.ts"
+      ],
       "typebox": [
         "/etc/profiles/per-user/keewai/lib/node_modules/pi-monorepo/node_modules/typebox/build/index.d.mts"
       ]
