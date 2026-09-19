@@ -18,8 +18,6 @@ python3Packages.buildPythonApplication rec {
     hash = "sha256-D2BQZG3gMIG/goeJBikYxb5PMDibzttWnlZ2ccg3Exk=";
   };
 
-  patches = [ ./shared-typesafe-key.patch ];
-
   build-system = [ python3Packages.hatchling ];
   dependencies = [
     browser-harness
@@ -27,14 +25,8 @@ python3Packages.buildPythonApplication rec {
   ]
   ++ python3Packages.httpx.optional-dependencies.http2;
 
-  postPatch = ''
-    substituteInPlace jev_ultrafast/demo.py \
-      --replace-fail 'ROOT.parent / "docs" / "demo.mp4"' \
-        "Path(\"$out/share/jev-ultrafast/demo.mp4\")"
-  '';
-
   postInstall = ''
-    install -Dm444 docs/demo.mp4 "$out/share/jev-ultrafast/demo.mp4"
+    install -Dm444 docs/demo.mp4 "$out/${python3Packages.python.sitePackages}/docs/demo.mp4"
     install -Dm444 .env.example "$out/share/jev-ultrafast/env.example"
   '';
 
@@ -43,6 +35,16 @@ python3Packages.buildPythonApplication rec {
     "--prefix PYTHONPATH : $out/${python3Packages.python.sitePackages}:${python3Packages.makePythonPath dependencies}"
     "--set BH_TELEMETRY 0"
     "--set BH_UPDATE_CHECK 0"
+    "--run ${lib.escapeShellArg ''
+      if [[ -z "''${TYPESAFE_API_KEY:-}" ]]; then
+        typesafe_key_file="''${TYPESAFE_API_KEY_FILE:-''${XDG_CONFIG_HOME:-$HOME/.config}/typesafe/api-key}"
+        if [[ -f "$typesafe_key_file" ]]; then
+          TYPESAFE_API_KEY="$(< "$typesafe_key_file")"
+          export TYPESAFE_API_KEY
+        fi
+        unset typesafe_key_file
+      fi
+    ''}"
   ];
 
   nativeCheckInputs = [
