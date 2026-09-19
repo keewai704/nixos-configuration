@@ -1,8 +1,8 @@
 { lib, pkgs, ... }:
 let
-  browser-harness = pkgs.callPackage ../../../pkgs/browser-harness { };
-  jev-ultrafast = pkgs.callPackage ../../../pkgs/jev-ultrafast { inherit browser-harness; };
-  brave = pkgs.callPackage ../../../pkgs/brave-origin { };
+  browser-harness = pkgs.callPackage ../../../../../pkgs/browser-harness { };
+  jev-ultrafast = pkgs.callPackage ../../../../../pkgs/jev-ultrafast { inherit browser-harness; };
+  brave = pkgs.callPackage ../../../../../pkgs/brave-origin { };
   python = pkgs.python3.withPackages (ps: [ (ps.toPythonModule jev-ultrafast) ]);
   runner = pkgs.writeShellApplication {
     name = "pi-jev-runner";
@@ -18,7 +18,7 @@ let
             ;;
         esac
       done < <(systemctl --user show-environment)
-      exec ${lib.getExe python} -B ${./pi-jev/launch.py} ${lib.getExe' pkgs.systemd "systemd-run"} ${lib.getExe brave} ${./pi-jev/runner.py} "$@"
+      exec ${lib.getExe python} -B ${./launch.py} ${lib.getExe' pkgs.systemd "systemd-run"} ${lib.getExe brave} ${./runner.py} "$@"
     '';
   };
 in
@@ -27,7 +27,7 @@ in
     browser-harness
     jev-ultrafast
   ];
-  home.file.".pi/agent/extensions/jev-browser.ts".source = pkgs.replaceVars ./pi-jev/extension.ts {
+  home.file.".pi/agent/extensions/jev-browser.ts".source = pkgs.replaceVars ./extension.ts {
     runner = lib.getExe runner;
     systemdRun = lib.getExe' pkgs.systemd "systemd-run";
     systemctl = lib.getExe' pkgs.systemd "systemctl";

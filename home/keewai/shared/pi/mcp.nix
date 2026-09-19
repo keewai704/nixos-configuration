@@ -1,7 +1,41 @@
-{ inputs, pkgs, ... }:
+{
+  config,
+  inputs,
+  lib,
+  pkgs,
+  ...
+}:
+let
+  mcpServers = lib.mapAttrs (
+    _: server:
+    lib.filterAttrs (_: value: value != null) (
+      builtins.intersectAttrs {
+        command = null;
+        args = null;
+        env = null;
+        url = null;
+        headers = null;
+      } server
+    )
+    // {
+      lifecycle = "lazy";
+    }
+  ) config.programs.mcp.servers;
+in
 {
   imports = [ inputs.mcp-servers-nix.homeManagerModules.default ];
   programs.mcp.enable = true;
+
+  home.file.".pi/agent/mcp.json".text = builtins.toJSON {
+    inherit mcpServers;
+    settings = {
+      hostConfigDiscovery = "off";
+      directTools = false;
+      scriptMode = true;
+      mcpFooterStatus = "compact";
+      notifyOnStartupConnect = false;
+    };
+  };
 
   mcp-servers = {
     programs = {

@@ -1,9 +1,7 @@
 {
   imports = [
     ./apple-device-usb.nix
-    ./mcp.nix
-    ./pi.nix
-    ./pi-web.nix
+    ./pi
     ./shell.nix
     ./skills.nix
     ./typesafe.nix

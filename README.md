@@ -135,16 +135,30 @@ Home Manager は `useUserPackages = true` で NixOS に統合されています�
 
 | 場所 | 役割 |
 | --- | --- |
-| [shared/pi.nix](home/keewai/shared/pi.nix)、[shared/pi/](home/keewai/shared/pi/) | Pi の Astra 設定、MCP 接続、追加システム指示、キャッシュ監視フックとレビュー用プロンプト |
-| [shared/pi-web.nix](home/keewai/shared/pi-web.nix) | Pi Web の導入、ユーザーサービス、ホストごとの tailnet 許可 |
-| [modules/common.nix](modules/common.nix) | ログイン前にも Pi Web などのユーザーサービスを起動するための linger |
-| [citrus/web.nix](hosts/citrus/web.nix)、[orange/services/web.nix](hosts/orange/services/web.nix) | 既存の Tailscale Serve と nginx による HTTPS 公開 |
-| [shared/mcp.nix](home/keewai/shared/mcp.nix) | 全ホストで使う MCP サーバー |
-| [desktop/cua.nix](home/keewai/desktop/cua.nix) | デスクトップ操作用ドライバーと MCP |
-| [desktop/pi-jev.nix](home/keewai/desktop/pi-jev.nix)、[pi-jev/](home/keewai/desktop/pi-jev/) | Jev と Browser Harness の導入、Pi の限定ブラウザー操作ツール |
-| [shared/skills.nix](home/keewai/shared/skills.nix) | Ponytail を含む個人スキルの配布 |
+| [shared/pi/default.nix](home/keewai/shared/pi/default.nix) | 全ホスト共通の Pi 設定の入口 |
+| [shared/pi/agent.nix](home/keewai/shared/pi/agent.nix) | 本体・実行環境、モデル、サブエージェント、拡張バージョン、ローカル拡張と指示の配布 |
+| [shared/pi/mcp.nix](home/keewai/shared/pi/mcp.nix) | 共通 MCP サーバーの登録と Pi アダプターへの変換 |
+| [shared/pi/lsp.nix](home/keewai/shared/pi/lsp.nix) | 言語サーバーと診断設定 |
+| [shared/pi/web-search.nix](home/keewai/shared/pi/web-search.nix) | Web 検索と取得経路、CLI / Web 共通の設定ファイル |
+| [shared/pi/web.nix](home/keewai/shared/pi/web.nix) | Pi Web の導入、ユーザーサービス、ホストごとの tailnet 許可 |
+| [shared/pi/APPEND_SYSTEM.md](home/keewai/shared/pi/APPEND_SYSTEM.md) | 全プロジェクト共通の追加システム指示 |
+| [shared/pi/extensions/](home/keewai/shared/pi/extensions/)、[prompts/](home/keewai/shared/pi/prompts/) | キャッシュ監視・Jev 分析のローカル拡張、レビュー用プロンプト |
+| [desktop/pi/default.nix](home/keewai/desktop/pi/default.nix) | デスクトップ専用連携の入口 |
+| [desktop/pi/cua.nix](home/keewai/desktop/pi/cua.nix) | デスクトップ操作用ドライバーと MCP |
+| [desktop/pi/jev-browser/](home/keewai/desktop/pi/jev-browser/) | Jev と Browser Harness の導入、Pi の限定ブラウザー操作ツールとランナー |
+| [shared/skills.nix](home/keewai/shared/skills.nix)、[skills/](skills/) | Pi 以外とも共有できる個人スキルの配布と編集元 |
 | [shared/typesafe.nix](home/keewai/shared/typesafe.nix) | Jev と Pi プラグインが共有する TypeSafe 認証ファイルの場所 |
-| [shared/pi/jev-analysis.ts](home/keewai/shared/pi/jev-analysis.ts) | 全ホストの Pi 用 Jev ログ一次切り分け・検索候補の順位付け |
+| [pkgs/pi-coding-agent/](pkgs/pi-coding-agent/)、[pkgs/pi-web/](pkgs/pi-web/) | アプリ本体のビルド定義とパッチ |
+| [modules/common.nix](modules/common.nix) | ログイン前にもユーザーサービスを起動するための linger |
+| [citrus/web.nix](hosts/citrus/web.nix)、[orange/services/web.nix](hosts/orange/services/web.nix) | 既存の Tailscale Serve と nginx による HTTPS 公開 |
+
+共通プロフィールは `shared/pi/`、デスクトッププロフィールは追加で `desktop/pi/` を読み込みます。
+設定を追加するときは、既存の機能別ファイルへ追記するか、同じディレクトリに名前の明確な
+モジュールを作り、その `default.nix` の `imports` に追加します。
+拡張のバージョン指定は `agent.nix` にまとめ、ローカル拡張は `extensions/`、
+プロンプトは `prompts/` に置いて `agent.nix` から配布します。
+共有スキル・TypeSafe 認証、パッケージのビルド、OS の公開設定は Pi 専用設定と役割が異なるため、
+上表の担当場所に残します。配置の整理で `~/.pi/agent` などの配布先やホストごとの有効機能は変えません。
 
 Codex CLI、Remote Control、ChatGPT Desktop とそのブラウザー・URL 連携は導入しません。
 Pi の `openai-codex` は ChatGPT 契約で接続するプロバイダー名であり、Codex CLI は必要ありません。
@@ -211,7 +225,7 @@ OpenAI Responses の `web_search` を必須で呼び出し、ライブ取得を�
 `external_web_access` の未指定は `true` です。検索ごとの要求は ChatGPT の利用枠を消費します。
 `provider` を省略するとこの経路を使います。明示した `provider` は上流仕様どおり経路を上書きします。
 
-設定元は [shared/pi.nix](home/keewai/shared/pi.nix) です。`PI_CODING_AGENT_DIR` がある Pi Web と XDG 設定を使う CLI の双方に対応するため、
+設定元は [shared/pi/web-search.nix](home/keewai/shared/pi/web-search.nix) です。`PI_CODING_AGENT_DIR` がある Pi Web と XDG 設定を使う CLI の双方に対応するため、
 `~/.pi/agent/web-search.json` と `~/.config/pi/web-search.json` を同じ Nix Store の設定へ接続します。
 通常の検索は `workflow = "none"` とし、検索のたびに確認用ブラウザーや追加要約を起動しません。
 必要なときは `/websearch` で確認用 UI を開けます。生成された設定ファイルは編集せず、変更は Nix 側で行います。
@@ -315,7 +329,7 @@ Web の入口は Tailscale Serve の HTTPS 443 です。
 | --- | --- | --- |
 | Immich | `https://orange.tail1e65cd.ts.net/` | [immich.nix](hosts/orange/services/immich.nix) |
 | Vaultwarden | `https://orange.tail1e65cd.ts.net/vault/` | [vaultwarden.nix](hosts/orange/services/vaultwarden.nix) |
-| Pi Web | `https://orange.tail1e65cd.ts.net/pi/` | [shared/pi-web.nix](home/keewai/shared/pi-web.nix)、[web.nix](hosts/orange/services/web.nix) |
+| Pi Web | `https://orange.tail1e65cd.ts.net/pi/` | [shared/pi/web.nix](home/keewai/shared/pi/web.nix)、[web.nix](hosts/orange/services/web.nix) |
 | Samba | HDD の共有 | [samba.nix](hosts/orange/services/samba.nix) |
 | Minecraft | LAN・tailnet 向け Fabric サーバー | [minecraft.nix](hosts/orange/services/minecraft.nix) |
 | Tailscale Exit Node | 経路と UDP オフロード | [tailscale-exit-node.nix](hosts/orange/services/tailscale-exit-node.nix) |
@@ -465,8 +479,8 @@ Jev 本体へのパッチはありません。プラグインからキーを変�
 ### Pi の Jev 分析ツール
 
 全ホストの Pi CLI / Pi Web に `jev_log_triage` と `jev_search_rank` を配置します。
-[shared/pi.nix](home/keewai/shared/pi.nix) が
-[jev-analysis.ts](home/keewai/shared/pi/jev-analysis.ts) を配布します。
+[shared/pi/agent.nix](home/keewai/shared/pi/agent.nix) が
+[jev-analysis.ts](home/keewai/shared/pi/extensions/jev-analysis.ts) を配布します。
 ブラウザー、追加の npm パッケージ、文字生成モデル、常駐サービスは不要です。
 適用後、既存の Pi は `/reload` で読み込みます。Jevの指定や呼び出しごとの確認は不要です。
 ツールの標準指示で、単純でないビルド・テスト・コマンドの失敗と、複数の検索候補に対して積極的に使います。
@@ -516,7 +530,7 @@ Jev 本体へのパッチはありません。プラグインからキーを変�
 ### Jev Ultrafast
 
 デスクトップでは `jev` と `browser-harness` を Home Manager で導入します。
-[pi-jev.nix](home/keewai/desktop/pi-jev.nix) が導入先です。
+[desktop/pi/jev-browser/default.nix](home/keewai/desktop/pi/jev-browser/default.nix) が導入先です。
 既存の Brave Origin を使い、既定の Firefox・URL ハンドラーは変更しません。
 サービスの自動起動、外部公開、Pi の MCP 登録は行いません。
 両コマンドでは Browser Harness のテレメトリーと更新通知を無効にしています。

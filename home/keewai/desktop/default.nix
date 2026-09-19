@@ -4,7 +4,6 @@
     ./apple-music.nix
     ./bitwarden.nix
     ./browser.nix
-    ./cua.nix
     ./hypr-island.nix
     ./file-manager.nix
     ./firefox.nix
@@ -12,7 +11,7 @@
     ./input-method.nix
     ./kitty.nix
     ./legcord.nix
-    ./pi-jev.nix
+    ./pi
     ./steam-theme.nix
     ./stylix.nix
   ];

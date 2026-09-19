@@ -1,6 +1,6 @@
 { lib, pkgs, ... }:
 let
-  cuaDriver = pkgs.callPackage ../../../pkgs/cua-driver { };
+  cuaDriver = pkgs.callPackage ../../../../pkgs/cua-driver { };
   cuaEnvironment = {
     CUA_DRIVER_PERMISSION_MODE = "standard";
     CUA_DRIVER_RS_ENABLE_WAYLAND = "1";

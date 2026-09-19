@@ -14,9 +14,9 @@ already completed for this task. Use the actual checkout's absolute paths with
 ## Declare the server
 
 The common registry is
-[shared/mcp.nix](/home/keewai/nixos-configuration/home/keewai/shared/mcp.nix).
+[shared/pi/mcp.nix](/home/keewai/nixos-configuration/home/keewai/shared/pi/mcp.nix).
 Desktop-only servers belong in the desktop profile; CUA is defined in
-[desktop/cua.nix](/home/keewai/nixos-configuration/home/keewai/desktop/cua.nix).
+[desktop/pi/cua.nix](/home/keewai/nixos-configuration/home/keewai/desktop/pi/cua.nix).
 Pi combines only the profiles selected by that host. Do not edit generated
 `~/.pi/agent/mcp.json` or `~/.config/mcp/mcp.json` for persistent configuration.
 
@@ -40,7 +40,7 @@ nix eval --impure --raw --no-write-lock-file --expr '(builtins.getFlake "/home/k
 
 Preserve the requested name, transport, arguments, environment, working
 directory, and authentication behavior. Change the conversion in
-[shared/pi.nix](/home/keewai/nixos-configuration/home/keewai/shared/pi.nix)
+[shared/pi/mcp.nix](/home/keewai/nixos-configuration/home/keewai/shared/pi/mcp.nix)
 only if a required field is missing from Pi's generated configuration, after
 checking the pinned adapter's support for that field.
 
