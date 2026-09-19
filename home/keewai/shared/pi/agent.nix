@@ -4,6 +4,9 @@
   pkgs,
   ...
 }:
+let
+  subagentResources = pkgs.callPackage ../../../../pkgs/pi-subagents-resources { };
+in
 {
   programs.pi-coding-agent = {
     enable = true;
@@ -59,9 +62,13 @@
           themes = [ ];
         }
         {
-          source = "npm:pi-subagents@0.68.0";
+          source = "npm:pi-subagents@${subagentResources.version}";
+          skills = [ ];
+          prompts = [ "!prompts/council.md" ];
         }
       ];
+      skills = [ "${subagentResources}/skills" ];
+      prompts = [ "${subagentResources}/prompts/council.md" ];
       subagents = {
         defaultModel = "openai-codex/gpt-5.6-luna";
         agentOverrides = {

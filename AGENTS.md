@@ -87,13 +87,14 @@ Edit Nix-managed sources, not generated files under `/home/keewai/.pi/agent` or
 `/home/keewai/.agents/skills`. Write agent instructions, prompt templates, and
 skills in English; respond to the user in their language.
 
-Do not create or use `checks/` or `docs/`, recreate removed content elsewhere,
-or add standalone repository check suites or documentation files. Keep validation
-guidance in `.agents/skills/nixos-validation/SKILL.md`, not scripts or per-topic
-test collections. Keep policy and navigation in the existing AGENTS.md and
-README.md. Use disposable validation commands and build tools; existing
-package-local tests and upstream build tests are allowed. Do not add code
-comments; preserve functional syntax such as shebangs and completion directives.
+Do not create repository-local `checks/` or `docs/` directories, standalone
+check suites, or standalone documentation files. Keep validation guidance in
+`.agents/skills/nixos-validation/SKILL.md`, not scripts or per-topic test
+collections. Keep repository policy and navigation in AGENTS.md and README.md.
+This restriction does not prohibit reading upstream documentation. Use disposable
+validation commands and build tools; existing package-local tests and upstream
+build tests are allowed. Do not add code comments; preserve functional syntax
+such as shebangs and completion directives.
 
 A change request authorizes the necessary local edits, disposable validation,
 repairs caused by the change, commits, and local activation under section 5.

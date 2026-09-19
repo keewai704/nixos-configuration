@@ -57,8 +57,9 @@ Use web_search for general research and verify sources. Omit provider for the
 configured OpenAI live-search route; do not switch models just to search. Keep
 secrets out of queries and URLs. For important claims, inspect original passages
 with fetch_content and get_search_content; source_check's phrase matching alone
-is not verification. When delegation is authorized, run researcher and
-evidence-auditor asynchronously so they inherit pi-web-access.
+is not verification. When an authorized workflow uses researcher or
+evidence-auditor, run those children asynchronously so they inherit pi-web-access.
+This execution requirement does not authorize additional children.
 
 Use lsp_diagnostics when intermediate diagnostics help, with explicit paths and
 root limited to affected files. It does not replace native project checks. Do not

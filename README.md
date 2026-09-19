@@ -253,6 +253,11 @@ Nixプロフィール内のPi SDKとNode型定義を参照します。このプ�
 組み込み役割の `high`（`evidence-auditor`、`oracle`、`reviewer`、`worker`）は `max`、
 `low`（`scout`）は `high` に設定します。`researcher` の `medium` と `delegate` の未指定は変更しません。
 役割のプロンプト・ツール・文脈継承は上流定義のままです。
+スキルと `/council` は [pi-subagents-resources](pkgs/pi-subagents-resources/default.nix) で
+同じ固定バージョンの npm ソースから生成します。Council の自動選択を複数の助言者・council の
+明示的な依頼に限定し、スキル内の相対参照と `/council` の参照先を修正します。
+元パッケージの対応するスキル・プロンプトは読み込み対象から外し、二重登録を防ぎます。
+拡張のバージョンもこの定義から参照し、導入済みの npm ファイルは直接変更しません。
 親の Astra・`xhigh` と全ツール設定は維持します。
 `reviewer` は読み取り専用の調査役なので、テスト実行や修正は親または `worker` が担当します。
 「reviewer でこの差分を確認して」と依頼するか、`/parallel-review` で観点別レビューを実行できます。
@@ -373,6 +378,7 @@ Nix ファイルを読むと依存関係・権限・起動条件がわかり、�
 | [fprintd-cs9711/](pkgs/fprintd-cs9711/) | CS9711 指紋センサーと認証キャンセルの修正 |
 | [hyprland/](pkgs/hyprland/) | 入力メソッドの修飾キー処理の修正 |
 | [pi-coding-agent/](pkgs/pi-coding-agent/) | ChatGPT のキャッシュ用ヘッダーと会話・接続の識別子を分離 |
+| [pi-subagents-resources/](pkgs/pi-subagents-resources/) | 固定した委任スキル・Council プロンプトの発動条件と参照先を修正 |
 | [pi-web/](pkgs/pi-web/) | 固定ソースからの Pi Web ビルド、`/pi/` 対応、同梱フォント、修正版 Pi SDK と端末の実行環境 |
 
 keyd が集約するのは処理対象の入力だけです。Citrus ではマウス入力を保つため、
