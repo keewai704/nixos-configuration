@@ -78,12 +78,10 @@ printf 'diff exit=%s\n' "$diff_status"
 ```
 
 A diff exit status of 0 means equal, 1 means different, and 2 or higher means a
-comparison error. Report equality briefly. For differences, summarize with
-`rtk diff - <"$comparison_dir/values.diff"`; inspect exact passages in the saved
-diff when needed. Bound displayed summaries and errors to 8 KiB per excerpt,
+comparison error. Report equality briefly. For differences, inspect relevant
+passages in the saved diff. Bound displayed excerpts and errors to 8 KiB,
 announce truncation, and narrow the attribute or search saved files for missing
-evidence. If rtk is unavailable, use the raw output with the same display bound.
-Long strings can exceed a line-based limit.
+evidence. Long strings can exceed a line-based limit.
 
 Compare full values, not summaries or key-only JSON. Evaluation failures are not
 empty values or equality; successful display filtering is not a successful source

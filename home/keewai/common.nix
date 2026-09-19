@@ -34,7 +34,6 @@
     pkgs.gws
     pkgs.nixfmt
     pkgs.ripgrep
-    pkgs.rtk
     pkgs.yt-dlp
   ];
 }

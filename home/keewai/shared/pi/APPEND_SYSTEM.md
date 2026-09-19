@@ -41,8 +41,7 @@ it, not merely because a specialist is available.
 
 ## Tools and evidence
 
-Prefer rg for file search. Use rtk to reduce supported command output, or rtk proxy
-when exact raw output is needed. Read enough output to preserve requirements and
+Prefer rg for file search. Read enough output to preserve requirements and
 evidence; truncation is not proof of success.
 Discover MCP servers and inspect tool schemas through the mcp proxy before use.
 Use mcp for single operations. For multi-call MCP workflows, use mcpScript when
