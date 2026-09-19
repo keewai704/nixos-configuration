@@ -144,6 +144,7 @@ Home Manager は `useUserPackages = true` で NixOS に統合されています�
 | [desktop/pi-jev.nix](home/keewai/desktop/pi-jev.nix)、[pi-jev/](home/keewai/desktop/pi-jev/) | Jev と Browser Harness の導入、Pi の限定ブラウザー操作ツール |
 | [shared/skills.nix](home/keewai/shared/skills.nix) | Ponytail を含む個人スキルの配布 |
 | [shared/typesafe.nix](home/keewai/shared/typesafe.nix) | Jev と Pi プラグインが共有する TypeSafe 認証ファイルの場所 |
+| [shared/pi/jev-analysis.ts](home/keewai/shared/pi/jev-analysis.ts) | 全ホストの Pi 用 Jev ログ一次切り分け・検索候補の順位付け |
 
 Codex CLI、Remote Control、ChatGPT Desktop とそのブラウザー・URL 連携は導入しません。
 Pi の `openai-codex` は ChatGPT 契約で接続するプロバイダー名であり、Codex CLI は必要ありません。
@@ -449,12 +450,54 @@ Home Manager は秘密値ではなく `TYPESAFE_API_KEY_FILE` にファイルの
 未設定時は `${XDG_CONFIG_HOME:-~/.config}/typesafe/api-key` を使います。
 設定画面で受け取ったキーは、同じディレクトリの権限 `600` の一時ファイルへ書き、
 rename で置き換えてください。キーを会話・ツール引数・ログ・セッション履歴へ保存せず、
-API 呼び出しの都度読み直します。今回はプラグイン自体を追加していません。
+API 呼び出しの都度読み直します。ログ・検索用の Jev 拡張もこの共有ファイルを利用します。
 
 `jev` の起動ラッパーが共有ファイルを読み、上流標準の `TYPESAFE_API_KEY` 環境変数で渡します。
 Jev 本体へのパッチはありません。プラグインからキーを変更した後は、Jev を再起動してください。
 優先順位は、明示的な `TYPESAFE_API_KEY` 環境変数、共有ファイル、Jev の `.env` の順です。
 共有運用ではキーを二重管理しないよう、Jev の `.env` の `TYPESAFE_API_KEY` は空のままにします。
+
+</details>
+
+<details>
+<summary>Jev でログの一次切り分け・検索結果の順位付け</summary>
+
+### Pi の Jev 分析ツール
+
+全ホストの Pi CLI / Pi Web に `jev_log_triage` と `jev_search_rank` を配置します。
+[shared/pi.nix](home/keewai/shared/pi.nix) が
+[jev-analysis.ts](home/keewai/shared/pi/jev-analysis.ts) を配布します。
+ブラウザー、追加の npm パッケージ、文字生成モデル、常駐サービスは不要です。
+適用後、既存の Pi は `/reload` で読み込みます。たとえば次のように依頼します。
+
+- 「この公開ビルドログの抜粋を Jev で一次切り分けして。原因候補と根拠の行を出して」
+- 「このテーマを検索し、得られた候補を Jev で関連度順に並べて。元URLも残して」
+
+`jev_log_triage` には連続したログ抜粋、出典ラベル `source`、元の開始行 `firstLine` を渡します。
+ツール自体はファイルを読みません。最大200行で、送信する構造化データ全体は24,000 UTF-8バイトまでです。
+途中の行を黙って省略せず、必要な範囲を明示して渡します。出典ラベルはTypeSafeへ送りません。
+失敗の確率、原因分類と確信度、選んだ根拠の1行と前後最大2行を返します。
+情報不足や低確信度では `inconclusive`、それ以外も `tentative` であり、原因の確定ではありません。
+確信度0.6などのしきい値は未校正の目安です。元ログの確認、終了コード、実際の検証を置き換えません。
+
+`jev_search_rank` には検索語と、取得済みの1〜20候補の `id / url / title / snippet` を渡します。
+先に既存の `web_search` / `get_search_content` で実際の候補を取得し、説明文を創作しません。
+検索語と候補全体は24,000 UTF-8バイトまでで、URLの取得や既存の検索結果の書き換えは行いません。
+関連度0〜3と確信度を返し、元ID・URL・入力位置を保持します。同点は入力順を維持し、低得点の候補も残します。
+関連度は事実確認・情報源の信頼性ではないため、重要な主張は原文で確認します。
+
+どちらも呼び出しごとに外部送信・課金の確認を行います。確認UIのない実行は拒否します。
+対象は公開データまたは機密を除いたサンプルに限定し、秘密値・私的情報を渡さないでください。
+自動マスキングはありません。ツール引数と結果は通常のPiセッション履歴にも残ります。
+ログ・会話履歴の自動収集、検索後の自動送信、コマンド実行・修復、自動承認のフックは追加しません。
+
+認証は明示的な `TYPESAFE_API_KEY`、共有ファイルの順です。ブラウザー用 `.env` は読みません。
+送信先はTypeSafe公式APIに固定し、リダイレクトや他社へのフォールバックは認めません。
+1回につきAPI要求は1回、応答待ちは最大30秒、送信承認待ちは最大120秒です。
+入力超過は切り捨てず拒否し、失敗・キャンセル時も自動再試行しません。
+応答は最大128 KB、結果は最大48 KBに制限します。キャンセル後も送信済みの要求は課金される場合があります。
+結果にはAPIの入出力トークン数と、入力100万トークンあたり$0.042・出力無料で計算した概算額を表示します。
+これは請求額・残高ではなく、料金改定にも自動追従しません。ChatGPT契約の利用枠とは別です。
 
 </details>
 

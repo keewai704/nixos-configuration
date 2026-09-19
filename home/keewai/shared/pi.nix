@@ -120,6 +120,7 @@ in
     ".pi/agent/APPEND_SYSTEM.md".source = ./pi/APPEND_SYSTEM.md;
     ".pi/agent/extensions/astra-cache.ts".source = ./pi/astra-cache.ts;
     ".pi/agent/extensions/cache-audit.ts".source = ./pi/cache-audit.ts;
+    ".pi/agent/extensions/jev-analysis.ts".source = ./pi/jev-analysis.ts;
     ".pi/agent/prompts/review.md".source = ./pi/review.md;
     ".pi/agent/pi-lsp.json".text = builtins.toJSON {
       timeout = 20000;
