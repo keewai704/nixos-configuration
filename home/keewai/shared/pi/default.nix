@@ -1,6 +1,7 @@
 {
   imports = [
     ./agent.nix
+    ./codex-conversion.nix
     ./lsp.nix
     ./mcp.nix
     ./web-search.nix

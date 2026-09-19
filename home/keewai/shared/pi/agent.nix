@@ -6,6 +6,7 @@
 }:
 let
   subagentResources = pkgs.callPackage ../../../../pkgs/pi-subagents-resources { };
+  codexConversionHelpers = pkgs.callPackage ../../../../pkgs/pi-codex-conversion-helpers { };
 in
 {
   programs.pi-coding-agent = {
@@ -44,6 +45,13 @@ in
         "--no-fund"
       ];
       packages = [
+        {
+          source = "npm:@howaboua/pi-codex-conversion@${codexConversionHelpers.version}";
+          extensions = [ "dist/index.js" ];
+          skills = [ ];
+          prompts = [ ];
+          themes = [ ];
+        }
         {
           source = "npm:pi-mcp-adapter@2.34.0";
         }
@@ -92,7 +100,6 @@ in
 
   home.file = {
     ".pi/agent/APPEND_SYSTEM.md".source = ./APPEND_SYSTEM.md;
-    ".pi/agent/extensions/astra-cache.ts".source = ./extensions/astra-cache.ts;
     ".pi/agent/extensions/cache-audit.ts".source = ./extensions/cache-audit.ts;
     ".pi/agent/extensions/jev-analysis.ts".source = ./extensions/jev-analysis.ts;
     ".pi/agent/prompts/review.md".source = ./prompts/review.md;

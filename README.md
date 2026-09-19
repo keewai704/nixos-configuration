@@ -137,6 +137,7 @@ Home Manager は `useUserPackages = true` で NixOS に統合されています�
 | --- | --- |
 | [shared/pi/default.nix](home/keewai/shared/pi/default.nix) | 全ホスト共通の Pi 設定の入口 |
 | [shared/pi/agent.nix](home/keewai/shared/pi/agent.nix) | 本体・実行環境、モデル、サブエージェント、拡張バージョン、ローカル拡張と指示の配布 |
+| [shared/pi/codex-conversion.nix](home/keewai/shared/pi/codex-conversion.nix) | Pi Codex conversion の追加ツール・互換設定 |
 | [shared/pi/mcp.nix](home/keewai/shared/pi/mcp.nix) | 共通 MCP サーバーの登録と Pi アダプターへの変換 |
 | [shared/pi/lsp.nix](home/keewai/shared/pi/lsp.nix) | 言語サーバーと診断設定 |
 | [shared/pi/web-search.nix](home/keewai/shared/pi/web-search.nix) | Web 検索と取得経路、CLI / Web 共通の設定ファイル |
@@ -189,11 +190,31 @@ Web の別端末や拡張が直接起動するプロセスの PATH を変更す�
 モデル選択は制限せず、必要なら Pi 標準の操作で変更できます。
 自動コンパクションを有効にし、応答用に 131,072 トークン、要約時の直近履歴に 32,768 トークンを確保します。
 Pi 本体は flake.lock の Nixpkgs に固定された 0.85.1 を使います。
-ChatGPT 接続のキャッシュ用ヘッダーを本文のキーに合わせる小さなパッチを適用しています。
-`pi-mcp-adapter@2.34.0`、`pi-web-access@0.29.0`、`@narumitw/pi-lsp@0.49.7`、`pi-subagents@0.68.0` は
+標準の ChatGPT 接続にはキャッシュ用ヘッダーを本文のキーに合わせる小さなパッチを適用しています。
+Pi Codex conversion が読み込まれる場合は、拡張自身の上流プロバイダー実装をそのまま使います。
+`@howaboua/pi-codex-conversion@3.0.34`、`pi-mcp-adapter@2.34.0`、`pi-web-access@0.29.0`、`@narumitw/pi-lsp@0.49.7`、`pi-subagents@0.68.0` は
 Pi 標準のパッケージ管理で初回起動時に取得し、npm の lifecycle scripts を無効にします。
 拡張のバージョン指定は Nix 管理で、取得した依存関係とロックは `~/.pi/agent/npm/` に保存されます。
 この npm 依存関係のロックは flake.lock には含まれません。
+
+[Pi Codex conversion](https://github.com/IgorWarzocha/howaboua-pi-stuff/tree/main/packages/pi-codex-conversion) は
+公開 npm パッケージを改変せず、CLI と Pi Web の両方で読み込みます。Codex CLI の導入は不要です。
+既定は **Extra tools only** で、既存の基本ツール・MCP・検索・LSP・サブエージェントを残したまま
+`apply_patch` と、画像対応モデル用の `view_image` を追加します。
+Structured / Code / Notebook モードへの全面置換、システム指示の上書き、拡張独自の履歴管理・圧縮、
+自動推論レベル変更、Fast Mode、キャッシュ keepalive と強制 WebSocket は有効にしません。
+Pi 標準の自動コンパクションと既存のモデル・推論設定を維持します。
+音声・GipPity LAN サーバーは起動せず、新しい待受け・ファイアウォール・外部公開も追加しません。
+特に Orange で `/codex voice server` による別ポート公開を行わないでください。
+
+NixOS では同梱 Linux バイナリをそのまま実行できないため、
+[pi-codex-conversion-helpers](pkgs/pi-codex-conversion-helpers/default.nix) で同じ固定版から補助バイナリを取り出し、
+動的リンクだけを Nix Store のライブラリに合わせます。上流の `tools.customRustBinariesDir` で指定し、
+導入済み npm ファイルや拡張の JavaScript は変更しません。補助バイナリは一般の PATH に追加しません。
+`/codex` で設定・利用状況を確認できますが、永続設定は
+[codex-conversion.nix](home/keewai/shared/pi/codex-conversion.nix) を編集してください。
+Nix 管理のグローバル設定を UI から保存したり、プロジェクト設定で上書きしたりしません。
+適用後、既存の Pi セッションは `/reload` で読み込みます。
 
 MCP は共有レジストリから、そのホストに定義されたすべてのサーバーを有効にします。
 共通の `context7`、`nixos`、`openaiDeveloperDocs`、`serena` に加え、デスクトップでは `cua-driver` も使えます。
@@ -271,10 +292,9 @@ Codex CLI を使う `codex-exec` と `codex-exec-writer` は無効にします�
 並列の編集は別 worktree へ分離し、子にローカル activation・公開・未承認のリモート操作を委ねません。
 
 システム指示とツール定義を不用意に変えず、毎ターンの日付・Git 状態の注入、履歴の書き換え、定期的な空要求は行いません。
-`astra-cache` フックは、作業ディレクトリとモデルから固定のキャッシュキーを作ります。
-ChatGPT 接続では本文の `prompt_cache_key` と HTTP の `session-id` を揃え、同じアカウント・作業ディレクトリ・モデルの新規セッションでも共通部分を再利用できるようにします。
-会話の保存先、Pi のセッション ID、WebSocket 接続の管理、`x-client-request-id` は個々のセッションのままです。
-ディレクトリやモデルが異なる場合はキーを分けます。プロンプト内容が変わった部分は、同じキーでも再利用されません。
+Pi Codex conversion の通信実装に合わせ、キャッシュキーは上流のセッション単位の扱いを使います。
+旧 `astra-cache` の作業ディレクトリ単位のキー上書きは、拡張が作る HTTP ヘッダーと不整合になるため撤去しました。
+既存セッションの保存先や ID は変更しません。新規セッション間のキャッシュ共用は強制しません。
 同じ仕事は `pi -c` で続け、モデル・推論レベル・拡張の変更や `/compact` は必要な場合に使います。
 フッターの `CH` は直近要求の再利用率、`/cache` は選択ブランチの入力トークンで重み付けした再利用率を表示します。
 `cache-audit` は送信直前の指示・ツール・推論設定・キャッシュキーなどを項目別にハッシュで比較し、
@@ -377,7 +397,8 @@ Nix ファイルを読むと依存関係・権限・起動条件がわかり、�
 | [cua-driver/](pkgs/cua-driver/) | デスクトップ操作用ドライバーの実行環境 |
 | [fprintd-cs9711/](pkgs/fprintd-cs9711/) | CS9711 指紋センサーと認証キャンセルの修正 |
 | [hyprland/](pkgs/hyprland/) | 入力メソッドの修飾キー処理の修正 |
-| [pi-coding-agent/](pkgs/pi-coding-agent/) | ChatGPT のキャッシュ用ヘッダーと会話・接続の識別子を分離 |
+| [pi-coding-agent/](pkgs/pi-coding-agent/) | 標準 ChatGPT 接続のキャッシュ用ヘッダーと会話・接続の識別子を分離 |
+| [pi-codex-conversion-helpers/](pkgs/pi-codex-conversion-helpers/) | 上流拡張を改変せず使うための NixOS 用ネイティブ補助バイナリ |
 | [pi-subagents-resources/](pkgs/pi-subagents-resources/) | 固定した委任スキル・Council プロンプトの発動条件と参照先を修正 |
 | [pi-web/](pkgs/pi-web/) | 固定ソースからの Pi Web ビルド、`/pi/` 対応、同梱フォント、修正版 Pi SDK と端末の実行環境 |
 
