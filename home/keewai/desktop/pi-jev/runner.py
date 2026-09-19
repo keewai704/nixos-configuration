@@ -306,6 +306,15 @@ def run(request):
         reason = "stale_page"
     except Exception as error:
         reason = "execution_uncertain" if phase == "execution" else "error"
+        if phase == "setup":
+            for marker, category in (
+                ("chrome-not-running:", "browser_not_running"),
+                ("remote-debugging-setup:", "browser_setup_required"),
+                ("permission-blocked:", "browser_permission_required"),
+            ):
+                if marker in str(error):
+                    reason = category
+                    break
         if phase in {"prediction", "text_generation"}:
             status = re.fullmatch(
                 r"Model provider returned HTTP (\d{3}); no action executed\.",
@@ -319,8 +328,9 @@ def run(request):
         browser = agent.browser if agent else ScopedBrowser.owned
         if browser is not None:
             try:
+                had_target = bool(getattr(browser, "target", None))
                 browser.close()
-                cleanup = "closed_owned_tab"
+                cleanup = "closed_owned_tab" if had_target else "no_owned_tab"
             except (Exception, StopRun):
                 cleanup = "failed_to_close_owned_tab"
     state = agent.state if agent else {}
@@ -335,6 +345,7 @@ def run(request):
     return {
         "event": "result",
         "stop_reason": reason,
+        "phase": phase,
         "agent_status": state.get("status", "not_started"),
         "verification": verification(page, request["expect"]),
         "evidence": evidence(page),
