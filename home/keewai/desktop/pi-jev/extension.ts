@@ -1,13 +1,43 @@
-import { spawn } from "node:child_process";
+import { execFile, spawn } from "node:child_process";
+import { randomUUID } from "node:crypto";
+import { mkdtemp, rm } from "node:fs/promises";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
+import { promisify } from "node:util";
 import type { ExtensionAPI } from "@earendil-works/pi-coding-agent";
 import { Type } from "typebox";
 
 const RUNNER = "@runner@";
+const SYSTEMD_RUN = "@systemdRun@";
+const SYSTEMCTL = "@systemctl@";
+const exec = promisify(execFile);
 const REVIEW = "Review each action — public pages or test environments";
 const AUTOMATIC = "Run automatically — isolated test environment only";
 
 function display(value: string): string {
 	return value.replace(/[\p{Cc}\p{Cf}]/gu, " ");
+}
+
+async function closeBrowserScope(unit: string, workspace: string) {
+	try {
+		await exec(SYSTEMCTL, ["--user", "stop", unit], { timeout: 6000 });
+	} catch {
+		const { stdout } = await exec(
+			SYSTEMCTL,
+			[
+				"--user",
+				"show",
+				unit,
+				"--property=LoadState",
+				"--property=ActiveState",
+			],
+			{ timeout: 3000 },
+		);
+		if (!stdout.split("\n").includes("ActiveState=inactive")) {
+			throw new Error("The dedicated Jev browser scope is still active.");
+		}
+	}
+	await rm(workspace, { recursive: true, force: true });
 }
 
 export default function jevBrowser(pi: ExtensionAPI) {
@@ -19,7 +49,7 @@ export default function jevBrowser(pi: ExtensionAPI) {
 		name: "jev_browser",
 		label: "Jev browser",
 		description:
-			"Run a bounded browser task only when the user explicitly requests Jev. For public pages or isolated test environments, never private/account data or production mutations. Requires interactive consent: page content goes to TypeSafe and the configured text-model provider, with separate API charges. Uses an owned tab in the existing Chromium profile, not an isolated browser. Defaults to per-action approval; only the user can select automatic test execution. Same-origin observations only, not a network sandbox. Does not replace search, APIs, CLI, or deterministic tests. Do not operate the same browser concurrently through CUA. Returns at most 6,000 visible-text characters, 20 controls, and 30 actions; DONE is not verified success. Stops and closes its owned tab; uncertain actions must not be automatically retried.",
+			"Run a bounded browser task only when the user explicitly requests Jev. For public pages or isolated test environments, never private/account data or production mutations. Requires interactive consent: page content goes to TypeSafe and the configured text-model provider, with separate API charges. Automatically starts a dedicated Brave instance with a temporary profile after consent; no existing login/profile is reused. The browser is visible in a desktop session and headless without a display. Defaults to per-action approval; only the user can select automatic test execution. Same-origin observations only, not a network sandbox. Does not replace search, APIs, CLI, or deterministic tests. Do not operate the same browser concurrently through CUA. Returns at most 6,000 visible-text characters, 20 controls, and 30 actions; DONE is not verified success. Stops its browser and connection daemon and removes the temporary profile; uncertain actions must not be automatically retried.",
 		parameters: Type.Object({
 			url: Type.String({
 				minLength: 1,
@@ -87,7 +117,7 @@ export default function jevBrowser(pi: ExtensionAPI) {
 				: controller.signal;
 			try {
 				const mode = await ctx.ui.select(
-					`Jev: ${display(params.url)}\n${display(params.goal)}\n\nPage content and generated field values are sent to TypeSafe and the configured text model; API charges apply. The existing Chromium profile is shared. Use only public content or non-sensitive test data. Origin checks do not sandbox network traffic. No production mutations.`,
+					`Jev: ${display(params.url)}\n${display(params.goal)}\n\nPage content and generated field values are sent to TypeSafe and the configured text model; API charges apply. A dedicated Brave instance will start with a temporary profile; existing logins are not reused. It and its profile will be removed on completion. Use only public content or non-sensitive test data. Origin checks do not sandbox network traffic. No production mutations.`,
 					["Cancel", REVIEW, AUTOMATIC],
 					{ signal: lifetime },
 				);
@@ -107,7 +137,23 @@ export default function jevBrowser(pi: ExtensionAPI) {
 					maxSteps: params.maxSteps ?? 12,
 					timeoutSeconds: params.timeoutSeconds ?? 120,
 				};
-				const child = spawn(RUNNER, [], { stdio: ["pipe", "pipe", "pipe"] });
+				const workspace = await mkdtemp(join(tmpdir(), "pi-jev-"));
+				const unit = `pi-jev-${randomUUID()}.scope`;
+				const child = spawn(
+					SYSTEMD_RUN,
+					[
+						"--user",
+						"--scope",
+						"--quiet",
+						"--collect",
+						`--unit=${unit}`,
+						`--property=RuntimeMaxSec=${request.timeoutSeconds + 8}s`,
+						"--property=TimeoutStopSec=3s",
+						RUNNER,
+						workspace,
+					],
+					{ stdio: ["pipe", "pipe", "pipe"] },
+				);
 				let closed = false;
 				let killed = false;
 				let timedOut = false;
@@ -241,26 +287,11 @@ export default function jevBrowser(pi: ExtensionAPI) {
 									: "runner_exit",
 							confirmed_actions: actions,
 							evidence: null,
-							cleanup: "unconfirmed; inspect the owned browser tab",
+							cleanup: "owned-tab cleanup unconfirmed before browser shutdown",
 							warning:
 								"Execution may have occurred. Never automatically retry this task.",
 						};
 					}
-					if (Buffer.byteLength(JSON.stringify(result)) > 48000) {
-						result = {
-							stop_reason: result.stop_reason,
-							evidence: null,
-							evidence_truncated: true,
-							verification: { status: "unknown" },
-							cleanup: result.cleanup,
-							warning:
-								"Result exceeded the 48 KB evidence limit; do not infer success.",
-						};
-					}
-					return {
-						content: [{ type: "text", text: JSON.stringify(result) }],
-						details: result,
-					};
 				} catch {
 					stop();
 					throw new Error(
@@ -273,7 +304,32 @@ export default function jevBrowser(pi: ExtensionAPI) {
 					if (killTimer) clearTimeout(killTimer);
 					lifetime.removeEventListener("abort", stop);
 					prompts.abort();
+					try {
+						await closeBrowserScope(unit, workspace);
+					} catch {
+						throw new Error(
+							`Jev browser cleanup could not be confirmed. Inspect ${unit} and ${workspace}; do not automatically retry.`,
+						);
+					}
 				}
+				if (!result) throw new Error("Jev returned no result.");
+				result.browser_cleanup = "stopped_and_profile_removed";
+				if (Buffer.byteLength(JSON.stringify(result)) > 48000) {
+					result = {
+						stop_reason: result.stop_reason,
+						evidence: null,
+						evidence_truncated: true,
+						verification: { status: "unknown" },
+						cleanup: result.cleanup,
+						browser_cleanup: result.browser_cleanup,
+						warning:
+							"Result exceeded the 48 KB evidence limit; do not infer success.",
+					};
+				}
+				return {
+					content: [{ type: "text", text: JSON.stringify(result) }],
+					details: result,
+				};
 			} finally {
 				active = undefined;
 			}

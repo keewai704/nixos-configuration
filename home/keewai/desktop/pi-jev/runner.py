@@ -50,6 +50,7 @@ class ScopedBrowser(Browser):
         self.outside_url = None
         ScopedBrowser.owned = self
         super().__init__(url)
+        self.call("Page.bringToFront")
 
     def close(self):
         if getattr(self, "target", None):
