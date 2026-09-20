@@ -3,10 +3,30 @@
   nixpkgs.config.allowUnfreePredicate =
     package:
     builtins.elem (lib.getName package) [
+      "cuda_cccl"
+      "cuda_compat"
+      "cuda_cudart"
+      "cuda_nvcc"
       "cuda_nvml_dev"
+      "cuda_nvrtc"
+      "cudnn"
+      "libcublas"
+      "libcurand"
+      "libnvvm"
       "nvidia-x11"
       "nvidia-settings"
     ];
+
+  nix.settings = {
+    extra-substituters = [
+      "https://nix-community.cachix.org"
+      "https://cache.nixos-cuda.org"
+    ];
+    extra-trusted-public-keys = [
+      "nix-community.cachix.org-1:mB9FSh9qf2dCimDSUo8Zy7bkq5CX+/rkCWyvRCYg3Fs="
+      "cache.nixos-cuda.org:74DUi4Ye579gUqzH4ziL9IyiJBlDpMRn9MBN8oNan9M="
+    ];
+  };
 
   boot.initrd.kernelModules = [
     "nvidia"

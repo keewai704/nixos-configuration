@@ -1,7 +1,7 @@
 ---
 name: faster-whisper
 description: Transcribe local audio or video into text and timestamped subtitles using faster-whisper with Whisper large-v3. Use for speech-to-text (STT), Japanese transcription, and SRT/VTT generation, not text-to-speech (TTS).
-compatibility: Requires the Nix-managed whisper-ctranslate2 command. CPU inference; internet access and several GB of disk space are needed for the initial model download.
+compatibility: Requires the Nix-managed CUDA-enabled whisper-ctranslate2 command and a supported NVIDIA GPU/driver. Internet access and several GB of disk space are needed for the initial model download.
 ---
 
 # Local transcription with faster-whisper
@@ -18,9 +18,18 @@ Check `command -v whisper-ctranslate2` and `whisper-ctranslate2 --version`.
 If missing, report that the Nix-managed environment needs activation; do not
 install packages with pip or modify generated skill files.
 
-Use `--device cpu --compute_type int8` for the shared environment. No CUDA setup
-is required or promised. Large-v3 is resource intensive and CPU transcription
-can be slow; allow the running command to finish rather than launching duplicates.
+Use **`--device cuda --compute_type float16`**. The Home Manager module selects
+the CUDA-enabled package when the host declares the NVIDIA driver; other hosts
+retain the CPU-only CLI, which does not satisfy this CUDA workflow. Check
+`nvidia-smi --query-gpu=name,memory.free,driver_version --format=csv,noheader`
+before inference. A working driver alone does not prove that the CLI was built
+with CUDA support: verify the actual transcription succeeds on CUDA.
+
+If CUDA is unavailable, the build lacks CUDA support, a library cannot load,
+or GPU memory is insufficient, report the blocker. Do not silently change to
+`--device cpu`, `--device auto`, or another model. Do not install drivers, change
+CUDA libraries, or terminate another GPU workload as part of transcription.
+Allow the running command to finish rather than launching duplicates.
 PyAV handles supported audio/video decoding without a separate FFmpeg command.
 
 The first run downloads the public `Systran/faster-whisper-large-v3` model from
@@ -70,7 +79,7 @@ output_dir=$(mktemp -d ./transcription.XXXXXX) &&
 whisper-ctranslate2 "/absolute/path/to/audio.m4a" \
   --model large-v3 \
   --model_dir "${XDG_CACHE_HOME:-$HOME/.cache}/faster-whisper" \
-  --device cpu --compute_type int8 --threads 8 \
+  --device cuda --compute_type float16 \
   --task transcribe --language ja \
   --vad_filter True --verbose False \
   --output_format txt --output_dir "$output_dir"
@@ -79,7 +88,6 @@ whisper-ctranslate2 "/absolute/path/to/audio.m4a" \
 Use `--output_format all` when both text and subtitles are requested; this
 produces TXT, SRT, VTT, TSV, and JSON. JSON includes the detected language and
 segment timestamps. Add `--word_timestamps True` only when word timing is needed.
-Thread count may be lowered on smaller or busy machines.
 
 ## Cached and offline use
 
@@ -96,5 +104,5 @@ is not interchangeable with a converted CTranslate2 model.
 
 For unexpectedly missing speech, inspect the source before retrying with
 `--vad_filter False`, writing to a new directory. Do not enable speaker
-diarization, live recording, batching, a daemon, or GPU configuration as part of
+diarization, live recording, batching, a daemon, or GPU configuration changes as part of
 ordinary file transcription.
