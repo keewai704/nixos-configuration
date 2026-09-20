@@ -100,6 +100,7 @@ Nix に慣れていない場合は、まず次の構文が分かれば読み進�
 | ウィンドウ、モニター、キー操作 | [desktop/hyprland.lua](home/keewai/desktop/hyprland.lua) |
 | Hyprland のパッケージ・ログイン・ポータル統合 | [hosts/citrus/hyprland.nix](hosts/citrus/hyprland.nix) |
 | 画面ロックとアイドル時の動作 | [desktop/hypr-island.nix](home/keewai/desktop/hypr-island.nix) |
+| ロック画面の再生中メディア表示 | [desktop/hyprlock-media.nix](home/keewai/desktop/hyprlock-media.nix)、[hyprlock-media.py](home/keewai/desktop/hyprlock-media.py) |
 | 日本語入力と切り替えキー | [desktop/input-method.nix](home/keewai/desktop/input-method.nix)、[modules/input-method-shortcut.nix](modules/input-method-shortcut.nix) |
 | 端末 | [desktop/kitty.nix](home/keewai/desktop/kitty.nix) |
 | ブラウザーと既定の URL ハンドラー | [desktop/browser.nix](home/keewai/desktop/browser.nix)、[firefox.nix](home/keewai/desktop/firefox.nix) |
@@ -125,6 +126,7 @@ Apple USB CLI は [shared/apple-device-usb.nix](home/keewai/shared/apple-device-
 パネル本体、Island のキー操作、ロックとアイドル制御、Stylix 連携、Bitwarden の初期設定ランチャーは
 外部入力の [hypr-island](https://github.com/keewai704/hypr-island) が管理します。
 このリポジトリには有効化、テーマの元データ、接続先 URL、機器の差分を置きます。
+ロック画面下部のメディア表示は `desktop/hyprlock-media.nix` で追加し、再生中の曲名・アーティスト・進捗を表示します。
 公開済みの Nix オプション名 `programs.dynamic-island` は互換性のため維持しています。
 
 Home Manager は `useUserPackages = true` で NixOS に統合されています。

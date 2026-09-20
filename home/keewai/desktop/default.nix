@@ -8,6 +8,7 @@
     ./file-manager.nix
     ./firefox.nix
     ./hyprland.nix
+    ./hyprlock-media.nix
     ./input-method.nix
     ./kitty.nix
     ./legcord.nix
