@@ -396,6 +396,12 @@ MCP / LSP に依存する検証は親が担当します。子にも適用され�
 旧拡張の取得済み npm ファイル・実行履歴・認証情報は自動削除しません。
 既存セッションは `/reload`、または新規セッションの開始で新しい構成を読み込みます。
 
+再起動で実行主体を失った子は、保存履歴の `running` / `queued` を稼働の証拠にせず、
+`interrupted` として表示します。履歴を書き換えず、同じ子セッション ID を `Agent` の
+`resume` に渡して再開できます。実際に動いている子・待機中の子はランタイムの状態を優先し、
+一覧・詳細・検索・結果取得で状態をそろえます。この修正と回帰テストは
+[interrupted-subagents.patch](pkgs/pi-web/interrupted-subagents.patch) で管理します。
+
 状態確認は `systemctl --user status pi-web`、ログは `journalctl --user -u pi-web`、
 再起動は `systemctl --user restart pi-web` です。
 ソース、npm 依存関係、フォントは固定し、Nix のビルド中にネットワークからフォントを取得しません。
