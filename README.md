@@ -126,7 +126,8 @@ Apple USB CLI は [shared/apple-device-usb.nix](home/keewai/shared/apple-device-
 パネル本体、Island のキー操作、ロックとアイドル制御、Stylix 連携、Bitwarden の初期設定ランチャーは
 外部入力の [hypr-island](https://github.com/keewai704/hypr-island) が管理します。
 このリポジトリには有効化、テーマの元データ、接続先 URL、機器の差分を置きます。
-ロック画面下部のメディア表示は `desktop/hyprlock-media.nix` で追加し、再生中の曲名・アーティスト・進捗を表示します。
+ロック画面下部のメディア表示は `desktop/hyprlock-media.nix` で追加し、再生中のアートワーク・曲名・アーティスト・進捗を表示します。
+アートワークはローカル画像またはリダイレクトのない公開 HTTPS URL に対応し、取得できない場合は画像だけを非表示にします。
 公開済みの Nix オプション名 `programs.dynamic-island` は互換性のため維持しています。
 
 Home Manager は `useUserPackages = true` で NixOS に統合されています。
