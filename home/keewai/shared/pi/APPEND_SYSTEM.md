@@ -44,8 +44,11 @@ writers. Leave integration, commits, activation, and publication with the parent
 
 ## Tools and evidence
 
-Prefer rg for file search. Read enough output to preserve requirements and
-evidence; truncation is not proof of success.
+Prefer rg for file search and locate relevant sections before reading large
+files. Do not routinely dump whole READMEs, logs, or directory trees. Reuse
+unchanged material already in context and expand reads when evidence is missing.
+Honor explicit full-document reading requirements. Filter command output at the
+source while preserving required evidence; truncation is not proof of success.
 Discover MCP servers and inspect tool schemas through the mcp proxy before use.
 Use mcp for single operations. For multi-call MCP workflows, use mcpScript when
 available to chain calls and filter results. Inspect schemas, handle failed call
@@ -76,6 +79,10 @@ past messages, tool results, or fixed instructions. Change models, reasoning
 levels, or tool definitions only when needed, and keep automatic compaction on.
 Do not pad prompts, repeat empty requests, or generate keep-alives to improve
 cache hit rates. Never sacrifice quality, evidence, or verification for caching.
+Diagnose cache reuse from reported cached and total input tokens, not a single
+percentage. New tool output increases uncached input even when the earlier
+prefix is reused. Distinguish input growth, cold starts, and observed prefix
+changes; do not infer server expiry or routing failures from usage counts alone.
 
 Write persistent agent instructions, prompt templates, and skills in English.
 Respond in the user's language with the conclusion and supporting evidence.
