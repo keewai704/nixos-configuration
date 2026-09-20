@@ -22,7 +22,6 @@ const requestFields = {
 type RequestField = keyof typeof requestFields;
 type Tokens = { input: number; cacheRead: number; cacheWrite: number };
 type Totals = Tokens & { samples: number };
-type ResponseUsage = { model: string; tokens: Tokens | undefined };
 type ReportLine = { text: string; color?: ThemeColor };
 
 function isRecord(value: unknown): value is Record<string, unknown> {
@@ -94,14 +93,12 @@ function summarizeBranch(entries: SessionEntry[]) {
 		Pi要約: emptyTotals(),
 		"Remote圧縮 V2": emptyTotals(),
 	};
-	let latest: ResponseUsage | undefined;
-	let previous: ResponseUsage | undefined;
+	let latest: { model: string; tokens: Tokens | undefined } | undefined;
 	for (const entry of entries) {
 		if (entry.type === "message") {
 			const message = entry.message;
 			if (message.role === "assistant") {
 				const tokens = readTokens(message.usage);
-				previous = latest;
 				latest = { model: `${message.provider}/${message.model}`, tokens };
 				addUsage(groups.応答, tokens);
 			} else if (message.role === "toolResult") {
@@ -121,7 +118,7 @@ function summarizeBranch(entries: SessionEntry[]) {
 		total.cacheWrite += group.cacheWrite;
 		total.samples += group.samples;
 	}
-	return { groups, total, latest, previous };
+	return { groups, total, latest };
 }
 
 function count(value: number): string {
@@ -142,32 +139,6 @@ function bar(tokens: Tokens): string {
 
 function fieldNames(fields: RequestField[]): string {
 	return fields.map((field) => requestFields[field]).join("・");
-}
-
-function inputComparison(
-	latest: ResponseUsage | undefined,
-	previous: ResponseUsage | undefined,
-): ReportLine[] {
-	if (
-		!latest?.tokens ||
-		!previous?.tokens ||
-		latest.model !== previous.model ||
-		totalInput(latest.tokens) === 0 ||
-		totalInput(previous.tokens) === 0
-	)
-		return [];
-	const before = totalInput(previous.tokens);
-	const after = totalInput(latest.tokens);
-	const difference = after - before;
-	return [
-		{
-			text: `前回応答の入力 ${count(before)} → 今回 ${count(after)} tokens（差 ${difference >= 0 ? "+" : ""}${count(difference)}）`,
-		},
-		{
-			text: "入力差は文脈の増減です。失効量や同一履歴の再利用率ではありません。",
-			color: "dim",
-		},
-	];
 }
 
 async function showReport(ctx: ExtensionCommandContext, lines: ReportLine[]) {
@@ -292,9 +263,9 @@ export default function cacheAudit(pi: ExtensionAPI) {
 
 	pi.registerCommand("cache", {
 		description:
-			"キャッシュの直近・累計、入力の増減、Remote圧縮と要求設定の変化を表示",
+			"キャッシュの直近・累計・Remote圧縮の内訳と要求設定の変化を表示",
 		handler: async (_args, ctx) => {
-			const { groups, total, latest, previous } = summarizeBranch(
+			const { groups, total, latest } = summarizeBranch(
 				ctx.sessionManager.getBranch(),
 			);
 			const latestStatus =
@@ -315,16 +286,8 @@ export default function cacheAudit(pi: ExtensionAPI) {
 							{
 								text: `再利用 ${count(latest.tokens.cacheRead)} / 入力 ${count(totalInput(latest.tokens))} tokens`,
 							},
-							{
-								text: `未キャッシュ ${count(latest.tokens.input)} / 新規書き込み ${count(latest.tokens.cacheWrite)} tokens`,
-							},
 						]
 					: []),
-				...inputComparison(latest, previous),
-				{
-					text: "新しい会話・ツール出力が増えると、既存入力を再利用できても率は下がります。",
-					color: "dim",
-				},
 				{ text: "" },
 				{
 					text: `ブランチ累計  ${rate(total)}  ${bar(total)}`,
