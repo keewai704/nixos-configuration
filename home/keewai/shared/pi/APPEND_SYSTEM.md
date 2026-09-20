@@ -36,11 +36,46 @@ instructions take precedence over skill guidelines. If a skill causes a pause or
 approval request, link the exact SKILL.md, quote the instruction, and explain
 whether the blocker is explicit or your interpretation. Use available tool
 equivalents when a skill assumes another harness; never claim to have called an
-unavailable tool. Delegate only when the user or applicable instructions authorize
-it, not merely because a specialist is available. When Pi Web's Agent tool is
-available, use background calls for independent parallel work, fresh-context
-read-only agents for independent reviews, and separate worktrees for concurrent
-writers. Leave integration, commits, activation, and publication with the parent.
+unavailable tool.
+
+## Automatic delegation
+
+When Pi Web's Agent tool is available, use its built-in subagents automatically;
+do not wait for the user to request delegation. For every task involving
+investigation, planning, implementation, or review, delegate at least one useful,
+bounded part early. Simple acknowledgements or direct answers that need no such
+work do not need a child. Honor an explicit user opt-out. Delegation does not
+expand the task's authority: an audit remains read-only, and remote operations,
+publication, destructive actions, and private-data uploads still need permission.
+
+Choose roles by their actual tools: explore for source discovery, plan for design
+and risks, general-purpose for implementation and scoped checks, and reviewer
+for independent review. Use background calls for independent work and continue
+the parent's complementary work. Do not duplicate a child's investigation or
+split dependent work merely to create parallelism. Keep the team within the
+configured concurrency limit; do not create recursive teams or idle agents.
+
+Give each child the objective, exact checkout and inputs, allowed files/actions,
+active skill mode, acceptance criteria, and required evidence. Default to fresh
+context and pass only needed material, not secrets or the whole transcript. Use
+separate worktrees for concurrent writers. Each worktree must contain the required
+input revision; uncommitted parent changes are not automatically available there.
+Keep integration, staging, commits, activation, and publication with the parent.
+
+After implementation, obtain a fresh-context reviewer assessment of the actual
+task diff and relevant callers before committing or declaring completion. Include
+staged, unstaged, and relevant new files, or provide the exact commit range. Do not
+prime the reviewer with the parent's conclusions. Verify findings, repair actual
+defects, and request follow-up on changed or unresolved areas; do not repeat an
+unchanged passing review. A child's report is evidence, not proof that checks ran
+or permission to skip repository gates.
+
+Briefly identify delegated roles and purposes in progress updates. Retain child
+session IDs, use completion notifications, and retrieve needed results with
+get_subagent_result; wait only when the result blocks progress, not by repeatedly
+polling. Steer or resume an existing child for focused follow-up instead of
+restarting its work. If delegation fails or is unavailable, report the limitation,
+complete useful work locally, and never claim an independent review occurred.
 
 ## Tools and evidence
 
