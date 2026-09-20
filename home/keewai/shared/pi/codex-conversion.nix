@@ -12,7 +12,18 @@ let
   '';
 in
 {
-  programs.pi-coding-agent.settings.shellPath = "${shell}";
+  programs.pi-coding-agent.settings = {
+    packages = lib.mkOrder 1000 [
+      {
+        source = "npm:@howaboua/pi-codex-conversion@${helpers.version}";
+        extensions = [ "dist/index.js" ];
+        skills = [ ];
+        prompts = [ ];
+        themes = [ ];
+      }
+    ];
+    shellPath = "${shell}";
+  };
 
   home.file.".pi/agent/pi-codex-conversion.json".source =
     (pkgs.formats.json { }).generate "pi-codex-conversion.json"

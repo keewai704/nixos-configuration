@@ -4,9 +4,6 @@
   pkgs,
   ...
 }:
-let
-  codexConversionHelpers = pkgs.callPackage ../../../../pkgs/pi-codex-conversion-helpers { };
-in
 {
   programs.pi-coding-agent = {
     enable = true;
@@ -42,32 +39,6 @@ in
         "--ignore-scripts"
         "--no-audit"
         "--no-fund"
-      ];
-      packages = [
-        {
-          source = "npm:@howaboua/pi-codex-conversion@${codexConversionHelpers.version}";
-          extensions = [ "dist/index.js" ];
-          skills = [ ];
-          prompts = [ ];
-          themes = [ ];
-        }
-        {
-          source = "npm:pi-mcp-adapter@2.34.0";
-        }
-        {
-          source = "npm:pi-web-access@0.29.0";
-          extensions = [ "index.ts" ];
-          skills = [ ];
-          prompts = [ ];
-          themes = [ ];
-        }
-        {
-          source = "npm:@narumitw/pi-lsp@0.49.7";
-          extensions = [ "dist/index.ts" ];
-          skills = [ ];
-          prompts = [ ];
-          themes = [ ];
-        }
       ];
       compaction = {
         enabled = true;

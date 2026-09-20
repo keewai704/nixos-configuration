@@ -136,11 +136,11 @@ Home Manager は `useUserPackages = true` で NixOS に統合されています�
 | 場所 | 役割 |
 | --- | --- |
 | [shared/pi/default.nix](home/keewai/shared/pi/default.nix) | 全ホスト共通の Pi 設定の入口 |
-| [shared/pi/agent.nix](home/keewai/shared/pi/agent.nix) | 本体・実行環境、モデル、拡張バージョン、ローカル拡張と指示の配布 |
-| [shared/pi/codex-conversion.nix](home/keewai/shared/pi/codex-conversion.nix) | Pi Codex conversion のツール・Remote context management・互換設定 |
-| [shared/pi/mcp.nix](home/keewai/shared/pi/mcp.nix) | 共通 MCP サーバーの登録と Pi アダプターへの変換 |
-| [shared/pi/lsp.nix](home/keewai/shared/pi/lsp.nix) | 言語サーバーと診断設定 |
-| [shared/pi/web-search.nix](home/keewai/shared/pi/web-search.nix) | Web 検索と取得経路、CLI / Web 共通の設定ファイル |
+| [shared/pi/agent.nix](home/keewai/shared/pi/agent.nix) | 本体・実行環境、モデル、ローカル拡張と指示の配布 |
+| [shared/pi/codex-conversion.nix](home/keewai/shared/pi/codex-conversion.nix) | Pi Codex conversion の導入、補助バイナリ、ツール・Remote context management・互換設定 |
+| [shared/pi/mcp.nix](home/keewai/shared/pi/mcp.nix) | Pi MCP アダプターの導入、共通 MCP サーバーの登録と設定変換 |
+| [shared/pi/lsp.nix](home/keewai/shared/pi/lsp.nix) | Pi LSP 拡張の導入、言語サーバーと診断設定 |
+| [shared/pi/web-search.nix](home/keewai/shared/pi/web-search.nix) | Pi Web 検索拡張の導入、検索・取得経路、CLI / Web 共通の設定ファイル |
 | [shared/pi/web.nix](home/keewai/shared/pi/web.nix) | Pi Web の導入、ユーザーサービス、ホストごとの tailnet 許可 |
 | [shared/pi/web-agents/](home/keewai/shared/pi/web-agents/) | Pi Web 内蔵サブエージェントの有効化、役割、モデル、推論設定 |
 | [shared/pi/APPEND_SYSTEM.md](home/keewai/shared/pi/APPEND_SYSTEM.md) | 全プロジェクト共通の追加システム指示 |
@@ -157,8 +157,10 @@ Home Manager は `useUserPackages = true` で NixOS に統合されています�
 共通プロフィールは `shared/pi/`、デスクトッププロフィールは追加で `desktop/pi/` を読み込みます。
 設定を追加するときは、既存の機能別ファイルへ追記するか、同じディレクトリに名前の明確な
 モジュールを作り、その `default.nix` の `imports` に追加します。
-拡張のバージョン指定は `agent.nix` にまとめ、ローカル拡張は `extensions/`、
-プロンプトは `prompts/` に置いて `agent.nix` から配布します。
+拡張のバージョン・読み込み対象は、その機能を担当するモジュールで設定と一緒に管理します。
+`settings.packages` の `lib.mkOrder` は従来の Codex conversion → MCP → Web 検索 → LSP の
+読み込み順を保つための指定です。Codex conversion のバージョンは補助バイナリと同じ定義を参照します。
+ローカル拡張は `extensions/`、プロンプトは `prompts/` に置いて `agent.nix` から配布します。
 共有スキル・TypeSafe 認証、パッケージのビルド、OS の公開設定は Pi 専用設定と役割が異なるため、
 上表の担当場所に残します。配置の整理で `~/.pi/agent` などの配布先やホストごとの有効機能は変えません。
 

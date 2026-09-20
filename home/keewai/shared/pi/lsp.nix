@@ -1,5 +1,15 @@
 { lib, pkgs, ... }:
 {
+  programs.pi-coding-agent.settings.packages = lib.mkOrder 1300 [
+    {
+      source = "npm:@narumitw/pi-lsp@0.49.7";
+      extensions = [ "dist/index.ts" ];
+      skills = [ ];
+      prompts = [ ];
+      themes = [ ];
+    }
+  ];
+
   home.file.".pi/agent/pi-lsp.json".text = builtins.toJSON {
     timeout = 20000;
     servers = {

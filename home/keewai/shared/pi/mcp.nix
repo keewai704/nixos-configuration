@@ -25,6 +25,11 @@ in
 {
   imports = [ inputs.mcp-servers-nix.homeManagerModules.default ];
   programs.mcp.enable = true;
+  programs.pi-coding-agent.settings.packages = lib.mkOrder 1100 [
+    {
+      source = "npm:pi-mcp-adapter@2.34.0";
+    }
+  ];
 
   home.file.".pi/agent/mcp.json".text = builtins.toJSON {
     inherit mcpServers;
