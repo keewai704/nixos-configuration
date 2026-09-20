@@ -15,8 +15,8 @@ in
 {
   programs.pi-coding-agent.settings.packages = lib.mkOrder 1200 [
     {
-      source = "npm:pi-web-access@0.29.0";
-      extensions = [ "index.ts" ];
+      source = "npm:pi-web-access@0.30.0";
+      extensions = [ "dist/index.js" ];
       skills = [ ];
       prompts = [ ];
       themes = [ ];

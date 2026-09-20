@@ -13,6 +13,26 @@
   home.file.".pi/agent/pi-lsp.json".text = builtins.toJSON {
     timeout = 20000;
     servers = {
+      basedpyright = {
+        command = [
+          (lib.getExe' pkgs.basedpyright "basedpyright-langserver")
+          "--stdio"
+        ];
+        extensions = [
+          ".py"
+          ".pyi"
+        ];
+      };
+      ruff = {
+        command = [
+          (lib.getExe pkgs.ruff)
+          "server"
+        ];
+        extensions = [
+          ".py"
+          ".pyi"
+        ];
+      };
       nixd = {
         command = [ (lib.getExe pkgs.nixd) ];
         extensions = [ ".nix" ];

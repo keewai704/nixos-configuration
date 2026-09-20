@@ -144,7 +144,7 @@ Home Manager は `useUserPackages = true` で NixOS に統合されています�
 | [shared/pi/web.nix](home/keewai/shared/pi/web.nix) | Pi Web の導入、ユーザーサービス、ホストごとの tailnet 許可 |
 | [shared/pi/web-agents/](home/keewai/shared/pi/web-agents/) | Pi Web 内蔵サブエージェントの有効化、役割、モデル、推論設定 |
 | [shared/pi/APPEND_SYSTEM.md](home/keewai/shared/pi/APPEND_SYSTEM.md) | 全プロジェクト共通の追加システム指示 |
-| [shared/pi/extensions/](home/keewai/shared/pi/extensions/)、[prompts/](home/keewai/shared/pi/prompts/) | キャッシュ監視・Jev 分析のローカル拡張、レビュー用プロンプト |
+| [shared/pi/extensions/](home/keewai/shared/pi/extensions/)、[prompts/](home/keewai/shared/pi/prompts/) | キャッシュ監視・Jev 分析・CLI 完了通知のローカル拡張、レビュー用プロンプト |
 | [desktop/pi/default.nix](home/keewai/desktop/pi/default.nix) | デスクトップ専用連携の入口 |
 | [desktop/pi/cua.nix](home/keewai/desktop/pi/cua.nix) | デスクトップ操作用ドライバーと MCP |
 | [desktop/pi/jev-browser/](home/keewai/desktop/pi/jev-browser/) | Jev と Browser Harness の導入、Pi の限定ブラウザー操作ツールとランナー |
@@ -177,8 +177,11 @@ Ponytail も他の個人スキルと同じ `~/.agents/skills` に配置します
 認証は Pi の `~/.pi/agent/auth.json` に保存されます。
 継続は `pi -c`、過去のセッションを選ぶ場合は `pi -r` です。
 パッケージ管理や `auth check` なども同じ `pi` コマンドを使います。
-Pi と Pi Web の実行環境には Node.js、Python（`python` / `python3`）、jq を含めます。
+Pi と Pi Web の実行環境には Node.js、Python（`python` / `python3`）、jq、ast-grep を含めます。
 MCP の大きな JSON 出力を処理するときに、補助コマンドが見つからず再試行することを防ぎます。
+構文構造を使う検索には Nix で固定した `ast-grep` CLI を使います。npm のネイティブバイナリを
+取得する追加拡張は使わず、検索は読み取り専用とし、変更は通常の編集ツールで行います。
+Linux の別コマンドと混同しないよう、`sg` ではなく `ast-grep` を呼び出します。
 Pi 標準の `shellCommandPrefix` で、シェルツールと `!` / `!!` の PATH の先頭に
 NixOS の権限ラッパーを置きます。Pi Web の非ログイン環境でも `sudo` が
 `/run/wrappers/bin/sudo` を使うようにし、sudo の認証・承認条件は変更しません。
@@ -197,7 +200,7 @@ Web の別端末や、指定したシェルを使わない拡張プロセスは�
 Pi 本体は flake.lock の Nixpkgs に固定された 0.85.1 を使います。
 標準の ChatGPT 接続にはキャッシュ用ヘッダーを本文のキーに合わせる小さなパッチを適用しています。
 Pi Codex conversion が読み込まれる場合は、拡張自身の上流プロバイダー実装をそのまま使います。
-`@howaboua/pi-codex-conversion@3.0.34`、`pi-mcp-adapter@2.34.0`、`pi-web-access@0.29.0`、`@narumitw/pi-lsp@0.49.7` は
+`@howaboua/pi-codex-conversion@3.0.34`、`pi-mcp-adapter@2.34.0`、`pi-web-access@0.30.0`、`@narumitw/pi-lsp@0.49.7` は
 Pi 標準のパッケージ管理で初回起動時に取得し、npm の lifecycle scripts を無効にします。
 拡張のバージョン指定は Nix 管理で、取得した依存関係とロックは `~/.pi/agent/npm/` に保存されます。
 この npm 依存関係のロックは flake.lock には含まれません。
@@ -271,12 +274,15 @@ OpenAI Responses の `web_search` を必須で呼び出し、ライブ取得を�
 通常の検索は `workflow = "none"` とし、検索のたびに確認用ブラウザーや追加要約を起動しません。
 必要なときは `/websearch` で確認用 UI を開けます。生成された設定ファイルは編集せず、変更は Nix 側で行います。
 ブラウザー Cookie の取得と第三者サービスによるページ取得代行は既定で無効、PDF はローカルの `unpdf` で抽出します（OCR なし）。
-`source_check` は原文のハッシュ・引用箇所と語句照合による補助判定を返します。判定だけを根拠にせず、
+`source_check` は原文のハッシュ・引用箇所を返しますが、主張の支持・反証は自動判定しません。
 重要な主張は `fetch_content` と `get_search_content` で原文を確認します。専門仕様には引き続き既存の MCP を使います。
 
 [@narumitw/pi-lsp](https://github.com/narumiruna/pi-extensions/tree/main/packages/pi-lsp) は
 必要時だけ `lsp_diagnostics` で診断し、呼び出し終了時に言語サーバーを停止します。
-Nix（nixd）、TypeScript/JavaScript、Lua、Bash を Nix の固定パッケージで設定し、Bash には ShellCheck を接続します。
+Nix（nixd）、TypeScript/JavaScript、Python、Lua、Bash を Nix の固定パッケージで設定し、Bash には ShellCheck を接続します。
+Python の `.py` / `.pyi` は basedpyright の型診断と Ruff の lint・修正に振り分けます。
+診断は両サーバーを使い、`lsp_fix` は対象サーバーを明示します。言語サーバーは専用の
+Nix Store パスから起動し、Python 仮想環境や既存プロジェクトの lint・型チェック設定は変更しません。
 設定は `~/.pi/agent/pi-lsp.json` に配置します。`/lsp` で利用可能なサーバーを確認できます。
 対象の `paths` と `root` を明示し、全体走査や診断出力の膨張を避けます。
 診断はビルドやテストの代用ではなく、自動整形・自動修正は行いません。
@@ -287,6 +293,11 @@ Nixプロフィール内のPi SDKとNode型定義を参照します。このプ�
 書き込む場合は同じファイルへの他の編集と並列実行しません。
 追加拡張は過去の履歴を書き換えず、常駐の追加モデル要求も行いません。
 速度や成果物の品質向上率を測定したものではなく、調査と途中診断の手段を補う構成です。
+
+[notify.ts](home/keewai/shared/pi/extensions/notify.ts) は Kitty 上の Pi CLI が作業を終えたときに
+OSC 99 のデスクトップ通知を送ります。`agent_settled` を使い、自動再試行・コンパクション・
+後続メッセージの処理中には完了扱いにしません。Pi Web / RPC、非対話モード、非 Kitty 端末では
+通知を出さず、追加のモデル要求や外部通知サービスも使いません。
 
 作業分担と独立レビューは [Pi Web 内蔵サブエージェント](#pi-web) に一本化します。
 `pi-subagents` 拡張と専用スキル・プロンプトは読み込まず、CLI の Pi にサブエージェント機能は追加しません。

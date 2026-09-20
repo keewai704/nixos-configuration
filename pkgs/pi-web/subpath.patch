@@ -486,15 +486,15 @@ diff --git a/components/MarkdownBody.tsx b/components/MarkdownBody.tsx
 index d81df80..d19a865 100644
 --- a/components/MarkdownBody.tsx
 +++ b/components/MarkdownBody.tsx
-@@ -78,7 +78,7 @@ export function MarkdownBody({ children, className, isStreaming, cwd, onOpenFile
-       delete props.node;
-       const filePath = typeof src === "string" ? resolveLocalFileHref(src, cwd) : null;
-       const imageSrc = filePath
--        ? `/api/files/${encodeFilePathForApi(filePath)}?type=read`
-+        ? `/pi/api/files/${encodeFilePathForApi(filePath)}?type=read`
-         : src;
-       // Dynamic local paths are served directly by the file API.
-       // eslint-disable-next-line @next/next/no-img-element
+@@ -29,7 +29,7 @@ function MarkdownImage({
+   const href = typeof src === "string" ? src : undefined;
+   const filePath = href ? resolveLocalFileHref(href, cwd) : null;
+   const imageSrc = filePath
+-    ? `/api/files/${encodeFilePathForApi(filePath)}?type=read`
++    ? `/pi/api/files/${encodeFilePathForApi(filePath)}?type=read`
+     : href;
+   // Dynamic local paths are served directly by the file API.
+   // eslint-disable-next-line @next/next/no-img-element
 diff --git a/components/MessageView.tsx b/components/MessageView.tsx
 index 290c2a3..bb3f7c6 100644
 --- a/components/MessageView.tsx
@@ -1041,7 +1041,7 @@ diff --git a/hooks/useAgentSession.ts b/hooks/useAgentSession.ts
 index 3acc369..87ea2d3 100644
 --- a/hooks/useAgentSession.ts
 +++ b/hooks/useAgentSession.ts
-@@ -363,7 +363,7 @@ export function useAgentSession(opts: UseAgentSessionOptions) {
+@@ -382,7 +382,7 @@ export function useAgentSession(opts: UseAgentSessionOptions) {
  
    if (!eventConnectionRef.current) {
      eventConnectionRef.current = new AgentEventConnection({
@@ -1050,16 +1050,16 @@ index 3acc369..87ea2d3 100644
        onEvent: (event) => handleAgentEventRef.current?.(event as AgentEvent),
        shouldMaintain: (sid) => (
          sessionHookMountedRef.current
-@@ -472,7 +472,7 @@ export function useAgentSession(opts: UseAgentSessionOptions) {
-     try {
+@@ -504,7 +504,7 @@ export function useAgentSession(opts: UseAgentSessionOptions) {
        if (showLoading) setLoading(true);
        const params = new URLSearchParams({ deferThinking: "1", deferMedia: "1" });
+       if (options?.force) params.set("force", "1");
 -      const res = await fetch(`/api/sessions/${encodeURIComponent(sid)}?${params}`);
 +      const res = await fetch(`/pi/api/sessions/${encodeURIComponent(sid)}?${params}`);
        if (res.status === 404) {
          if (showLoading) {
            setData(null);
-@@ -507,7 +507,7 @@ export function useAgentSession(opts: UseAgentSessionOptions) {
+@@ -544,7 +544,7 @@ export function useAgentSession(opts: UseAgentSessionOptions) {
        if (!includeState) return null;
  
        try {
@@ -1068,7 +1068,7 @@ index 3acc369..87ea2d3 100644
          if (!stateRes.ok) throw new Error(`HTTP ${stateRes.status}`);
          const agentState = await stateRes.json() as { running: boolean; state?: AgentStateResponse };
          if (sessionIdRef.current !== sid) return null;
-@@ -545,7 +545,7 @@ export function useAgentSession(opts: UseAgentSessionOptions) {
+@@ -582,7 +582,7 @@ export function useAgentSession(opts: UseAgentSessionOptions) {
        // then prepend them. Omitting `before` fetches the most-recent `tail`.
        if (before) params.set("before", before);
        if (options?.tail) params.set("tail", String(options.tail));
@@ -1546,9 +1546,9 @@ index 8b40d18..ce5a491 100644
    outputFileTracingRoot: configDir,
 +  basePath: "/pi",
 +  skipTrailingSlashRedirect: true,
-   // next/image is only used for the static logo, so the /_next/image optimizer
-   // (and its sharp/libheif attack surface, see GHSA-2xp9-vwfh-vxw4) is not needed.
-   images: { unoptimized: true },
+   experimental: {
+     // proxy.ts matches /api/:path*, and Next buffers the request body whenever
+     // a proxy is present, capped at 10 MB by default. The upload route accepts
 @@ -62,7 +64,7 @@ const nextConfig: NextConfig = {
          source: "/sw.js",
          headers: [
@@ -1608,7 +1608,7 @@ diff --git a/public/sw.js b/public/sw.js
 index 2c9fb53..522ad26 100644
 --- a/public/sw.js
 +++ b/public/sw.js
-@@ -1,13 +1,13 @@
+@@ -1,11 +1,11 @@
 -const CACHE_PREFIX = "pi-web";
 +const CACHE_PREFIX = "pi-web-pi";
  const CACHE_VERSION = new URL(self.location.href).searchParams.get("v") || "dev";
@@ -1626,8 +1626,6 @@ index 2c9fb53..522ad26 100644
 +  "/pi/icons/icon-512.png",
 +  "/pi/icons/apple-touch-icon.png",
  ];
- 
- self.addEventListener("install", (event) => {
 @@ -42,7 +42,7 @@ self.addEventListener("fetch", (event) => {
    if (url.origin !== self.location.origin) return;
  
@@ -1764,10 +1762,40 @@ index 8f6b145..06e3edb 100644
      "focus",
    ]);
  });
-@@ -137,5 +137,5 @@ test("notification click opens a window and rejects cross-origin targets", async
+@@ -137,8 +137,8 @@ test("notification click opens a window and rejects cross-origin targets", async
    const event = dispatchNotificationClick({ url: "https://example.com/redirect" });
    await event.pending;
  
 -  assert.deepEqual(opened, ["https://pi.test/"]);
 +  assert.deepEqual(opened, ["https://pi.test/pi/"]);
  });
+ 
+ // A reachable port backed by a dead upstream answers nothing at all, so these
+ // tests drive fetch() with a stub that only settles once the worker aborts it.
+@@ -191,7 +191,7 @@ test("a stalled navigation falls back to offline.html", async () => {
+ 
+   mock.timers.enable({ apis: ["setTimeout"] });
+   try {
+-    const pending = dispatchFetch("https://pi.test/", { mode: "navigate" });
++    const pending = dispatchFetch("https://pi.test/pi/", { mode: "navigate" });
+     await flushMicrotasks();
+     mock.timers.tick(8000);
+     const response = await pending;
+@@ -209,7 +209,7 @@ test("a stalled static asset request is bounded as well", async () => {
+ 
+   mock.timers.enable({ apis: ["setTimeout"] });
+   try {
+-    const pending = dispatchFetch("https://pi.test/_next/static/chunks/app.js");
++    const pending = dispatchFetch("https://pi.test/pi/_next/static/chunks/app.js");
+     // cacheFirst awaits the cache lookup before it reaches the network.
+     await flushMicrotasks();
+     mock.timers.tick(8000);
+@@ -234,7 +234,7 @@ test("a response that arrives in time is not cut off mid-stream", async () => {
+ 
+   mock.timers.enable({ apis: ["setTimeout"] });
+   try {
+-    const response = await dispatchFetch("https://pi.test/", { mode: "navigate" });
++    const response = await dispatchFetch("https://pi.test/pi/", { mode: "navigate" });
+     // The budget only covers time to first byte: a long-lived body keeps
+     // streaming past it (Next.js streams its SSR payload).
+     mock.timers.tick(60000);

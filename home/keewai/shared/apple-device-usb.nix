@@ -16,7 +16,7 @@ let
         export UV_PYTHON_DOWNLOADS=never
         exec ${lib.getExe pkgs.uv} tool run \
           --python ${pkgs.python313}/bin/python3 \
-          --from pymobiledevice3==11.13.0 ${command} "$@"
+          --from pymobiledevice3==11.15.5 ${command} "$@"
       '';
     };
 in

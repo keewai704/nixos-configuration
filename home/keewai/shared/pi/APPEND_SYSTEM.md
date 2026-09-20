@@ -49,6 +49,9 @@ files. Do not routinely dump whole READMEs, logs, or directory trees. Reuse
 unchanged material already in context and expand reads when evidence is missing.
 Honor explicit full-document reading requirements. Filter command output at the
 source while preserving required evidence; truncation is not proof of success.
+Use `ast-grep` through the shell for syntax-aware structural searches when text
+search is insufficient. Keep those searches read-only and use the normal editing
+tools for changes. Prefer the `ast-grep` executable over Linux's unrelated `sg`.
 Discover MCP servers and inspect tool schemas through the mcp proxy before use.
 Use mcp for single operations. For multi-call MCP workflows, use mcpScript when
 available to chain calls and filter results. Inspect schemas, handle failed call

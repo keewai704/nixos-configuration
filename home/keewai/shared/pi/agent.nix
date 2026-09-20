@@ -9,6 +9,7 @@
     enable = true;
     package = pkgs.callPackage ../../../../pkgs/pi-coding-agent { };
     extraPackages = [
+      pkgs.ast-grep
       pkgs.nodejs
       pkgs.python3
       pkgs.jq
@@ -53,6 +54,7 @@
     ".pi/agent/APPEND_SYSTEM.md".source = ./APPEND_SYSTEM.md;
     ".pi/agent/extensions/cache-audit.ts".source = ./extensions/cache-audit.ts;
     ".pi/agent/extensions/jev-analysis.ts".source = ./extensions/jev-analysis.ts;
+    ".pi/agent/extensions/notify.ts".source = ./extensions/notify.ts;
     ".pi/agent/prompts/review.md".source = ./prompts/review.md;
   };
 }

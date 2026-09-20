@@ -8,14 +8,14 @@
 }:
 python3Packages.buildPythonApplication rec {
   pname = "jev-ultrafast";
-  version = "0.1.0-unstable-2026-09-17";
+  version = "0.1.0-unstable-2026-09-18";
   pyproject = true;
 
   src = fetchFromGitHub {
     owner = "browser-use";
     repo = "jev-ultrafast";
-    rev = "452c1ad2dd628008f1d5608f28158d76e49e6cc0";
-    hash = "sha256-D2BQZG3gMIG/goeJBikYxb5PMDibzttWnlZ2ccg3Exk=";
+    rev = "1231850a0bf1a0c0341fe408ef1668dbbfdfac46";
+    hash = "sha256-8EJhsOjalxX6uUCu+bREqopVUBG8O64SehhQUdNUwVI=";
   };
 
   build-system = [ python3Packages.hatchling ];

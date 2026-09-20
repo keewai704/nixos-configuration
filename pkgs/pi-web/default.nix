@@ -28,13 +28,13 @@ let
 in
 buildNpmPackage {
   pname = "pi-web";
-  version = "0.9.1-unstable-2026-09-16";
+  version = "0.9.1-unstable-2026-09-19";
 
   src = fetchFromGitHub {
     owner = "agegr";
     repo = "pi-web";
-    rev = "860698a6573e63a2432157676a5ac9bc9ce54044";
-    hash = "sha256-izRVOsYwlY+r8prmaEQJkktk7N8TFwYlyaLbQy15XUc=";
+    rev = "1eb5e66a37c468aca7f0d338edb23de4fd84433e";
+    hash = "sha256-pXXrD4DTzyk+i/xDW9F26X+qXicbr8nAUA3vzTS0Lz4=";
   };
   patches = [
     ./local-font.patch
