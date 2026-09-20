@@ -356,7 +356,7 @@ class Controller:
 
 async def session(args):
     async with await create_using_usbmux(
-        serial=args.udid, connection_type="USB"
+        serial=args.udid, connection_type="USB", autopair=False
     ) as lockdown:
         product = lockdown.product_type
         name = lockdown.all_values["DeviceName"]
