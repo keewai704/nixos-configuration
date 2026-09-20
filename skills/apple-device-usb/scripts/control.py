@@ -1,19 +1,20 @@
 import argparse
 import asyncio
+import fcntl
 import io
 import json
 import logging
 import os
+import signal
 import struct
 import sys
 import tempfile
 import termios
 import uuid
-from contextlib import AsyncExitStack, asynccontextmanager, suppress
+from contextlib import AsyncExitStack, asynccontextmanager, contextmanager
 from pathlib import Path
 
 from PIL import Image
-from pymobiledevice3.lockdown import create_using_usbmux
 from pymobiledevice3.remote.core_device.device_info import DeviceInfoService
 from pymobiledevice3.remote.core_device.display_service import DisplayService
 from pymobiledevice3.remote.core_device.hid_service import (
@@ -29,9 +30,10 @@ from pymobiledevice3.remote.core_device.hid_service import (
 )
 from pymobiledevice3.remote.core_device.pasteboard_service import PasteboardService
 from pymobiledevice3.remote.core_device.screen_stream import open_media_receiver
-from pymobiledevice3.remote.userspace_tunnel import UserspaceRsdTunnel
 from pymobiledevice3.services.dvt.instruments.dvt_provider import DvtProvider
 from pymobiledevice3.services.dvt.instruments.screenshot import Screenshot
+
+from connection import MODES, get_tunnel, select_connection
 
 
 def emit(**result):
@@ -93,6 +95,8 @@ async def media_hid_session(rsd, display_id):
                             sender_ip=rsd.service.address[0],
                             display_id=display_id,
                             client_session_id=session_id,
+                            allow_rtcp_fb=False,
+                            ltrp_enabled=False,
                         ),
                         timeout=30,
                     )
@@ -103,17 +107,16 @@ async def media_hid_session(rsd, display_id):
                     async with UniversalHIDServiceService(rsd) as hid:
                         yield hid
                 finally:
-                    receiver.cancel()
-                    if keepalive is not None:
-                        keepalive.cancel()
+                    try:
+                        await asyncio.wait_for(
+                            DisplayService.stop_all_streams(rsd), timeout=6
+                        )
+                    finally:
+                        receiver.cancel()
+                        if keepalive is not None:
+                            keepalive.cancel()
         finally:
-            try:
-                with suppress(Exception):
-                    await asyncio.wait_for(
-                        display.stop_media_stream(session_id), timeout=3
-                    )
-            finally:
-                transport.close()
+            transport.close()
 
 
 def display_signature(info):
@@ -355,32 +358,34 @@ class Controller:
 
 
 async def session(args):
-    async with await create_using_usbmux(
-        serial=args.udid, connection_type="USB", autopair=False
-    ) as lockdown:
-        product = lockdown.product_type
-        name = lockdown.all_values["DeviceName"]
-        if not await lockdown.get_developer_mode_status():
-            raise RuntimeError(
-                "Enable Developer Mode on the device, then mount its Developer Disk Image"
+    async with AsyncExitStack() as resources:
+        async with asyncio.timeout(90):
+            mode, serial = await select_connection(args.connection, args.serial)
+            rsd = await resources.enter_async_context(get_tunnel(mode, serial))
+            if not await rsd.get_developer_mode_status():
+                raise RuntimeError(
+                    "Enable Developer Mode on the device, then mount its Developer Disk Image"
+                )
+            dvt = await resources.enter_async_context(DvtProvider(rsd))
+            screenshot = await resources.enter_async_context(Screenshot(dvt))
+            controller = Controller(
+                rsd, screenshot, rsd.product_type, args.output, args.max_size
             )
-    async with (
-        UserspaceRsdTunnel(
-            serial=args.udid, autopair=False, remotepairing_fallback=False
-        ) as rsd,
-        DvtProvider(rsd) as dvt,
-        Screenshot(dvt) as screenshot,
-        AsyncExitStack() as inputs,
-    ):
-        controller = Controller(rsd, screenshot, product, args.output, args.max_size)
-        initial_display = await current_display(rsd)
-        controller.hid = await inputs.enter_async_context(
-            media_hid_session(rsd, initial_display["display"])
+            initial_display = await current_display(rsd)
+            controller.hid = await resources.enter_async_context(
+                media_hid_session(rsd, initial_display["display"])
+            )
+            first_frame = await controller.capture()
+            if controller.signature["display"] != initial_display["display"]:
+                raise RuntimeError("Primary display changed during startup; reconnect")
+        emit(
+            connection=mode,
+            requested_connection=args.connection,
+            device=rsd.all_values.get("DeviceName"),
+            udid=rsd.udid,
+            product=rsd.product_type,
+            **first_frame,
         )
-        first_frame = await controller.capture()
-        if controller.signature["display"] != initial_display["display"]:
-            raise RuntimeError("Primary display changed during startup; reconnect")
-        emit(device=name, udid=args.udid, product=product, **first_frame)
         reader = asyncio.StreamReader(limit=65536)
         transport, _ = await asyncio.get_running_loop().connect_read_pipe(
             lambda: asyncio.StreamReaderProtocol(reader),
@@ -406,11 +411,55 @@ async def session(args):
     return 0
 
 
+async def run(args):
+    loop = asyncio.get_running_loop()
+    task = asyncio.current_task()
+
+    def request_stop():
+        if not task.cancelling():
+            task.cancel()
+
+    for sig in (signal.SIGINT, signal.SIGTERM):
+        loop.add_signal_handler(sig, request_stop)
+    try:
+        return await session(args)
+    except asyncio.CancelledError:
+        emit(closed=True)
+        return 130
+    finally:
+        for sig in (signal.SIGINT, signal.SIGTERM):
+            loop.remove_signal_handler(sig)
+
+
+@contextmanager
+def instance_lock():
+    runtime = os.environ.get("XDG_RUNTIME_DIR")
+    if not runtime:
+        raise RuntimeError("XDG_RUNTIME_DIR is required")
+    fd = os.open(
+        Path(runtime) / "apple-device-usb.lock",
+        os.O_CREAT | os.O_RDWR | os.O_NOFOLLOW,
+        0o600,
+    )
+    with os.fdopen(fd, "r+") as lock:
+        try:
+            fcntl.flock(lock, fcntl.LOCK_EX | fcntl.LOCK_NB)
+        except BlockingIOError:
+            raise RuntimeError("Another apple-device-usb session is running") from None
+        yield
+
+
 def main():
     parser = argparse.ArgumentParser(
-        description="USB CoreDevice HID session: one JSON command per stdin line"
+        description="USB/Wi-Fi CoreDevice HID session: one JSON command per stdin line"
     )
-    parser.add_argument("--udid", required=True)
+    parser.add_argument("--connection", choices=MODES, default="auto")
+    parser.add_argument(
+        "--serial",
+        "--udid",
+        dest="serial",
+        help="Select a USB device or saved Wi-Fi pairing",
+    )
     parser.add_argument("--max-size", type=int, default=1280)
     parser.add_argument(
         "--output", type=Path, default=Path.home() / "Pictures/apple-device"
@@ -427,7 +476,8 @@ def main():
         quiet[3] &= ~termios.ECHO
         termios.tcsetattr(sys.stdin, termios.TCSANOW, quiet)
     try:
-        return asyncio.run(session(args))
+        with instance_lock():
+            return asyncio.run(run(args))
     except KeyboardInterrupt:
         return 130
     except Exception as error:

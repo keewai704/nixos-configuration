@@ -1,46 +1,61 @@
 ---
 name: apple-device-usb
-description: Operate a USB-connected iPhone or iPad using screenshots and input. Not for simulators or macOS desktop control.
+description: Operate an iPhone or iPad over USB or an already paired local Wi-Fi connection using screenshots and input. Not for simulators or macOS desktop control.
 ---
 
-# Apple device control over USB
+# Apple device control over USB or Wi-Fi
 
-Use the installed `apple-device-usb` helper for one on-demand USB session:
+Use the installed `apple-device-usb` helper for one on-demand session:
 observe a screenshot, send one frame-bound action, inspect the result, then close
 the session. Do not operate while the user or another controller is changing the
 device's screen. Editing this skill does not authorize connecting to a device.
 
-This workflow adapts the explicit setup, session ownership, and failure handling
+The connection implementation and workflow adapt the design
 of [Omarchy iPhone Mirror](https://github.com/daniellemky/omarchy-iphone-mirror/tree/cd076dc9721554f2169c1f2a5cfb818d6ca0e954),
 especially its [phone setup](https://github.com/daniellemky/omarchy-iphone-mirror/blob/cd076dc9721554f2169c1f2a5cfb818d6ca0e954/docs/phone-setup.md)
 and [agent setup](https://github.com/daniellemky/omarchy-iphone-mirror/blob/cd076dc9721554f2169c1f2a5cfb818d6ca0e954/docs/agent-setup.md).
-It is not an installer or wrapper for that application. Do not run its installer,
-invent `setup-phone.sh` commands here, add Wi-Fi pairing, or enable autostart.
+It is not an installer or GUI wrapper for that application. Do not run its
+installer, invent `setup-phone.sh` commands here, or enable autostart. The existing
+skill and command names remain valid for both transports.
 
 ## Implementation and compatibility
 
 The Nix-managed [launcher](/home/keewai/nixos-configuration/home/keewai/shared/apple-device-usb.nix)
-pins the dependency; [scripts/control.py](scripts/control.py) defines the actual
-JSON interface. Use those installed sources, not a different upstream version's
-commands. The helper reuses one userspace tunnel, DVT screenshot channel,
+pins the dependency; [scripts/connection.py](scripts/connection.py) selects the
+transport and [scripts/control.py](scripts/control.py) defines the JSON interface.
+The connection adaptation retains Omarchy's [MIT license](scripts/LICENSE.omarchy).
+Use those installed sources, not a different upstream version's commands.
+The helper reuses one userspace tunnel, DVT screenshot channel,
 CoreDevice media/HID session, and virtual keyboard. RTCP receiver reports keep
 the media session alive between inputs. No root tunnel or VNC server is needed;
 the media transport still uses sockets.
 
-The initial lockdown connection is USB-only, but the pinned userspace tunnel's
-internal lockdown selector prefers USB without excluding a matching network
-device. Disabling RemotePairing fallback does not close that separate path.
-Keep the cable attached. On USB loss, stop the recorded unit externally; a
-successful helper response does not prove the transport is still USB. Never
-intentionally continue over Wi-Fi. If the task requires a strict USB-only
-transport guarantee, report this helper limitation and do not start it. That
-guarantee needs a transport-level change, not another discovery check.
+Like Omarchy, connection selection happens once at startup:
+
+| Option | Selection |
+| --- | --- |
+| `--connection auto` | Default: use a matching USB device first; otherwise use saved Wi-Fi pairing. Unavailable usbmuxd also permits Wi-Fi discovery. |
+| `--connection usb` | Require USB. Missing devices and connection failures stop; never use a network usbmux device or Wi-Fi fallback. |
+| `--connection wifi` | Skip USB discovery and authenticate a saved pairing on the local network. |
+| `--serial <identifier>` | Select a USB device or saved pairing; `--udid` is an alias. Without it, ambiguous devices/records stop rather than guessing. |
+
+Use `usb` for USB-only requests, `wifi` for explicitly requested wireless control,
+and `auto` only when either transport is authorized. Selecting USB commits that
+session to USB, even if its connection subsequently fails. Connecting or removing
+a cable never changes an active session's transport. End the old session before
+choosing again; never replay an uncertain input.
+
+The provider adapter uses the pinned library's private `_aopen_locked` hook, as
+Omarchy does. It restores the temporary provider selector on success, failure,
+and cancellation while the library's lifecycle lock is held. Unlike the stock
+USB-preferred selector, its USB provider explicitly requires `connection_type="USB"`.
+Review this adapter when changing the dependency version.
 
 Omarchy decodes HEVC directly in MPV and gates input on viewer focus. This helper
 instead uses inspected screenshots and frame IDs; there is no viewer-focus gate.
-Do not copy MPV coordinates, shortcuts, or its automatic USB/Wi-Fi selection into
-this workflow. Linux PyAV VNC frames were visibly corrupted in the original
-local 11.5.0 test, so do not select targets from damaged VNC frames.
+Do not copy MPV coordinates or viewer shortcuts into this workflow. Linux PyAV
+VNC frames were visibly corrupted in the original local 11.5.0 test, so do not
+select targets from damaged VNC frames.
 
 The USB transport requires iOS/iPadOS 17.4+, not every device on those versions
 supports the required display/input services. The original local verification
@@ -53,17 +68,18 @@ work. Stop on unavailable media capabilities rather than cycling images.
 ## 1. Confirm the host and prepare the selected device
 
 Confirm `hostnamectl --static` (fallback `hostname`) matches `/etc/hostname`;
-stop on mismatch. Reuse an unchanged host check. Use only this host's USB device.
+stop on mismatch. Reuse an unchanged host check. Do not use another host's USB
+device or a remote shell. For USB discovery and initial phone preparation:
 
 ```sh
 systemctl is-active usbmuxd
 timeout -k 3 20 pymobiledevice3 usbmux list --usb --simple
 ```
 
-This lists USB UDIDs without opening lockdown connections. Stop if none are
-present; ask which device when ambiguous. Never select a saved network device
-as fallback. Keep identifiers and personal device names out of external
-diagnostics.
+This lists USB UDIDs without opening lockdown connections. For USB control or
+preparation, stop if none are present; ask which device when ambiguous. For
+already paired Wi-Fi control, no attached USB device is required. Keep identifiers
+and personal device names out of external diagnostics.
 
 Phone preparation is separate from input. Before changing trust, revealing
 Developer Mode, or downloading/mounting a developer image, explain the effect
@@ -83,8 +99,9 @@ PYMOBILEDEVICE3_UDID='<observed-UDID>' pymobiledevice3 mounter list
 If Developer Mode is off, explain Settings → Privacy & Security → Developer
 Mode. Use `amfi reveal-developer-mode` only when needed and authorized, with the
 same UDID selection. Wait for the user's enable/restart/confirmation, then check
-again. For versions older than 17.4, stop this workflow and inspect the installed
-`pymobiledevice3 --help` and upstream transport guidance.
+again. Do not force the USB path on versions older than 17.4; inspect the installed
+`pymobiledevice3 --help` and upstream transport guidance. Wi-Fi still requires
+compatible display and input services, regardless of OS version.
 
 Mount only when no developer image is mounted and the operation is authorized:
 
@@ -96,26 +113,58 @@ Allow the initial download to finish. Check again after a device reboot; do not
 mount on every connection, unmount an existing image, or replace one as automatic
 recovery. Close an existing controller before any image-changing operation.
 
+### Optional Wi-Fi preparation
+
+USB trust and CoreDevice Wi-Fi pairing are separate. If wireless control is
+requested and no matching record exists, explain that this operation creates a
+saved network credential and obtain authorization. With that same device trusted,
+unlocked, and connected over USB, run once:
+
+```sh
+PYMOBILEDEVICE3_UDID='<observed-UDID>' pymobiledevice3 lockdown remotepairing --pair
+```
+
+Do not read pairing keys, delete records, or repeat pairing automatically. Reuse
+an existing record; the helper always connects with automatic pairing disabled.
+Keep the device and this host on the same local network. For a wireless check,
+close the USB session, have the user disconnect the cable, and start with
+`--connection wifi`. Discovery with `pymobiledevice3 remote browse` is optional;
+its identifiers and addresses must stay local. The helper checks discovered
+routes and rejects loopback, known tunnel interfaces, and `ipheth` USB tethering.
+Do not change firewall or route settings to bypass a failed check.
+
 ## 2. Start one persistent helper
 
 Use a private FIFO and a transient systemd user service so the helper survives
-tool calls. Do not reconnect for every action or start a second controller for
-the same device. If the user manager is unavailable, report that limitation;
-do not substitute a root service or invent a terminal-session API.
+tool calls. An advisory file lock under `XDG_RUNTIME_DIR` rejects a second helper
+instance; it does not lock other applications such as Omarchy's viewer. Close
+other controllers first. Do not reconnect for every action. If the user manager
+is unavailable, report that limitation; do not substitute a root service or
+invent a terminal-session API.
+
+Exclusive mirroring use is required: the pinned dependency's supported cleanup
+stops all media streams on the selected device. Do not start while another
+mirror or device-control session must remain active. The local lock cannot
+establish that exclusivity on the device or on another computer.
+
+Choose the authorized mode before starting; this example explicitly uses USB.
+Change `connection` to `auto` or `wifi` when appropriate. Omit `--serial` and its
+argument only when automatic selection of the sole device/record is intended.
 
 ```sh
 set -e
 umask 077
 session=$(mktemp -d "${XDG_RUNTIME_DIR:?}/apple-device-usb.XXXXXX")
 unit="apple-device-usb-${session##*.}"
+connection=usb
 mkfifo "$session/input"
 systemd-run --user --unit="$unit" --collect \
   --property=UMask=0077 \
   --property="StandardOutput=append:$session/events.jsonl" \
   --property="StandardError=append:$session/stderr.log" \
   "$(command -v bash)" -c \
-  'exec 3<>"$1/input"; exec "$2" --udid "$3" <&3' \
-  _ "$session" "$(command -v apple-device-usb)" '<observed-UDID>'
+  'exec 3<>"$1/input"; exec "$2" --connection "$3" --serial "$4" <&3' \
+  _ "$session" "$(command -v apple-device-usb)" "$connection" '<observed-identifier>'
 printf 'session=%s\nunit=%s\n' "$session" "$unit"
 ```
 
@@ -124,13 +173,15 @@ values in later shell calls; shell variables do not persist. The absolute Nix
 launcher path is required because user services do not inherit the shell PATH.
 
 Read complete new lines from `events.jsonl` with the available file-reading tool.
-Track consumed lines. The initial event includes private device identifiers plus
+Track consumed lines. The initial event reports the actual `connection`, the
+`requested_connection`, private device identifiers, and
 `frame`, `image`, `size`, `original`, `orientation`, and `touch_rotation`. Open
 `image` with the available image tool and use that image's pixel dimensions.
 The default longest edge is 1280px; both preview and full-size captures remain
 under `~/Pictures/apple-device`, outside the transient logs.
 
-A launched unit is not a successful connection. If no initial frame arrives,
+A launched unit is not a successful connection. Startup has a 90-second budget,
+including tunnel and service setup. If no initial frame arrives,
 inspect only the recorded unit's status and `stderr.log`. Do not launch again
 while its state is unknown.
 
@@ -184,13 +235,21 @@ consequential input; do not guess using destructive controls. Recheck after
 rotation or display changes. MPV's normalized video coordinates do not establish
 this screenshot mapping.
 
-## 4. Close only the owned session
+## 4. Close the helper and media session
 
 Send `{"quit":true}` through the same FIFO. Confirm the new `closed` event and
 inactive service before removing only the recorded temporary session directory.
-Normal exit releases the media/HID resources and tunnel. If stuck, stop the exact
+Normal exit releases input, requests media shutdown, then closes owned receiver
+tasks, media/display resources, and finally the tunnel. On pymobiledevice3
+11.15.5, `DisplayService.stop_all_streams(rsd)` opens a fresh display connection;
+reusing the start connection or passing the session UUID to `stop_media_stream`
+is invalid. This stops all media streams on the selected device, which is why
+exclusive use is required. Cleanup failures report an error, not `closed`.
+SIGINT/SIGTERM request the same context cleanup. If stuck, stop the exact
 recorded unit with `systemctl --user stop "$unit"`, inspect its logs, and confirm
-it is inactive; do not claim a graceful close without the event.
+it is inactive; do not claim a graceful close without the event. `closed` confirms
+local cleanup, not the remote service's state. Keep the shared
+`apple-device-usb.lock` file in place; closing its descriptor releases the lock.
 
 Captures are not deleted with session logs. Keep only task-needed captures under
 the user's retention instructions; never delete unrelated images. Report only
@@ -202,6 +261,7 @@ distinguish setup success, screenshot success, input success, and cleanup status
 | Observation | Next step |
 | --- | --- |
 | Empty USB list or `RX transfer stalled` | Inspect `journalctl -u usbmuxd` and USB topology locally. A different controller/port resolved the original citrus case; bus numbers are not stable identities. Preserve daemon/firewall settings and pairing records. |
+| Missing/ambiguous Wi-Fi pairing or unreachable LAN peer | Confirm the selected identifier and prior authorization for Wi-Fi. Do not pair automatically, delete other records, use a VPN as fallback, or reopen a failed USB session as Wi-Fi. |
 | Trust, Developer Mode, or developer-image error | Return to the selected device's prerequisite check. No automatic pairing, image replacement, or reboot. |
 | Missing/zero media capabilities | Report the compatibility limit. A mounted image is insufficient evidence; do not repeatedly reconnect. |
 | Screenshot works but input does not | Check geometry/calibration separately from the media/HID connection. If the stock `display get-media-stream-server-status` also times out, stop HID retries and request a user-controlled device restart. |
@@ -219,7 +279,7 @@ account data, screenshots, clipboard contents, or typed input. The initial event
 and arbitrary exception text may contain private data; never forward them raw.
 If authorization or sensitivity is uncertain, diagnose locally without Jev.
 Its advice does not authorize repair, reconnecting, or replaying input. Do not
-use `jev_browser` or a web bridge to control this USB session.
+use `jev_browser` or a web bridge to control this device session.
 
 For an explicitly requested VNC viewer only, inspect the installed
 `display serve-vnc --help` first. Bind to `127.0.0.1` (for example port 5901), never
