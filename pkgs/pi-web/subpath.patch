@@ -482,6 +482,18 @@ index c8cbad8..8c082a1 100644
        const next = await response.json() as GitFileDiffResponse & { error?: string };
        if (requestId !== gitDiffRequestRef.current) return;
        setGitDiff(response.ok && next.supported && typeof next.patch === "string" ? next : null);
+diff --git a/components/MarkdownBody.test.mjs b/components/MarkdownBody.test.mjs
+--- a/components/MarkdownBody.test.mjs
++++ b/components/MarkdownBody.test.mjs
+@@ -150,7 +150,7 @@ test("opens markdown images in the shared image preview", () => {
+   const remoteHtml = renderMarkdown("![logo](https://example.com/logo.png)");
+ 
+   assert.match(localHtml, /<button[^>]+aria-label="Preview image: chart"[^>]*>/);
+-  assert.match(localHtml, /<img[^>]+src="\/api\/files\/home\/me\/project\/docs\/tmp\/chart\.png\?type=read"/);
++  assert.match(localHtml, /<img[^>]+src="\/pi\/api\/files\/home\/me\/project\/docs\/tmp\/chart\.png\?type=read"/);
+   assert.match(localHtml, /<img[^>]+alt="chart"/);
+   assert.match(remoteHtml, /<button[^>]+aria-label="Preview image: logo"[^>]*>/);
+   assert.match(remoteHtml, /<img[^>]+src="https:\/\/example\.com\/logo\.png"/);
 diff --git a/components/MarkdownBody.tsx b/components/MarkdownBody.tsx
 index d81df80..d19a865 100644
 --- a/components/MarkdownBody.tsx
