@@ -206,6 +206,12 @@ Pi 標準のパッケージ管理で初回起動時に取得し、npm の lifecy
 拡張のバージョン指定は Nix 管理で、取得した依存関係とロックは `~/.pi/agent/npm/` に保存されます。
 この npm 依存関係のロックは flake.lock には含まれません。
 
+[Pi 0.86.0](https://github.com/earendil-works/pi/blob/v0.86.0/packages/coding-agent/CHANGELOG.md) は
+プロバイダーへ渡すシステム指示・ツール定義を `TranscriptContext.messages` 内へ移しました。
+Codex conversion 3.0.34 は旧形式の `context.systemPrompt` / `context.tools` を参照するため、
+0.86.0 の正規化処理と拡張のリクエスト生成を組み合わせた通信なしの検証で、指示とツールの欠落を確認しています。
+本体だけの更新は保留し、拡張の対応後に指示・ツール・Remote コンテキスト管理と Pi Web の互換性を検証して更新します。
+
 [Pi Codex conversion](https://github.com/IgorWarzocha/howaboua-pi-stuff/tree/main/packages/pi-codex-conversion) は
 公開 npm パッケージを改変せず、CLI と Pi Web の両方で読み込みます。Codex CLI の導入は不要です。
 Codex 対象モデルでは **Structured adapter** と実験的 **Context management: Remote** を使います。
