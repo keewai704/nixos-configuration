@@ -23,6 +23,18 @@ or configuration snapshots. Format and check syntax only for changed files.
   `home/keewai/shared/pi/tsconfig.json` with the pinned TypeScript compiler or LSP.
   It resolves Pi and Node types from the deployed user profile; a missing profile
   is an environment limitation, not a reason to install mutable npm dependencies.
+- Jev computer integration: use a disposable GTK/Qt window with synthetic data,
+  never the user's existing documents or account screens. Type-check with
+  `home/keewai/desktop/pi/jev-computer/tsconfig.json`, which extends the shared
+  configuration. Check native inspection,
+  editable-text readback, button effects, and two-sample exact predicates. Exercise
+  missing/duplicate targets, stale tokens, process/window replacement, private
+  roles, size limits, cancellation, low-confidence/invalid model answers, and the
+  shared Jev lock with disposable commands or mocked providers. A live TypeSafe
+  check may send only the synthetic fixture, not incidental desktop content.
+  Test consent handling separately; mocked test consent is not a user grant for
+  real applications. Recheck deployed inspection and fixture behavior after both
+  activation gates. Model stop reasons and deterministic verification are separate.
 - Another host only: locally evaluate the changed attributes, or build the affected
   output when package implementation or build logic changed. Shared settings do
   not require every host's build unless host-specific branches need validation.

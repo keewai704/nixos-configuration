@@ -1,0 +1,7 @@
+{
+  "extends": "../../../shared/pi/tsconfig.json",
+  "compilerOptions": {
+    "allowImportingTsExtensions": true
+  },
+  "include": ["*.ts"]
+}

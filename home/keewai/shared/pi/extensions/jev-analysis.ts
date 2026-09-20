@@ -38,7 +38,7 @@ type Question = {
 	criteria?: Record<string, string> | string[];
 };
 
-function record(value: unknown): Record<string, unknown> {
+export function record(value: unknown): Record<string, unknown> {
 	if (!value || typeof value !== "object" || Array.isArray(value))
 		throw new Error("Invalid TypeSafe response object.");
 	return value as Record<string, unknown>;
@@ -70,7 +70,7 @@ function probabilities(value: unknown, keys: string[]): Record<string, number> {
 	return parsed;
 }
 
-function choice(value: unknown, criteria: Record<string, string>) {
+export function choice(value: unknown, criteria: Record<string, string>) {
 	const answer = record(value);
 	if (
 		answer.type !== "choice" ||
@@ -168,6 +168,92 @@ function result(details: Record<string, unknown>) {
 	return { content: [{ type: "text" as const, text }], details };
 }
 
+export async function evaluateQuestions(
+	state: unknown,
+	questions: Record<string, Question>,
+	signal: AbortSignal | undefined,
+) {
+	const stateBytes = Buffer.byteLength(JSON.stringify(state));
+	if (stateBytes > MAX_STATE_BYTES)
+		throw new Error(
+			"Jev accepts at most 24,000 UTF-8 bytes of state. Supply a smaller explicit excerpt or candidate list; nothing was sent.",
+		);
+	const body = JSON.stringify({ model: "jev-latest", state, questions });
+	if (Buffer.byteLength(body) > 64000)
+		throw new Error("Jev request exceeded 64 KB; nothing was sent.");
+	const lifetime = signal ?? new AbortController().signal;
+	lifetime.throwIfAborted();
+	const key = await apiKey();
+	if (body.includes(key))
+		throw new Error(
+			"Request contains the TypeSafe credential; nothing was sent.",
+		);
+	const requestSignal = AbortSignal.any([lifetime, AbortSignal.timeout(30000)]);
+	requestSignal.throwIfAborted();
+	let response: Response;
+	try {
+		response = await fetch(ENDPOINT, {
+			method: "POST",
+			headers: {
+				Authorization: `Bearer ${key}`,
+				"Content-Type": "application/json",
+			},
+			body,
+			signal: requestSignal,
+			redirect: "error",
+		});
+	} catch {
+		throw new Error(
+			"TypeSafe request failed, timed out, or was cancelled. No automatic retry; a submitted request may still be billed.",
+		);
+	}
+	if (!response.ok) {
+		await response.body?.cancel();
+		throw new Error(
+			`TypeSafe HTTP ${response.status}; no automatic retry. Check authentication, credit, or service status. Response body withheld.`,
+		);
+	}
+	let raw: Record<string, unknown>;
+	try {
+		raw = record(await readResponse(response));
+		requestSignal.throwIfAborted();
+	} catch {
+		throw new Error(
+			"TypeSafe response was incomplete, invalid, oversized, or cancelled. No automatic retry; the request may be billed.",
+		);
+	}
+	const answers = record(raw.answers);
+	if (
+		Object.keys(answers).length !== Object.keys(questions).length ||
+		Object.keys(questions).some((key) => !Object.hasOwn(answers, key))
+	)
+		throw new Error(
+			"TypeSafe returned missing or unexpected answers; no ranking or diagnosis produced.",
+		);
+	if (
+		typeof raw.model !== "string" ||
+		!/^[a-zA-Z0-9._-]{1,100}$/.test(raw.model)
+	)
+		throw new Error("TypeSafe returned an invalid model identifier.");
+	const usage = record(raw.usage);
+	const input = number(usage.input_tokens, 0, Number.MAX_SAFE_INTEGER);
+	const output = number(usage.output_tokens, 0, Number.MAX_SAFE_INTEGER);
+	if (!Number.isInteger(input) || !Number.isInteger(output))
+		throw new Error("Invalid TypeSafe token counts.");
+	return {
+		answers,
+		metadata: {
+			model: raw.model,
+			requests: 1,
+			input_tokens: input,
+			output_tokens: output,
+			estimated_cost_usd: (input * INPUT_USD_PER_MILLION) / 1000000,
+			pricing:
+				"Estimate at $0.042/M input tokens, output free; not an invoice or balance.",
+		},
+	};
+}
+
 export default function jevAnalysis(pi: ExtensionAPI) {
 	let active: AbortController | undefined;
 	pi.on("session_shutdown", () => active?.abort());
@@ -177,96 +263,16 @@ export default function jevAnalysis(pi: ExtensionAPI) {
 		questions: Record<string, Question>,
 		signal: AbortSignal | undefined,
 	) {
-		const stateBytes = Buffer.byteLength(JSON.stringify(state));
-		if (stateBytes > MAX_STATE_BYTES)
-			throw new Error(
-				"Jev accepts at most 24,000 UTF-8 bytes of state. Supply a smaller explicit excerpt or candidate list; nothing was sent.",
-			);
-		const body = JSON.stringify({ model: "jev-latest", state, questions });
-		if (Buffer.byteLength(body) > 64000)
-			throw new Error("Jev request exceeded 64 KB; nothing was sent.");
 		if (active)
 			throw new Error("Another Jev analysis is active in this session.");
 		const controller = new AbortController();
 		active = controller;
-		const lifetime = AbortSignal.any([
-			controller.signal,
-			...(signal ? [signal] : []),
-		]);
 		try {
-			lifetime.throwIfAborted();
-			const key = await apiKey();
-			if (body.includes(key))
-				throw new Error(
-					"Request contains the TypeSafe credential; nothing was sent.",
-				);
-			const requestSignal = AbortSignal.any([
-				lifetime,
-				AbortSignal.timeout(30000),
-			]);
-			requestSignal.throwIfAborted();
-			let response: Response;
-			try {
-				response = await fetch(ENDPOINT, {
-					method: "POST",
-					headers: {
-						Authorization: `Bearer ${key}`,
-						"Content-Type": "application/json",
-					},
-					body,
-					signal: requestSignal,
-					redirect: "error",
-				});
-			} catch {
-				throw new Error(
-					"TypeSafe request failed, timed out, or was cancelled. No automatic retry; a submitted request may still be billed.",
-				);
-			}
-			if (!response.ok) {
-				await response.body?.cancel();
-				throw new Error(
-					`TypeSafe HTTP ${response.status}; no automatic retry. Check authentication, credit, or service status. Response body withheld.`,
-				);
-			}
-			let raw: Record<string, unknown>;
-			try {
-				raw = record(await readResponse(response));
-				requestSignal.throwIfAborted();
-			} catch {
-				throw new Error(
-					"TypeSafe response was incomplete, invalid, oversized, or cancelled. No automatic retry; the request may be billed.",
-				);
-			}
-			const answers = record(raw.answers);
-			if (
-				Object.keys(answers).length !== Object.keys(questions).length ||
-				Object.keys(questions).some((key) => !Object.hasOwn(answers, key))
-			)
-				throw new Error(
-					"TypeSafe returned missing or unexpected answers; no ranking or diagnosis produced.",
-				);
-			if (
-				typeof raw.model !== "string" ||
-				!/^[a-zA-Z0-9._-]{1,100}$/.test(raw.model)
-			)
-				throw new Error("TypeSafe returned an invalid model identifier.");
-			const usage = record(raw.usage);
-			const input = number(usage.input_tokens, 0, Number.MAX_SAFE_INTEGER);
-			const output = number(usage.output_tokens, 0, Number.MAX_SAFE_INTEGER);
-			if (!Number.isInteger(input) || !Number.isInteger(output))
-				throw new Error("Invalid TypeSafe token counts.");
-			return {
-				answers,
-				metadata: {
-					model: raw.model,
-					requests: 1,
-					input_tokens: input,
-					output_tokens: output,
-					estimated_cost_usd: (input * INPUT_USD_PER_MILLION) / 1000000,
-					pricing:
-						"Estimate at $0.042/M input tokens, output free; not an invoice or balance.",
-				},
-			};
+			return await evaluateQuestions(
+				state,
+				questions,
+				AbortSignal.any([controller.signal, ...(signal ? [signal] : [])]),
+			);
 		} finally {
 			active = undefined;
 		}

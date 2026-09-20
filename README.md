@@ -147,6 +147,7 @@ Home Manager は `useUserPackages = true` で NixOS に統合されています�
 | [shared/pi/extensions/](home/keewai/shared/pi/extensions/)、[prompts/](home/keewai/shared/pi/prompts/) | キャッシュ監視・Jev 分析・CLI 完了通知のローカル拡張、レビュー用プロンプト |
 | [desktop/pi/default.nix](home/keewai/desktop/pi/default.nix) | デスクトップ専用連携の入口 |
 | [desktop/pi/cua.nix](home/keewai/desktop/pi/cua.nix) | デスクトップ操作用ドライバーと MCP |
+| [desktop/pi/jev-computer/](home/keewai/desktop/pi/jev-computer/) | Jev と Linux AT-SPI の限定アクセシビリティ操作ループ |
 | [desktop/pi/jev-browser/](home/keewai/desktop/pi/jev-browser/) | Jev と Browser Harness の導入、Pi の限定ブラウザー操作ツールとランナー |
 | [shared/skills.nix](home/keewai/shared/skills.nix)、[skills/](skills/) | Pi 以外とも共有できる個人スキルの配布と編集元 |
 | [shared/typesafe.nix](home/keewai/shared/typesafe.nix) | Jev と Pi プラグインが共有する TypeSafe 認証ファイルの場所 |
@@ -612,6 +613,49 @@ Jev 本体へのパッチはありません。プラグインからキーを変�
 応答は最大128 KB、結果は最大48 KBに制限します。キャンセル後も送信済みの要求は課金される場合があります。
 結果にはAPIの入出力トークン数と、入力100万トークンあたり$0.042・出力無料で計算した概算額を表示します。
 これは請求額・残高ではなく、料金改定にも自動追従しません。ChatGPT契約の利用枠とは別です。
+
+</details>
+
+<details>
+<summary>Jev と AT-SPI を組み合わせた高速 GUI 操作</summary>
+
+### Jev computer
+
+デスクトップの Pi に `computer_inspect` と `jev_computer` を配布します。既存の `cua-driver` は維持し、
+短い状態依存の操作を、主モデルへクリックごとに戻らずツール内で進めます。
+高速経路は GTK / Qt の AT-SPI を直接使い、CUA の Hyprland IPC 形式への依存を避けます。
+プロセス・コンポジターから対象 PID を特定し、`computer_inspect` に渡してウィンドウ名を確認します。
+さらに正確な `window_title` を指定して要素を読み、`jev_computer` に `pid`、`window_title`、目的と候補を渡します。
+`computer_inspect` は読み取り専用で、TypeSafe には送信しません。
+候補は正確な `role` / `label` の組で、`value` を省略すると最初の公開アクセシビリティ・アクション、
+指定すると編集可能なテキスト・フィールド全体の置換です。
+同名・同ロールが複数ある場合や無効な要素は操作対象にしません。入力文字列は主モデルが事前に用意し、
+Jev は候補選択だけを担当します。別の文字生成モデルやスクリーンショット送信は不要です。
+ブラウザーのページ操作には既存の `jev_browser`、既知の固定手順や API / CLI 処理には決定的な処理を使います。
+
+開始時に対象、目的、候補、アクセシビリティ本文・値の TypeSafe 送信と別料金を確認します。
+既定は操作ごとの承認で、隔離したテストアプリの自動実行は利用者だけが選択できます。
+私的・ログイン済みアカウント情報、秘密値、端末、本番の購入・投稿・削除・権限変更には使いません。
+これは OS やネットワークのサンドボックスではなく、公開情報でも機密が混ざる画面は対象外です。
+呼び出し元は必要に応じて通常の CUA の画像と突き合わせ、信頼できるネイティブのアクセシビリティ・ツリーに限定します。
+
+各操作の前後で状態を取得し、判断・承認待ちの間に状態が変わった場合も停止します。
+同一ユーザーの PID・開始時刻と正確なウィンドウ名に固定し、古い要素トークンを再利用しません。
+曖昧な対象、変化なし、部分的な操作結果、低確信度では再試行せず、主モデルへ戻します。
+クリック後のツリー変化は進捗の手掛かりであり、目的の達成を保証しません。
+0.7 の確信度しきい値は未校正の目安で、安全性の保証ではありません。
+座標、キー操作、前面化、アプリ起動、ブラウザーのデバッグ設定への自動切り替えはありません。
+AT-SPI ワーカーは実行中だけ専用 stdio 接続で起動し、終了後はそのプロセスを止めて対象アプリを残します。
+新しい常駐サービス・待受け・MCP サーバーは追加しません。ブラウザー版 Jev と共有するロックで多重実行を拒否しますが、
+通常の CUA や人の入力を遮断するものではないため、同じアプリを並行操作しないでください。
+
+既定は8操作・120秒、最大20候補・20操作・300秒です。観測は最大80要素・16 KB、結果は48 KB未満です。
+`expect` は新しい観測で2回連続して確認する述語です。`role` / `label` は正確な一致を使い、
+必要なら `value` / `selected` も指定します。`stop_reason: done` と検査結果は独立し、
+`unknown` や検査未指定は成功を意味しません。アクセシビリティ検査だけで視覚的・タスク全体の成功を保証しません。
+処理時間、Jev 判断時間、要求回数、取得できた利用量に基づく概算料金を返します。速度の倍率は保証しません。
+認証・送信制限・応答検証は共有の [Jev 分析実装](home/keewai/shared/pi/extensions/jev-analysis.ts) を再利用します。
+適用後、既存セッションでは `/reload`、または新しいセッションで読み込みます。
 
 </details>
 
