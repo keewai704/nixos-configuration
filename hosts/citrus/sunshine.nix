@@ -66,6 +66,13 @@ in
 
   users.users.keewai.extraGroups = [ "uinput" ];
 
+  boot.kernelModules = [ "uhid" ];
+  services.udev.packages = [
+    (pkgs.writeTextDir "lib/udev/rules.d/70-sunshine-uhid.rules" ''
+      KERNEL=="uhid", SUBSYSTEM=="misc", GROUP="uinput", MODE="0660", TAG+="uaccess", OPTIONS+="static_node=uhid"
+    '')
+  ];
+
   systemd.user.services.sunshine.serviceConfig = {
     ExecStartPre = "${display} init";
     ExecStopPost = "${display} stop";

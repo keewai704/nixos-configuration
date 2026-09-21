@@ -111,16 +111,12 @@ def focus(name):
     ipc("eval", f"hl.dispatch(hl.dsp.focus({{monitor={lua(name)}}}))")
 
 
-def workspace_name(workspace):
-    return (
-        workspace["name"]
-        if workspace["name"].startswith("special:")
-        else (
-            f"name:{workspace['name']}"
-            if workspace.get("type") == "named" or workspace.get("id", 0) < 0
-            else workspace["name"]
-        )
+def workspace_selector(workspace):
+    named = workspace["type"] == "named" or (
+        workspace["type"] == "normal" and "id" not in workspace
     )
+    prefix = "name:" if named else ""
+    return prefix + workspace["address"]
 
 
 def restore_layout(state_file):
@@ -167,13 +163,15 @@ def restore(state_file):
             + ", ".join(sorted(missing)),
             file=sys.stderr,
         )
+    current_workspaces = {workspace_selector(w) for w in query("workspaces")}
     for workspace in state["workspaces"]:
-        if workspace["monitor"] in names:
+        selector = workspace_selector(workspace)
+        if workspace["monitor"] in names and selector in current_workspaces:
             attempt(
                 ipc,
                 "eval",
                 "hl.dispatch(hl.dsp.workspace.move({"
-                f"monitor={lua(workspace['monitor'])},workspace={lua(workspace_name(workspace))}"
+                f"monitor={lua(workspace['monitor'])},workspace={lua(selector)}"
                 + "}))",
             )
     for monitor in state["monitors"]:
@@ -183,7 +181,7 @@ def restore(state_file):
         attempt(
             ipc,
             "eval",
-            f"hl.get_monitor({lua(monitor['name'])}):set_workspace({lua(workspace_name(active))})",
+            f"hl.get_monitor({lua(monitor['name'])}):set_workspace({lua(workspace_selector(active))})",
         )
         action = "on" if monitor["dpmsStatus"] else "off"
         if action == "off":
@@ -274,6 +272,14 @@ def prepare(mode, state_file):
         )
         if mode == "client-only":
             wait_for(lambda outputs: {m["name"] for m in outputs} == {OUTPUT})
+            previous_active = next(
+                (m["activeWorkspace"] for m in monitors if m["focused"]), None
+            )
+            if previous_active:
+                ipc(
+                    "eval",
+                    f"hl.get_monitor({lua(OUTPUT)}):set_workspace({lua(workspace_selector(previous_active))})",
+                )
         ipc("eval", f"hl.dispatch(hl.dsp.dpms({{action='on',monitor={lua(OUTPUT)}}}))")
         focus(OUTPUT)
     except BaseException:

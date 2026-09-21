@@ -142,6 +142,12 @@ Moonlight には LAN の citrus または Tailscale の citrus アドレスを�
 
 解像度とリフレッシュレートは接続時のクライアント設定に合わせます。
 HDR は有効にせず、まず 1920×1080・60 FPS・20 Mbps を測定の出発点にします。
+120 Hz 対応クライアントでは、1080p・120 FPS・40 Mbps・H.264・ハードウェアデコード、
+V-Sync とフレームペーシング無効を低遅延候補にできます。ティアリングが気になる場合は V-Sync を戻します。
+Moonlight の CLI では `moonlight stream citrus "Extend Display" --1080 --fps 120 --bitrate 40000 --video-codec H.264 --video-decoder hardware --no-vsync --no-frame-pacing --no-hdr` で指定できます。
+2026-09-21 の citrus 内 Moonlight/Weston ループバック測定では、描画 59.94 → 119.87 FPS、
+ホスト処理平均 2.2 → 2.2 ms、デコード平均 0.28 → 0.06 ms、ネットワーク欠落はいずれも 0% でした。
+これは合成映像・同一 GPU の測定で、外部端末や LAN/Wi-Fi、ゲーム負荷時の性能は保証しません。
 単なる切断ではアプリが継続するため、画面を戻すときは Moonlight の「アプリを終了」を使います。
 サービス停止時にも復元処理が走ります。サービス稼働中は仮想画面を維持します。
 終了時は Hyprland の設定を再読み込みして、宣言済みの画面設定と接続中の画面のワークスペース配置を戻します。
