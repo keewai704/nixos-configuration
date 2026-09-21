@@ -31,8 +31,10 @@
   xdg.configFile."gh/config.yml".force = true;
 
   home.packages = [
+    pkgs.file
     pkgs.gws
     pkgs.nixfmt
+    pkgs.openssl
     pkgs.ripgrep
     pkgs.yt-dlp
   ];
