@@ -6,6 +6,7 @@ in
     ./boot.nix
     ./hardware-configuration.nix
     ./services/health-monitor.nix
+    ./services/icloud-keychain.nix
     ./services/immich.nix
     ./services/local-backup.nix
     ./services/maintenance.nix

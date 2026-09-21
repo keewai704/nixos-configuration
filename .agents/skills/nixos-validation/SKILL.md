@@ -38,6 +38,16 @@ or configuration snapshots. Format and check syntax only for changed files.
 - Another host only: locally evaluate the changed attributes, or build the affected
   output when package implementation or build logic changed. Shared settings do
   not require every host's build unless host-specific branches need validation.
+- iCloud Keychain: keep protocol and relay tests synthetic and network-free.
+  Verify authenticated WSS, per-connection encryption state, token revocation,
+  rejected browser origins, message bounds, and headless keyring operations on an
+  isolated D-Bus session with temporary HOME and XDG paths. Never exercise Apple
+  login, provisioning, escrow recovery, or writes as automated smoke checks.
+  Citrus must install only the native relay, with no Apple account state created.
+  On Orange, check the user service and loopback listener, anonymous HTTPS 401,
+  canonical redirect, and authenticated WebSocket through the existing HTTPS 443
+  ingress. Orange live gates require running on Orange; local evaluation elsewhere
+  is not evidence that its service is deployed or working.
 
 Keep necessary syntax/dependency checks and tests included in upstream builds.
 Do not add fixed-value tests that merely mirror configuration, standalone check

@@ -9,8 +9,6 @@ import json
 import os
 import resource
 import secrets
-import struct
-import subprocess
 import sys
 import tempfile
 from pathlib import Path
@@ -62,13 +60,14 @@ def private_write(path, data):
 
 
 def master_key(*, interactive=False):
+    connection = None
     try:
         connection = secretstorage.dbus_init()
-        collection = secretstorage.get_default_collection(connection)
-        if collection.is_locked() and (
-            not interactive or collection.unlock() or collection.is_locked()
-        ):
-            raise Denied(1, "Login keyring is locked")
+        collection = secretstorage.Collection(connection)
+        if collection.is_locked():
+            raise Denied(
+                1, "Keyring is locked; run icloud-keychain keyring-unlock on Orange"
+            )
         for item in collection.search_items(ATTRIBUTES):
             key = session._decode_key(item.get_secret())
             if key is None:
@@ -93,6 +92,9 @@ def master_key(*, interactive=False):
         raise Denied(
             1, "Secret Service unavailable; no plaintext key fallback is permitted"
         ) from None
+    finally:
+        if connection is not None:
+            connection.close()
 
 
 def lock_path():
@@ -131,6 +133,8 @@ def associations():
     fd = os.open(paths.config_dir() / "keepassxc.guard", os.O_CREAT | os.O_RDWR, 0o600)
     with os.fdopen(fd, "rb") as guard:
         fcntl.flock(guard, fcntl.LOCK_EX)
+        if path.exists() and path.stat().st_size > 131072:
+            raise ValueError("Association state exceeds the size limit")
         state = (
             json.loads(path.read_text())
             if path.exists()
@@ -176,35 +180,9 @@ def entry_id(entry):
     ).hexdigest()[:32]
 
 
-def approve(key):
-    fingerprint = hashlib.sha256(decode(key, 32)).hexdigest()
-    try:
-        result = subprocess.run(
-            [
-                "@zenity@",
-                "--question",
-                "--default-cancel",
-                "--timeout=60",
-                "--title=iCloud Keychain browser association",
-                (
-                    "--text=Allow the KeePassXC-Browser connection you just requested?\n"
-                    "This grants access to matching website passwords and TOTP codes.\n"
-                    f"Identification key SHA-256:\n{fingerprint}"
-                ),
-            ],
-            stdin=subprocess.DEVNULL,
-            stdout=subprocess.DEVNULL,
-            stderr=subprocess.DEVNULL,
-            timeout=65,
-            check=False,
-        )
-        return result.returncode == 0
-    except (OSError, subprocess.TimeoutExpired):
-        return False
-
-
 class Protocol:
-    def __init__(self):
+    def __init__(self, approve_association=None):
+        self.approve_association = approve_association or (lambda key: False)
         self.box = None
         self.client_id = None
         self.client_key = None
@@ -293,13 +271,18 @@ class Protocol:
             if action == "get-databasehash":
                 return {"hash": state["hash"]}
             if action == "associate":
+                if len(state["keys"]) >= 256:
+                    raise Denied(
+                        6,
+                        "Browser association limit reached; sign in again to reset associations",
+                    )
                 if not hmac.compare_digest(
                     decode(payload.get("key"), 32), self.client_key
                 ):
                     raise Denied(8, "Association key mismatch")
                 key = payload.get("idKey")
                 decode(key, 32)
-                if not approve(key):
+                if not self.approve_association(key):
                     raise Denied(6, "Browser association denied")
                 identifier = secrets.token_hex(16)
                 state["keys"][identifier] = key
@@ -401,49 +384,6 @@ class Protocol:
             raise Denied(10, "Browser association is unknown or revoked")
 
 
-def read_exact(stream, length):
-    result = bytearray()
-    while len(result) < length:
-        part = stream.read(length - len(result))
-        if not part:
-            raise ValueError("Truncated native message")
-        result.extend(part)
-    return bytes(result)
-
-
-def serve(instream, outstream):
-    protocol = Protocol()
-    while True:
-        first = instream.read(1)
-        if not first:
-            return 0
-        length = struct.unpack("=I", first + read_exact(instream, 3))[0]
-        if not 0 < length <= MAX_MESSAGE:
-            raise ValueError("Native message too large")
-        request = json.loads(read_exact(instream, length))
-        response = protocol.handle(request)
-        encoded = json.dumps(response).encode()
-        if len(encoded) > MAX_MESSAGE:
-            encoded = json.dumps(
-                {
-                    "action": response["action"],
-                    "errorCode": 6,
-                    "error": "Response exceeds native messaging limit",
-                }
-            ).encode()
-        outstream.write(struct.pack("=I", len(encoded)) + encoded)
-        outstream.flush()
-
-
-def native_main():
-    resource.setrlimit(resource.RLIMIT_CORE, (0, 0))
-    try:
-        return serve(sys.stdin.buffer, sys.stdout.buffer)
-    except (ValueError, OSError):
-        print("Invalid or closed native messaging stream", file=sys.stderr)
-        return 1
-
-
 def main(argv=None):
     resource.setrlimit(resource.RLIMIT_CORE, (0, 0))
     parser = argparse.ArgumentParser(
@@ -454,6 +394,27 @@ def main(argv=None):
         help="Public HTTPS anisette-v3 URL (default: https://ani.sidestore.io)",
     )
     commands = parser.add_subparsers(dest="command", required=True)
+    remote = commands.add_parser(
+        "serve", help="Serve authenticated browser clients on loopback only"
+    )
+    remote.add_argument("--port", type=int, default=30142)
+    remote.add_argument("--public-url", required=True)
+    commands.add_parser(
+        "keyring-unlock",
+        help="Create/unlock the encrypted server keyring without a GUI",
+    )
+    client_add = commands.add_parser(
+        "client-add",
+        help="Authorize browser association and password reads; print a secret token once",
+    )
+    client_add.add_argument("name")
+    client_revoke = commands.add_parser(
+        "client-revoke", help="Revoke a client, including its existing connections"
+    )
+    client_revoke.add_argument("name")
+    commands.add_parser(
+        "client-list", help="List authorized client names, without tokens"
+    )
     commands.add_parser(
         "login",
         help="Interactive Apple login and explicitly confirmed escrow recovery; password is not saved",
@@ -471,6 +432,16 @@ def main(argv=None):
         help="Remove local account tokens, caches and browser associations; keep device identity",
     )
     args = parser.parse_args(argv)
+    if args.command == "serve":
+        from .server import run_server
+
+        try:
+            return run_server(args.public_url, args.port)
+        except KeyboardInterrupt:
+            return 0
+        except Exception:
+            print("iCloud Keychain server could not start", file=sys.stderr)
+            return 1
     fd = os.open(paths.config_dir() / "cli.guard", os.O_CREAT | os.O_RDWR, 0o600)
     with os.fdopen(fd, "rb") as guard:
         try:
@@ -483,15 +454,28 @@ def main(argv=None):
 
 def run_command(args):
     try:
+        if args.command == "keyring-unlock":
+            from .keyring import unlock
+
+            unlock()
+            return 0
+        if args.command.startswith("client-"):
+            from .server import manage_client
+
+            return manage_client(args.command, getattr(args, "name", None))
         if args.command == "lock":
             private_write(lock_path(), b"locked\n")
             return 0
         if args.command == "logout":
+            from .server import client_state
+
             private_write(lock_path(), b"locked\n")
             with associations() as state:
                 state.update(hash=secrets.token_hex(32), keys={})
                 for name in ("session.enc", "vault.enc", "aliases.enc"):
                     (paths.config_dir() / name).unlink(missing_ok=True)
+            with client_state() as clients:
+                clients.clear()
             return 0
         master_key(interactive=True)
         session._key_from_secret_service = lambda: master_key(interactive=True)
@@ -544,7 +528,7 @@ def run_command(args):
             )
             if result == 0:
                 print(
-                    "Run icloud-keychain unlock, then connect KeePassXC-Browser and approve its dialog."
+                    "Run icloud-keychain unlock on Orange, then authorize a relay with client-add."
                 )
             return result
         if args.command == "sync":

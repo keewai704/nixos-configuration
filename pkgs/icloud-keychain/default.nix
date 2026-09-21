@@ -6,7 +6,6 @@
   cacert,
   openssl,
   python3Packages,
-  zenity,
 }:
 let
   appleRoot = fetchurl {
@@ -43,9 +42,14 @@ python3Packages.buildPythonApplication {
   postPatch = ''
     cp ${./keepassxc.py} icp/keepassxc.py
     cp ${./anisette.py} icp/auth/anisette.py
+    cp ${./keyring.py} icp/keyring.py
+    cp ${./server.py} icp/server.py
+    cp ${./client.py} tests/icloud_keychain_client.py
     cp ${./test_keepassxc.py} tests/test_keepassxc.py
     cp ${./test_anisette.py} tests/test_anisette.py
-    substituteInPlace icp/keepassxc.py --replace-fail '@zenity@' '${lib.getExe zenity}'
+    cp ${./test_client.py} tests/test_client.py
+    cp ${./test_server.py} tests/test_server.py
+    cp ${./test_keyring.py} tests/test_keyring.py
     substituteInPlace icp/auth/anisette.py --replace-fail '@appleCa@' '${appleCaBundle}'
     substituteInPlace icp/auth/gsa.py icp/auth/icloud.py \
       --replace-fail 'verify=False' 'verify="${appleCaBundle}", allow_redirects=False'
@@ -59,8 +63,7 @@ python3Packages.buildPythonApplication {
     substituteInPlace icp/transport/cloudkit.py \
       --replace-fail 'verify=VERIFY_TLS,' 'verify=VERIFY_TLS, allow_redirects=False,'
     substituteInPlace pyproject.toml \
-      --replace-fail 'icp = "icp.cli.app:main"' 'icloud-keychain = "icp.keepassxc:main"
-    icloud-keychain-native = "icp.keepassxc:native_main"'
+      --replace-fail 'icp = "icp.cli.app:main"' 'icloud-keychain = "icp.keepassxc:main"'
     substituteInPlace icp/cli/app.py \
       --replace-fail '    password = ui.secret("Password: ")' '    if saved_user and username.casefold() != saved_user.casefold():
             ui.err("Sign out with icloud-keychain logout before changing Apple accounts")

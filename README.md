@@ -60,6 +60,7 @@ flake.nix
 | [hosts/](hosts/) | ホスト固有のハードウェア、サービス、起動設定 |
 | [home/keewai/shared/](home/keewai/shared/) | 全ホストで使う個人の CLI、シェル、Pi |
 | [home/keewai/desktop/](home/keewai/desktop/) | デスクトップ用アプリ、キー操作、ユーザーサービス、表示設定 |
+| [home/keewai/server/](home/keewai/server/) | ホストから明示的に読み込む個人用サーバーアプリ |
 | [pkgs/](pkgs/) | パッケージのビルド定義、パッチ、実行時に必要な補助コード |
 | [themes/](themes/) | NixOS と Home Manager が共有する色、フォント、画像 |
 | [skills/](skills/) | Nix で配布する個人用 Pi スキルの編集元 |
@@ -106,7 +107,7 @@ Nix に慣れていない場合は、まず次の構文が分かれば読み進�
 | ブラウザーと既定の URL ハンドラー | [desktop/browser.nix](home/keewai/desktop/browser.nix)、[firefox.nix](home/keewai/desktop/firefox.nix) |
 | ファイル管理、圧縮、XDG フォルダー | [desktop/file-manager.nix](home/keewai/desktop/file-manager.nix) |
 | Bitwarden と SSH エージェント | [desktop/bitwarden.nix](home/keewai/desktop/bitwarden.nix) |
-| iCloud Keychain と KeePassXC-Browser | [desktop/icloud-keychain.nix](home/keewai/desktop/icloud-keychain.nix)、[パッケージ](pkgs/icloud-keychain/) |
+| iCloud Keychain（Orange）とブラウザー中継 | [server/icloud-keychain.nix](home/keewai/server/icloud-keychain.nix)、[desktop/icloud-keychain.nix](home/keewai/desktop/icloud-keychain.nix)、[パッケージ](pkgs/icloud-keychain/) |
 | デスクトップのパネルとランチャー | [desktop/hypr-island.nix](home/keewai/desktop/hypr-island.nix) |
 | Discord クライアントとテーマ | [desktop/legcord.nix](home/keewai/desktop/legcord.nix)、[legcord-system24.nix](home/keewai/desktop/legcord-system24.nix) |
 | Steam と Millennium | [hosts/citrus/steam.nix](hosts/citrus/steam.nix)、[desktop/steam-theme.nix](home/keewai/desktop/steam-theme.nix) |
@@ -549,22 +550,56 @@ Firefox の見た目は Sine/Natsumi が担当するため、Stylix の Firefox 
 `icloud-keychain` は [Sank6/iCloud-Keychain-for-Linux](https://github.com/Sank6/iCloud-Keychain-for-Linux)
 を固定リビジョンで利用する、非公式・実験的な読み取り専用 CLI です。Apple の公開 API ではなく、
 Advanced Data Protection を含む実アカウントでの動作は保証できません。
-KeePassXC-Browser とは Native Messaging と NaCl box で通信し、TCP ポートは開きません。
+Keychain の保持・Apple 認証・同期・復号は **Orange** の `keewai` ユーザーで行います。
+Citrus にはバックエンドをインストールせず、暗号化済みメッセージを中継する CLI だけを配置します。
+通信経路は次のとおりです。
+
+```text
+KeePassXC-Browser → Citrus の Native Messaging 中継
+  → wss://orange.tail1e65cd.ts.net/icloud-keychain/
+  → Tailscale Serve HTTPS 443 → nginx 127.0.0.1:8000 → backend 127.0.0.1:30142
+```
+
+追加の外部ポートは公開しません。接続ごとに独立した NaCl box セッションを使います。
 KeePassXC 2.6.1 相当の接続・関連付け・ログイン取得・TOTP・ロックに対応します。
 パスワードの追加・更新、グループ、Passkey、Auto-Type は未対応で、成功として応答しません。
 
-デスクトップの Home Manager が CLI と Firefox / Brave の Native Messaging マニフェストを配置します。
+デスクトップの Home Manager が中継 CLI と Firefox / Brave の Native Messaging マニフェストを配置します。
 ブラウザー拡張は公式の **KeePassXC-Browser** を使用してください。
 `org.keepassxc.keepassxc_browser` を使うため、同じブラウザーで本来の KeePassXC と同時利用はできません。
 既存の Bitwarden は変更しません。対応する拡張 ID 以外には接続を公開しません。
 
+Orange 上で、最初にキーリングを作成・解除し、Apple にログインします。
+キーリングには Apple パスワードとは別の、空でないパスワードを設定してください。
+
 ```sh
+icloud-keychain keyring-unlock
 icloud-keychain login
 icloud-keychain unlock
+icloud-keychain client-add citrus
+```
+
+`client-add` はブラウザーの関連付けとパスワード取得を許可する機密トークンを一度だけ表示します。
+Nix、URL、シェル引数、チャット、ログへ保存せず、Citrus 上の非表示入力へ渡してください。
+サーバー側にはトークンのハッシュだけを保存します。Citrus では次を実行し、続けて拡張から接続します。
+
+```sh
+icloud-keychain-client configure
+icloud-keychain-client status
+```
+
+トークンは Citrus の `$XDG_CONFIG_HOME/icloud-keychain-client/token` にモード `0600` で保存します。
+これは中継の認可情報であり、Apple の認証情報やKeychainの復号鍵ではありません。
+初回関連付けの許可は Orange 上の `client-add` で与えるため、ブラウザー接続時の GUI 確認はありません。
+管理操作を行う Web API は公開しません。管理・閲覧コマンドはすべて Orange 上で実行します。
+
+```sh
 icloud-keychain show github
 icloud-keychain show github --show-passwords
 icloud-keychain sync
 icloud-keychain lock
+icloud-keychain client-list
+icloud-keychain client-revoke citrus
 icloud-keychain logout
 ```
 
@@ -572,9 +607,14 @@ icloud-keychain logout
 対象 Apple デバイスのパスコードと確認操作が必要です。この操作は新しい端末の信頼関係を登録します。
 **誤ったパスコードを繰り返すと回復レコードが失われる可能性があります。** 自動再試行はせず、
 ログイン・回復操作をエージェントやテストから実行しないでください。
-参加・同期後に `unlock` を実行し、拡張の接続操作で表示される確認ダイアログを自分で承認します。
+`client-revoke` は既存接続の次の要求にも適用され、再接続だけで解除されることはありません。
+`lock` はブラウザーアクセスを止めます。キーリング自体が施錠された場合は `keyring-unlock` が必要です。
+Orange の Home Manager がバックエンドとヘッドレスの GNOME Keyring をユーザーサービスとして起動します。
+GNOME Keyring の D-Bus・PAM・メモリロック用 capability 連携は Orange の NixOS モジュールで保持します。
 
 公開 Anisette v3 サーバー `https://ani.sidestore.io` を既定で使用します。
+Orange / Citrus のどちらにも Anisette サーバーや生成ライブラリは配置しません。
+同梱するのは公開サービスの v3 API を呼び出すクライアント処理だけです。
 `--anisette https://...` をサブコマンドの前に指定するか、`ICP_ANISETTE_URL` で変更できます。
 旧 v1 へのフォールバックはありません。サーバーには端末の provisioning データと IP アドレスが
 見えますが、Apple ID、パスワード、認証トークン、Keychain の内容は渡しません。
@@ -584,12 +624,18 @@ icloud-keychain logout
 Apple 認証の TLS 検証も無効化せず、Apple が公開する Root CA をハッシュ固定して
 このアプリ内だけの CA bundle に追加します。システム全体の信頼設定は変更しません。
 
-Apple のパスワードは保存しません。暗号化済みセッションとキャッシュは
-`$XDG_CONFIG_HOME/icp`（既定 `~/.config/icp`）、復号鍵はログインキーホルダーに保存します。
+Apple のパスワードは保存しません。暗号化済みセッションとキャッシュは Orange の
+`$XDG_CONFIG_HOME/icp`（既定 `~/.config/icp`）、復号鍵は Orange の暗号化キーリングに保存します。
 Secret Service が利用できない場合は停止し、平文の鍵ファイルへ切り替えません。
+ヘッドレス解除は固定された GNOME Keyring の拡張 D-Bus API を使い、パスワードを暗号化された
+Secret Service セッションで渡します。GUI プロンプトや空パスワードへのフォールバックはありません。
 同期は `sync` による手動操作で、トークン失効時は再度 `login` が必要です。
-`logout` はローカルのトークン・キャッシュ・拡張の関連付けを消去しますが、Apple 側の信頼端末を
+`logout` は Orange のトークン・キャッシュ・拡張の関連付け・中継クライアントの認可を消去しますが、Apple 側の信頼端末を
 削除する操作ではありません。アカウント変更前には必ず `logout` してください。
+
+Citrus 側で Keychain 全体を復号・保持・キャッシュする機能はありません。ただし、自動入力のために
+返された資格情報は KeePassXC-Browser と対象ページのメモリへ渡ります。過去に別途 Citrus に作成した
+Apple の状態やキーリング項目を、この設定が勝手に移送・削除することはありません。
 
 自動入力は **HTTPS のホスト名とポートが完全一致**する項目だけです。名前からの推測や親子ドメイン
 への展開はせず、別オリジンへ送信するフォームにも返しません。保存されたホスト名とログイン先が

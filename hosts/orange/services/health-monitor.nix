@@ -7,6 +7,7 @@
 
 let
   inherit (import ../settings.nix)
+    icloudKeychainPort
     immichBackupRoot
     immichPort
     localBackupRoot
@@ -36,6 +37,7 @@ let
   monitoredServiceUnits = map (service: "${service}.service") monitoredServices;
 
   loopbackBackendPorts = [
+    icloudKeychainPort
     immichPort
     nginxPort
     vaultwardenPort
@@ -49,6 +51,7 @@ let
     "@smartDevices@" = lib.escapeShellArgs smartDevices;
     "@tailnetOrigin@" = tailnetOrigin;
     "@nginxPort@" = toString nginxPort;
+    "@icloudKeychainPort@" = toString icloudKeychainPort;
     "@tailnetHostname@" = tailnetHostname;
     "@minecraftPort@" = toString minecraftPort;
     "@loopbackBackendPortPattern@" = loopbackBackendPortPattern;

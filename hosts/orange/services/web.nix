@@ -2,6 +2,7 @@
 
 let
   inherit (import ../settings.nix)
+    icloudKeychainPort
     immichPort
     nginxPort
     tailnetHostname
@@ -36,6 +37,7 @@ in
     clientMaxBodySize = "50000M";
 
     appendHttpConfig = ''
+      limit_conn_zone $server_name zone=icloud_keychain_connections:1m;
       map $http_x_forwarded_for $tailscale_client_ip {
         default $http_x_forwarded_for;
         "" $remote_addr;
@@ -56,6 +58,12 @@ in
         send_timeout 600s;
       '';
       locations = {
+        "= /icloud-keychain".return = "308 ${tailnetOrigin}/icloud-keychain/";
+        "^~ /icloud-keychain/" = mkProxyLocation icloudKeychainPort ''
+          limit_conn icloud_keychain_connections 8;
+          client_max_body_size 1m;
+          access_log off;
+        '';
         "= /pi".return = "308 ${tailnetOrigin}/pi/$is_args$args";
         "= /pi/pi".return = "302 ${tailnetOrigin}/pi/$is_args$args";
         "= /pi/pi/".return = "302 ${tailnetOrigin}/pi/$is_args$args";

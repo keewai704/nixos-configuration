@@ -1,9 +1,7 @@
 import contextlib
-import io
 import json
 import os
 import secrets
-import struct
 import tempfile
 import unittest
 from unittest.mock import Mock, patch
@@ -99,10 +97,8 @@ class ProtocolTests(unittest.TestCase):
         self.loader = self.stack.enter_context(
             patch.object(bridge, "load_credentials", return_value=self.credentials)
         )
-        self.approval = self.stack.enter_context(
-            patch.object(bridge, "approve", return_value=True)
-        )
-        self.server = bridge.Protocol()
+        self.approval = Mock(return_value=True)
+        self.server = bridge.Protocol(approve_association=self.approval)
         self.client = Client(self.server)
 
     def test_pair_reconnect_and_fill(self):
@@ -225,23 +221,6 @@ class ProtocolTests(unittest.TestCase):
         self.assertTrue(bridge.lock_path().exists())
         self.assertIsNone(self.server.authorized)
 
-    def test_native_framing_and_limits(self):
-        request = self.client.request("get-databasehash")
-        encoded = json.dumps(request).encode()
-        output = io.BytesIO()
-        bridge.serve(io.BytesIO(struct.pack("=I", len(encoded)) + encoded), output)
-        data = output.getvalue()
-        length = struct.unpack("=I", data[:4])[0]
-        self.assertEqual(len(data) - 4, length)
-        self.assertEqual(json.loads(data[4:])["errorCode"], 3)
-        for data in (
-            b"\x01",
-            struct.pack("=I", 100) + b"{}",
-            struct.pack("=I", bridge.MAX_MESSAGE + 1),
-        ):
-            with self.assertRaises(ValueError):
-                bridge.serve(io.BytesIO(data), io.BytesIO())
-
 
 class StorageTests(unittest.TestCase):
     def setUp(self):
@@ -251,7 +230,7 @@ class StorageTests(unittest.TestCase):
         self.addCleanup(self.stack.close)
         self.stack.enter_context(patch.dict(os.environ, XDG_CONFIG_HOME=self.temp.name))
         self.stack.enter_context(
-            patch.object(bridge.secretstorage, "dbus_init", return_value=object())
+            patch.object(bridge.secretstorage, "dbus_init", return_value=Mock())
         )
         self.collection = Mock()
         self.collection.is_locked.return_value = False
@@ -259,7 +238,7 @@ class StorageTests(unittest.TestCase):
         self.stack.enter_context(
             patch.object(
                 bridge.secretstorage,
-                "get_default_collection",
+                "Collection",
                 return_value=self.collection,
             )
         )

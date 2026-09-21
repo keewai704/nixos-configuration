@@ -1,6 +1,6 @@
 { pkgs, ... }:
 let
-  package = pkgs.callPackage ../../../pkgs/icloud-keychain { };
+  package = pkgs.callPackage ../../../pkgs/icloud-keychain/client.nix { };
   manifest = {
     name = "org.keepassxc.keepassxc_browser";
     description = "Read-only iCloud Keychain bridge for KeePassXC-Browser";
