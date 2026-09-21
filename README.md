@@ -101,7 +101,7 @@ Nix に慣れていない場合は、まず次の構文が分かれば読み進�
 | ウィンドウ、モニター、キー操作 | [desktop/hyprland.lua](home/keewai/desktop/hyprland.lua) |
 | Hyprland のパッケージ・ログイン・ポータル統合 | [hosts/citrus/hyprland.nix](hosts/citrus/hyprland.nix) |
 | 画面ロックとアイドル時の動作 | [desktop/hypr-island.nix](home/keewai/desktop/hypr-island.nix) |
-| ロック画面の再生中メディア表示 | [desktop/hyprlock-media.nix](home/keewai/desktop/hyprlock-media.nix)、[hyprlock-media.py](home/keewai/desktop/hyprlock-media.py) |
+| ロック画面のメディア表示（現在は無効） | [desktop/hyprlock-media.nix](home/keewai/desktop/hyprlock-media.nix)、[hyprlock-media.py](home/keewai/desktop/hyprlock-media.py) |
 | 日本語入力と切り替えキー | [desktop/input-method.nix](home/keewai/desktop/input-method.nix)、[modules/input-method-shortcut.nix](modules/input-method-shortcut.nix) |
 | 端末 | [desktop/kitty.nix](home/keewai/desktop/kitty.nix) |
 | ブラウザーと既定の URL ハンドラー | [desktop/browser.nix](home/keewai/desktop/browser.nix)、[firefox.nix](home/keewai/desktop/firefox.nix) |
@@ -111,6 +111,7 @@ Nix に慣れていない場合は、まず次の構文が分かれば読み進�
 | デスクトップのパネルとランチャー | [desktop/hypr-island.nix](home/keewai/desktop/hypr-island.nix) |
 | Discord クライアントとテーマ | [desktop/legcord.nix](home/keewai/desktop/legcord.nix)、[legcord-system24.nix](home/keewai/desktop/legcord-system24.nix) |
 | Steam と Millennium | [hosts/citrus/steam.nix](hosts/citrus/steam.nix)、[desktop/steam-theme.nix](home/keewai/desktop/steam-theme.nix) |
+| Sunshine 配信と仮想画面 | [hosts/citrus/sunshine.nix](hosts/citrus/sunshine.nix)、[sunshine-display](pkgs/sunshine-display/) |
 | 共通の色、フォント、壁紙 | [themes/tokyo-night-black/default.nix](themes/tokyo-night-black/default.nix) |
 | Orange の保存先、ポート、URL | [hosts/orange/settings.nix](hosts/orange/settings.nix) |
 
@@ -125,10 +126,37 @@ Apple USB CLI は [shared/apple-device-usb.nix](home/keewai/shared/apple-device-
 実機の usbmuxd は [hosts/citrus/apple-device-usb.nix](hosts/citrus/apple-device-usb.nix) が担当します。
 指紋認証は fprintd が有効な環境でだけ使います。
 
+### citrus の Sunshine 配信
+
+Sunshine は Hyprland セッションで起動し、物理モニターがなくても `SUNSHINE` 仮想画面を
+NVENC で配信します。入力用の uinput・udev と Avahi の統合は NixOS モジュール、
+Moonlight クライアントのインストールは Home Manager が担当します。
+管理画面は citrus 上の `https://localhost:47990` からのみ利用でき、UPnP は無効です。
+Moonlight には LAN の citrus または Tailscale の citrus アドレスを追加してペアリングします。
+
+| アプリ | 動作 |
+| --- | --- |
+| `Extend Display` | 既存画面の右に仮想画面を配置 |
+| `Steam Big Picture` | クライアントのみの表示に切り替え、Steam Big Picture を起動 |
+| `Client Only` | 他の画面を無効にして仮想画面だけに表示 |
+
+解像度とリフレッシュレートは接続時のクライアント設定に合わせます。
+HDR は有効にせず、まず 1920×1080・60 FPS・20 Mbps を測定の出発点にします。
+単なる切断ではアプリが継続するため、画面を戻すときは Moonlight の「アプリを終了」を使います。
+サービス停止時にも復元処理が走ります。サービス稼働中は仮想画面を維持します。
+終了時は Hyprland の設定を再読み込みして、宣言済みの画面設定と接続中の画面のワークスペース配置を戻します。
+途中で取り外した画面は、再接続時に宣言済みの設定を使います。その画面の以前のワークスペース配置や電源状態は復元できません。
+一時的な `hyprctl` の設定変更は再読み込みにより解除されます。
+`SUNSHINE` はサービス専用の予約出力名です。稼働中に同名の出力を手動で作り直さないでください。
+
+Hyprland の画面ロックは無効です。起動時・アイドル時・サスペンド前のロックは行わず、
+Island のロック用キー、メニュー、IPC とアクションも削除しています。
+無人時もデスクトップへアクセスできるため、端末とペアリング済みクライアントの管理に注意してください。
+
 パネル本体、Island のキー操作、ロックとアイドル制御、Stylix 連携、Bitwarden の初期設定ランチャーは
 外部入力の [hypr-island](https://github.com/keewai704/hypr-island) が管理します。
 このリポジトリには有効化、テーマの元データ、接続先 URL、機器の差分を置きます。
-ロック画面下部のメディア表示は `desktop/hyprlock-media.nix` で追加し、再生中のアートワーク・曲名・アーティスト・進捗を表示します。
+`desktop/hyprlock-media.nix` にはロック画面のメディア表示を保持していますが、画面ロック無効時は動作しません。
 アートワークはローカル画像またはリダイレクトのない公開 HTTPS URL に対応し、取得できない場合は画像だけを非表示にします。
 公開済みの Nix オプション名 `programs.dynamic-island` は互換性のため維持しています。
 

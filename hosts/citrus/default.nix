@@ -11,6 +11,7 @@
     ./input-method-shortcut.nix
     ./apple-device-usb.nix
     ./nvidia.nix
+    ./sunshine.nix
     ./web.nix
     ./stylix.nix
   ];

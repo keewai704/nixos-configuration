@@ -3,6 +3,9 @@
   nixpkgs.config.allowUnfreePredicate =
     package:
     builtins.elem (lib.getName package) [
+      "cuda_cccl"
+      "cuda_cudart"
+      "cuda_nvcc"
       "cuda_nvml_dev"
       "nvidia-x11"
       "nvidia-settings"

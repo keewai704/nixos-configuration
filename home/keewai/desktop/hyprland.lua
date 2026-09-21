@@ -19,6 +19,16 @@ hl.monitor({
     vrr = 2,
 })
 
+local sunshine_instance = os.getenv("HYPRLAND_INSTANCE_SIGNATURE")
+if sunshine_instance then
+    local sunshine_layout = os.getenv("XDG_RUNTIME_DIR") .. "/sunshine-display/" .. sunshine_instance .. "/layout.lua"
+    local sunshine_file = io.open(sunshine_layout, "r")
+    if sunshine_file then
+        sunshine_file:close()
+        dofile(sunshine_layout)
+    end
+end
+
 hl.env("XCURSOR_SIZE", tostring(theme.cursor.size))
 hl.env("XCURSOR_THEME", theme.cursor.name)
 hl.env("QT_QPA_PLATFORM", "wayland")
@@ -256,7 +266,7 @@ bind(main_mod .. " + F1", function()
             "Super+N: notifications    Super+V: clipboard",
             "Print: region    Shift+Print: all screens    Ctrl+Print: active window",
             "Super+D: Dynamic Island",
-            "Super+Alt+C: session    Super+Alt+L: lock",
+            "Super+Alt+C: session",
             "Alt+[: brightness down    Alt+]: brightness up",
             "Super+F: fullscreen",
             "Alt+Tab: cycle windows",

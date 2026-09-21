@@ -1,0 +1,35 @@
+diff --git a/hyprland.lua b/hyprland.lua
+--- a/hyprland.lua
++++ b/hyprland.lua
+@@ -49,1 +49,0 @@
+-    bind(main_mod .. " + ALT + L", hl.dsp.exec_cmd(options.package .. "/bin/islandctl lock"), "Lock session")
+diff --git a/actions.py b/actions.py
+--- a/actions.py
++++ b/actions.py
+@@ -293,1 +293,0 @@
+-        "lock": "hyprlock",
+@@ -409,1 +408,0 @@
+-    "lock": ("", _launch),
+diff --git a/shell.qml b/shell.qml
+--- a/shell.qml
++++ b/shell.qml
+@@ -354,3 +354,0 @@
+-        function lock(): void {
+-            root.launch("lock");
+-        }
+diff --git a/ModuleSession.qml b/ModuleSession.qml
+--- a/ModuleSession.qml
++++ b/ModuleSession.qml
+@@ -67,5 +67,0 @@
+-                    {
+-                        label: "Lock",
+-                        cmd: "lock",
+-                        icon: "lock"
+-                    },
+@@ -99,5 +94,1 @@
+-                        if (modelData.cmd === "lock") {
+-                            shell.launch("lock");
+-                            pages.done();
+-                        } else
+-                            pages.confirmAction = modelData.cmd;
++                        pages.confirmAction = modelData.cmd;
