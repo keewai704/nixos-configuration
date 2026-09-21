@@ -6,11 +6,6 @@
 
     siora.url = "git+https://github.com/keewai704/siora.git?ref=main";
 
-    hypr-island = {
-      url = "git+https://github.com/keewai704/hypr-island.git?ref=main";
-      inputs.nixpkgs.follows = "nixpkgs";
-    };
-
     agenix = {
       url = "github:ryantm/agenix";
       inputs.home-manager.follows = "home-manager";

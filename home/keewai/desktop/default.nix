@@ -4,14 +4,13 @@
     ./apple-music.nix
     ./bitwarden.nix
     ./browser.nix
-    ./hypr-island.nix
     ./file-manager.nix
     ./firefox.nix
     ./hyprland.nix
-    ./hyprlock-media.nix
     ./input-method.nix
     ./kitty.nix
     ./legcord.nix
+    ./noctalia.nix
     ./pi
     ./steam-theme.nix
     ./stylix.nix

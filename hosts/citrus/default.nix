@@ -4,13 +4,13 @@
     ./boot.nix
     ./webhid.nix
     ./desktop.nix
-    ./hypr-island.nix
     ./fingerprint.nix
     ./hardware-configuration.nix
     ./hyprland.nix
     ./input-method-shortcut.nix
     ./apple-device-usb.nix
     ./nvidia.nix
+    ./noctalia.nix
     ./web.nix
     ./stylix.nix
   ];

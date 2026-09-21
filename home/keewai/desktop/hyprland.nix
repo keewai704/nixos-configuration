@@ -5,15 +5,10 @@
   ...
 }:
 let
-  theme = import ../../../themes/tokyo-night-black {
-    inherit pkgs;
-    colors = config.lib.stylix.colors;
-  };
   hyprlandConfig = pkgs.writeTextFile {
     name = "hyprland.lua";
     text =
-      "local theme = ${lib.generators.toLua { } theme.hyprland}\n"
-      + config.programs.dynamic-island.hyprland.config
+      "local cursor = ${lib.generators.toLua { } { inherit (config.stylix.cursor) name size; }}\n"
       + builtins.readFile ./hyprland.lua;
     checkPhase = ''
       HOME="$TMPDIR" XDG_RUNTIME_DIR="$TMPDIR" ${lib.getExe pkgs.hyprland} --verify-config -c "$target"
