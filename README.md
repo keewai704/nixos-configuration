@@ -217,13 +217,19 @@ Codex conversion 3.0.34 は旧形式の `context.systemPrompt` / `context.tools`
 
 [Pi Codex conversion](https://github.com/IgorWarzocha/howaboua-pi-stuff/tree/main/packages/pi-codex-conversion) は
 公開 npm パッケージを改変せず、CLI と Pi Web の両方で読み込みます。Codex CLI の導入は不要です。
-Codex 対象モデルでは **Structured adapter** と実験的 **Context management: Remote** を使います。
-追加ツール専用モードでは context management が無効になるため、`read / bash / edit / write` は
-`exec_command / write_stdin / apply_patch / view_image` に置き換わります。
-`grep / find / ls`、MCP・検索・LSP・サブエージェントは維持します。非対象モデルでは通常の Pi ツールに戻ります。
+Codex 対象モデルでは **Code Mode** と実験的 **Context management: Remote** を使います。
+追加ツール専用モードは使わず、Pi 既定の `read / bash / edit / write` は
+`exec` / `wait` を使う構成に置き換わります。`exec` 内の JavaScript から
+`tools.exec_command`、`tools.write_stdin`、`tools.apply_patch`、`tools.view_image` を組み合わせます。
+既存の MCP・検索・LSP・サブエージェントなどは維持し、Code Mode の登録 API に対応した拡張だけが
+`exec` 内にも公開されます。非対象モデルでは通常の Pi ツールに戻ります。
+初回実行では上流が固定した Code Mode ホストをチェックサム検証付きでキャッシュへ取得します。
+Notebook Mode は有効にしません。
 
 Remote は Codex のサーバー側 history / notes を暗号化された契約で利用し、
 `history / notes / new_context / get_context_remaining` でコンテキストの引き継ぎを行います。
+Code Mode では `history`・`notes`・`new_context` は直接呼び出し、残量確認は
+`exec` 内の `tools.get_context_remaining` を使います。
 **Hybrid compaction** も有効にし、対応する Codex 接続では Responses compaction V2 の暗号化チェックポイントを
 ノートと併用します。単独の `responsesCompaction` は無効のままですが、Hybrid 経由で V2 を使用します。
 自動コンパクションは有効のままで、しきい値ではノート保存を促し、`new_context`・手動 `/compact`・
@@ -233,7 +239,7 @@ Remote を利用したセッションの再開時は同じ設定を維持して�
 非対応の接続には Remote は適用されず、暗号化チェックポイントの他プロバイダーへの可搬性も保証されません。
 Remote と独立した Parallel Pi summary は併用せず、追加のローカル要約要求は行いません。
 
-Code / Notebook、Heavy system prompt overwrite、自動推論レベル変更、Fast Mode、
+Notebook、Heavy system prompt overwrite、自動推論レベル変更、Fast Mode、
 キャッシュ keepalive と強制 WebSocket は有効にしません。既存のモデル・推論設定を維持します。
 音声・GipPity LAN サーバーは起動せず、新しい待受け・ファイアウォール・外部公開も追加しません。
 特に Orange で `/codex voice server` による別ポート公開を行わないでください。

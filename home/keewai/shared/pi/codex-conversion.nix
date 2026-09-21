@@ -28,7 +28,7 @@ in
   home.file.".pi/agent/pi-codex-conversion.json".source =
     (pkgs.formats.json { }).generate "pi-codex-conversion.json"
       {
-        executionMode = "normal";
+        executionMode = "code";
         scope.allProviders = "off";
         prompt.heavySystemPromptOverwrite = false;
         tools = {
