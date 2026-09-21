@@ -9,7 +9,6 @@
     ./firefox.nix
     ./hyprland.nix
     ./hyprlock-media.nix
-    ./icloud-keychain.nix
     ./input-method.nix
     ./kitty.nix
     ./legcord.nix

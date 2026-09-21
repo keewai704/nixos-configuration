@@ -107,7 +107,7 @@ Nix に慣れていない場合は、まず次の構文が分かれば読み進�
 | ブラウザーと既定の URL ハンドラー | [desktop/browser.nix](home/keewai/desktop/browser.nix)、[firefox.nix](home/keewai/desktop/firefox.nix) |
 | ファイル管理、圧縮、XDG フォルダー | [desktop/file-manager.nix](home/keewai/desktop/file-manager.nix) |
 | Bitwarden と SSH エージェント | [desktop/bitwarden.nix](home/keewai/desktop/bitwarden.nix) |
-| iCloud Keychain（Orange）とブラウザー中継 | [server/icloud-keychain.nix](home/keewai/server/icloud-keychain.nix)、[desktop/icloud-keychain.nix](home/keewai/desktop/icloud-keychain.nix)、[パッケージ](pkgs/icloud-keychain/) |
+| iCloud Keychain / KeePass互換サーバー（Orangeのみ） | [server/icloud-keychain.nix](home/keewai/server/icloud-keychain.nix)、[パッケージ](pkgs/icloud-keychain/) |
 | デスクトップのパネルとランチャー | [desktop/hypr-island.nix](home/keewai/desktop/hypr-island.nix) |
 | Discord クライアントとテーマ | [desktop/legcord.nix](home/keewai/desktop/legcord.nix)、[legcord-system24.nix](home/keewai/desktop/legcord-system24.nix) |
 | Steam と Millennium | [hosts/citrus/steam.nix](hosts/citrus/steam.nix)、[desktop/steam-theme.nix](home/keewai/desktop/steam-theme.nix) |
@@ -551,12 +551,12 @@ Firefox の見た目は Sine/Natsumi が担当するため、Stylix の Firefox 
 を固定リビジョンで利用する、非公式・実験的な読み取り専用 CLI です。Apple の公開 API ではなく、
 Advanced Data Protection を含む実アカウントでの動作は保証できません。
 Keychain の保持・Apple 認証・同期・復号は **Orange** の `keewai` ユーザーで行います。
-Citrus にはバックエンドをインストールせず、暗号化済みメッセージを中継する CLI だけを配置します。
+Citrus にはバックエンド・中継・CLI・Native Messaging マニフェストを一切配置しません。
+KDBX は使用せず、Orange が iCloud Keychain の同期プロトコルを直接扱います。
 通信経路は次のとおりです。
 
 ```text
-KeePassXC-Browser → Citrus の Native Messaging 中継
-  → wss://orange.tail1e65cd.ts.net/icloud-keychain/
+KeePass互換クライアント → wss://orange.tail1e65cd.ts.net/icloud-keychain/
   → Tailscale Serve HTTPS 443 → nginx 127.0.0.1:8000 → backend 127.0.0.1:30142
 ```
 
@@ -564,10 +564,10 @@ KeePassXC-Browser → Citrus の Native Messaging 中継
 KeePassXC 2.6.1 相当の接続・関連付け・ログイン取得・TOTP・ロックに対応します。
 パスワードの追加・更新、グループ、Passkey、Auto-Type は未対応で、成功として応答しません。
 
-デスクトップの Home Manager が中継 CLI と Firefox / Brave の Native Messaging マニフェストを配置します。
-ブラウザー拡張は公式の **KeePassXC-Browser** を使用してください。
-`org.keepassxc.keepassxc_browser` を使うため、同じブラウザーで本来の KeePassXC と同時利用はできません。
-既存の Bitwarden は変更しません。対応する拡張 ID 以外には接続を公開しません。
+提供するのは認証付き WebSocket の KeePassXC プロトコルです。通常の KeePassXC-Browser は
+Native Messaging または固定されたローカル WebSocket に接続するため、これだけで任意の遠隔 URL へ
+直接接続できるわけではありません。この構成では Citrus 側の接続設定や中継を作成しません。
+既存の Bitwarden は変更しません。
 
 Orange 上で、最初にキーリングを作成・解除し、Apple にログインします。
 キーリングには Apple パスワードとは別の、空でないパスワードを設定してください。
@@ -576,20 +576,13 @@ Orange 上で、最初にキーリングを作成・解除し、Apple にログ�
 icloud-keychain keyring-unlock
 icloud-keychain login
 icloud-keychain unlock
-icloud-keychain client-add citrus
+icloud-keychain client-add browser
 ```
 
 `client-add` はブラウザーの関連付けとパスワード取得を許可する機密トークンを一度だけ表示します。
-Nix、URL、シェル引数、チャット、ログへ保存せず、Citrus 上の非表示入力へ渡してください。
-サーバー側にはトークンのハッシュだけを保存します。Citrus では次を実行し、続けて拡張から接続します。
-
-```sh
-icloud-keychain-client configure
-icloud-keychain-client status
-```
-
-トークンは Citrus の `$XDG_CONFIG_HOME/icloud-keychain-client/token` にモード `0600` で保存します。
-これは中継の認可情報であり、Apple の認証情報やKeychainの復号鍵ではありません。
+Nix、URL、シェル引数、チャット、ログへ保存しないでください。互換クライアントは WebSocket の
+ハンドシェイクに `Authorization: Bearer <token>` を付け、`Origin` は送信しません。
+サーバー側にはトークンのハッシュだけを保存します。
 初回関連付けの許可は Orange 上の `client-add` で与えるため、ブラウザー接続時の GUI 確認はありません。
 管理操作を行う Web API は公開しません。管理・閲覧コマンドはすべて Orange 上で実行します。
 
@@ -599,7 +592,7 @@ icloud-keychain show github --show-passwords
 icloud-keychain sync
 icloud-keychain lock
 icloud-keychain client-list
-icloud-keychain client-revoke citrus
+icloud-keychain client-revoke browser
 icloud-keychain logout
 ```
 
@@ -630,11 +623,10 @@ Secret Service が利用できない場合は停止し、平文の鍵ファイ�
 ヘッドレス解除は固定された GNOME Keyring の拡張 D-Bus API を使い、パスワードを暗号化された
 Secret Service セッションで渡します。GUI プロンプトや空パスワードへのフォールバックはありません。
 同期は `sync` による手動操作で、トークン失効時は再度 `login` が必要です。
-`logout` は Orange のトークン・キャッシュ・拡張の関連付け・中継クライアントの認可を消去しますが、Apple 側の信頼端末を
+`logout` は Orange のトークン・キャッシュ・拡張の関連付け・クライアントの認可を消去しますが、Apple 側の信頼端末を
 削除する操作ではありません。アカウント変更前には必ず `logout` してください。
 
-Citrus 側で Keychain 全体を復号・保持・キャッシュする機能はありません。ただし、自動入力のために
-返された資格情報は KeePassXC-Browser と対象ページのメモリへ渡ります。過去に別途 Citrus に作成した
+Citrus 側にこの機能の実装・設定はありません。過去に別途 Citrus に作成した
 Apple の状態やキーリング項目を、この設定が勝手に移送・削除することはありません。
 
 自動入力は **HTTPS のホスト名とポートが完全一致**する項目だけです。名前からの推測や親子ドメイン

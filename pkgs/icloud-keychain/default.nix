@@ -44,10 +44,8 @@ python3Packages.buildPythonApplication {
     cp ${./anisette.py} icp/auth/anisette.py
     cp ${./keyring.py} icp/keyring.py
     cp ${./server.py} icp/server.py
-    cp ${./client.py} tests/icloud_keychain_client.py
     cp ${./test_keepassxc.py} tests/test_keepassxc.py
     cp ${./test_anisette.py} tests/test_anisette.py
-    cp ${./test_client.py} tests/test_client.py
     cp ${./test_server.py} tests/test_server.py
     cp ${./test_keyring.py} tests/test_keyring.py
     substituteInPlace icp/auth/anisette.py --replace-fail '@appleCa@' '${appleCaBundle}'
@@ -75,7 +73,7 @@ python3Packages.buildPythonApplication {
   pythonImportsCheck = [ "icp.keepassxc" ];
 
   meta = {
-    description = "Experimental read-only iCloud Keychain CLI with KeePassXC-Browser native messaging";
+    description = "Experimental iCloud Keychain CLI and KeePass-compatible WebSocket server";
     homepage = "https://github.com/Sank6/iCloud-Keychain-for-Linux";
     license = lib.licenses.mit;
     platforms = lib.platforms.linux;

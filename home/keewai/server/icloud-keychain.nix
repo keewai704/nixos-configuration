@@ -21,7 +21,7 @@ in
   };
   systemd.user.services.icloud-keychain = {
     Unit = {
-      Description = "iCloud Keychain backend for authenticated KeePassXC-Browser relays";
+      Description = "iCloud Keychain backend for authenticated KeePass clients";
       Requires = [ "gnome-keyring.service" ];
       After = [ "gnome-keyring.service" ];
     };

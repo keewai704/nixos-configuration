@@ -528,7 +528,7 @@ def run_command(args):
             )
             if result == 0:
                 print(
-                    "Run icloud-keychain unlock on Orange, then authorize a relay with client-add."
+                    "Run icloud-keychain unlock on Orange, then authorize a client with client-add."
                 )
             return result
         if args.command == "sync":

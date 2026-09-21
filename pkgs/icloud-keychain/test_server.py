@@ -23,7 +23,6 @@ from cryptography.x509.oid import NameOID
 from icp import server
 from icp import keepassxc as bridge
 from icp.keepassxc import Denied
-import icloud_keychain_client as relay
 from test_keepassxc import Client
 
 
@@ -56,7 +55,7 @@ class ServerTests(unittest.TestCase):
         self.addCleanup(self.environment.stop)
         output = io.StringIO()
         with contextlib.redirect_stdout(output):
-            server.manage_client("client-add", "citrus")
+            server.manage_client("client-add", "browser")
         self.token = output.getvalue().strip()
         self.server = server.Server("https://orange.example/icloud-keychain/")
 
@@ -70,14 +69,14 @@ class ServerTests(unittest.TestCase):
         self.assertEqual(path.stat().st_mode & 0o777, 0o600)
         self.assertNotIn(self.token, path.read_text())
         self.assertEqual(
-            server.load_clients()["citrus"],
+            server.load_clients()["browser"],
             hashlib.sha256(self.token.encode()).hexdigest(),
         )
         with self.assertRaises(Denied):
-            server.manage_client("client-add", "citrus")
+            server.manage_client("client-add", "browser")
         with contextlib.redirect_stdout(io.StringIO()) as output:
             server.manage_client("client-list")
-        self.assertEqual(output.getvalue(), "citrus\n")
+        self.assertEqual(output.getvalue(), "browser\n")
 
     def test_handshake_checks_path_host_origin_and_token(self):
         connection = Connection()
@@ -120,7 +119,7 @@ class ServerTests(unittest.TestCase):
     def test_revocation_blocks_existing_connection_before_read(self):
         connection = Connection(['{"action":"get-logins"}'])
         self.assertIsNone(self.server.process_request(connection, self.request()))
-        server.manage_client("client-revoke", "citrus")
+        server.manage_client("client-revoke", "browser")
         with patch.object(server, "Protocol") as factory:
             self.server.handle(connection)
             factory.return_value.handle.assert_not_called()
@@ -139,7 +138,7 @@ class ServerTests(unittest.TestCase):
         self.server.process_request(connection, self.request())
 
         def revoke(payload):
-            server.manage_client("client-revoke", "citrus")
+            server.manage_client("client-revoke", "browser")
             return {"action": "get-logins", "message": "synthetic-secret"}
 
         with patch.object(server, "Protocol") as factory:
@@ -175,7 +174,7 @@ class ServerTests(unittest.TestCase):
             with self.assertRaises(ValueError):
                 server.Server(value)
 
-    def test_verified_tls_native_relay_and_encrypted_credentials(self):
+    def test_verified_tls_and_encrypted_credentials(self):
         directory = Path(self.directory.name)
         key = rsa.generate_private_key(public_exponent=65537, key_size=2048)
         subject = x509.Name([x509.NameAttribute(NameOID.COMMON_NAME, "orange.example")])
@@ -260,31 +259,6 @@ class ServerTests(unittest.TestCase):
                     self.assertEqual(
                         client.logins()["entries"][0]["password"], "synthetic-secret"
                     )
-                request = json.dumps(
-                    {
-                        "action": "change-public-keys",
-                        "clientID": bridge.encode(os.urandom(24)),
-                        "nonce": bridge.encode(os.urandom(24)),
-                        "publicKey": bridge.encode(bytes(client.key.public_key)),
-                    }
-                )
-                incoming = io.BytesIO(
-                    relay.HEADER.pack(len(request.encode())) + request.encode()
-                )
-                outgoing = io.BytesIO()
-                with (
-                    patch.object(
-                        relay,
-                        "DEFAULT_SERVER_URL",
-                        "wss://orange.example/icloud-keychain/",
-                    ),
-                    patch.object(relay, "connect", side_effect=local_connect),
-                    patch.object(
-                        relay.ssl, "create_default_context", return_value=trusted
-                    ),
-                ):
-                    self.assertEqual(relay.relay(incoming, outgoing, self.token), 0)
-                self.assertEqual(json.loads(outgoing.getvalue()[4:])["success"], "true")
             finally:
                 listener.shutdown()
                 thread.join(timeout=5)
