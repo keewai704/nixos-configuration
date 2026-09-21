@@ -140,6 +140,7 @@ Home Manager は `useUserPackages = true` で NixOS に統合されています�
 | --- | --- |
 | [shared/pi/default.nix](home/keewai/shared/pi/default.nix) | 全ホスト共通の Pi 設定の入口 |
 | [shared/pi/agent.nix](home/keewai/shared/pi/agent.nix) | 本体・実行環境、モデル、ローカル拡張と指示の配布 |
+| [shared/pi/bigpowers.nix](home/keewai/shared/pi/bigpowers.nix) | bigpowers の固定版と Pi 用スキル・プロンプトの読み込み |
 | [shared/pi/codex-conversion.nix](home/keewai/shared/pi/codex-conversion.nix) | Pi Codex conversion の導入、補助バイナリ、ツール・Remote context management・互換設定 |
 | [shared/pi/mcp.nix](home/keewai/shared/pi/mcp.nix) | Pi MCP アダプターの導入、共通 MCP サーバーの登録と設定変換 |
 | [shared/pi/lsp.nix](home/keewai/shared/pi/lsp.nix) | Pi LSP 拡張の導入、言語サーバーと診断設定 |
@@ -204,10 +205,19 @@ Web の別端末や、指定したシェルを使わない拡張プロセスは�
 Pi 本体は flake.lock の Nixpkgs に固定された 0.85.1 を使います。
 標準の ChatGPT 接続にはキャッシュ用ヘッダーを本文のキーに合わせる小さなパッチを適用しています。
 Pi Codex conversion が読み込まれる場合は、拡張自身の上流プロバイダー実装をそのまま使います。
-`@howaboua/pi-codex-conversion@3.0.34`、`pi-mcp-adapter@2.34.0`、`pi-web-access@0.30.0`、`@narumitw/pi-lsp@0.49.7` は
+`@howaboua/pi-codex-conversion@3.0.34`、`pi-mcp-adapter@2.34.0`、`pi-web-access@0.30.0`、`@narumitw/pi-lsp@0.49.7`、`bigpowers@2.88.9` は
 Pi 標準のパッケージ管理で初回起動時に取得し、npm の lifecycle scripts を無効にします。
 拡張のバージョン指定は Nix 管理で、取得した依存関係とロックは `~/.pi/agent/npm/` に保存されます。
 この npm 依存関係のロックは flake.lock には含まれません。
+
+[bigpowers](https://github.com/danielvm-git/bigpowers) は Pi 用スキルとプロンプトを
+パッケージの宣言どおり読み込みます。`/skill:using-bigpowers` や `/plan-work` などから使えます。
+同梱の `extensions/omp-hooks.ts` は、スキル注入ツールと独自 Git ガードを追加します。
+Pi 標準のスキル読み込み・既存の作業方針との重複を避けるため、この補助フックは読み込みません。
+同じスキルを公開する bigpowers MCP サーバーも追加せず、Ponytail と AGENTS.md を維持します。
+`bigpowers setup` や `bigpowers init` は自動実行しません。後者はプロジェクトに `scripts` のリンクと
+`specs` の雛形を作るため、必要なプロジェクトで方針・既存ファイルとの整合を確認してから行います。
+このリポジトリでは、スキルの指示より AGENTS.md の配置・検証・承認規則を優先します。
 
 [Pi 0.86.0](https://github.com/earendil-works/pi/blob/v0.86.0/packages/coding-agent/CHANGELOG.md) は
 プロバイダーへ渡すシステム指示・ツール定義を `TranscriptContext.messages` 内へ移しました。
