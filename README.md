@@ -144,7 +144,7 @@ Home Manager は `useUserPackages = true` で NixOS に統合されています�
 | --- | --- |
 | [shared/pi/default.nix](home/keewai/shared/pi/default.nix) | 全ホスト共通の Pi 設定の入口 |
 | [shared/pi/agent.nix](home/keewai/shared/pi/agent.nix) | 本体・実行環境、モデル、ローカル拡張と指示の配布 |
-| [shared/pi/bigpowers.nix](home/keewai/shared/pi/bigpowers.nix) | bigpowers の固定版と Pi 用スキル・プロンプトの読み込み |
+| [skills/superpowers/](skills/superpowers/) | Superpowers 6.4.1 の Pi / Astra 向けローカルスキル |
 | [shared/pi/codex-conversion.nix](home/keewai/shared/pi/codex-conversion.nix) | Pi Codex conversion の導入、補助バイナリ、ツール・Remote context management・互換設定 |
 | [shared/pi/mcp.nix](home/keewai/shared/pi/mcp.nix) | Pi MCP アダプターの導入、共通 MCP サーバーの登録と設定変換 |
 | [shared/pi/lsp.nix](home/keewai/shared/pi/lsp.nix) | Pi LSP 拡張の導入、言語サーバーと診断設定 |
@@ -167,7 +167,7 @@ Home Manager は `useUserPackages = true` で NixOS に統合されています�
 設定を追加するときは、既存の機能別ファイルへ追記するか、同じディレクトリに名前の明確な
 モジュールを作り、その `default.nix` の `imports` に追加します。
 拡張のバージョン・読み込み対象は、その機能を担当するモジュールで設定と一緒に管理します。
-`settings.packages` の `lib.mkOrder` は Codex conversion → MCP → Web 検索 → LSP → bigpowers → pi-subagents の
+`settings.packages` の `lib.mkOrder` は Codex conversion → MCP → Web 検索 → LSP → pi-subagents の
 読み込み順を保つための指定です。Codex conversion のバージョンは補助バイナリと同じ定義を参照します。
 ローカル拡張は `extensions/`、プロンプトは `prompts/` に置いて `agent.nix` から配布します。
 共有スキル・TypeSafe 認証、パッケージのビルド、OS の公開設定は Pi 専用設定と役割が異なるため、
@@ -209,19 +209,22 @@ Web の別端末や、指定したシェルを使わない拡張プロセスは�
 Pi 本体は flake.lock の Nixpkgs に固定された 0.85.1 を使います。
 標準の ChatGPT 接続にはキャッシュ用ヘッダーを本文のキーに合わせる小さなパッチを適用しています。
 Pi Codex conversion が読み込まれる場合は、拡張自身の上流プロバイダー実装をそのまま使います。
-`@howaboua/pi-codex-conversion@3.0.34`、`pi-mcp-adapter@2.34.0`、`pi-web-access@0.30.0`、`@narumitw/pi-lsp@0.49.7`、`bigpowers@2.88.9`、`pi-subagents@0.70.0` は
+`@howaboua/pi-codex-conversion@3.0.34`、`pi-mcp-adapter@2.34.0`、`pi-web-access@0.30.0`、`@narumitw/pi-lsp@0.49.7`、`pi-subagents@0.70.0` は
 Pi 標準のパッケージ管理で初回起動時に取得し、npm の lifecycle scripts を無効にします。
 拡張のバージョン指定は Nix 管理で、取得した依存関係とロックは `~/.pi/agent/npm/` に保存されます。
 この npm 依存関係のロックは flake.lock には含まれません。
 
-[bigpowers](https://github.com/danielvm-git/bigpowers) は Pi 用スキルとプロンプトを
-パッケージの宣言どおり読み込みます。`/skill:using-bigpowers` や `/plan-work` などから使えます。
-同梱の `extensions/omp-hooks.ts` は、スキル注入ツールと独自 Git ガードを追加します。
-Pi 標準のスキル読み込み・既存の作業方針との重複を避けるため、この補助フックは読み込みません。
-同じスキルを公開する bigpowers MCP サーバーも追加せず、Ponytail と AGENTS.md を維持します。
-`bigpowers setup` や `bigpowers init` は自動実行しません。後者はプロジェクトに `scripts` のリンクと
-`specs` の雛形を作るため、必要なプロジェクトで方針・既存ファイルとの整合を確認してから行います。
-このリポジトリでは、スキルの指示より AGENTS.md の配置・検証・承認規則を優先します。
+[Superpowers 6.4.1](https://github.com/obra/superpowers/tree/5bf4e78011075bcfc0dc295f0724994cd123ee71)
+の全15スキルを、[Astra の公式ガイド](https://developers.openai.com/api/docs/guides/latest-model#prompting-best-practices)
+に合わせたローカル版として [skills/superpowers/](skills/superpowers/) で管理します。
+上流リビジョンと MIT ライセンスを保持し、Home Manager が `~/.agents/skills/superpowers/` へ配布します。
+Pi の標準探索を使い、`/skill:using-superpowers`、`/skill:brainstorming`、
+`/skill:systematic-debugging` などで呼び出せます。開発時は `APPEND_SYSTEM.md` が入口スキルを案内します。
+不要な承認待ち、固定回数のレビュー・テスト、別ハーネス専用ツールの指示を調整し、
+変更に必要な検証、独立レビュー、許可された作業の完遂を重視します。
+Ponytail、利用者の明示指示、AGENTS.md の配置・検証・承認規則を維持します。
+上流のブートストラップ拡張、ブラウザー補助、実行スクリプト、会話のエクスポート機能は配布しません。
+スキルは npm では取得せず、このリポジトリで更新します。適用後は新しいタスクで読み込んでください。
 
 [Pi 0.86.0](https://github.com/earendil-works/pi/blob/v0.86.0/packages/coding-agent/CHANGELOG.md) は
 プロバイダーへ渡すシステム指示・ツール定義を `TranscriptContext.messages` 内へ移しました。
