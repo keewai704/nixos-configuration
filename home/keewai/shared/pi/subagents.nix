@@ -6,7 +6,7 @@ in
   programs.pi-coding-agent.settings = {
     packages = lib.mkOrder 1500 [
       {
-        source = "npm:pi-subagents@0.70.0";
+        source = "npm:pi-subagents@0.70.1";
         extensions = [ "index.js" ];
       }
     ];

@@ -8,11 +8,11 @@
 }:
 stdenvNoCC.mkDerivation (finalAttrs: {
   pname = "pi-codex-conversion-helpers";
-  version = "3.0.34";
+  version = "3.0.35";
 
   src = fetchzip {
     url = "https://registry.npmjs.org/@howaboua/pi-codex-conversion/-/pi-codex-conversion-${finalAttrs.version}.tgz";
-    hash = "sha256-f6lsazAU31HkSpkyqW0Tw+FSInAHPl/8NZ07xitwxB8=";
+    hash = "sha256-kXu/019zK1z1kQWfUe6S971MeLh46ZwE64iBcJQCaz4=";
   };
 
   nativeBuildInputs = [ autoPatchelfHook ];

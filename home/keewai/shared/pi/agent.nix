@@ -33,6 +33,7 @@
         "ls"
       ];
       showCacheMissNotices = true;
+      cacheWarming = "off";
       enableInstallTelemetry = false;
       enableAnalytics = false;
       npmCommand = [
