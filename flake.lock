@@ -335,27 +335,6 @@
         "type": "github"
       }
     },
-    "hypr-island": {
-      "inputs": {
-        "nixpkgs": [
-          "nixpkgs"
-        ]
-      },
-      "locked": {
-        "lastModified": 1789575946,
-        "narHash": "sha256-8iFS4aAnoXjL2bnGtjYtPyD5oCMRf8wBuR99bjmSO/s=",
-        "ref": "main",
-        "rev": "beffa4e5ac2edd5d9bd058c428ad0f7245acc18e",
-        "revCount": 37,
-        "type": "git",
-        "url": "https://github.com/keewai704/hypr-island.git"
-      },
-      "original": {
-        "ref": "main",
-        "type": "git",
-        "url": "https://github.com/keewai704/hypr-island.git"
-      }
-    },
     "hyprcursor": {
       "inputs": {
         "hyprlang": [
@@ -978,7 +957,6 @@
         "agenix": "agenix",
         "chaotic": "chaotic",
         "home-manager": "home-manager_2",
-        "hypr-island": "hypr-island",
         "hyprland": "hyprland",
         "mcp-servers-nix": "mcp-servers-nix",
         "millennium": "millennium",

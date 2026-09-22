@@ -19,8 +19,8 @@ hl.monitor({
     vrr = 2,
 })
 
-hl.env("XCURSOR_SIZE", tostring(theme.cursor.size))
-hl.env("XCURSOR_THEME", theme.cursor.name)
+hl.env("XCURSOR_SIZE", tostring(cursor.size))
+hl.env("XCURSOR_THEME", cursor.name)
 hl.env("QT_QPA_PLATFORM", "wayland")
 hl.env("MOZ_ENABLE_WAYLAND", "1")
 
@@ -40,13 +40,6 @@ hl.config({
         border_size = 2,
         resize_on_border = true,
         extend_border_grab_area = 12,
-        col = {
-            active_border = {
-                colors = theme.colors.activeBorder,
-                angle = 45,
-            },
-            inactive_border = theme.colors.inactiveBorder,
-        },
         snap = {
             enabled = true,
             respect_gaps = true,
@@ -65,8 +58,6 @@ hl.config({
             enabled = true,
             range = 12,
             render_power = 3,
-            color = theme.colors.shadow,
-            color_inactive = theme.colors.shadowInactive,
             offset = { 0, 2 },
         },
         blur = {
@@ -113,13 +104,35 @@ hl.config({
     misc = {
         disable_hyprland_logo = true,
         force_default_wallpaper = 0,
-        background_color = theme.colors.background,
         focus_on_activate = true,
     },
 
     cursor = {
         hide_on_key_press = true,
     },
+})
+
+local has_noctalia_theme, noctalia_theme = pcall(function()
+    return require("noctalia")
+end)
+if has_noctalia_theme then
+    noctalia_theme.apply_theme()
+end
+
+hl.window_rule({
+    match = { class = "dev.noctalia.Noctalia" },
+    float = true,
+    size = { 1080, 920 },
+})
+hl.layer_rule({
+    name = "noctalia",
+    match = {
+        namespace = "^noctalia-(bar-.+|notification|dock|panel|attached-panel|osd|window-switcher)$",
+    },
+    no_anim = true,
+    ignore_alpha = 0.5,
+    blur = true,
+    blur_popups = true,
 })
 
 hl.window_rule({ match = { class = "^steam_app_[0-9]+$" }, tag = "+proton-game" })
@@ -156,6 +169,63 @@ local function bind(keys, dispatcher, description, flags)
     flags = flags or {}
     flags.description = description
     hl.bind(keys, dispatcher, flags)
+end
+
+local ipc = "noctalia msg "
+bind(main_mod .. " + D", hl.dsp.exec_cmd(ipc .. "bar-toggle"), "Toggle Noctalia bar")
+bind(main_mod .. " + Space", hl.dsp.exec_cmd(ipc .. "panel-toggle launcher"), "Open launcher")
+bind(
+    main_mod .. " + SHIFT + Space",
+    hl.dsp.exec_cmd(ipc .. "panel-toggle wallpaper"),
+    "Open wallpapers"
+)
+bind(
+    main_mod .. " + I",
+    hl.dsp.exec_cmd(ipc .. "panel-toggle control-center"),
+    "Open control center"
+)
+bind(
+    main_mod .. " + N",
+    hl.dsp.exec_cmd(ipc .. "panel-toggle control-center notifications"),
+    "Open notifications"
+)
+bind(main_mod .. " + V", hl.dsp.exec_cmd(ipc .. "panel-toggle clipboard"), "Open clipboard")
+bind(main_mod .. " + ALT + C", hl.dsp.exec_cmd(ipc .. "panel-toggle session"), "Open session menu")
+bind(main_mod .. " + ALT + L", hl.dsp.exec_cmd(ipc .. "session lock"), "Lock session")
+bind(main_mod .. " + comma", hl.dsp.exec_cmd(ipc .. "settings-toggle"), "Open Noctalia settings")
+bind("ALT + Tab", hl.dsp.exec_cmd(ipc .. "window-switcher"), "Switch windows")
+bind("Print", hl.dsp.exec_cmd(ipc .. "screenshot-region"), "Take region screenshot")
+bind(
+    "SHIFT + Print",
+    hl.dsp.exec_cmd(ipc .. "screenshot-fullscreen all"),
+    "Take full-screen screenshot"
+)
+bind(
+    "CTRL + Print",
+    hl.dsp.exec_cmd("grimblast --notify copysave active"),
+    "Take active window screenshot"
+)
+
+for _, binding in ipairs({
+    { "XF86AudioRaiseVolume", "volume-up", "Raise volume", true },
+    { "XF86AudioLowerVolume", "volume-down", "Lower volume", true },
+    { "XF86AudioMute", "volume-mute", "Toggle audio mute" },
+    { "XF86AudioMicMute", "mic-mute", "Toggle microphone mute" },
+    { "XF86AudioPlay", "media toggle", "Toggle media playback" },
+    { "XF86AudioPause", "media toggle", "Toggle media playback" },
+    { "XF86AudioNext", "media next", "Play next track" },
+    { "XF86AudioPrev", "media previous", "Play previous track" },
+    { "ALT + bracketleft", "brightness-down", "Lower brightness", true },
+    { "ALT + bracketright", "brightness-up", "Raise brightness", true },
+    { "XF86MonBrightnessDown", "brightness-down", "Lower brightness", true },
+    { "XF86MonBrightnessUp", "brightness-up", "Raise brightness", true },
+}) do
+    bind(
+        binding[1],
+        hl.dsp.exec_cmd(ipc .. binding[2]),
+        binding[3],
+        { locked = true, repeating = binding[4] or false }
+    )
 end
 
 bind(main_mod .. " + Return", hl.dsp.exec_cmd(terminal), "Open terminal")
@@ -255,7 +325,7 @@ bind(main_mod .. " + F1", function()
             "Super+Space: launcher    +Shift: wallpapers    Super+I: controls",
             "Super+N: notifications    Super+V: clipboard",
             "Print: region    Shift+Print: all screens    Ctrl+Print: active window",
-            "Super+D: Dynamic Island",
+            "Super+D: Noctalia bar    Super+comma: settings",
             "Super+Alt+C: session    Super+Alt+L: lock",
             "Alt+[: brightness down    Alt+]: brightness up",
             "Super+F: fullscreen",
@@ -263,7 +333,6 @@ bind(main_mod .. " + F1", function()
             "Hold Super+Shift+E: log out",
         }, "\n"),
         timeout = 8000,
-        color = theme.colors.notification,
         font_size = 15,
     })
 end, "Show shortcut help")

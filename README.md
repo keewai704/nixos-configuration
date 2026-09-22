@@ -99,14 +99,13 @@ Nix に慣れていない場合は、まず次の構文が分かれば読み進�
 | 設定を伴わないデスクトップ用ツール | [desktop/applications.nix](home/keewai/desktop/applications.nix) |
 | ウィンドウ、モニター、キー操作 | [desktop/hyprland.lua](home/keewai/desktop/hyprland.lua) |
 | Hyprland のパッケージ・ログイン・ポータル統合 | [hosts/citrus/hyprland.nix](hosts/citrus/hyprland.nix) |
-| 画面ロックとアイドル時の動作 | [desktop/hypr-island.nix](home/keewai/desktop/hypr-island.nix) |
-| ロック画面の再生中メディア表示 | [desktop/hyprlock-media.nix](home/keewai/desktop/hyprlock-media.nix)、[hyprlock-media.py](home/keewai/desktop/hyprlock-media.py) |
+| 画面ロック、メディア表示、アイドル時の動作 | [desktop/noctalia.nix](home/keewai/desktop/noctalia.nix) |
 | 日本語入力と切り替えキー | [desktop/input-method.nix](home/keewai/desktop/input-method.nix)、[modules/input-method-shortcut.nix](modules/input-method-shortcut.nix) |
 | 端末 | [desktop/kitty.nix](home/keewai/desktop/kitty.nix) |
 | ブラウザーと既定の URL ハンドラー | [desktop/browser.nix](home/keewai/desktop/browser.nix)、[firefox.nix](home/keewai/desktop/firefox.nix) |
 | ファイル管理、圧縮、XDG フォルダー | [desktop/file-manager.nix](home/keewai/desktop/file-manager.nix) |
 | Bitwarden と SSH エージェント | [desktop/bitwarden.nix](home/keewai/desktop/bitwarden.nix) |
-| デスクトップのパネルとランチャー | [desktop/hypr-island.nix](home/keewai/desktop/hypr-island.nix) |
+| デスクトップのパネル、ランチャー、アプリの配色 | [desktop/noctalia.nix](home/keewai/desktop/noctalia.nix) |
 | Discord クライアントとテーマ | [desktop/legcord.nix](home/keewai/desktop/legcord.nix)、[legcord-system24.nix](home/keewai/desktop/legcord-system24.nix) |
 | Steam と Millennium | [hosts/citrus/steam.nix](hosts/citrus/steam.nix)、[desktop/steam-theme.nix](home/keewai/desktop/steam-theme.nix) |
 | 共通の色、フォント、壁紙 | [themes/tokyo-night-black/default.nix](themes/tokyo-night-black/default.nix) |
@@ -116,19 +115,24 @@ Nix に慣れていない場合は、まず次の構文が分かれば読み進�
 対応モジュールが必要な動作を満たさない場合は `home.packages` に置きます。
 ログイン、PAM、ドライバー、USB のアクセス権、システムデーモンなどは NixOS 側で管理します。
 
-たとえば、Hyprlock の見た目と起動は hypr-island の Home Manager モジュール、
-認証に必要な PAM は [hosts/citrus/hypr-island.nix](hosts/citrus/hypr-island.nix) が読み込む
-hypr-island の NixOS モジュールが担当します。
+たとえば、Noctalia の見た目と起動は Home Manager、電源管理と I²C アクセスは
+[hosts/citrus/noctalia.nix](hosts/citrus/noctalia.nix) が担当します。
 Apple USB CLI は [shared/apple-device-usb.nix](home/keewai/shared/apple-device-usb.nix)、
 実機の usbmuxd は [hosts/citrus/apple-device-usb.nix](hosts/citrus/apple-device-usb.nix) が担当します。
 指紋認証は fprintd が有効な環境でだけ使います。
 
-パネル本体、Island のキー操作、ロックとアイドル制御、Stylix 連携、Bitwarden の初期設定ランチャーは
-外部入力の [hypr-island](https://github.com/keewai704/hypr-island) が管理します。
-このリポジトリには有効化、テーマの元データ、接続先 URL、機器の差分を置きます。
-ロック画面下部のメディア表示は `desktop/hyprlock-media.nix` で追加し、再生中のアートワーク・曲名・アーティスト・進捗を表示します。
-アートワークはローカル画像またはリダイレクトのない公開 HTTPS URL に対応し、取得できない場合は画像だけを非表示にします。
-公開済みの Nix オプション名 `programs.dynamic-island` は互換性のため維持しています。
+パネル、ランチャー、通知、クリップボード、壁紙、認証ダイアログ、ロックとアイドル制御は
+nixpkgs の [Noctalia v5](https://docs.noctalia.dev/noctalia/) が管理します。
+シェル起動時にロックし、アイドル 600 秒でロック、660 秒で画面を消灯します。
+ロック画面のメディア表示は Noctalia 標準のものを使います。
+GTK・Qt・Kitty・Hyprland の配色は Noctalia のテンプレートを優先し、対応する Stylix の配色は無効です。
+Home Manager はテンプレートの読み込み先を宣言し、生成される色ファイルは Noctalia が更新します。
+Stylix はフォント・カーソル・アイコン、起動時の表示と未対応アプリの設定に残します。
+Bitwarden のデスクトップアプリ・SSH エージェント・rbw の初期設定は `desktop/bitwarden.nix` が担当します。
+rbw の初回利用時は `rbw config set email <メールアドレス>`、`rbw login`、`rbw unlock`、`rbw sync` を実行します。
+公式 Bitwarden サーバーに変更した場合は、ログイン前に `rbw register` で個人 API キーによる端末登録が必要です。
+Noctalia の標準ランチャーには、旧 Dynamic Island の `bw <項目名>` による Bitwarden 検索・コピー・セットアップ機能はありません。rbw は端末から使用します。
+キー操作は `desktop/hyprland.lua` にあり、`Super+,` で Noctalia 設定を開けます。
 
 Home Manager は `useUserPackages = true` で NixOS に統合されています。
 ユーザーのパッケージは `/etc/profiles/per-user/keewai` に入り、適用には NixOS の再構築を使います。

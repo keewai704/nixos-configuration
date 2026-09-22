@@ -1,9 +1,6 @@
-{ config, pkgs, ... }:
+{ pkgs, ... }:
 let
-  theme = import ../../themes/tokyo-night-black {
-    inherit pkgs;
-    colors = config.lib.stylix.colors;
-  };
+  theme = import ../../themes/tokyo-night-black { inherit pkgs; };
 in
 {
   stylix = theme.stylix // {
@@ -13,7 +10,7 @@ in
       console.enable = true;
       font-packages.enable = false;
       fontconfig.enable = true;
-      gtk.enable = true;
+      gtk.enable = false;
       qt.enable = false;
     };
   };

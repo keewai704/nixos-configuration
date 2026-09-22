@@ -5,10 +5,7 @@
   ...
 }:
 let
-  theme = import ../../../themes/tokyo-night-black {
-    inherit pkgs;
-    colors = config.lib.stylix.colors;
-  };
+  theme = import ../../../themes/tokyo-night-black { inherit pkgs; };
 in
 {
   imports = [ inputs.stylix.homeModules.stylix ];
@@ -17,14 +14,8 @@ in
     overlays.enable = false;
     targets = {
       font-packages.enable = true;
-      gtk = {
-        enable = true;
-        flatpakSupport.enable = false;
-      };
-      qt = {
-        enable = true;
-        standardDialogs = "xdgdesktopportal";
-      };
+      gtk.enable = false;
+      qt.enable = false;
     };
   };
 

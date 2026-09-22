@@ -1,15 +1,11 @@
 {
-  config,
   inputs,
   lib,
   pkgs,
   ...
 }:
 let
-  theme = import ../../themes/tokyo-night-black {
-    inherit pkgs;
-    colors = config.lib.stylix.colors;
-  };
+  theme = import ../../themes/tokyo-night-black { inherit pkgs; };
   hyprlandSession = "${lib.getExe pkgs.uwsm} start -e -D Hyprland ${pkgs.hyprland}/bin/start-hyprland";
 in
 {
