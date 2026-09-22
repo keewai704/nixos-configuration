@@ -23,6 +23,19 @@ or configuration snapshots. Format and check syntax only for changed files.
   `home/keewai/shared/pi/tsconfig.json` with the pinned TypeScript compiler or LSP.
   It resolves Pi and Node types from the deployed user profile; a missing profile
   is an environment limitation, not a reason to install mutable npm dependencies.
+- pi-subagents integration: use disposable agent state and synthetic local model
+  responses to check the pinned Pi SDK, bundled-role discovery and explicit
+  child-provider bindings, foreground/background completion, status, resume, and control.
+  Give bundled-reviewer fixtures a disposable Git repository with a committed
+  HEAD; its watchdog_diff provider cannot initialize from an unborn repository.
+  A launch receipt or accepted steering request is not a completed child or
+  delivered message. Inspect terminal metadata and process cleanup separately.
+  Verify that Pi Web's built-in tools are disabled and that Code Mode keeps the
+  native subagent tool available. Use the configured resource filters when
+  testing other packages; do not enable disabled hooks in the test fixture.
+  Never read real auth/session data or contact paid model APIs for these checks.
+  Recheck deployed settings and affected behavior after each activation gate;
+  isolated mock tests do not prove live provider authentication or deployment.
 - Jev computer integration: use a disposable GTK/Qt window with synthetic data,
   never the user's existing documents or account screens. Type-check with
   `home/keewai/desktop/pi/jev-computer/tsconfig.json`, which extends the shared

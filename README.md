@@ -146,7 +146,7 @@ Home Manager は `useUserPackages = true` で NixOS に統合されています�
 | [shared/pi/lsp.nix](home/keewai/shared/pi/lsp.nix) | Pi LSP 拡張の導入、言語サーバーと診断設定 |
 | [shared/pi/web-search.nix](home/keewai/shared/pi/web-search.nix) | Pi Web 検索拡張の導入、検索・取得経路、CLI / Web 共通の設定ファイル |
 | [shared/pi/web.nix](home/keewai/shared/pi/web.nix) | Pi Web の導入、ユーザーサービス、ホストごとの tailnet 許可 |
-| [shared/pi/web-agents/](home/keewai/shared/pi/web-agents/) | Pi Web 内蔵サブエージェントの有効化、役割、モデル、推論設定 |
+| [shared/pi/subagents.nix](home/keewai/shared/pi/subagents.nix) | pi-subagents の固定版、実行設定、同梱役割と子の拡張連携 |
 | [shared/pi/APPEND_SYSTEM.md](home/keewai/shared/pi/APPEND_SYSTEM.md) | 全プロジェクト共通の追加システム指示 |
 | [shared/pi/extensions/](home/keewai/shared/pi/extensions/)、[prompts/](home/keewai/shared/pi/prompts/) | キャッシュ監視・Jev 分析・CLI 完了通知のローカル拡張、レビュー用プロンプト |
 | [desktop/pi/default.nix](home/keewai/desktop/pi/default.nix) | デスクトップ専用連携の入口 |
@@ -163,7 +163,7 @@ Home Manager は `useUserPackages = true` で NixOS に統合されています�
 設定を追加するときは、既存の機能別ファイルへ追記するか、同じディレクトリに名前の明確な
 モジュールを作り、その `default.nix` の `imports` に追加します。
 拡張のバージョン・読み込み対象は、その機能を担当するモジュールで設定と一緒に管理します。
-`settings.packages` の `lib.mkOrder` は従来の Codex conversion → MCP → Web 検索 → LSP の
+`settings.packages` の `lib.mkOrder` は Codex conversion → MCP → Web 検索 → LSP → bigpowers → pi-subagents の
 読み込み順を保つための指定です。Codex conversion のバージョンは補助バイナリと同じ定義を参照します。
 ローカル拡張は `extensions/`、プロンプトは `prompts/` に置いて `agent.nix` から配布します。
 共有スキル・TypeSafe 認証、パッケージのビルド、OS の公開設定は Pi 専用設定と役割が異なるため、
@@ -205,7 +205,7 @@ Web の別端末や、指定したシェルを使わない拡張プロセスは�
 Pi 本体は flake.lock の Nixpkgs に固定された 0.85.1 を使います。
 標準の ChatGPT 接続にはキャッシュ用ヘッダーを本文のキーに合わせる小さなパッチを適用しています。
 Pi Codex conversion が読み込まれる場合は、拡張自身の上流プロバイダー実装をそのまま使います。
-`@howaboua/pi-codex-conversion@3.0.34`、`pi-mcp-adapter@2.34.0`、`pi-web-access@0.30.0`、`@narumitw/pi-lsp@0.49.7`、`bigpowers@2.88.9` は
+`@howaboua/pi-codex-conversion@3.0.34`、`pi-mcp-adapter@2.34.0`、`pi-web-access@0.30.0`、`@narumitw/pi-lsp@0.49.7`、`bigpowers@2.88.9`、`pi-subagents@0.70.0` は
 Pi 標準のパッケージ管理で初回起動時に取得し、npm の lifecycle scripts を無効にします。
 拡張のバージョン指定は Nix 管理で、取得した依存関係とロックは `~/.pi/agent/npm/` に保存されます。
 この npm 依存関係のロックは flake.lock には含まれません。
@@ -325,10 +325,9 @@ OSC 99 のデスクトップ通知を送ります。`agent_settled` を使い、
 後続メッセージの処理中には完了扱いにしません。Pi Web / RPC、非対話モード、非 Kitty 端末では
 通知を出さず、追加のモデル要求や外部通知サービスも使いません。
 
-作業分担と独立レビューは [Pi Web 内蔵サブエージェント](#pi-web) に一本化します。
-Web では明示的な委任依頼なしで自動利用し、CLI の Pi にサブエージェント機能は追加しません。
-CLI / Web 共通の `/review` は、Web では独立した `reviewer` の結果も回収して確認します。
-内蔵ツールを利用できない場合は親が直接レビューし、その制限を報告します。
+作業分担と独立レビューは [pi-subagents](#pi-subagents) に一本化し、CLI と Web の両方で
+明示的な委任依頼なしでも利用します。共通の `/review` は独立した `reviewer` の結果も回収して確認します。
+拡張を利用できない場合は親が直接レビューし、その制限を報告します。
 
 システム指示とツール定義を不用意に変えず、毎ターンの日付・Git 状態の注入、履歴の書き換え、定期的な空要求は行いません。
 Pi Codex conversion の通信実装に合わせ、キャッシュキーは上流のセッション単位の扱いを使います。
@@ -384,23 +383,56 @@ Web 版と CLI は `~/.pi/agent` の認証、設定、拡張、スキル、会�
 Pi Web が内部で使う Pi SDK も、このリポジトリのキャッシュ修正版を使います。
 Home Manager が管理する設定・モデル・スキルの変更は、Web 画面ではなく Nix の編集元で行います。
 
-内蔵サブエージェントは `Agent` で起動し、`get_subagent_result` で結果を確認、
-`steer_subagent` で実行中の子に追加指示を送ります。バックグラウンド実行、再開、
-モデル指定、文脈継承、worktree 分離は内蔵機能を使います。
-[web-agents/](home/keewai/shared/pi/web-agents/) で有効化、親セッションごとの最大同時実行数4、4役を管理します。
+### pi-subagents
 
-| 役割 | 用途 | モデル | 推論 |
-| --- | --- | --- | --- |
-| `explore` | 読み取り専用のコード調査 | `openai-codex/gpt-5.6-luna` | `high` |
-| `plan` | 読み取り専用の計画・リスク整理 | `openai-codex/gpt-5.6-luna` | `max` |
-| `general-purpose` | 実装・検証 | `openai-codex/gpt-5.6-luna` | `max` |
-| `reviewer` | 差分・呼び出し元の独立レビュー | `openai-codex/gpt-5.6-luna` | `max` |
+[pi-subagents](https://github.com/nicobailon/pi-subagents) を Pi 標準の npm パッケージとして読み込みます。
+Pi 0.85.1 で前景・バックグラウンド実行を確認した 0.70.0 に固定します。
+0.70.1 はバックグラウンド runner が Pi 0.85.1 にない `pi-ai.createInitialSystemMessage` を参照して
+起動できないため使いません。本体・Codex conversion と合わせて互換性を検証してから更新します。
+Pi Web 内蔵側は `agents/settings.json` の `builtInEnabled: false` で無効にし、
+`Agent`・`get_subagent_result`・`steer_subagent` と二重に実行しません。
+一方、pi-subagents 側の同梱役割は `subagents.disableBuiltins: false` で有効にします。
+旧 `explore`・`general-purpose`・`plan`・独自 `reviewer` の定義は配布せず、役割のプロンプト・
+ツール・推論設定はパッケージのものを優先します。同梱スキルとプロンプトも読み込みます。
+既存の `/review` は同梱 `reviewer` を呼び出し、付属の `/parallel-review`・`/review-loop` などとも共存します。
+追加 CLI や council 用モデルなどを要求するワークフローは、必要な前提を確認してから使います。
+固定版の `reviewer` は `watchdog_diff` のために Git リポジトリと有効な `HEAD` を必要とします。
+非 Git の計画・提案レビューでは `oracle` に読み取り専用の独立レビューを依頼し、
+reviewer の起動だけを目的にリポジトリやコミットを自動作成しません。
 
-親の Astra・`xhigh` と全ツール設定は維持します。全役を既定でバックグラウンド実行し、
-独立した文脈と組み込みツールだけを使います。拡張・スキルは自動読み込みせず、Web 検索や
-MCP / LSP に依存する検証は親が担当します。子にも適用される AGENTS.md を読むよう指示し、
-実装・計画・レビュー時は必要な Ponytail を読みます。`reviewer` は Git の実際の差分を
-確認するためシェルを使いますが、変更操作は禁止します。この指示は OS の読み取り専用隔離ではありません。
+単独の委任は `subagent({ agent: "scout", task: "...", cwd: "...", async: true, context: "fresh" })`、
+結果の確認は `subagent({ action: "status", id: "..." })` を使います。
+実行中への指示は `action: "steer"`、完了した子の継続は `action: "resume"` と `message`、
+中断・終了は `interrupt` / `stop` です。通常の非同期実行は完了通知を使い、繰り返しポーリングしません。
+詳しい引数は `/subagents-guide` または `subagent({ action: "guide", topic: "tool-reference" })` で確認します。
+CLI の `/subagents-fleet` と Web の会話内ツール結果・status は同じ拡張の状態を参照します。
+Pi Web の旧内蔵サブエージェント一覧が、新しい拡張の実行一覧になるわけではありません。
+
+並列処理は拡張の `workflowScript` と `runs.run` / `runs.all`、編集の分離は `worktree: true` または
+`isolation: "worktree"` を使います。設定は [subagents.nix](home/keewai/shared/pi/subagents.nix) に置き、
+1ワークフローの並列数を4、親セッションのトップレベル非同期 run 数も4に制限します。
+これはワークフロー／親セッション単位の上限であり、複数の実行・セッションにまたがる
+子の合計の上限ではありません。旧 Pi Web の合計4子制限を独自のスケジューラーで再実装せず、
+pi-subagents の制限単位を採用します。不要なファンアウトを避け、定期実行は無効にします。
+
+| 同梱の主な役割 | 用途 |
+| --- | --- |
+| `scout` | ローカルコードの調査と引き継ぎ情報の整理 |
+| `worker` | 実装・修正・検証 |
+| `reviewer` | 差分、計画、提案のレビュー |
+| `oracle` | 計画・判断への独立した検討 |
+| `delegate` | 専門役に当てはまらない限定的な委任 |
+| `researcher` | Web・文書調査 |
+| `evidence-auditor` | 調査結果の出典・根拠の確認 |
+
+親の Astra・`xhigh` は維持します。子のモデルを独自に固定せず、役割や呼び出しで未指定なら親のモデルを継承します。
+推論は同梱役割の値が優先されるため、旧4役の Luna／high・max 設定は引き継ぎません。
+共通の運用設定として、既定は非同期・fresh context とし、会話履歴を意図せず引き継がないようにします。
+親の Code Mode が子の標準ツールを置き換えないよう、ambient 拡張は `subagents.defaultExtensions: []` で無効にします。
+`researcher` と `evidence-auditor` には `pi-web-access` の実行ファイルを `subagentOnlyExtensions` で明示し、
+前景・バックグラウンドともに必要な検索・取得ツールを提供します。その他の拡張に依存する検証は親が担当します。
+役割の `inheritProjectContext` などの設定、`watchdog_diff`・`contact_supervisor` などの内部ツールは上流に従います。
+レビューは読み取り専用として依頼し、実装時は適用される AGENTS.md と Ponytail を守るよう親が指示します。
 
 [APPEND_SYSTEM.md](home/keewai/shared/pi/APPEND_SYSTEM.md) により、調査・計画・実装・レビューを
 伴う通常の依頼は毎回、早い段階で有用な部分を自動委任します。単なる応答や即答には子を起動せず、
@@ -415,18 +447,25 @@ MCP / LSP に依存する検証は親が担当します。子にも適用され�
 子の要求も ChatGPT の利用枠を消費します。自動利用はモデルへの常設指示であり、毎ターンの強制起動や
 追加の常駐ループではありません。
 
-上流の役割検出は個別ファイルのシンボリックリンクを対象にしないため、
-`~/.pi/agent/agents` ディレクトリ全体を Home Manager からリンクします。
-役割や有効化設定を Web 画面から書き換えず、`web-agents/` を編集して適用します。
+役割はインストールしたパッケージから読み、独自プロファイルは配布しません。
+拡張設定は `~/.pi/agent/extensions/subagent/config.json` に配布します。
+`~/.pi/agent/agents` は Pi Web の無効化用 `settings.json` だけを持つ読み取り専用の Nix Store ディレクトリへリンクします。
+これにより Web UI の atomic rename で無効化設定を置き換えることも防ぎます。
+共有設定は Web 画面や拡張の管理操作で書き換えず、Nix の編集元を変更します。
+カスタム役割が別途必要になった場合だけ、そのプロジェクトの方針に従って明示的に追加します。
 初回移行時に既存の未管理ディレクトリがある場合は内容を確認して退避し、自動上書きしません。
 旧拡張の取得済み npm ファイル・実行履歴・認証情報は自動削除しません。
 既存セッションは `/reload`、または新規セッションの開始で新しい構成を読み込みます。
 
-再起動で実行主体を失った子は、保存履歴の `running` / `queued` を稼働の証拠にせず、
-`interrupted` として表示します。履歴を書き換えず、同じ子セッション ID を `Agent` の
-`resume` に渡して再開できます。実際に動いている子・待機中の子はランタイムの状態を優先し、
-一覧・詳細・検索・結果取得で状態をそろえます。この修正と回帰テストは
-[interrupted-subagents.patch](pkgs/pi-web/interrupted-subagents.patch) で管理します。
+Code Mode でも `subagent` は直接呼び出します。拡張の `workflowScript` と Code Mode の `exec` は別の実行環境で、
+対応する橋渡しを登録していない `tools.subagent` が `exec` 内にあるとは扱いません。
+委任の深さは共通設定の `maxSubagentDepth: 1` で制限し、親の方針でも再帰的なチーム作成を行いません。
+
+旧内蔵 Agent の会話は残しますが、旧 ID を pi-subagents の再開 ID へ自動変換しません。
+移行前の子は完了を確認してから新しいセッションへ切り替えます。
+旧履歴の停止済み `running` / `queued` を `interrupted` と表示する
+[interrupted-subagents.patch](pkgs/pi-web/interrupted-subagents.patch) は履歴閲覧のため維持します。
+新しい実行は pi-subagents の run ID・保持された子・実行ログで確認し、復旧は拡張の native 操作を使います。
 
 状態確認は `systemctl --user status pi-web`、ログは `journalctl --user -u pi-web`、
 再起動は `systemctl --user restart pi-web` です。

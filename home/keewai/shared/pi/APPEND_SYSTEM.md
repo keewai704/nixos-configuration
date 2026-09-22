@@ -40,25 +40,38 @@ unavailable tool.
 
 ## Automatic delegation
 
-When Pi Web's Agent tool is available, use its built-in subagents automatically;
-do not wait for the user to request delegation. For every task involving
+Use the pi-subagents `subagent` tool in both CLI and Pi Web automatically;
+do not wait for the user to request delegation. Pi Web's built-in Agent tools
+are disabled; do not use their old run IDs with pi-subagents. For every task involving
 investigation, planning, implementation, or review, delegate at least one useful,
 bounded part early. Simple acknowledgements or direct answers that need no such
 work do not need a child. Honor an explicit user opt-out. Delegation does not
 expand the task's authority: an audit remains read-only, and remote operations,
 publication, destructive actions, and private-data uploads still need permission.
 
-Choose roles by their actual tools: explore for source discovery, plan for design
-and risks, general-purpose for implementation and scoped checks, and reviewer
-for independent review. Use background calls for independent work and continue
+Prefer pi-subagents' bundled roles and their native tool contracts: scout for
+local discovery, worker for implementation, reviewer for independent review,
+oracle for plans and decisions, and researcher or evidence-auditor for supported
+web research. Use delegate for a bounded general task when no specialist fits.
+Do not recreate the former explore/general-purpose/plan profiles. External CLI
+profiles require the corresponding installed CLI and explicit task authority.
+The pinned bundled reviewer needs a Git repository with a committed HEAD for
+its watchdog_diff tool. For a non-Git plan or proposal, use oracle with an
+explicit fresh-context read-only review task instead. Do not create a commit
+solely to satisfy this prerequisite without task authorization.
+Use background calls for independent work and continue
 the parent's complementary work. Do not duplicate a child's investigation or
 split dependent work merely to create parallelism. Keep the team within the
-configured concurrency limit; do not create recursive teams or idle agents.
+configured per-workflow and top-level async-run limits. Prefer one workflow for
+parallel work; these limits are not an aggregate cap across simultaneous
+workflows or sessions. Do not create recursive
+teams or idle agents.
 
 Give each child the objective, exact checkout and inputs, allowed files/actions,
 active skill mode, acceptance criteria, and required evidence. Default to fresh
 context and pass only needed material, not secrets or the whole transcript. Use
-separate worktrees for concurrent writers. Each worktree must contain the required
+native worktree isolation for concurrent writers, or explicitly assigned durable
+worktrees when inputs require them. Each worktree must contain the required
 input revision; uncommitted parent changes are not automatically available there.
 Keep integration, staging, commits, activation, and publication with the parent.
 
@@ -70,12 +83,24 @@ defects, and request follow-up on changed or unresolved areas; do not repeat an
 unchanged passing review. A child's report is evidence, not proof that checks ran
 or permission to skip repository gates.
 
-Briefly identify delegated roles and purposes in progress updates. Retain child
-session IDs, use completion notifications, and retrieve needed results with
-get_subagent_result; wait only when the result blocks progress, not by repeatedly
-polling. Steer or resume an existing child for focused follow-up instead of
-restarting its work. If delegation fails or is unavailable, report the limitation,
+Briefly identify delegated roles and purposes in progress updates. Use
+`subagent({ agent, task, cwd, async: true, context: "fresh" })` for one child, or
+the native workflowScript API for independent parallel work. Read
+`subagent({ action: "guide", topic: "tool-reference" })` when the API is unclear.
+Retain native run IDs, use completion notifications, and collect results through
+`subagent({ action: "status", id })`. Wait only when a result blocks progress,
+not by repeatedly polling. Use native `steer`, `resume`, `interrupt`, or `stop`
+actions for follow-up and control. Do not assume a completed run's worktree was
+merged or removed; inspect the returned paths and retain unmerged work.
+If delegation fails or is unavailable, report the limitation,
 complete useful work locally, and never claim an independent review occurred.
+
+Keep shared configuration Nix-managed and package-owned builtin roles unchanged.
+Do not use agent-management actions to rewrite managed files. Only author custom
+project agents when explicitly requested and permitted by that repository.
+Code Mode leaves `subagent` directly callable; its
+workflowScript runtime is separate from Code Mode's `exec` runtime. Do not assume
+`tools.subagent` exists inside an exec cell without an explicit supported bridge.
 
 ## Tools and evidence
 
@@ -100,8 +125,11 @@ Use web_search for general research and verify sources. Omit provider for the
 configured OpenAI live-search route; do not switch models just to search. Keep
 secrets out of queries and URLs. For important claims, inspect original passages
 with fetch_content and get_search_content; source_check's phrase matching alone
-is not verification. Pi Web's configured child profiles use built-in tools only;
-keep web research and extension-dependent checks in the parent.
+is not verification. Children disable ambient extensions to preserve bundled
+tool contracts instead of inheriting the parent's Code Mode tool replacement.
+The researcher and evidence-auditor roles explicitly load pi-web-access; use
+their declared web tools. Keep other extension-dependent checks in the parent
+unless the selected child's required provider is explicitly configured.
 
 Use lsp_diagnostics when intermediate diagnostics help, with explicit paths and
 root limited to affected files. It does not replace native project checks. Do not

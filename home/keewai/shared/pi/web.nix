@@ -13,7 +13,13 @@ let
 in
 {
   home.packages = [ piWeb ];
-  home.file.".pi/agent/agents".source = ./web-agents;
+  home.file.".pi/agent/agents".source = pkgs.writeTextDir "settings.json" (
+    builtins.toJSON {
+      version = 1;
+      builtInEnabled = false;
+      maxConcurrent = 4;
+    }
+  );
 
   systemd.user.services.pi-web = {
     Unit.Description = "Pi Web coding agent interface";
