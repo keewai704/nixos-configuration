@@ -10,6 +10,7 @@
     ./input-method.nix
     ./kitty.nix
     ./legcord.nix
+    ./microsoft365.nix
     ./noctalia.nix
     ./pi
     ./steam-theme.nix
