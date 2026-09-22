@@ -305,17 +305,9 @@ check_tailnet() {
 }
 
 check_web_services() {
-  local icloud_status
   check_http "nginx" "http://127.0.0.1:@nginxPort@/" --header 'Host: @tailnetHostname@'
   check_http "immich" "@tailnetOrigin@/"
   check_http "vaultwarden" "@tailnetOrigin@/vault/"
-  if icloud_status=$(curl --silent --show-error --max-time 10 --output /dev/null --write-out '%{http_code}' \
-    --header 'Host: @tailnetHostname@' 'http://127.0.0.1:@icloudKeychainPort@/icloud-keychain/') &&
-    [[ "$icloud_status" == 401 ]]; then
-    clear_alert "http-icloud-keychain"
-  else
-    queue_alert "http-icloud-keychain" "iCloud Keychain backend did not return the expected unauthenticated HTTP 401"
-  fi
 }
 
 check_tcp_services() {

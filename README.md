@@ -107,7 +107,6 @@ Nix に慣れていない場合は、まず次の構文が分かれば読み進�
 | ブラウザーと既定の URL ハンドラー | [desktop/browser.nix](home/keewai/desktop/browser.nix)、[firefox.nix](home/keewai/desktop/firefox.nix) |
 | ファイル管理、圧縮、XDG フォルダー | [desktop/file-manager.nix](home/keewai/desktop/file-manager.nix) |
 | Bitwarden と SSH エージェント | [desktop/bitwarden.nix](home/keewai/desktop/bitwarden.nix) |
-| iCloud Keychain / KeePass互換サーバー（Orangeのみ） | [server/icloud-keychain.nix](home/keewai/server/icloud-keychain.nix)、[パッケージ](pkgs/icloud-keychain/) |
 | デスクトップのパネルとランチャー | [desktop/hypr-island.nix](home/keewai/desktop/hypr-island.nix) |
 | Discord クライアントとテーマ | [desktop/legcord.nix](home/keewai/desktop/legcord.nix)、[legcord-system24.nix](home/keewai/desktop/legcord-system24.nix) |
 | Steam と Millennium | [hosts/citrus/steam.nix](hosts/citrus/steam.nix)、[desktop/steam-theme.nix](home/keewai/desktop/steam-theme.nix) |
@@ -578,95 +577,6 @@ Firefox の見た目は Sine/Natsumi が担当するため、Stylix の Firefox 
 
 <details>
 <summary>TypeSafe の共有認証（Jev / Pi プラグイン）</summary>
-
-### iCloud Keychain と KeePassXC-Browser
-
-`icloud-keychain` は [Sank6/iCloud-Keychain-for-Linux](https://github.com/Sank6/iCloud-Keychain-for-Linux)
-を固定リビジョンで利用する、非公式・実験的な読み取り専用 CLI です。Apple の公開 API ではなく、
-Advanced Data Protection を含む実アカウントでの動作は保証できません。
-Keychain の保持・Apple 認証・同期・復号は **Orange** の `keewai` ユーザーで行います。
-Citrus にはバックエンド・中継・CLI・Native Messaging マニフェストを一切配置しません。
-KDBX は使用せず、Orange が iCloud Keychain の同期プロトコルを直接扱います。
-通信経路は次のとおりです。
-
-```text
-KeePass互換クライアント → wss://orange.tail1e65cd.ts.net/icloud-keychain/
-  → Tailscale Serve HTTPS 443 → nginx 127.0.0.1:8000 → backend 127.0.0.1:30142
-```
-
-追加の外部ポートは公開しません。接続ごとに独立した NaCl box セッションを使います。
-KeePassXC 2.6.1 相当の接続・関連付け・ログイン取得・TOTP・ロックに対応します。
-パスワードの追加・更新、グループ、Passkey、Auto-Type は未対応で、成功として応答しません。
-
-提供するのは認証付き WebSocket の KeePassXC プロトコルです。通常の KeePassXC-Browser は
-Native Messaging または固定されたローカル WebSocket に接続するため、これだけで任意の遠隔 URL へ
-直接接続できるわけではありません。この構成では Citrus 側の接続設定や中継を作成しません。
-既存の Bitwarden は変更しません。
-
-Orange 上で、最初にキーリングを作成・解除し、Apple にログインします。
-キーリングには Apple パスワードとは別の、空でないパスワードを設定してください。
-
-```sh
-icloud-keychain keyring-unlock
-icloud-keychain login
-icloud-keychain unlock
-icloud-keychain client-add browser
-```
-
-`client-add` はブラウザーの関連付けとパスワード取得を許可する機密トークンを一度だけ表示します。
-Nix、URL、シェル引数、チャット、ログへ保存しないでください。互換クライアントは WebSocket の
-ハンドシェイクに `Authorization: Bearer <token>` を付け、`Origin` は送信しません。
-サーバー側にはトークンのハッシュだけを保存します。
-初回関連付けの許可は Orange 上の `client-add` で与えるため、ブラウザー接続時の GUI 確認はありません。
-管理操作を行う Web API は公開しません。管理・閲覧コマンドはすべて Orange 上で実行します。
-
-```sh
-icloud-keychain show github
-icloud-keychain show github --show-passwords
-icloud-keychain sync
-icloud-keychain lock
-icloud-keychain client-list
-icloud-keychain client-revoke browser
-icloud-keychain logout
-```
-
-初回ログインでは端末上で Apple ID、パスワード、2FA を入力します。Keychain への参加には別途、
-対象 Apple デバイスのパスコードと確認操作が必要です。この操作は新しい端末の信頼関係を登録します。
-**誤ったパスコードを繰り返すと回復レコードが失われる可能性があります。** 自動再試行はせず、
-ログイン・回復操作をエージェントやテストから実行しないでください。
-`client-revoke` は既存接続の次の要求にも適用され、再接続だけで解除されることはありません。
-`lock` はブラウザーアクセスを止めます。キーリング自体が施錠された場合は `keyring-unlock` が必要です。
-Orange の Home Manager がバックエンドとヘッドレスの GNOME Keyring をユーザーサービスとして起動します。
-GNOME Keyring の D-Bus・PAM・メモリロック用 capability 連携は Orange の NixOS モジュールで保持します。
-
-公開 Anisette v3 サーバー `https://ani.sidestore.io` を既定で使用します。
-Orange / Citrus のどちらにも Anisette サーバーや生成ライブラリは配置しません。
-同梱するのは公開サービスの v3 API を呼び出すクライアント処理だけです。
-`--anisette https://...` をサブコマンドの前に指定するか、`ICP_ANISETTE_URL` で変更できます。
-旧 v1 へのフォールバックはありません。サーバーには端末の provisioning データと IP アドレスが
-見えますが、Apple ID、パスワード、認証トークン、Keychain の内容は渡しません。
-公開サーバーの可用性・運営者は信頼境界に含まれます。状態を別サーバーへ自動送信しません。
-中断した provisioning の再実行やサーバー変更時は、エラーを確認してから
-`~/.config/icp/anisette-v3.json` を別の場所へ退避して明示的にやり直します。
-Apple 認証の TLS 検証も無効化せず、Apple が公開する Root CA をハッシュ固定して
-このアプリ内だけの CA bundle に追加します。システム全体の信頼設定は変更しません。
-
-Apple のパスワードは保存しません。暗号化済みセッションとキャッシュは Orange の
-`$XDG_CONFIG_HOME/icp`（既定 `~/.config/icp`）、復号鍵は Orange の暗号化キーリングに保存します。
-Secret Service が利用できない場合は停止し、平文の鍵ファイルへ切り替えません。
-ヘッドレス解除は固定された GNOME Keyring の拡張 D-Bus API を使い、パスワードを暗号化された
-Secret Service セッションで渡します。GUI プロンプトや空パスワードへのフォールバックはありません。
-同期は `sync` による手動操作で、トークン失効時は再度 `login` が必要です。
-`logout` は Orange のトークン・キャッシュ・拡張の関連付け・クライアントの認可を消去しますが、Apple 側の信頼端末を
-削除する操作ではありません。アカウント変更前には必ず `logout` してください。
-
-Citrus 側にこの機能の実装・設定はありません。過去に別途 Citrus に作成した
-Apple の状態やキーリング項目を、この設定が勝手に移送・削除することはありません。
-
-自動入力は **HTTPS のホスト名とポートが完全一致**する項目だけです。名前からの推測や親子ドメイン
-への展開はせず、別オリジンへ送信するフォームにも返しません。保存されたホスト名とログイン先が
-異なる場合は自動入力しません。ブラウザー用 `lock` は CLI の閲覧を禁止するものではなく、
-同じ OS ユーザーの侵害や、既に拡張へ渡したパスワードの回収を防ぐ機能でもありません。
 
 ### TypeSafe の共有認証
 
