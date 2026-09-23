@@ -144,7 +144,7 @@ Home Manager は `useUserPackages = true` で NixOS に統合されています�
 | --- | --- |
 | [shared/pi/default.nix](home/keewai/shared/pi/default.nix) | 全ホスト共通の Pi 設定の入口 |
 | [shared/pi/agent.nix](home/keewai/shared/pi/agent.nix) | 本体・実行環境、モデル、ローカル拡張と指示の配布 |
-| [skills/superpowers/](skills/superpowers/) | Superpowers 6.4.1 の Pi / Astra 向けローカルスキル |
+| [shared/pi/superpowers.nix](home/keewai/shared/pi/superpowers.nix) | Superpowers 6.4.1 公式 Pi パッケージの固定と読み込み |
 | [shared/pi/codex-conversion.nix](home/keewai/shared/pi/codex-conversion.nix) | Pi Codex conversion の導入、補助バイナリ、ツール・Remote context management・互換設定 |
 | [shared/pi/mcp.nix](home/keewai/shared/pi/mcp.nix) | Pi MCP アダプターの導入、共通 MCP サーバーの登録と設定変換 |
 | [shared/pi/lsp.nix](home/keewai/shared/pi/lsp.nix) | Pi LSP 拡張の導入、言語サーバーと診断設定 |
@@ -214,16 +214,14 @@ Pi 標準のパッケージ管理で初回起動時に取得し、npm の lifecy
 この npm 依存関係のロックは flake.lock には含まれません。
 
 [Superpowers 6.4.1](https://github.com/obra/superpowers/tree/5bf4e78011075bcfc0dc295f0724994cd123ee71)
-の全15スキルを、[Astra の公式ガイド](https://developers.openai.com/api/docs/guides/latest-model#prompting-best-practices)
-に合わせたローカル版として [skills/superpowers/](skills/superpowers/) で管理します。
-上流リビジョンと MIT ライセンスを保持し、Home Manager が `~/.agents/skills/superpowers/` へ配布します。
-Pi の標準探索を使い、`/skill:using-superpowers`、`/skill:brainstorming`、
-`/skill:systematic-debugging` などで呼び出せます。開発時は `APPEND_SYSTEM.md` が入口スキルを案内します。
-不要な承認待ち、固定回数のレビュー・テスト、別ハーネス専用ツールの指示を調整し、
-変更に必要な検証、独立レビュー、許可された作業の完遂を重視します。
-Ponytail、利用者の明示指示、AGENTS.md の配置・検証・承認規則を維持します。
-上流のブートストラップ拡張、ブラウザー補助、実行スクリプト、会話のエクスポート機能は配布しません。
-スキルは npm では取得せず、このリポジトリで更新します。適用後は新しいタスクで読み込んでください。
+は [superpowers.nix](home/keewai/shared/pi/superpowers.nix) で上流リビジョンとハッシュを固定し、
+改変せず Nix ストアから公式 Pi パッケージとして読み込みます。
+パッケージのマニフェストに従って全15スキルと公式拡張を読み込み、開始時とコンパクション後に
+`using-superpowers` の初期指示を挿入します。`/skill:brainstorming`、
+`/skill:systematic-debugging` などの標準スキルコマンドも利用できます。
+ローカル改変版は配布せず、`~/.agents/skills/superpowers/` との二重読み込みを避けます。
+Ponytail、利用者の明示指示、AGENTS.md の配置・検証・承認規則は引き続き優先します。
+更新は Nix の固定リビジョンとハッシュを変更して行い、適用後は新しい Pi セッションで読み込んでください。
 
 [Pi 0.86.0](https://github.com/earendil-works/pi/blob/v0.86.0/packages/coding-agent/CHANGELOG.md) は
 プロバイダーへ渡すシステム指示・ツール定義を `TranscriptContext.messages` 内へ移しました。

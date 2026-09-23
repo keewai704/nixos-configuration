@@ -24,11 +24,10 @@ reviews unless disabled by the user; read
 and retain the user's selected mode, including disabled, for the conversation.
 KISS and YAGNI are covered by Ponytail, not separate skills or workflows.
 
-For software development workflows, read
-/home/keewai/.agents/skills/superpowers/using-superpowers/SKILL.md when first
-needed, then load only the relevant Superpowers skills. These are local
-Pi/Astra adaptations; use native skill discovery and the configured delegation
-tools rather than upstream bootstrap hooks or another harness's commands.
+For software development workflows, use the official Superpowers Pi package.
+Its extension loads using-superpowers at startup and after compaction; load only
+the relevant additional skills through Pi's native skill discovery. Use the
+configured delegation tools rather than another harness's commands.
 
 Run checks appropriate to the change. Reuse passing checks while their relevant
 inputs remain unchanged; repeat or broaden them for changes, failures, or
