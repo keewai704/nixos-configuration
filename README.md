@@ -203,11 +203,11 @@ Web の別端末や、指定したシェルを使わない拡張プロセスは�
 既定のモデルは `openai-codex/gpt-6-astra`、推論は `xhigh`、コンテキスト上限は 872,000 です。
 モデル選択は制限せず、必要なら Pi 標準の操作で変更できます。
 自動コンパクションを有効にし、応答用に 131,072 トークン、要約時の直近履歴に 32,768 トークンを確保します。
-Pi 本体は [pi-coding-agent/default.nix](pkgs/pi-coding-agent/default.nix) で 0.87.0 に固定し、
+Pi 本体は [pi-coding-agent/default.nix](pkgs/pi-coding-agent/default.nix) で 0.87.1 に固定し、
 Nixpkgs のビルド定義を使ってソース・npm 依存関係・モデルカタログのハッシュを検証します。
 標準の ChatGPT 接続にはキャッシュ用ヘッダーを本文のキーに合わせる小さなパッチを適用しています。
 Pi Codex conversion が読み込まれる場合は、拡張自身の上流プロバイダー実装をそのまま使います。
-`@howaboua/pi-codex-conversion@3.0.35`、`pi-mcp-adapter@2.34.0`、`pi-web-access@0.30.0`、`@narumitw/pi-lsp@0.49.7`、`pi-subagents@0.70.1` は
+`@howaboua/pi-codex-conversion@3.0.37`、`pi-mcp-adapter@2.34.0`、`pi-web-access@0.30.0`、`@narumitw/pi-lsp@0.49.7`、`pi-subagents@0.70.1` は
 Pi 標準のパッケージ管理で初回起動時に取得し、npm の lifecycle scripts を無効にします。
 拡張のバージョン指定は Nix 管理で、取得した依存関係とロックは `~/.pi/agent/npm/` に保存されます。
 この npm 依存関係のロックは flake.lock には含まれません。
@@ -227,8 +227,12 @@ Ponytail、利用者の明示指示、AGENTS.md の配置・検証・承認規�
 [Pi 0.86.0](https://github.com/earendil-works/pi/blob/v0.86.0/packages/coding-agent/CHANGELOG.md) は
 プロバイダーへ渡すシステム指示・ツール定義を `TranscriptContext.messages` 内へ移しました。
 旧形式の `context.systemPrompt` / `context.tools` を参照していた Codex conversion 3.0.34 は使わず、
-上流で transcript 形式の指示・ツール・圧縮・再開に対応した 3.0.35 と組み合わせます。
+上流で Pi 0.87 の指示・ツール・圧縮・再開に対応した 3.0.37 と組み合わせます。
 Pi 本体の `cacheWarming` は `off` にし、更新によってキャッシュ維持用の追加推論を有効にしません。
+Pi Web はビルド時も実行時も同じ Pi SDK を参照し、
+[transcript-context.patch](pkgs/pi-web/transcript-context.patch) でタイトル生成・専用システム指示・
+セッション一覧の同時刻の並び順を新しい SDK に合わせます。
+会話履歴や読み取り専用の `agent.state.systemPrompt` は書き換えません。
 
 [Pi Codex conversion](https://github.com/IgorWarzocha/howaboua-pi-stuff/tree/main/packages/pi-codex-conversion) は
 公開 npm パッケージを改変せず、CLI と Pi Web の両方で読み込みます。Codex CLI の導入は不要です。
@@ -391,7 +395,7 @@ Home Manager が管理する設定・モデル・スキルの変更は、Web 画
 ### pi-subagents
 
 [pi-subagents](https://github.com/nicobailon/pi-subagents) を Pi 標準の npm パッケージとして読み込みます。
-Pi 0.87.0 の transcript API に合わせて 0.70.1 に固定します。
+Pi 0.87.1 の transcript API に合わせて 0.70.1 に固定します。
 バックグラウンド runner が使う `pi-ai.createInitialSystemMessage` は更新後の Pi に含まれます。
 Pi Web 内蔵側は `agents/settings.json` の `builtInEnabled: false` で無効にし、
 `Agent`・`get_subagent_result`・`steer_subagent` と二重に実行しません。

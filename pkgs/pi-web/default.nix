@@ -40,6 +40,7 @@ buildNpmPackage {
     ./local-font.patch
     ./subpath.patch
     ./interrupted-subagents.patch
+    ./transcript-context.patch
   ];
   npmDepsHash = "sha256-lGsMOYY2rCQSw+hMLXv+aWq4991NnkhLJUipL1F843k=";
   npmRebuildFlags = [ "--ignore-scripts" ];
@@ -63,6 +64,11 @@ buildNpmPackage {
   postConfigure = ''
     cp -r ${piRoot} node_modules/@earendil-works/pi-coding-agent
     chmod -R u+w node_modules/@earendil-works/pi-coding-agent
+    for package in pi-ai pi-agent-core pi-tui; do
+      rm -r "node_modules/@earendil-works/$package"
+      ln -s "pi-coding-agent/node_modules/@earendil-works/$package" \
+        "node_modules/@earendil-works/$package"
+    done
   '';
 
   doCheck = true;
