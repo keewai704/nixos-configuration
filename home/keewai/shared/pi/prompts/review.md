@@ -9,19 +9,16 @@ and relevant untracked source files. Review both diffs and those new files; a
 tracked-file diff alone is not the complete change. Exclude ignored/generated
 artifacts and secret material, and mention exclusions that limit the review.
 If a target is supplied, keep the review within that scope.
-When native Agent is available, delegate an independent fresh-context assessment
-with subagent_type: "code-reviewer". Give it the exact target and checkout, not
-your conclusions. Use a fresh task rather than resuming the implementation child.
-Use assignment with goal, context, and ordered instructions; prohibit edits,
-staging, and commits. Supply a readable complete diff and relevant new-file paths
-because the read-only role has no shell. Retrieve get_subagent_result, verify its
-report, then manage_subagents(action: "close") with the returned delivery_id.
-Do not create a repository or commit just to run a reviewer.
-Verify findings and synthesize one report.
-If delegation is unavailable or fails, review locally and state that limitation.
+When native delegation is available and not disabled, request a fresh
+`code-reviewer` assessment under the active delegation policy. Supply the exact
+checkout, complete readable diff/new-file paths, and requirements, not your
+conclusions. Do not reuse the implementer's context or create a repository/commit
+just to obtain review. Verify findings and close the verified report. If delegation
+is unavailable, disabled, or fails, review locally and state the limitation.
 Read the applicable AGENTS.md and relevant callers. Look for concrete bugs,
 regressions, and missing verification introduced by the changes. Check that file
 names and placement match their responsibilities.
-Report findings by severity with file and line, triggering conditions, impact,
-and a suggested fix. If there are no concrete findings, say so and identify any
-unverified scope. Do not edit files or change Git's index during the review.
+Report actionable findings by severity with file and line, triggering conditions,
+impact, and how to demonstrate the failure. Separate defects from preferences.
+If there are no concrete findings, say so and identify unverified scope. Do not
+edit files or change Git's index during the review.

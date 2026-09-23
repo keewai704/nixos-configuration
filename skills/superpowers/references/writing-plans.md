@@ -15,7 +15,10 @@ Prefer existing APIs and conventions. Include code or commands where they remove
 uncertainty, not a transcript of every keystroke. Separate independent work from
 sequential dependencies and include required review and deployment gates.
 
-Keep a short plan in session state. Write a plan file only when requested or
-required, in an allowed location. For an implementation request, proceed in the
-current session without forcing an execution-mode question. A plan-only request
-ends with the plan.
+For tracked implementation, keep the plan in the configured TODO ledger. In Pi,
+use pi-tasks' TaskCreate/TaskUpdate with acceptance criteria and dependencies;
+native Agent jobs represent delegated execution, not checklist items. Keep
+decision rationale and evidence references in durable context notes. Do not
+duplicate task status in a plan file unless requested or required in an allowed
+location. Proceed in the current session without an execution-mode question.
+A plan-only request ends with the plan, without executing it or spawning workers.

@@ -14,7 +14,9 @@ Give each task its goal, exact checkout, relevant inputs, allowed actions/files,
 constraints, acceptance criteria, and expected evidence. Writers need a committed
 `input_revision` and isolated worktree; uncommitted parent inputs do not transfer.
 Use background execution while the parent handles complementary work. Follow
-the configured concurrency limit and do not recursively delegate.
+the active policy's concurrency and depth limits. Nested delegation cannot expand
+the child's authority or effective tool/resource scope; a read-only child cannot
+create a writer.
 
 Collect terminal results with `get_subagent_result` and inspect actual evidence
 and changes. A launch receipt is not completion. Keep integration, staging,

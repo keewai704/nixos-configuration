@@ -1,6 +1,6 @@
 ---
 name: faster-whisper
-description: Transcribe local audio or video into text and timestamped subtitles using faster-whisper with Whisper large-v3. Use for speech-to-text (STT), Japanese transcription, and SRT/VTT generation, not text-to-speech (TTS).
+description: Transcribe local audio/video to text or SRT/VTT with Whisper large-v3, including Japanese. Not text-to-speech.
 compatibility: Requires the Nix-managed CUDA-enabled whisper-ctranslate2 command and a supported NVIDIA GPU/driver. Internet access and several GB of disk space are needed for the initial model download.
 ---
 

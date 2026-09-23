@@ -1,88 +1,67 @@
 # Repository working agreement
 
-This file defines ownership, authorization, and completion requirements.
-Parent model selection lives in `home/keewai/shared/pi/agent.nix`; shared native
-CLI/Web delegation is registered in `home/keewai/shared/pi/subagents.nix` and
-implemented in `pkgs/pi-web/`. Prefer packaged roles or explicit specialist
-prompts over duplicate profiles. Cross-project behavior and
-skill routing live in `home/keewai/shared/pi/APPEND_SYSTEM.md`. Personal skills
-live in `skills/`; repository-only skills live in `.agents/skills/`.
-Use [README.md](README.md) for architecture, examples, and editing entry points
-when those details are relevant to the task.
+Complete the requested change through the applicable checks, commit, and local
+deployment below. Keep going when the next step is authorized; ask only for a
+decision that changes the outcome, scope, or authority. Audits remain read-only.
+When blocked, finish independent work and report the blocker and unfinished scope.
+
+Use [README.md](README.md) for architecture and editing entry points when needed,
+not as a mandatory pre-read. Ownership:
+
+- `home/keewai/shared/pi/agent.nix`: Pi model and runtime defaults.
+- `home/keewai/shared/pi/subagents.nix` and `pkgs/pi-web/`: native CLI/Web delegation.
+- `home/keewai/shared/pi/APPEND_SYSTEM.md`: cross-project behavior and skill routing.
+- `skills/`: distributed personal skills; `.agents/skills/`: repository-only skills.
 
 ## 1. Identify the execution host
 
-Before inspecting live system state or performing host-dependent operations,
-confirm that `hostnamectl --static` matches `/etc/hostname`; use `hostname` if
-`hostnamectl` is unavailable. Reuse this confirmation while the environment is
-unchanged. Recheck if the environment changes or host identity becomes uncertain.
-A mismatch blocks host-dependent operations, not read-only source analysis.
+Before live-state inspection or host-dependent work, confirm that
+`hostnamectl --static` matches `/etc/hostname` (`hostname` is the fallback).
+Reuse the result until the environment or identity becomes uncertain. A mismatch
+blocks host-dependent work, not read-only source analysis. Paths, flake targets,
+and previous conversations are not evidence of the running host.
 
-Only the verified local host may be treated as the running system. Do not infer
-its identity from repository paths, flake targets, instructions, previous
-conversations, or configuration being edited.
-
-Do not use SSH, mosh, or remote shells to inspect checkouts, edit, validate,
-rebuild, deploy, or check runtime state on another host unless the current request
-explicitly authorizes that host and remote operation. General repository access
-does not grant remote access. Another host's declarative configuration may be
-edited, formatted, evaluated, or built in this local checkout without connecting
-to that host.
+SSH, mosh, and remote shells require explicit authorization for that host and
+operation. Another host's configuration may be edited, evaluated, or built
+locally without connecting to it. Never activate another host's output locally.
 
 ## 2. Match file names and responsibilities
 
-Read the affected implementation and the callers or imports needed to understand
-the change. Consult README.md when choosing a new location or resolving ownership;
-reuse unchanged context already read.
+Read the affected implementation and relevant callers/imports; reuse unchanged
+context. Put content where its name and path predict its purpose. Existing
+misplacement, convenient imports, or a smaller diff do not justify unrelated
+responsibilities. Create a specifically named file when needed, keeping tightly
+coupled code together rather than splitting by line count.
 
-- Put settings, scripts, documentation, and instructions where their name and path
-  predict their purpose. Existing imports, convenient values, smaller diffs, or
-  existing misplaced content do not justify adding unrelated responsibilities.
-- If no suitable file exists, create a specifically named file in the responsible
-  directory and connect its imports or references. Avoid vague `misc` or `utils`
-  containers. Keep tightly coupled implementation together rather than splitting
-  it to meet a line count or one-setting-per-file rule.
-- Keep `hosts/<host>/default.nix` for imports and small host-wide settings.
-  `modules/common.nix` contains only settings used by every host. Put substantial
-  features and services in files named for them.
-- Limit moves and renames to the requested scope; update all references and
-  preserve existing behavior. Leave unrelated cleanup for another task.
-- Before committing, check every changed file's responsibility and placement.
-  Fix mismatches and briefly explain any non-obvious placement in the final report.
-  Reviews should flag newly introduced responsibility mismatches too.
+`hosts/<host>/default.nix` is for imports and small host-wide settings;
+`modules/common.nix` is only for settings used by every host. Substantial features
+belong in named modules. Scope moves and renames to the task and update callers.
+Review placement before committing and explain non-obvious choices in the report.
 
 ## 3. Prefer Home Manager for personal applications
 
-Use Home Manager for personal applications, CLI tools, shell settings, user
-services, and user files. Prefer suitable `programs.*` or `services.*` modules,
-then `home.packages`. Declare these in `home/<user>/common.nix`, `shared/`, or
-`desktop/`, not `hosts/`.
+Personal applications, CLI tools, shell settings, user services, and user files
+belong in `home/<user>/common.nix`, `shared/`, or `desktop/`. Prefer suitable
+`programs.*`/`services.*` modules, then `home.packages`, not `hosts/`.
 
-All hosts share the common profile. Desktop hosts also load the common desktop
-profile through `modules/desktop.nix`; place GUI applications, session services,
-themes, and desktop-only MCP servers there. Apply hardware-dependent differences
-within that profile based on available capabilities. `modules/home-manager.nix`
-owns the NixOS/Home Manager connection.
+Every host loads the common profile. `modules/desktop.nix` adds the shared
+desktop profile for GUI apps, session services, themes, and desktop-only MCP
+servers; express hardware differences there by capability.
+`modules/home-manager.nix` owns the NixOS/Home Manager connection.
 
-Before choosing system ownership, inspect the pinned NixOS and Home Manager
-modules and upstream requirements. Preserve required boot/login integration,
-daemons, kernel/drivers, udev, PAM, polkit, D-Bus activation, capability/setuid
-wrappers, graphics infrastructure, and system font access. Keep necessary OS and
-device integration in `hosts/<host>/` or a genuinely shared system module;
-clients and daemons may have different owners.
+For ownership changes, inspect the pinned modules and upstream requirements.
+Preserve boot/login, daemon, kernel/driver, udev, PAM, polkit, D-Bus,
+capability/setuid, graphics, and system-font integration. Required OS/device
+integration stays in a host or genuinely shared system module. Do not disable
+integration modules or empty package lists merely to move executables unless all
+integration is explicitly replaced. Clients and daemons may have different owners;
+build-only and service-internal dependencies stay with their consumer.
 
-Do not disable an integration module or force its package list empty merely to
-move executables. Replace it only when all required integration is explicitly
-preserved. After changing ownership, verify affected profiles, plugins, native
-messaging, MIME handlers, autostart, session integration, and device access.
-Explain the specific integration requiring each affected system-side application
-in the final report. Build-only and service-internal dependencies belong with
-their consumer rather than the personal interactive application set.
-
-Home Manager controls ownership, not sandboxing or execution privileges. This
-repository uses `useUserPackages = true`, installs user packages under
-`/etc/profiles/per-user/<user>`, and still deploys through NixOS activation.
-Do not describe a package move as privilege reduction or root-free deployment.
+Verify affected profiles, plugins, native messaging, MIME handlers, autostart,
+session integration, and device access after an ownership change. Explain why
+each affected system-side application needs that integration. Home Manager uses
+`useUserPackages = true` and `/etc/profiles/per-user/<user>` here; deployment still
+uses NixOS activation. Moving a package is not sandboxing or privilege reduction.
 
 ## 4. Respect sources and authorization
 
@@ -90,26 +69,17 @@ Edit Nix-managed sources, not generated files under `/home/keewai/.pi/agent` or
 `/home/keewai/.agents/skills`. Write agent instructions, prompt templates, and
 skills in English; respond to the user in their language.
 
-Do not create repository-local `checks/` or `docs/` directories, standalone
-check suites, or standalone documentation files. Keep validation guidance in
-`.agents/skills/nixos-validation/SKILL.md`, not scripts or per-topic test
-collections. Keep repository policy and navigation in AGENTS.md and README.md.
-This restriction does not prohibit reading upstream documentation. Use disposable
-validation commands and build tools; existing package-local tests and upstream
-build tests are allowed. Do not add code comments; preserve functional syntax
-such as shebangs and completion directives.
+Keep policy and navigation in AGENTS.md and README.md, and validation guidance in
+`.agents/skills/nixos-validation/SKILL.md`. Do not add repository-local `checks/`
+or `docs/`, standalone check suites or documentation files. Upstream documentation,
+disposable validation, existing package-local tests, and upstream build tests are
+allowed. Do not add code comments; preserve shebangs and completion directives.
 
-A change request authorizes the necessary local edits, disposable validation,
-repairs caused by the change, commits, and local activation under section 5.
-Do not ask for approval again at each step. Audit/advice requests authorize
-inspection and recommendations, with only separately requested changes applied.
-Unrelated changes and remote operations are not implied. Push, publication,
-private-data uploads, and destructive actions require authorization covering the
-specific operation.
-
-If blocked, complete independent work that remains authorized and useful, then
-report the concrete blocker and unfinished scope. Do not broaden authority or
-fix unrelated problems to force completion.
+A change request authorizes necessary local edits, disposable validation, repairs
+caused by the change, commits, and section 5 activation without repeated approval.
+Audit/advice requests authorize inspection and recommendations, not edits.
+Unrelated work, remote operations, push/publication, private-data uploads, and
+destructive actions need authorization covering the specific operation.
 
 ## 5. Validate, commit, and apply when the local host is affected
 

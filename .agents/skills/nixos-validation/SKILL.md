@@ -23,15 +23,28 @@ or configuration snapshots. Format and check syntax only for changed files.
   `home/keewai/shared/pi/tsconfig.json` with the pinned TypeScript compiler or LSP.
   It resolves Pi and Node types from the deployed user profile; a missing profile
   is an environment limitation, not a reason to install mutable npm dependencies.
+- Pi providers, context management, or TODO configuration: use disposable HOME,
+  agent state, and synthetic providers without real credentials or paid requests.
+  Check CLI/Web resource discovery, standard Pi tools, one registration of each
+  native delegation tool, and the selected provider's model/auth/tool bridge.
+  Test context notes and raw-history retrieval across repeated compaction, resume,
+  and branches; check bounded output, opaque/private payload exclusion, aborts,
+  failures, and preserved tool-call/result boundaries. Test pi-tasks CRUD,
+  dependencies, persistence/resume, real runtime fork isolation, failed ledger
+  reads/initialization preserving original data, and absence of execution tools
+  or auto-cascade. Configuration alone does not prove live authentication.
+  Verify deployed resources and affected service behavior after both activation
+  gates without reloading the owning migration session. Preserve retired runtime
+  artifacts and configuration locally; do not rewrite historical sessions.
 - Native Pi delegation integration: use disposable HOME and agent state with
   synthetic local providers, never real credentials, sessions, or paid model APIs.
   Run package-local shared runtime and adapter tests using the pinned Pi SDK.
   Load the built CLI artifact and Web adapter with the configured filters; check
   one registration of Agent, get_subagent_result, steer_subagent, and
-  manage_subagents, six exact roles, actual child tools/model/provider bindings,
-  and Code Mode keeping all four tools direct. Run the external Code Mode
-  integration fixture with pinned package/helper paths and preserved MCP/search/LSP
-  resources; do not make those ambient packages production build dependencies.
+  manage_subagents, six exact roles, and actual child tools/model/provider bindings.
+  Preserve MCP/search/LSP resources; do not make those ambient packages production
+  build dependencies. Code Mode and its retired conversion fixture are not part
+  of the configured runtime.
   Verify concurrency across batches/resumes, dependency failure and explicit
   integrated-change release, messages and input/follow-up/verified-close, durable
   delivery, parent process ownership, and teardown before resume. Use disposable
@@ -52,6 +65,8 @@ or configuration snapshots. Format and check syntax only for changed files.
   canonical /pi/ assets and events after each activation gate. A launch receipt or
   accepted message is not completion or consumption, and isolated provider tests
   do not prove live provider authentication. Never reload the migration session.
+  For resource/config-only changes, exercise the affected loading and bridge paths;
+  do not rerun unchanged controller and browser-navigation suites by default.
 - Another host only: locally evaluate the changed attributes, or build the affected
   output when package implementation or build logic changed. Shared settings do
   not require every host's build unless host-specific branches need validation.

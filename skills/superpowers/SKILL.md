@@ -1,6 +1,6 @@
 ---
 name: superpowers
-description: Use when Superpowers is requested or coordinated development needs design, planning, and execution guidance. Not for routine edits.
+description: Guide coordinated design, planning, or implementation when needed or explicitly requested. Not for routine edits.
 license: MIT
 ---
 
@@ -46,7 +46,8 @@ Locally adapted from all 15 skills in
 revision `5bf4e78011075bcfc0dc295f0724994cd123ee71`, under the [MIT license](LICENSE).
 The entry replaces `using-superpowers`; the other workflows are supporting
 references, not separately advertised skills. This version follows
-[OpenAI's guidance on rethinking skills and prompts for GPT-6 Astra](https://developers.openai.com/blog/rethinking-skills-and-prompts-for-gpt-6-astra):
-narrow triggers, progressive disclosure, clear decision boundaries, and completion
-without unnecessary process. Upstream bootstrap hooks, executable helpers, and
-transcript export are not included.
+[OpenAI's Astra guidance](https://developers.openai.com/blog/rethinking-skills-and-prompts-for-gpt-6-astra)
+and [Anthropic's Opus guidance](https://claude.dev/blog/getting-the-most-out-of-opus-5-5/):
+narrow triggers, progressive disclosure, clear completion and stop boundaries,
+and durable progress without a fixed thinking ritual. Upstream bootstrap hooks,
+executable helpers, and transcript export are not included.

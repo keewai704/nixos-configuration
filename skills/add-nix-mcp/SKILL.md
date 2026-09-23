@@ -1,15 +1,13 @@
 ---
 name: add-nix-mcp
-description: Add or update Nix-managed MCP server configuration for Pi. Use for persistent server changes, not calls to an existing server.
+description: Add or change persistent Nix-managed MCP servers for Pi. Not for calling an existing server.
 ---
 
 # Add a Nix-managed MCP server
 
-Use `/home/keewai/nixos-configuration` as the source. Follow its
-[AGENTS.md](/home/keewai/nixos-configuration/AGENTS.md) for host confirmation,
-worktree protection, checks, commits, and local activation. Reuse preparation
-already completed for this task. Use the actual checkout's absolute paths with
-`git -C` and flake references when working elsewhere or in an isolated worktree.
+Edit the actual nixos-configuration checkout. Its
+[AGENTS.md](/home/keewai/nixos-configuration/AGENTS.md) owns repository gates;
+reuse completed preparation and use absolute checkout paths when working elsewhere.
 
 ## Declare the server
 

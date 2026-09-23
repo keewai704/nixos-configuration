@@ -91,7 +91,7 @@ function summarizeBranch(entries: SessionEntry[]) {
 		応答: emptyTotals(),
 		ツール内呼び出し: emptyTotals(),
 		Pi要約: emptyTotals(),
-		"Remote圧縮 V2": emptyTotals(),
+		"旧Remote圧縮 V2": emptyTotals(),
 	};
 	let latest: { model: string; tokens: Tokens | undefined } | undefined;
 	for (const entry of entries) {
@@ -106,7 +106,7 @@ function summarizeBranch(entries: SessionEntry[]) {
 			}
 		} else if (entry.type === "compaction") {
 			addUsage(groups.Pi要約, readTokens(entry.usage));
-			addUsage(groups["Remote圧縮 V2"], readNativeTokens(entry.details));
+			addUsage(groups["旧Remote圧縮 V2"], readNativeTokens(entry.details));
 		} else if (entry.type === "branch_summary") {
 			addUsage(groups.Pi要約, readTokens(entry.usage));
 		}
@@ -263,7 +263,7 @@ export default function cacheAudit(pi: ExtensionAPI) {
 
 	pi.registerCommand("cache", {
 		description:
-			"キャッシュの直近・累計・Remote圧縮の内訳と要求設定の変化を表示",
+			"キャッシュの直近・累計・要約の内訳と要求設定の変化を表示（旧Remote履歴にも対応）",
 		handler: async (_args, ctx) => {
 			const { groups, total, latest } = summarizeBranch(
 				ctx.sessionManager.getBranch(),

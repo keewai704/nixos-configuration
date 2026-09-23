@@ -1,16 +1,14 @@
 ---
 name: add-nix-skill
-description: Create or update personal skills managed by nixos-configuration. Use for persistent skill changes, not ordinary skill invocation or unrelated repository skills.
+description: Create or revise Nix-managed personal skills. Not for invoking skills or editing repository-only guidance.
 ---
 
 # Add a Nix-managed skill
 
-Author sources under `/home/keewai/nixos-configuration/skills`. Follow the
-repository's [AGENTS.md](/home/keewai/nixos-configuration/AGENTS.md) for host
-confirmation, worktree protection, checks, commits, and local activation.
-Reuse preparation already completed for this task. When working outside the
-checkout or in an isolated worktree, use that checkout's absolute paths with
-`git -C` and flake references.
+Edit `skills/` in the actual nixos-configuration checkout, not deployed links.
+Use its [AGENTS.md](/home/keewai/nixos-configuration/AGENTS.md) for repository
+gates and absolute checkout paths when working elsewhere. Reuse completed
+preparation; do not restart a generic workflow for each skill.
 
 ## Author and publish
 

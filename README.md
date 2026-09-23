@@ -175,20 +175,20 @@ Moonlight の CLI では `moonlight stream citrus "Extend Display" --1080 --fps 
 | --- | --- |
 | [shared/pi/default.nix](home/keewai/shared/pi/default.nix) | 全ホスト共通の Pi 設定の入口 |
 | [shared/pi/agent.nix](home/keewai/shared/pi/agent.nix) | 本体・実行環境、モデル、ローカル拡張と指示の配布 |
-| [skills/superpowers/](skills/superpowers/) | Superpowers の Pi / Astra 向け入口スキルと用途別の参照手順 |
-| [shared/pi/codex-conversion.nix](home/keewai/shared/pi/codex-conversion.nix) | Pi Codex conversion の導入、補助バイナリ、ツール・Remote context management・互換設定 |
+| [skills/superpowers/](skills/superpowers/) | Opus / Astra 共通の Superpowers 入口スキルと用途別の参照手順 |
+| [shared/pi/tasks.nix](home/keewai/shared/pi/tasks.nix) | pi-tasks の TODO 管理、保存先と表示設定 |
 | [shared/pi/mcp.nix](home/keewai/shared/pi/mcp.nix) | Pi MCP アダプターの導入、共通 MCP サーバーの登録と設定変換 |
 | [shared/pi/lsp.nix](home/keewai/shared/pi/lsp.nix) | Pi LSP 拡張の導入、言語サーバーと診断設定 |
 | [shared/pi/web-search.nix](home/keewai/shared/pi/web-search.nix) | Pi Web 検索拡張の導入、検索・取得経路、CLI / Web 共通の設定ファイル |
 | [shared/pi/web.nix](home/keewai/shared/pi/web.nix) | Pi Web の導入、ユーザーサービス、ホストごとの tailnet 許可 |
 | [shared/pi/subagents.nix](home/keewai/shared/pi/subagents.nix) | CLI/Web 共通のネイティブ委任・ロール・設定 |
 | [shared/pi/APPEND_SYSTEM.md](home/keewai/shared/pi/APPEND_SYSTEM.md) | 全プロジェクト共通の追加システム指示 |
-| [shared/pi/extensions/](home/keewai/shared/pi/extensions/)、[prompts/](home/keewai/shared/pi/prompts/) | キャッシュ監視・CLI 完了通知のローカル拡張、レビュー用プロンプト |
+| [shared/pi/extensions/](home/keewai/shared/pi/extensions/)、[prompts/](home/keewai/shared/pi/prompts/) | ローカルコンテキスト管理・キャッシュ監視・CLI 完了通知、レビュー用プロンプト |
 | [desktop/pi/default.nix](home/keewai/desktop/pi/default.nix) | デスクトップ専用連携の入口 |
 | [desktop/pi/cua.nix](home/keewai/desktop/pi/cua.nix) | デスクトップ操作用ドライバーと MCP |
 | [shared/skills.nix](home/keewai/shared/skills.nix)、[skills/](skills/) | Pi 以外とも共有できる個人スキルの配布と編集元 |
 | [pkgs/pi-coding-agent/](pkgs/pi-coding-agent/)、[pkgs/pi-web/](pkgs/pi-web/) | アプリ本体のビルド定義とパッチ |
-| [pkgs/pi-codex-conversion/](pkgs/pi-codex-conversion/)、[pi-mcp-adapter/](pkgs/pi-mcp-adapter/)、[pi-web-access/](pkgs/pi-web-access/)、[pi-lsp/](pkgs/pi-lsp/) | 拡張本体と実行時依存関係の固定・ビルド |
+| [pkgs/pi-tasks/](pkgs/pi-tasks/)、[pi-mcp-adapter/](pkgs/pi-mcp-adapter/)、[pi-web-access/](pkgs/pi-web-access/)、[pi-lsp/](pkgs/pi-lsp/) | 拡張本体と実行時依存関係の固定・ビルド |
 | [modules/common.nix](modules/common.nix) | ログイン前にもユーザーサービスを起動するための linger |
 | [citrus/web.nix](hosts/citrus/web.nix)、[orange/services/web.nix](hosts/orange/services/web.nix) | 既存の Tailscale Serve と nginx による HTTPS 公開 |
 
@@ -197,8 +197,8 @@ Moonlight の CLI では `moonlight stream citrus "Extend Display" --1080 --fps 
 モジュールを作り、その `default.nix` の `imports` に追加します。
 npm 拡張のバージョンと依存関係は `pkgs/pi-*/`、読み込み対象と設定は担当の Home Manager モジュールで管理します。
 Superpowers の入口と参照手順は `skills/superpowers/`、配布は `shared/skills.nix` が担当します。
-`settings.packages` の `lib.mkOrder` は Codex conversion → MCP → Web 検索 → LSP → ネイティブ委任の
-読み込み順を保つための指定です。Codex conversion のバージョンは補助バイナリと同じ定義を参照します。
+`settings.packages` の `lib.mkOrder` で拡張の読み込み順を固定します。
+Pi Codex conversion とそのツール置換・Remote context management は読み込みません。
 ローカル拡張は `extensions/`、プロンプトは `prompts/` に置いて `agent.nix` から配布します。
 共有スキル、パッケージのビルド、OS の公開設定は Pi 専用設定と役割が異なるため、
 上表の担当場所に残します。配置の整理で `~/.pi/agent` などの配布先やホストごとの有効機能は変えません。
@@ -224,8 +224,7 @@ Linux の別コマンドと混同しないよう、`sg` ではなく `ast-grep` 
 Pi 標準の `shellCommandPrefix` で、シェルツールと `!` / `!!` の PATH の先頭に
 NixOS の権限ラッパーを置きます。Pi Web の非ログイン環境でも `sudo` が
 `/run/wrappers/bin/sudo` を使うようにし、sudo の認証・承認条件は変更しません。
-`exec_command` はこの prefix を使わないため、Pi の `shellPath` に Nix 管理の Bash ラッパーを設定し、
-同じ PATH と `pipefail` を維持します。Fish 環境でも存在しない `/bin/bash` にフォールバックしません。
+シェル実行には Pi 標準の `bash` を使い、Codex conversion の `exec_command` や専用ラッパーは使いません。
 Web の別端末や、指定したシェルを使わない拡張プロセスは対象外です。
 `pipefail` により、パイプの前段で失敗した検証を後段の整形処理が成功として隠すことを防ぎます。
 `errexit` は強制せず、想定した失敗は呼び出し側で明示的に処理します。
@@ -235,26 +234,25 @@ Web の別端末や、指定したシェルを使わない拡張プロセスは�
 
 既定のモデルは `openai-codex/gpt-6-astra`、推論は `xhigh`、コンテキスト上限は 872,000 です。
 モデル選択は制限せず、必要なら Pi 標準の操作で変更できます。
-自動コンパクションを有効にし、応答用に 131,072 トークン、要約時の直近履歴に 32,768 トークンを確保します。
+自動コンパクションは有効です。一般設定は応答用 16,384・直近履歴 20,000 トークンとし、
+Astra はモデル別設定で従来の 131,072・32,768 トークンを維持します。
 Pi 本体は [pi-coding-agent/default.nix](pkgs/pi-coding-agent/default.nix) で 0.87.1 に固定し、
 Nixpkgs のビルド定義を使ってソース・npm 依存関係・モデルカタログのハッシュを検証します。
 標準の ChatGPT 接続にはキャッシュ用ヘッダーを本文のキーに合わせる小さなパッチを適用しています。
-Pi Codex conversion が読み込まれる場合は、拡張自身の上流プロバイダー実装をそのまま使います。
-`@howaboua/pi-codex-conversion@3.0.37`、`pi-mcp-adapter@2.34.0`、`pi-web-access@0.30.0`、`@narumitw/pi-lsp@0.49.7`、
-以上の4拡張は Nix で固定し、Home Manager の `settings.packages` から
+`pi-mcp-adapter@2.34.0`、`pi-web-access@0.30.0`、`@narumitw/pi-lsp@0.49.7`、
+`@tintinweb/pi-tasks@0.9.0` は Nix で固定し、Home Manager の `settings.packages` から
 Nix ストアのパッケージを直接読み込みます。初回起動時の npm インストールは不要です。
 通常の依存関係を持つ拡張は各 `pkgs/pi-*/package.json` と `package-lock.json`、`npmDepsHash` で
 配布物と依存関係を固定し、lifecycle scripts と Pi SDK の重複インストールを無効にしてビルドします。
 Pi SDK だけに依存する LSP は npm 配布物のハッシュを固定します。
-Code Mode の実行ホストも上流の固定済み配布物を同梱し、起動時のダウンロードを不要にします。
 更新時は担当パッケージのバージョン・ロック・ハッシュを更新して NixOS の検証と適用を行います。
 `pi update --extensions` ではこれらの固定パッケージを更新しません。
 認証・会話・実行時キャッシュは引き続き `~/.pi/agent` に保存します。
 以前の `~/.pi/agent/npm/` は読み込みに使わず、自動削除もしません。
 
 [Superpowers 6.4.1](https://github.com/obra/superpowers/tree/5bf4e78011075bcfc0dc295f0724994cd123ee71)
-の全15スキルを、指定の [Astra 向けスキル・プロンプト設計指針](https://developers.openai.com/blog/rethinking-skills-and-prompts-for-gpt-6-astra)
-に沿ってローカル版へ書き直しています。
+の全15スキルを、[Astra の設計指針](https://developers.openai.com/blog/rethinking-skills-and-prompts-for-gpt-6-astra)
+と [Opus の利用指針](https://claude.dev/blog/getting-the-most-out-of-opus-5-5/)に沿う共通のローカル版として管理します。
 [skills/superpowers/SKILL.md](skills/superpowers/SKILL.md) が1つの入口になり、
 残り14のワークフローは `references/` から必要なものだけ読みます。
 起動時に提示する名前・説明は `superpowers` の1件です。
@@ -281,8 +279,7 @@ Ponytail、利用者の明示指示、AGENTS.md の配置・検証・承認規�
 
 [Pi 0.86.0](https://github.com/earendil-works/pi/blob/v0.86.0/packages/coding-agent/CHANGELOG.md) は
 プロバイダーへ渡すシステム指示・ツール定義を `TranscriptContext.messages` 内へ移しました。
-旧形式の `context.systemPrompt` / `context.tools` を参照していた Codex conversion 3.0.34 は使わず、
-上流で Pi 0.87 の指示・ツール・圧縮・再開に対応した 3.0.37 と組み合わせます。
+追加プロバイダーもこの形式と標準ツールの契約に対応する必要があります。
 Pi 本体の `cacheWarming` は `off` にし、更新によってキャッシュ維持用の追加推論を有効にしません。
 Pi Web はビルド時も実行時も同じ Pi SDK を参照し、
 [transcript-context.patch](pkgs/pi-web/transcript-context.patch) でタイトル生成・専用システム指示・
@@ -291,49 +288,39 @@ Pi Web はビルド時も実行時も同じ Pi SDK を参照し、
 Pi Web のラッパーは同じ SDK の場所を `PI_SUBAGENTS_PI_CODING_AGENT_PACKAGE_ROOT` で伝え、
 通常と異なる Nix の配置でもバックグラウンドの子が本体を解決できるようにします。
 
-[Pi Codex conversion](https://github.com/IgorWarzocha/howaboua-pi-stuff/tree/main/packages/pi-codex-conversion) は
-公開 npm パッケージを改変せず、CLI と Pi Web の両方で読み込みます。Codex CLI の導入は不要です。
-Codex 対象モデルでは **Code Mode** と実験的 **Context management: Remote** を使います。
-追加ツール専用モードは使わず、Pi 既定の `read / bash / edit / write` は
-`exec` / `wait` を使う構成に置き換わります。`exec` 内の JavaScript から
-`tools.exec_command`、`tools.write_stdin`、`tools.apply_patch`、`tools.view_image` を組み合わせます。
-既存の MCP・検索・LSP・サブエージェントなどは維持し、Code Mode の登録 API に対応した拡張だけが
-`exec` 内にも公開されます。非対象モデルでは通常の Pi ツールに戻ります。
-Code Mode ホストもハッシュを固定して Nix パッケージへ同梱し、初回実行時の取得は不要です。
-Notebook Mode は有効にしません。
+コンテキスト管理は [local-context.ts](home/keewai/shared/pi/extensions/local-context.ts) が担当します。
+Astra の「メモを引き継ぎ、必要な過去の履歴を検索する」方式を Pi のローカル保存で近似し、
+Opus と Astra に共通で使います。OpenAI 内部実装や暗号化チェックポイントの再実装ではありません。
+Pi の元の JSONL 履歴は保持し、選択中のセッション・ブランチに限定して必要な箇所を取得します。
+自動コンパクションと手動 `/compact` は維持します。「ローカル」は保存と制御を指し、
+通常のモデル推論やコンパクション用要約までオフラインになるわけではありません。
+`context_notes` は明示メモの読み取り・全体更新、`context_history_search` と
+`context_history_read` は元のテキストの検索・範囲取得を提供します。メモは Pi の追記型セッション記録に
+保存し、自動要約とは区別します。メモや TODO を毎ターンのシステム指示に重ねて注入しません。
+取得結果は件数・文字数を制限し、entry/window ID と次ページ位置を返します。window は compaction 境界の
+時系列区間で、過去にモデルへ送った入力の完全な複製ではありません。思考・画像・ツール引数・非公開
+メタデータ・他拡張のチェックポイントを除外しますが、通常のテキストに含まれる秘密の万能除去機能ではありません。
 
-Remote は Codex のサーバー側 history / notes を暗号化された契約で利用し、
-`history / notes / new_context / get_context_remaining` でコンテキストの引き継ぎを行います。
-Code Mode では `history`・`notes`・`new_context` は直接呼び出し、残量確認は
-`exec` 内の `tools.get_context_remaining` を使います。
-**Hybrid compaction** も有効にし、対応する Codex 接続では Responses compaction V2 の暗号化チェックポイントを
-ノートと併用します。単独の `responsesCompaction` は無効のままですが、Hybrid 経由で V2 を使用します。
-自動コンパクションは有効のままで、しきい値ではノート保存を促し、`new_context`・手動 `/compact`・
-コンテキスト超過の回復で圧縮します。既存の会話は有効化だけで切り捨てず、元の Pi JSONL も残します。
-Remote を利用したセッションの再開時は同じ設定を維持してください。途中で無効にすると分離した履歴が再結合し得ます。
-サーバー機能や認証に問題があっても、別の保存方式へ黙って切り替えません。
-非対応の接続には Remote は適用されず、暗号化チェックポイントの他プロバイダーへの可搬性も保証されません。
-Remote と独立した Parallel Pi summary は併用せず、追加のローカル要約要求は行いません。
+TODO は [pi-tasks](https://github.com/tintinweb/pi-tasks) の `TaskCreate / TaskList / TaskGet / TaskUpdate` で管理します。
+保存先は `session-global`（`~/.pi/agent/tasks/sessions/` 以下）で、リポジトリに作業用ファイルを増やしません。
+完了タスクの自動削除と auto-cascade は無効です。既存ファイルの移動・削除は行いません。
+永続セッションの fork は親の TODO を独立した保存先に引き継ぎます。読み取り不能・破損・旧形式の不正な
+タスクファイルは空として上書きせず、操作を止めて元データを保持します。修復は別途明示的に行ってください。
+`TaskExecute / TaskStop / TaskOutput` は登録せず、子の実行と結果確認は従来のネイティブ `Agent` 系ツールが担当します。
+親が結果を確認して TODO を更新する設計で、二つのランタイムや自動同期を重ねません。
+永続設定は [tasks.nix](home/keewai/shared/pi/tasks.nix) を編集します。
 
-Notebook、Heavy system prompt overwrite、自動推論レベル変更、Fast Mode、
-キャッシュ keepalive と強制 WebSocket は有効にしません。既存のモデル・推論設定を維持します。
-音声・GipPity LAN サーバーは起動せず、新しい待受け・ファイアウォール・外部公開も追加しません。
-特に Orange で `/codex voice server` による別ポート公開を行わないでください。
-
-NixOS では同梱 Linux バイナリをそのまま実行できないため、
-[pi-codex-conversion-helpers](pkgs/pi-codex-conversion-helpers/default.nix) で同じ固定版から補助バイナリを取り出し、
-動的リンクだけを Nix Store のライブラリに合わせます。上流の `tools.customRustBinariesDir` で指定し、
-導入済み npm ファイルや拡張の JavaScript は変更しません。補助バイナリは一般の PATH に追加しません。
-`/codex` で設定・利用状況を確認できますが、永続設定は
-[codex-conversion.nix](home/keewai/shared/pi/codex-conversion.nix) を編集してください。
-Nix 管理のグローバル設定を UI から保存したり、プロジェクト設定で上書きしたりしません。
-適用後、既存の Pi セッションは `/reload` で読み込みます。
+Codex conversion、専用補助バイナリ、Code Mode、Remote/Hybrid compaction の有効設定は撤去しています。
+移行中の会話は `/reload` せず、適用後は新しいセッションで標準ツールとローカル方式を使います。
+過去の会話・認証・取得済みパッケージは削除しません。旧 Remote セッションを新方式で安全に再開できるとは
+限らず、暗号化状態をローカルメモに自動変換することもしません。旧設定と必要な Store パスは
+移行時にローカルの退避先と GC root で保持します。旧セッションの再開は別途互換性を確認してください。
 
 MCP は共有レジストリから、そのホストに定義されたすべてのサーバーを有効にします。
 共通の `context7`、`nixos`、`openaiDeveloperDocs`、`serena` に加え、デスクトップでは `cua-driver` も使えます。
 初回はツール情報を取得し、以降は必要時に接続します。共有設定へ追加したサーバーも Pi 側に反映されます。
 `defaultTools` は Linux の全組み込みツール `read / bash / edit / write / grep / find / ls` を選びます。
-Codex adapter の対象モデルでは上記のツール置換が適用されます。
+Opus と Astra のどちらでも標準ツールを維持し、モデル別のツール置換は行いません。
 拡張ツールも標準どおり有効にし、ラッパーの `--tools` による許可リストは設けません。
 MCP アダプターのサーバー別補助ツールも、登録されると利用できます。
 `/mcp` で接続状況を確認できます。
@@ -396,15 +383,15 @@ OSC 99 のデスクトップ通知を送ります。`agent_settled` を使い、
 拡張を利用できない場合は親が直接レビューし、その制限を報告します。
 
 システム指示とツール定義を不用意に変えず、毎ターンの日付・Git 状態の注入、履歴の書き換え、定期的な空要求は行いません。
-Pi Codex conversion の通信実装に合わせ、キャッシュキーは上流のセッション単位の扱いを使います。
-旧 `astra-cache` の作業ディレクトリ単位のキー上書きは、拡張が作る HTTP ヘッダーと不整合になるため撤去しました。
+キャッシュキーは Pi 標準プロバイダーのセッション単位の扱いを使います。
+作業ディレクトリ単位の独自キーへの上書きは行いません。
 既存セッションの保存先や ID は変更しません。新規セッション間のキャッシュ共用は強制しません。
 同じ仕事は `pi -c` で続け、モデル・推論レベル・拡張の変更や `/compact` は必要な場合に使います。
 フッターの `CH` は直近要求の再利用率です。`/cache` は直近応答と選択ブランチの累計を分けて表示し、
 再利用・新規キャッシュ書き込み・未キャッシュの入力トークン数を確認できます。
 累計は全モデル・圧縮前も含む報告済み使用量を入力トークンで重み付けし、
-通常応答・ツール内呼び出し・Pi 要約・Remote 圧縮 V2 の内訳も表示します。
-V2 の使用量は拡張が保存する圧縮メタデータから読み、別途実行された Pi 要約の使用量とは分けて加算します。
+通常応答・ツール内呼び出し・Pi 要約・旧 Remote 圧縮 V2 の内訳も表示します。
+旧 V2 の使用量は保存済みメタデータから読みます。新しい Remote 圧縮を実行する機能ではありません。
 入力使用量のない応答は `0%` ではなく `未計測` とします。表示はコマンド実行時点のスナップショットです。
 端末ではスクロール可能なパネルを開き、↑↓ / PageUp / PageDown で移動、Esc / Enter で閉じます。
 Pi Web / RPC では同じ内容をテキスト通知、非対話モードでは標準出力に表示します。
@@ -496,7 +483,7 @@ Web は元のコンパクトなエージェント一覧・会話切替を維持�
 
 同じ親の実行所有権は1プロセスだけが保持します。他の CLI/Web は閲覧できますが操作できません。
 終了・クラッシュ後は自動実行せず、明示的な resume が必要です。CLI 終了後の常駐実行は保証しません。
-Code Mode でも4ツールは直接利用し、未登録の `tools.Agent` 等を仮定しません。
+4ツールは Pi 標準ツールと並べて直接利用します。Code Mode 用ブリッジは不要です。
 委任は有用な場合に限定し、独立レビューとリポジトリの検証・適用ゲートを維持します。
 
 旧 Teams・Crew・Core の登録と同梱スキル・プロンプトの読み込みを解除します。
@@ -593,9 +580,8 @@ plain-text results from legacy native sessions.
 CLI and Web tools expose the same task and control semantics. Web preserves its
 original agent conversation list; CLI provides equivalent tool results and
 compact status output. Existing native
-`Agent`, result retrieval, and steering calls remain supported. Code Mode must
-keep the native delegation tools directly callable without requiring an
-unregistered `tools.*` bridge.
+`Agent`, result retrieval, and steering calls remain directly callable alongside
+standard Pi tools, without an unregistered bridge or second execution runtime.
 
 #### Persistence, interruption, and write isolation
 
@@ -644,7 +630,7 @@ and are not automatically resumed or converted.
 Use the existing package test framework for shared runtime and adapter coverage.
 Use disposable agent state and synthetic local providers, not real credentials
 or paid model calls, for lifecycle integration tests. Required behaviors include
-role discovery, provider bindings, Code Mode tool availability, both adapter
+role discovery, provider bindings, standard and extension tool availability, both adapter
 paths, concurrency, dependency failures, messages, input/follow-up/close, result
 delivery, cancellation/resume, process ownership, and retained writer changes.
 Verify that child repository instructions and tool restrictions survive resume.
@@ -697,7 +683,7 @@ The plan is not an implementation-completion or deployment record.
 
 #### Review focus
 
-1. A registered provider or Code Mode changes the effective tool set: test the
+1. A registered provider or extension changes the effective tool set: test the
    actual SDK-created child and its resumed session, not only declared profiles
    (Tasks 3 and 5).
 2. CLI and Web race for the same parent, or a PID is reused: exactly one execution
@@ -1044,7 +1030,7 @@ callbacks. Both construct `SubagentParentHost` and call the same controller.
   report into the new one. Keep that delivery pending and reconcile only when
   its owner parent is active again. On shutdown, abort and persist unfinished
   children before releasing ownership; no detached child execution is promised.
-- [ ] Load the configured Code Mode extension in disposable integration tests
+- [ ] Load the configured extensions in disposable integration tests
   and prove that native delegation tools remain directly callable while children
   retain their intended permissions. Rerun the adapter tests, regenerate/check
   the patch, and retain the tested adapter checkpoint for independent review.
@@ -1105,8 +1091,8 @@ extension; the service still uses the existing `pi-web` executable.
 
 - [ ] Add package-local adapter tests for the packaged CLI entry, six roles,
   provider/tool bindings, no Next.js startup on CLI load, and one registration
-  under Web. Add a disposable combined-resource check including Code Mode and
-  the preserved MCP/search/LSP extensions. Do not load real credentials.
+  under Web. Add a disposable combined-resource check including local context,
+  TODO tracking, and the preserved MCP/search/LSP extensions. Do not load real credentials.
 - [ ] Bundle the CLI entry using the already pinned SDK's `esbuild` library,
   leaving SDK and npm dependencies external. Do not bundle a second Pi SDK.
 
@@ -1241,7 +1227,7 @@ Nix ファイルを読むと依存関係・権限・起動条件がわかり、�
 | [fprintd-cs9711/](pkgs/fprintd-cs9711/) | CS9711 指紋センサーと認証キャンセルの修正 |
 | [hyprland/](pkgs/hyprland/) | 入力メソッドの修飾キー処理の修正 |
 | [pi-coding-agent/](pkgs/pi-coding-agent/) | 標準 ChatGPT 接続のキャッシュ用ヘッダーと会話・接続の識別子を分離 |
-| [pi-codex-conversion-helpers/](pkgs/pi-codex-conversion-helpers/) | 上流拡張を改変せず使うための NixOS 用ネイティブ補助バイナリ |
+| [pi-tasks/](pkgs/pi-tasks/) | TODO 管理の固定版と、ネイティブ委任を重複させない登録フィルター |
 | [pi-web/](pkgs/pi-web/) | 固定ソースからの Pi Web ビルド、`/pi/` 対応、同梱フォント、修正版 Pi SDK と端末の実行環境 |
 
 keyd が集約するのは処理対象の入力だけです。Citrus ではマウス入力を保つため、

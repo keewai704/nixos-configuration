@@ -1,6 +1,6 @@
 ---
 name: ponytail
-description: Keep requested work simple, necessary, and complete. Use for coding work or explicit Ponytail, KISS, YAGNI, simplification, or speculative-scope reviews.
+description: Simplify coding work and reviews without reducing requested scope. Use for coding or explicit Ponytail, KISS, or YAGNI requests.
 license: MIT
 ---
 
@@ -48,13 +48,15 @@ Default to `full` unless the user has selected another mode in this session.
 only when it affects the user's decision. `full` follows the reuse order above.
 `ultra` scrutinizes new machinery more strictly while still completing every
 explicit requirement.
-Ask for `ponytail lite`, `ponytail full`, or `ponytail ultra` in the
-conversation to change level; `stop ponytail` or `normal mode` disables the mode.
+The user can say `ponytail lite`, `ponytail full`, or `ponytail ultra` to change
+level; `stop ponytail` or `normal mode` disables the mode. Do not ask them to
+choose a mode before ordinary work.
 Retain the selected mode within the session until changed. These are conversational
 instructions, not registered Pi commands or persistent settings.
 Mode changes do not grant permission or replace repository operational gates.
 
-Locally adapted from Ponytail 4.9.0 using the
-[Astra prompting guidance](https://developers.openai.com/api/docs/guides/latest-model#prompting-best-practices),
-reviewed 2026-09-13. Pi loads this file on demand through native skill
-discovery.
+Locally adapted from Ponytail 4.9.0. The same outcome-oriented guidance applies
+to Opus and Astra: clear completion and authority, narrow skill triggers, and no
+fixed thinking ritual. See the [Opus guide](https://claude.dev/blog/getting-the-most-out-of-opus-5-5/)
+and [Astra guide](https://developers.openai.com/blog/rethinking-skills-and-prompts-for-gpt-6-astra).
+Pi loads this file on demand through native skill discovery.
