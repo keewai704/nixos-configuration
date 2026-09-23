@@ -23,17 +23,21 @@ or configuration snapshots. Format and check syntax only for changed files.
   `home/keewai/shared/pi/tsconfig.json` with the pinned TypeScript compiler or LSP.
   It resolves Pi and Node types from the deployed user profile; a missing profile
   is an environment limitation, not a reason to install mutable npm dependencies.
-- pi-subagents integration: use disposable agent state and synthetic local model
-  responses to check the pinned Pi SDK, bundled-role discovery and explicit
-  child-provider bindings, foreground/background completion, status, resume, and control.
-  Give bundled-reviewer fixtures a disposable Git repository with a committed
-  HEAD; its watchdog_diff provider cannot initialize from an unborn repository.
+- Pi delegation integration: use disposable HOME and agent state with synthetic
+  local model responses, never real auth/session data or paid model APIs. Load
+  the pinned teams, crew, and core packages together with the pinned Pi SDK and
+  configured resource filters. Check unique tool/command registration, crew role
+  discovery, actual child tools and model/provider bindings, and Code Mode keeping
+  the native delegation tools available. Exercise crew report/follow-up/close,
+  core background and autoAwait completion/status/result/steer/cancel/resume, and
+  teams task delivery and worker shutdown. Test write isolation in disposable Git
+  repositories with committed HEADs; inspect automatic commits and retained branches.
+  Seed abandoned dirty worktrees and old teams, then verify startup and shutdown
+  preserve their files and refs. Cancellation must finish teardown before a
+  terminal run can be resumed; test this without an arbitrary sleep.
   A launch receipt or accepted steering request is not a completed child or
   delivered message. Inspect terminal metadata and process cleanup separately.
-  Verify that Pi Web's built-in tools are disabled and that Code Mode keeps the
-  native subagent tool available. Use the configured resource filters when
-  testing other packages; do not enable disabled hooks in the test fixture.
-  Never read real auth/session data or contact paid model APIs for these checks.
+  Verify that Pi Web's built-in tools remain disabled. Keep teams hooks disabled.
   Recheck deployed settings and affected behavior after each activation gate;
   isolated mock tests do not prove live provider authentication or deployment.
 - Another host only: locally evaluate the changed attributes, or build the affected

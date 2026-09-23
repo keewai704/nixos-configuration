@@ -46,38 +46,40 @@ unavailable tool.
 
 ## Automatic delegation
 
-Use the pi-subagents `subagent` tool in both CLI and Pi Web automatically;
+Use the configured delegation extensions in both CLI and Pi Web automatically;
 do not wait for the user to request delegation. Pi Web's built-in Agent tools
-are disabled; do not use their old run IDs with pi-subagents. For every task involving
+are disabled. For every task involving
 investigation, planning, implementation, or review, delegate at least one useful,
 bounded part early. Simple acknowledgements or direct answers that need no such
 work do not need a child. Honor an explicit user opt-out. Delegation does not
 expand the task's authority: an audit remains read-only, and remote operations,
 publication, destructive actions, and private-data uploads still need permission.
 
-Prefer pi-subagents' bundled roles and their native tool contracts: scout for
-local discovery, worker for implementation, reviewer for independent review,
-oracle for plans and decisions, and researcher or evidence-auditor for supported
-web research. Use delegate for a bounded general task when no specialist fits.
-Do not recreate the former explore/general-purpose/plan profiles. External CLI
-profiles require the corresponding installed CLI and explicit task authority.
-The pinned bundled reviewer needs a Git repository with a committed HEAD for
-its watchdog_diff tool. For a non-Git plan or proposal, use oracle with an
-explicit fresh-context read-only review task instead. Do not create a commit
-solely to satisfy this prerequisite without task authorization.
+Prefer pi-crew for ordinary delegated work. Discover its current roles with
+`crew_list`: scout for source discovery, planner or oracle for design and
+decisions, worker for implementation, and code-reviewer or quality-reviewer for
+independent review. Preserve package-owned roles rather than copying profiles.
+Use pi-core-subagent's `subagent` for inline specialists or genuinely dependent
+task graphs, and pi-agent-teams' `teams` for a shared task queue and teammate
+messaging. Choose one orchestrator per workstream; do not launch the same work
+through multiple extensions. Their IDs and lifecycle operations are not interchangeable.
 Use background calls for independent work and continue
 the parent's complementary work. Do not duplicate a child's investigation or
 split dependent work merely to create parallelism. Keep the team within the
-configured per-workflow and top-level async-run limits. Prefer one workflow for
-parallel work; these limits are not an aggregate cap across simultaneous
-workflows or sessions. Do not create recursive
-teams or idle agents.
+budget of at most four active children across the three extensions. This is an
+orchestration policy, not a shared runtime limiter. Pass `concurrency: 4` or less
+to core task batches. Do not create recursive teams or idle agents.
 
 Give each child the objective, exact checkout and inputs, allowed files/actions,
 active skill mode, acceptance criteria, and required evidence. Default to fresh
 context and pass only needed material, not secrets or the whole transcript. Use
-native worktree isolation for concurrent writers, or explicitly assigned durable
-worktrees when inputs require them. Each worktree must contain the required
+separate worktrees for concurrent writers. Teams supports `workspaceMode: "worktree"`;
+crew starts in the parent's cwd, so explicitly direct its file and shell operations
+to the assigned checkout; this is not automatic cwd isolation. Core treats `bash`, `edit`, or `write`
+as write-capable and creates a worktree from committed inputs, then automatically
+commits the child's changes. Use it only when repository policy permits those
+automatic child commits; otherwise use crew or teams with parent-owned integration.
+Each worktree must contain the required
 input revision; uncommitted parent changes are not automatically available there.
 Keep integration, staging, commits, activation, and publication with the parent.
 
@@ -90,23 +92,33 @@ unchanged passing review. A child's report is evidence, not proof that checks ra
 or permission to skip repository gates.
 
 Briefly identify delegated roles and purposes in progress updates. Use
-`subagent({ agent, task, cwd, async: true, context: "fresh" })` for one child, or
-the native workflowScript API for independent parallel work. Read
-`subagent({ action: "guide", topic: "tool-reference" })` when the API is unclear.
-Retain native run IDs, use completion notifications, and collect results through
-`subagent({ action: "status", id })`. Wait only when a result blocks progress,
-not by repeatedly polling. Use native `steer`, `resume`, `interrupt`, or `stop`
-actions for follow-up and control. Do not assume a completed run's worktree was
-merged or removed; inspect the returned paths and retain unmerged work.
+`crew_spawn` with a self-contained structured task (`goal`, `context`, and
+`instructions`). Crew delivers reports automatically; verify them before
+`crew_done`. Use `crew_respond` for completed or needs-input children, not running
+ones; use `crew_abort` for cancellation. A closed or failed child is not a
+resumable core run. For core, use `subagent({ agent, prompt, task, cwd })` or a
+single `tasks` batch; default tools are read-only and context is fresh. Check
+`subagent_status` once after launch, then use notifications and `subagent_result`.
+Use `steer_subagent`, `resume_subagent`, or `subagent_cancel` for supported core
+states, and `await_subagent` only when its result blocks progress. For teams,
+inspect the `teams` schema before choosing task, messaging, or lifecycle actions;
+prefer `contextMode: "fresh"`, specify `teammates` to avoid extra idle workers,
+and leave hooks disabled unless explicitly needed.
+Retain each extension's native IDs. Do not repeatedly poll, automatically retry
+uncertain effects, or assume a completed worktree was merged or removed.
+Inspect returned paths and retain unmerged work.
+Teams and Core preserve abandoned worktrees in this installation. Inspect their
+contents and integration state before any explicitly authorized cleanup; do not
+use `/team cleanup` as an automatic end-of-task step.
 If delegation fails or is unavailable, report the limitation,
 complete useful work locally, and never claim an independent review occurred.
 
-Keep shared configuration Nix-managed and package-owned builtin roles unchanged.
+Keep shared configuration Nix-managed and package-owned roles unchanged.
 Do not use agent-management actions to rewrite managed files. Only author custom
 project agents when explicitly requested and permitted by that repository.
-Code Mode leaves `subagent` directly callable; its
-workflowScript runtime is separate from Code Mode's `exec` runtime. Do not assume
-`tools.subagent` exists inside an exec cell without an explicit supported bridge.
+Use the delegation tools directly in Code Mode. Do not assume that `tools.teams`,
+`tools.crew_spawn`, or `tools.subagent` exists inside an exec cell without an
+explicit supported bridge.
 
 ## Tools and evidence
 
@@ -131,11 +143,11 @@ Use web_search for general research and verify sources. Omit provider for the
 configured OpenAI live-search route; do not switch models just to search. Keep
 secrets out of queries and URLs. For important claims, inspect original passages
 with fetch_content and get_search_content; source_check's phrase matching alone
-is not verification. Children disable ambient extensions to preserve bundled
-tool contracts instead of inheriting the parent's Code Mode tool replacement.
-The researcher and evidence-auditor roles explicitly load pi-web-access; use
-their declared web tools. Keep other extension-dependent checks in the parent
-unless the selected child's required provider is explicitly configured.
+is not verification. Inspect the selected child's actual tools rather than
+assuming it inherits the parent's extensions. Core disables ambient extensions;
+crew and teams have different resource-loading contracts. Keep web research and
+extension-dependent checks in the parent unless the required child tools have
+been explicitly configured and verified.
 
 Use lsp_diagnostics when intermediate diagnostics help, with explicit paths and
 root limited to affected files. It does not replace native project checks. Do not

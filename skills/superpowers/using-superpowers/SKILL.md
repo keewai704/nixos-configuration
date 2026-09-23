@@ -26,7 +26,8 @@ instruction, and distinguish a requirement from your interpretation. Continue
 independent authorized work while blocked.
 
 Use the tools actually exposed by the current harness. In configured Pi, use
-pi-subagents' native tool and bundled roles; inspect its guide when needed.
+pi-crew's bundled roles, core subagent's inline tasks, or agent teams as appropriate;
+inspect their distinct tool schemas and do not interchange their run IDs.
 Follow the active delegation policy, honor opt-outs, and report unavailable
 tools instead of pretending to call them. Keep remote operations, publication,
 private-data uploads, and destructive cleanup within explicit authorization.
