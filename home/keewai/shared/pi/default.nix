@@ -5,7 +5,6 @@
     ./lsp.nix
     ./mcp.nix
     ./subagents.nix
-    ./superpowers.nix
     ./web-search.nix
     ./web.nix
   ];

@@ -175,7 +175,7 @@ Moonlight の CLI では `moonlight stream citrus "Extend Display" --1080 --fps 
 | --- | --- |
 | [shared/pi/default.nix](home/keewai/shared/pi/default.nix) | 全ホスト共通の Pi 設定の入口 |
 | [shared/pi/agent.nix](home/keewai/shared/pi/agent.nix) | 本体・実行環境、モデル、ローカル拡張と指示の配布 |
-| [shared/pi/superpowers.nix](home/keewai/shared/pi/superpowers.nix) | Superpowers 6.4.1 公式 Pi パッケージの固定と読み込み |
+| [skills/superpowers/](skills/superpowers/) | Superpowers の Pi / Astra 向け入口スキルと用途別の参照手順 |
 | [shared/pi/codex-conversion.nix](home/keewai/shared/pi/codex-conversion.nix) | Pi Codex conversion の導入、補助バイナリ、ツール・Remote context management・互換設定 |
 | [shared/pi/mcp.nix](home/keewai/shared/pi/mcp.nix) | Pi MCP アダプターの導入、共通 MCP サーバーの登録と設定変換 |
 | [shared/pi/lsp.nix](home/keewai/shared/pi/lsp.nix) | Pi LSP 拡張の導入、言語サーバーと診断設定 |
@@ -196,8 +196,8 @@ Moonlight の CLI では `moonlight stream citrus "Extend Display" --1080 --fps 
 設定を追加するときは、既存の機能別ファイルへ追記するか、同じディレクトリに名前の明確な
 モジュールを作り、その `default.nix` の `imports` に追加します。
 npm 拡張のバージョンと依存関係は `pkgs/pi-*/`、読み込み対象と設定は担当の Home Manager モジュールで管理します。
-Superpowers の固定は `shared/pi/superpowers.nix` が担当します。
-`settings.packages` の `lib.mkOrder` は Codex conversion → MCP → Web 検索 → LSP → ネイティブ委任 → フィルター付き Superpowers の
+Superpowers の入口と参照手順は `skills/superpowers/`、配布は `shared/skills.nix` が担当します。
+`settings.packages` の `lib.mkOrder` は Codex conversion → MCP → Web 検索 → LSP → ネイティブ委任の
 読み込み順を保つための指定です。Codex conversion のバージョンは補助バイナリと同じ定義を参照します。
 ローカル拡張は `extensions/`、プロンプトは `prompts/` に置いて `agent.nix` から配布します。
 共有スキル、パッケージのビルド、OS の公開設定は Pi 専用設定と役割が異なるため、
@@ -253,31 +253,31 @@ Code Mode の実行ホストも上流の固定済み配布物を同梱し、起�
 以前の `~/.pi/agent/npm/` は読み込みに使わず、自動削除もしません。
 
 [Superpowers 6.4.1](https://github.com/obra/superpowers/tree/5bf4e78011075bcfc0dc295f0724994cd123ee71)
-は [superpowers.nix](home/keewai/shared/pi/superpowers.nix) で上流リビジョンとハッシュを固定し、
-改変せず Nix ストアから公式 Pi パッケージとして読み込みます。
-Pi 標準の `extensions = []` で bootstrap 拡張を無効にし、`skills` フィルターで
-`using-superpowers` を通常の探索・スキルコマンドから除外します。残り14スキルは利用できます。
-開始時・コンパクション後の自動注入と、入口スキルの通常候補への掲載は行いません。
-通常は Superpowers を使わず、[APPEND_SYSTEM.md](home/keewai/shared/pi/APPEND_SYSTEM.md) の条件で選択します。
+の全15スキルを、指定の [Astra 向けスキル・プロンプト設計指針](https://developers.openai.com/blog/rethinking-skills-and-prompts-for-gpt-6-astra)
+に沿ってローカル版へ書き直しています。
+[skills/superpowers/SKILL.md](skills/superpowers/SKILL.md) が1つの入口になり、
+残り14のワークフローは `references/` から必要なものだけ読みます。
+起動時に提示する名前・説明は `superpowers` の1件です。
+[shared/skills.nix](home/keewai/shared/skills.nix) が `~/.agents/skills/superpowers/` へ配布し、
+Pi 標準の探索で読み込みます。公式パッケージや bootstrap 拡張は重ねて登録しません。
 
 | 作業 | 運用 |
 | --- | --- |
 | 原因・修正方針が明確なバグ修正、通常の設定変更 | Superpowers なし。範囲と必要な確認を明確にして直接実施 |
-| 要件や設計に重要な未決事項がある変更 | `brainstorming` で認識を合わせる |
-| 複数段階の調整・計画が必要な変更 | `writing-plans` と `executing-plans`（Native execution）を優先 |
-| 高リスクな変更、厳密な検証の明示依頼 | 必要なデバッグ・テスト・検証スキルだけを選択 |
-| 独立した実装作業を分担する利点が明確な変更 | `subagent-driven-development` を検討。規模だけでは選ばない |
+| 要件や設計に重要な未決事項がある変更 | 必要に応じて入口から設計の手順を選ぶ |
+| 複数段階の調整・計画が必要な変更 | 計画・実行の手順を選び、親が現在のセッションで進める |
+| 高リスクな変更、厳密な検証の明示依頼 | 必要なデバッグ・テスト・検証の参照だけを読む |
+| 独立した実装作業を分担する利点が明確な変更 | 委任の手順を選ぶ。規模だけでは分担しない |
 
-`/skill:brainstorming`、`/skill:executing-plans` などで個別に指定できます。
-フル運用を明示依頼した場合だけ、Pi 設定にある固定パッケージ内の
-`skills/using-superpowers/SKILL.md` を直接読み込みます。通常の `/skill:using-superpowers` は登録しません。
-上流の広い発動条件や「1%」ルールよりこの選択方針を優先し、1スキルの利用から全工程へ自動展開しません。
-Native execution は親が現在のセッションで実装し、最後に別コンテキストで変更全体をレビューします。
-Superpowers を使わない場合も、必要な確認・独立レビュー・コミット・適用の規則は省略しません。
-ローカル改変版は配布せず、`~/.agents/skills/superpowers/` との二重読み込みを避けます。
-Ponytail、利用者の明示指示、AGENTS.md の配置・検証・承認規則は引き続き優先します。
-更新は Nix の固定リビジョンとハッシュを変更して行います。既存の会話に読み込まれた指示は消えないため、
-適用後は新しい Pi セッションで利用してください。モデルと effort の既定値はこの運用変更では変えません。
+`/skill:superpowers <依頼内容>` で明示的に呼び出せます。以前の
+`/skill:brainstorming` などの個別コマンドは登録せず、
+例えば `/skill:superpowers 設計の未決事項を整理して` と指定します。
+広すぎる発動条件、固定回数の工程、不要な承認待ちを避け、許可された範囲の完遂を重視します。
+通常の選択方針は [APPEND_SYSTEM.md](home/keewai/shared/pi/APPEND_SYSTEM.md) に置き、
+Ponytail、利用者の明示指示、AGENTS.md の配置・検証・承認規則を維持します。
+上流リビジョンと MIT ライセンスはスキル内に保持し、更新は `skills/superpowers/` で行います。
+上流の実行ヘルパーや会話エクスポート機能は配布しません。
+適用後は新しい Pi セッションで利用してください。既存の会話は書き換えず、モデルと effort も変更しません。
 
 [Pi 0.86.0](https://github.com/earendil-works/pi/blob/v0.86.0/packages/coding-agent/CHANGELOG.md) は
 プロバイダーへ渡すシステム指示・ツール定義を `TranscriptContext.messages` 内へ移しました。
@@ -1082,9 +1082,9 @@ Create `pkgs/pi-web/build-subagent-extension.mjs` and
 `home/keewai/shared/pi/web-package.nix`. Modify
 `home/keewai/shared/pi/{subagents.nix,web.nix,APPEND_SYSTEM.md,prompts/review.md}`,
 the delegation references in `AGENTS.md`, this README, and
-`.agents/skills/nixos-validation/SKILL.md`. Preserve the separately deployed
-official Superpowers package and selective activation policy. Its package-owned
-skills remain unchanged; do not restore the removed local skill copies.
+`.agents/skills/nixos-validation/SKILL.md`. Superpowers configuration is
+independent of delegation; preserve its current skill distribution and selection
+policy described in the Pi skills section above.
 
 **Interfaces:** Both Nix modules import `web-package.nix` to obtain the same Pi Web
 derivation. Its packaged `pi-web-native-subagents/subagent-cli-extension.js` is the sole configured delegation
