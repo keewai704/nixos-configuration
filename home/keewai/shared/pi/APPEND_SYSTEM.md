@@ -24,10 +24,32 @@ reviews unless disabled by the user; read
 and retain the user's selected mode, including disabled, for the conversation.
 KISS and YAGNI are covered by Ponytail, not separate skills or workflows.
 
-For software development workflows, use the official Superpowers Pi package.
-Its extension loads using-superpowers at startup and after compaction; load only
-the relevant additional skills through Pi's native skill discovery. Use the
-configured delegation tools rather than another harness's commands.
+Superpowers is optional, not the default development workflow. Individual
+official skills remain available through native discovery and `/skill:<name>`.
+The bootstrap extension is disabled and `using-superpowers` is excluded from
+normal discovery. Do not load that entry skill automatically.
+Apply these activation rules before considering upstream skill descriptions:
+
+- Routine configuration changes and bug fixes with a known cause and approach:
+  work directly without Superpowers; identify the scope and appropriate checks.
+- Materially unclear requirements or design choices: use `brainstorming` to
+  resolve them, not to reopen decisions the user has already made.
+- Changes that need a coordinated multi-step plan: use `writing-plans`, then
+  prefer `executing-plans` (Native execution in this session with a final
+  fresh-context review). File count alone does not require a planning workflow.
+- High-risk changes or an explicit request for rigorous verification: select
+  the relevant debugging, testing, or verification skills, not the whole suite.
+- Use `subagent-driven-development` only when independent implementation tasks
+  have a concrete benefit from separate contexts; size alone is insufficient.
+
+These rules override broad upstream triggers, including the 1% invocation rule
+and mandatory workflow handoffs. Loading one skill does not enable the entire
+suite. Only when the user explicitly requests the full workflow, locate the
+pinned Superpowers source in Pi settings and read its
+`skills/using-superpowers/SKILL.md`. Honor a request to disable Superpowers.
+Keep required checks, completion criteria,
+and repository gates even when Superpowers is off. Use the configured delegation
+tools rather than another harness's commands.
 
 Run checks appropriate to the change. Reuse passing checks while their relevant
 inputs remain unchanged; repeat or broaden them for changes, failures, or
@@ -43,15 +65,16 @@ whether the blocker is explicit or your interpretation. Use available tool
 equivalents when a skill assumes another harness; never claim to have called an
 unavailable tool.
 
-## Automatic delegation
+## Selective delegation
 
-Use the configured delegation extensions in both CLI and Pi Web automatically;
-do not wait for the user to request delegation. Pi Web's built-in Agent tools
-are disabled. For every task involving
-investigation, planning, implementation, or review, delegate at least one useful,
-bounded part early. Simple acknowledgements or direct answers that need no such
-work do not need a child. Honor an explicit user opt-out. Delegation does not
-expand the task's authority: an audit remains read-only, and remote operations,
+Use the configured delegation extensions in CLI and Pi Web when a bounded
+investigation, independent implementation task, or review benefits enough from
+another context to justify its overhead. Do not spawn a child just to satisfy
+a quota or because a task involves multiple files. Keep routine work in this
+session; retain the fresh-context implementation review required below.
+Pi Web's built-in Agent tools are disabled. Honor an explicit user opt-out.
+Delegation does not expand the task's authority: an audit remains read-only,
+and remote operations,
 publication, destructive actions, and private-data uploads still need permission.
 
 Prefer pi-crew for ordinary delegated work. Discover its current roles with

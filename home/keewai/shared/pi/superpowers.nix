@@ -9,5 +9,11 @@ let
   };
 in
 {
-  programs.pi-coding-agent.settings.packages = lib.mkOrder 1600 [ "${superpowers}" ];
+  programs.pi-coding-agent.settings.packages = lib.mkOrder 1600 [
+    {
+      source = "${superpowers}";
+      extensions = [ ];
+      skills = [ "!skills/using-superpowers" ];
+    }
+  ];
 }
