@@ -609,6 +609,533 @@ affected-service, and running/boot-default checks. Do not deploy to Orange or
 publish remotely. Until implementation and those gates pass, the integration
 remains planned rather than deployed.
 
+### Unified CLI/Web subagents implementation plan
+
+> **For agentic workers:** Use `superpowers:subagent-driven-development` or
+> `superpowers:executing-plans` after the user reviews this plan and selects the
+> execution method. The parent owns staging, commits, integration, and activation.
+
+**Goal:** Replace the three delegation plugins in CLI and Web with the same
+Pi Web-derived runtime, six roles, durable task coordination, and safe recovery.
+
+**Architecture:** Extend the existing native controller and queue rather than
+wrapping the old engines. Extract shared child-session construction, persistent
+task state, and parent execution ownership. Thin CLI and Web adapters supply
+parent context and presentation; a bundled CLI entry uses the same source.
+
+**Tech stack:** TypeScript, Node.js, the pinned Pi 0.87.1 SDK, existing `node:test`
+and `jiti` tests, React/Next.js, existing `proper-lockfile`, and Nix/Home Manager.
+
+**Spec:** [Approved design](#unified-cliweb-subagents-approved-design-not-yet-implemented).
+The plan is not an implementation-completion or deployment record.
+
+#### Global constraints
+
+- "Do not keep the three existing engines behind a new facade."
+- "Default to four and accept configured limits only from one through four."
+- "Models inherit the parent's effective provider and model unless explicitly overridden."
+- "Default to fresh conversation context, background execution, and no recursive delegation."
+- "Do not add a daemon."
+- "Claim persistent execution ownership atomically for the parent session, covering all its batches and child runs."
+- "Never automatically commit, merge, delete worktrees, or remove branches."
+- "Uncommitted parent changes are not copied implicitly."
+- "Old plugin run IDs are not native run IDs and are not automatically resumed or converted."
+- "Do not deploy to Orange or publish remotely."
+- Retain `/pi/`, the packaged SDK, other plugins, authentication, and history.
+  Use package-local tests; do not create repository-local check suites or docs.
+
+#### Review focus
+
+1. A registered provider or Code Mode changes the effective tool set: test the
+   actual SDK-created child and its resumed session, not only declared profiles
+   (Tasks 3 and 5).
+2. CLI and Web race for the same parent, or a PID is reused: exactly one execution
+   owner wins; uncertain liveness never permits takeover (Task 2).
+3. A cancelled child is still tearing down while another batch or resume arrives:
+   preserve the four-child bound and reject overlapping attempts (Tasks 3 and 4).
+4. A notification is queued but not persisted, or the CLI changes parent sessions:
+   do not lose reports, duplicate acknowledged reports, or notify the wrong parent
+   (Tasks 4 and 5).
+5. An upstream writer reports success with unmerged changes: retain clean and
+   dirty worktrees and keep file-dependent work blocked until explicit integration
+   release; test paths containing spaces (Tasks 3 and 4).
+
+#### Source and patch workflow
+
+Keep repository edits in the task worktree, separate from the occupied main
+index. Prepare a disposable Pi Web source checkout from the pinned source in
+`pkgs/pi-web/default.nix`, apply its four existing patches in order, and record
+that as the patch baseline. Never edit Nix Store files. Restore development
+dependencies offline from that derivation's `npmDeps` cache into the disposable
+checkout, after running `use-packaged-pi-sdk.mjs` on its manifests. Use the same
+SDK symlinks as `postConfigure`. Do not install mutable global dependencies or
+run baseline builds unrelated to a changed behavior.
+
+All `lib/`, `components/`, `app/`, and `e2e/` paths below refer to that disposable
+Pi Web checkout. Carry its changes in the new
+`pkgs/pi-web/unified-subagents.patch`, appended after the existing four patches.
+Generate the patch from the recorded baseline, including new source files and
+package-local tests. Apply it to a second clean copy of that same patched
+baseline with `git apply --check` before each task commit. Update only task files;
+parent commits use explicit paths, never `git add .` in the Nix checkout.
+Tasks 1 through 6 leave tested checkpoints in that task diff. Do not commit
+implementation checkpoints before an independent review of their actual diff;
+the native execution path consolidates them in the reviewed Task 7 commit.
+
+#### Task 1: Define roles, task contracts, and the hard concurrency limit
+
+**Files:** Modify `lib/subagents.ts`, `lib/subagent-settings.ts`,
+`lib/subagent-queue.ts`, and their existing tests. Create
+`lib/subagent-task-types.ts`, `lib/subagent-task-types.test.mjs`, and generated
+`lib/subagent-role-data.json`. Add the patch and role-generation build wiring to
+`pkgs/pi-web/default.nix`; create `pkgs/pi-web/build-subagent-roles.mjs`.
+
+**Interfaces:** Keep native v1 metadata readable. Use the following shared types;
+`context` remains an array, matching the approved structured assignment contract.
+
+```ts
+export type Assignment = string | {
+  goal: string;
+  context: string[];
+  instructions: string[];
+};
+export type Dependency = { taskId: string; input: 'report' | 'integrated_changes' };
+export type DelegationReport =
+  | { outcome: 'completed' | 'failed'; report: string }
+  | { outcome: 'needs_input'; report: string; needs: string };
+export type TaskStatus =
+  | 'blocked' | 'queued' | 'running' | 'cancelling' | 'needs_input'
+  | 'completed' | 'failed' | 'aborted' | 'interrupted';
+export interface TaskInput {
+  id: string;
+  profile: string;
+  description: string;
+  assignment: Assignment;
+  needs: Dependency[];
+  inputRevision?: string;
+  specialistPrompt?: string;
+  model?: string;
+  thinking?: ThinkingLevel;
+}
+```
+
+- [ ] Add failing tests for six canonical roles and three native aliases,
+  structured and plain assignments, blank fields, unknown report outcomes,
+  `needs_input` without `needs`, and the boundary values below.
+
+  ```js
+  import assert from 'node:assert/strict';
+  import test from 'node:test';
+  import { createJiti } from 'jiti';
+  const { validateSubagentLimit } = await createJiti(import.meta.url)
+    .import('./subagent-settings.ts');
+  test('enforces the native limit', () => {
+    for (const value of [1, 4]) assert.equal(validateSubagentLimit(value), value);
+    for (const value of [0, 5, 1.5, NaN]) {
+      assert.throws(() => validateSubagentLimit(value));
+    }
+  });
+  ```
+
+- [ ] Run `node --experimental-strip-types --test lib/subagent-settings.test.mjs
+  lib/subagent-queue.test.mjs lib/subagents.test.mjs
+  lib/subagent-task-types.test.mjs`; confirm the new assertions fail before fixes.
+- [ ] Define the shared schemas and `formatAssignment(assignment: Assignment):
+  string`. Reject whitespace-only required strings and empty instructions. Set
+  missing concurrency to four and reject explicit invalid settings. Call this
+  same validation at the queue boundary instead of clamping arbitrary values.
+
+  ```ts
+  export function validateSubagentLimit(value: number): number {
+    if (!Number.isInteger(value) || value < 1 || value > 4) {
+      throw new Error('maxConcurrent must be an integer from 1 through 4');
+    }
+    return value;
+  }
+  ```
+
+- [ ] Fetch only the fixed Crew 1.0.34 source as a build input from
+  `https://registry.npmjs.org/@melihmucuk/pi-crew/-/pi-crew-1.0.34.tgz`, with NAR
+  hash `sha256-VICdpdnYu+JdtT2t+4DEARiPkY9kGBVkKBpX17qLU9U=`. Generate role body
+  and description data from its six `agents/*.md` files after `postConfigure`,
+  when the existing YAML parser is available; preserve its MIT notice.
+  Do not import its runtime or model allocations. Non-worker defaults use the
+  native read-only tool preset; worker uses coding tools and worktree isolation.
+  Keep exact role selection and explicit specialist prompts. Map
+  `general-purpose -> worker`, `explore -> scout`, and `plan -> planner` only as
+  built-in aliases, without overriding an exact user-defined profile.
+- [ ] Rerun the focused tests. Package-local tests must verify generated roles,
+  not mirror a hand-maintained list in a second runtime. Regenerate/check the
+  patch and retain this tested checkpoint for the independent diff review.
+
+#### Task 2: Persist task state and claim one owner per parent
+
+**Files:** Create `lib/subagent-state.ts`, `lib/subagent-state.test.mjs`,
+`lib/subagent-ownership.ts`, and `lib/subagent-ownership.test.mjs`. Extend shared
+types in `lib/subagent-task-types.ts`.
+
+**Interfaces:** `readDelegationState(agentDir, parentSessionFile)` returns the
+versioned state or no state. `updateDelegationState(agentDir, parentSessionFile,
+mutate)` performs a locked read-modify-atomic-write. `claimParent`, `assertOwner`,
+and `releaseParent` use a token containing parent identity and process identity.
+`validateBatch(tasks: TaskInput[]): void` validates a complete batch before any
+session or worktree creation. `readyTaskIds(state): string[]` is a pure selector.
+
+- [ ] Add tests that two processes cannot claim the same parent, separate parents
+  can proceed, PID reuse is not mistaken for the old owner, and uncertain process
+  identity fails closed. Test malformed/unsupported state, duplicate IDs, unknown
+  or self dependencies, cycles, unassigned work, and failed prerequisites.
+
+  ```js
+  import assert from 'node:assert/strict';
+  import { createJiti } from 'jiti';
+  const { validateBatch } = await createJiti(import.meta.url)
+    .import('./subagent-state.ts');
+  const task = (id, needs = []) => ({
+    id, profile: 'scout', description: id, assignment: 'Inspect', needs,
+  });
+  assert.throws(() => validateBatch([
+    task('a', [{ taskId: 'b', input: 'report' }]),
+    task('b', [{ taskId: 'a', input: 'report' }]),
+  ]), /cycle/i);
+  assert.doesNotThrow(() => validateBatch([
+    task('a'), task('b', [{ taskId: 'a', input: 'report' }]),
+  ]));
+  ```
+
+- [ ] Run `node --experimental-strip-types --test lib/subagent-state.test.mjs
+  lib/subagent-ownership.test.mjs`; confirm the new behavior is absent.
+- [ ] Store state under the writable agent directory's `native-subagents/`, keyed
+  by a hash of the canonical parent session path. Do not write into the managed
+  `agents/` directory. Use private directories and files (0700 and 0600).
+  State records parent/group/task IDs, assignment, role,
+  dependencies, attempt, child session, resource snapshot, workspace, report,
+  messages, pending deliveries, and `closedAt`. Preserve terminal outcomes when
+  closing a delivery. Reject unsupported versions rather than overwriting them.
+- [ ] Reuse `proper-lockfile` for short metadata critical sections and
+  `writePrivateFileAtomicSync` for replacement. Persist a random ownership token,
+  PID, Linux boot identity and process-start identity. Check actual process
+  identity before recovering ownership; a stale lock timestamp alone is not
+  permission to take over. Claim at the parent level, covering all its batches.
+  Read-only inspection never claims ownership or starts work. Recover unfinished
+  work as interrupted, never by automatically enqueueing it.
+- [ ] Implement DAG validation and readiness without a second execution queue.
+  Report dependencies require completed reports. Integrated-change dependencies
+  additionally require a parent-approved commit OID. Bound messages to 8 KiB,
+  structured reports to 256 KiB, and injected report excerpts to 32 KiB, measured
+  as UTF-8 bytes; retain links to complete reports and reject oversized writes.
+- [ ] Rerun the two test files and the queue tests. Regenerate/check the patch and
+  retain the tested state/ownership checkpoint for independent review.
+
+#### Task 3: Share child-session creation, recovery, and write isolation
+
+**Files:** Create `lib/subagent-session.ts` and `lib/subagent-session.test.mjs`.
+Modify `lib/subagent-runtime.ts`, `lib/subagent-prompt.ts`, `lib/worktree.ts`,
+`lib/pi-types.ts`, and their existing runtime, prompt, isolation, and worktree tests.
+
+**Interfaces:** The shared controller receives a parent port rather than requiring
+the parent's full `AgentSession`. SDK types below come from the packaged Pi SDK.
+`createSubagentSession(parent, input, snapshot?)` and
+`restoreSubagentSession(parent, sessionFile, snapshot, modelOverride?)` return an
+SDK child session; the shared runtime owns its lifecycle. The host may register
+that session for display but must not separately construct it on resume.
+
+```ts
+export interface SubagentParentHost {
+  parentSessionId: string;
+  sessionFile: string;
+  cwd: string;
+  effectiveModel: { provider: string; id: string };
+  thinking?: ThinkingLevel;
+  resolveModelRuntime(): Promise<ModelRuntime>;
+  readEntries(): readonly SessionEntry[];
+  readContext(): unknown[];
+  sendNotification(message: DelegationNotification): Promise<void>;
+}
+```
+
+- [ ] Extend the runtime tests' injected-host pattern with a deferred abort and
+  real temporary Git repositories. Cover start/resume using one queue, no fifth
+  active child, queued and running cancellation, a resume rejected while
+  cancelling, preserved resource snapshots, unsupported model/thinking overrides,
+  and fresh/exact prompts that still contain applicable repository instructions.
+
+  ```js
+  import assert from 'node:assert/strict';
+  let finishAbort;
+  const abortFinished = new Promise((resolve) => { finishAbort = resolve; });
+  const child = { abort: () => abortFinished };
+  let released = false;
+  const stopped = child.abort().then(() => { released = true; });
+  assert.equal(released, false);
+  finishAbort();
+  await stopped;
+  assert.equal(released, true);
+  ```
+
+  Apply this deferred-abort sequence through the real controller fixture: call
+  cancel, assert resume is rejected and its slot remains occupied, resolve abort,
+  await persisted cancellation, then assert resume can start exactly once.
+- [ ] Run `node --experimental-strip-types --test lib/subagent-session.test.mjs
+  lib/subagent-runtime.test.mjs lib/subagent-prompt.test.mjs
+  lib/subagent-isolation.test.mjs lib/worktree.test.mjs` and capture failures.
+- [ ] Move child resource restoration out of Web-only `startRpcSession` into the
+  shared helper. Use public SDK services, validate the effective model before
+  construction, and persist the effective tool/resource selection. Reuse existing
+  prompt and resource readers; do not reintroduce the removed direct mutation of
+  `agent.state.systemPrompt`. Remove `noContextFiles: true` from child paths and
+  retain repository instructions even with an exact specialist prompt. Missing
+  required restored resources are errors, not silent permission changes.
+- [ ] Extend `addWorktree` with an optional resolved commit input without changing
+  its ordinary UI callers. Native writers must supply `inputRevision`, resolve it
+  locally to a commit OID, and create a new isolated branch from that OID. Keep
+  native plain-prompt syntax, but report a clear error when a writer omits this
+  required isolation input. Never use an implicit remote tip or shared-checkout
+  fallback. Remove native worktree cleanup on success, failure, cancellation,
+  close, and setup failure; return any created path when setup later fails.
+- [ ] Unify start and resume completion handling. `cancel` transitions through
+  cancelling, awaits abort/prompt completion and terminal persistence, and only
+  then releases the queue slot. Retain session/worktree identity on resume;
+  explicitly resumed tasks that never acquired a session perform their first
+  execution and report that fact rather than claim restored conversation history.
+- [ ] Test clean and dirty worktree retention, a parent dirty file absent from a
+  child, exact commit selection, and paths with spaces. Rerun the focused tests,
+  regenerate/check the patch, and retain the tested lifecycle checkpoint.
+
+#### Task 4: Execute task graphs, scoped communication, and durable results
+
+**Files:** Modify `lib/subagent-runtime.ts`, `lib/subagent-state.ts`,
+`lib/subagent-extension.ts`, `lib/subagents.ts`, `lib/types.ts`, and their tests.
+
+**Interfaces:** Add controller operations `startBatch`, `list`, `assign`,
+`resume`, `cancel`, `release`, `message`, `close`, and `reconcileDeliveries`.
+Each takes a registered parent host or child actor, never trusts a tool-supplied
+parent identity, and uses Task 2 state plus Task 3 session operations. `release`
+takes a task ID and integrated commit OID. `close` takes a task ID and delivery ID.
+
+```ts
+export type DelegationActor =
+  | { kind: 'parent'; parentSessionId: string }
+  | { kind: 'child'; parentSessionId: string; taskId: string; sessionId: string };
+export interface DelegationNotification {
+  deliveryId: string;
+  parentSessionId: string;
+  taskId: string;
+  attempt: number;
+  report: DelegationReport;
+}
+```
+
+- [ ] Add controller and extension tests for rejected batches with zero launch
+  side effects, dependency success/failure/input wait, pending role assignment,
+  integrated-change release, cross-parent rejection, sibling sender identity,
+  answer/follow-up in the same child session, stale delivery IDs, and close
+  without deleting files. Simulate crashes before send, while queued, and after
+  parent transcript persistence but before delivery-state persistence.
+- [ ] Run `node --experimental-strip-types --test lib/subagent-runtime.test.mjs
+  lib/subagent-state.test.mjs lib/subagent-extension.test.mjs
+  lib/subagents.test.mjs` and confirm the new lifecycle tests fail.
+- [ ] Extend `Agent` with structured assignments, batches, explicit specialist
+  prompts, committed writer inputs, and resume model overrides. Retain native
+  `get_subagent_result` and `steer_subagent`. Add one parent control tool,
+  `manage_subagents`, for list/assign/message/answer/cancel/close/release. Add only
+  `report_subagent` and `send_subagent_message` to children, with actor identity
+  bound by the runtime. Exclude all parent control tools from child sessions.
+- [ ] A child report terminates its turn but does not free a slot until SDK
+  teardown completes. `needs_input` keeps the session for explicit answer/resume.
+  Successful prerequisites release report-only dependents; file-dependent tasks
+  remain blocked until the parent supplies an integrated revision. Assigning work
+  may change a pending task's role and assignment, never mutate a running attempt.
+- [ ] Give each attempt a stable delivery ID. Save the report and pending
+  delivery before notifying. Move delivery responsibility from the extension's
+  completion callback into the runtime. Treat the matching persisted parent
+  `custom_message.details.deliveryId` as the receipt; a resolved send Promise is
+  insufficient. Keep an in-process inflight set until receipt or owner teardown,
+  and reconcile against parent entries before redelivery. Scope all messages to
+  their group and label agent messages as information, not new user authority.
+- [ ] Verify legacy result text, queued/blocked result retrieval, sender checks,
+  input-required payloads, payload byte limits, and no double completion callback.
+  Rerun the focused tests, regenerate/check the patch, and retain the tested
+  task-coordination checkpoint for independent review.
+
+#### Task 5: Connect CLI and Web to the shared controller
+
+**Files:** Create `lib/subagent-cli-extension.ts` and
+`lib/subagent-cli-extension.test.mjs`. Modify `lib/rpc-manager.ts`, its runtime and
+shutdown tests, and `lib/subagent-extension.ts`. Create
+`lib/subagent-adapters.test.mjs` for disposable SDK integration coverage.
+
+**Interfaces:** CLI exports the standard `(pi: ExtensionAPI) => void` extension
+factory. Web supplies the existing wrapper registration and event invalidation
+callbacks. Both construct `SubagentParentHost` and call the same controller.
+
+- [ ] Add tests that both adapters expose one copy of every native tool, load no
+  old engine, and produce the same child metadata/results. Use temporary agent
+  state and registered synthetic providers that return deterministic tool calls;
+  inspect actual SDK child tools, provider bindings, and resumed resources. Test
+  a parent session switch with an undelivered report and a shutdown mid-cancel.
+- [ ] Run `node --experimental-strip-types --test
+  lib/subagent-cli-extension.test.mjs lib/subagent-adapters.test.mjs
+  lib/rpc-manager.test.mjs lib/rpc-manager-shutdown.test.mjs` before wiring.
+- [ ] The CLI factory registers tools without starting resources. Bind a parent
+  port at session start and release it after awaited shutdown. Build the child
+  `ModelRuntime` with public `ModelRuntime.create`, register the parent's public
+  native/configured providers, and transfer only necessary runtime authentication
+  through public APIs. Disable network model discovery. Do not read private
+  `ModelRegistry.runtime`, persist credentials in task state, or silently fall
+  back to another model. Keep selected model/thinking validation in Task 3.
+- [ ] In Web, retain the native inline extension and register children for the
+  existing inspectable session UI. Extend the existing precedence filter to
+  suppress only the known packaged CLI entry when the native inline entry is
+  active. Preserve unrelated tools, extensions, and diagnostics. Both routes must
+  restore children through Task 3, not recreate independent Web-only state.
+- [ ] When CLI moves to another parent session, do not send an old parent's
+  report into the new one. Keep that delivery pending and reconcile only when
+  its owner parent is active again. On shutdown, abort and persist unfinished
+  children before releasing ownership; no detached child execution is promised.
+- [ ] Load the configured Code Mode extension in disposable integration tests
+  and prove that native delegation tools remain directly callable while children
+  retain their intended permissions. Rerun the adapter tests, regenerate/check
+  the patch, and retain the tested adapter checkpoint for independent review.
+
+#### Task 6: Present tasks and controls in Web
+
+**Files:** Modify `components/AgentSessionPanel.tsx`, `components/AgentsConfig.tsx`,
+their tests, `components/AppShell.tsx`, `lib/api-types.ts`,
+`app/api/subagents/[id]/route.ts`, settings/profile routes and relevant tests.
+Create `app/api/subagents/tasks/route.ts` and its route tests. Add task display and
+action coverage to the existing package-local `e2e/run.mjs` flow; add translation
+keys to the existing `en`, `zh-CN`, and `zh-TW` message files.
+
+**Interfaces:** `GET /pi/api/subagents/tasks?parentSessionId=...` returns inspectable
+task state and ownership. POST accepts the same parent control actions as
+`manage_subagents`. Resolve the actual parent and actor on the server before
+calling the controller; client input does not grant ownership or arbitrary file
+access. Active work owned elsewhere is viewable but its controls are disabled.
+
+- [ ] Add failing route tests for missing parents, cross-parent child IDs,
+  rejected owners, each control action, input-required reports, and read-only
+  managed settings. Add UI coverage for task/assignee/dependency/status display,
+  opening the existing child conversation, and accessible labelled controls.
+- [ ] Run `node --experimental-strip-types --test
+  'app/api/subagents/**/*.test.mjs' components/AgentSessionPanel.test.mjs
+  components/AgentsConfig.test.mjs` and capture the new failures.
+- [ ] Extend the existing agent panel rather than create another execution UI.
+  Render task state from the common API, keep child conversation links, and use
+  the existing SSE/session refresh path for updates. Preserve `/pi/` in every
+  new fetch URL, following the current subpath patch. Expose model/role details
+  without leaking credentials or entire prompts into compact status rows.
+- [ ] Report Nix-managed settings/profiles as read-only with an explanatory UI
+  state; reject mutations server-side before writing. Preserve existing editable
+  unmanaged project profiles. Do not add a new configuration owner or locale.
+- [ ] Extend the existing disposable E2E fixture with seeded native tasks and
+  run `node e2e/run.mjs` against its isolated server and browser. Use the `/pi/`
+  base URL and a Nix-provided browser; do not download a mutable browser or use
+  real user sessions. Verify dependency-blocked and input-required states,
+  message/control delivery, and reconnect without resurrecting completed work.
+  If the browser prerequisite is unavailable, record the blocker rather than
+  claiming a source-pattern assertion proves the UI behavior.
+- [ ] Rerun affected route/component tests, regenerate/check the patch, and
+  retain the tested Web checkpoint for independent review.
+
+#### Task 7: Package and migrate the common implementation
+
+**Files:** Modify `pkgs/pi-web/default.nix` and the patched `package.json`.
+Create `pkgs/pi-web/build-subagent-extension.mjs` and
+`home/keewai/shared/pi/web-package.nix`. Modify
+`home/keewai/shared/pi/{subagents.nix,web.nix,APPEND_SYSTEM.md,prompts/review.md}`,
+the delegation references in `AGENTS.md`, this README, and
+`.agents/skills/nixos-validation/SKILL.md`. Update only obsolete routing references
+in `skills/superpowers/{using-superpowers,dispatching-parallel-agents,requesting-code-review}/SKILL.md`.
+
+**Interfaces:** Both Nix modules import `web-package.nix` to obtain the same Pi Web
+derivation. Its packaged `subagents/index.mjs` is the sole configured delegation
+extension; the service still uses the existing `pi-web` executable.
+
+- [ ] Add package-local adapter tests for the packaged CLI entry, six roles,
+  provider/tool bindings, no Next.js startup on CLI load, and one registration
+  under Web. Add a disposable combined-resource check including Code Mode and
+  the preserved MCP/search/LSP extensions. Do not load real credentials.
+- [ ] Bundle the CLI entry using the already pinned SDK's `esbuild` library,
+  leaving SDK and npm dependencies external. Do not bundle a second Pi SDK.
+
+  ```js
+  const { buildSync } = createRequire(import.meta.url)(process.argv[2]);
+  buildSync({
+    entryPoints: ['lib/subagent-cli-extension.ts'],
+    outfile: 'subagents/index.mjs',
+    bundle: true,
+    platform: 'node',
+    format: 'esm',
+    packages: 'external',
+  });
+  ```
+
+  Import `createRequire` from `node:module` in the build helper. Pass the fixed
+  SDK's `node_modules/esbuild` path from Nix `postBuild`. Include the artifact in
+  npm package files and declare it under `pi.extensions`. Preserve the existing
+  packaged SDK symlinks and add a disposable extension-load install check.
+- [ ] Replace the three registrations in `subagents.nix` with the packaged
+  native entry and empty package skill/prompt/theme filters. Move the managed
+  native settings there from `web.nix`, enabling the feature with limit four.
+  Keep the source of role data build-only and copy its license into the output.
+  Do not delete old downloaded packages, metadata, or worktrees. Leave unused
+  old package recipes as rollback material unless separately requested to remove
+  them; they are no longer part of the active delegation configuration.
+- [ ] Update the automatic-delegation policy and `/review` to exact native tool
+  and role names, structured tickets, explicit writer revisions, the enforced
+  limit, and verified close. Replace only stale routing references in distributed
+  skills, loading the applicable skill-editing guidance before editing them.
+  Preserve unrelated Superpowers behavior and existing model settings.
+- [ ] Update validation guidance to the new runtime and remove the obsolete gate
+  asserting native tools are disabled. Replace the README's old deployment guide
+  with accurate new usage after validation; keep the design/plan labelled pending
+  until their execution gates pass. Format only task Nix/Markdown/source files,
+  stage new files before Git-flake checks, and inspect the task-only diff.
+- [ ] Run focused package tests and configured LSP diagnostics on affected source
+  files in the disposable checkout. Diagnose missing LSP commands as configuration
+  errors, not passing checks. Obtain the selected workflow's independent review
+  of the actual task diff, fix defects, and commit task changes before activation.
+
+#### Task 8: Verify the committed migration and activate only locally
+
+**Files:** No new implementation files. Repair only defects caused by this change
+and rerun their affected checks. The task checkout and its commits remain the
+source of truth while the original checkout's index contains unrelated changes.
+
+- [ ] Check spec coverage, native test results, patch applicability, file
+  responsibilities, and the final independent review. Confirm that all intended
+  changes are committed and no task changes are uncommitted. Do not stage, reset,
+  or merge over the original checkout's occupied index.
+- [ ] Reconfirm the execution host if its identity has become uncertain, require
+  `nixosConfigurations.citrus`, and record the expected system store path and
+  network/failed-unit/Pi Web baseline. End old children before changing deployed
+  delegation packages. Do not reload the active migration session.
+- [ ] Use the required rebuild's evaluation, package build, type checks, and
+  `npm test`, rather than prebuilding the same system output:
+
+  ```sh
+  sudo nixos-rebuild test --flake /tmp/nixos-pi-unified-subagents.4lLknp/checkout#citrus --no-write-lock-file
+  ```
+
+- [ ] After test activation, check network connectivity, failed system and user
+  units, Pi Web service health, loopback listeners, and the canonical `/pi/` page,
+  assets, and event stream. In new disposable CLI/Web sessions, verify deployed
+  native tool/role discovery and the tested synthetic-provider lifecycle. Confirm
+  managed settings and other configured extensions still load. A failed required
+  gate blocks switch; do not substitute mocked tests for these deployment checks.
+- [ ] Only after those gates pass, switch the same committed configuration:
+
+  ```sh
+  sudo nixos-rebuild switch --flake /tmp/nixos-pi-unified-subagents.4lLknp/checkout#citrus --no-write-lock-file
+  ```
+
+- [ ] Repeat network, unit, and affected-service checks after switch. Confirm both
+  `/run/current-system` and `/nix/var/nix/profiles/system` match the tested store
+  path. Report task commits, clean task status, local live/boot-default outcomes,
+  the retained original index and worktrees, and any blocked integration. Do not
+  push, publish, deploy remotely, or automatically clean old artifacts.
+
 ## Orange のサービスを読む
 
 各サービスは [settings.nix](hosts/orange/settings.nix) を直接読みます。
