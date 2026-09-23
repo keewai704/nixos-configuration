@@ -8,7 +8,9 @@
 }:
 stdenvNoCC.mkDerivation (finalAttrs: {
   pname = "pi-codex-conversion-helpers";
-  version = "3.0.37";
+  version =
+    (builtins.fromJSON (builtins.readFile ../pi-codex-conversion/package.json))
+    .dependencies."@howaboua/pi-codex-conversion";
 
   src = fetchzip {
     url = "https://registry.npmjs.org/@howaboua/pi-codex-conversion/-/pi-codex-conversion-${finalAttrs.version}.tgz";

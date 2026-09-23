@@ -5,6 +5,7 @@
   ...
 }:
 let
+  extension = pkgs.callPackage ../../../../pkgs/pi-codex-conversion { };
   helpers = pkgs.callPackage ../../../../pkgs/pi-codex-conversion-helpers { };
   shell = pkgs.writeShellScript "pi-codex-bash" ''
     export PATH=${lib.escapeShellArg osConfig.security.wrapperDir}:"$PATH"
@@ -15,7 +16,7 @@ in
   programs.pi-coding-agent.settings = {
     packages = lib.mkOrder 1000 [
       {
-        source = "npm:@howaboua/pi-codex-conversion@${helpers.version}";
+        source = "${extension}/lib/node_modules/@howaboua/pi-codex-conversion";
         extensions = [ "dist/index.js" ];
         skills = [ ];
         prompts = [ ];

@@ -157,13 +157,14 @@ Home Manager は `useUserPackages = true` で NixOS に統合されています�
 | [desktop/pi/cua.nix](home/keewai/desktop/pi/cua.nix) | デスクトップ操作用ドライバーと MCP |
 | [shared/skills.nix](home/keewai/shared/skills.nix)、[skills/](skills/) | Pi 以外とも共有できる個人スキルの配布と編集元 |
 | [pkgs/pi-coding-agent/](pkgs/pi-coding-agent/)、[pkgs/pi-web/](pkgs/pi-web/) | アプリ本体のビルド定義とパッチ |
+| [pkgs/pi-codex-conversion/](pkgs/pi-codex-conversion/)、[pi-mcp-adapter/](pkgs/pi-mcp-adapter/)、[pi-web-access/](pkgs/pi-web-access/)、[pi-lsp/](pkgs/pi-lsp/)、[pi-crew/](pkgs/pi-crew/) | 拡張本体と実行時依存関係の固定・ビルド |
 | [modules/common.nix](modules/common.nix) | ログイン前にもユーザーサービスを起動するための linger |
 | [citrus/web.nix](hosts/citrus/web.nix)、[orange/services/web.nix](hosts/orange/services/web.nix) | 既存の Tailscale Serve と nginx による HTTPS 公開 |
 
 共通プロフィールは `shared/pi/`、デスクトッププロフィールは追加で `desktop/pi/` を読み込みます。
 設定を追加するときは、既存の機能別ファイルへ追記するか、同じディレクトリに名前の明確な
 モジュールを作り、その `default.nix` の `imports` に追加します。
-拡張のバージョン・読み込み対象は、その機能を担当するモジュールで設定と一緒に管理します。
+拡張のバージョンと依存関係は `pkgs/pi-*/`、読み込み対象と設定は担当の Home Manager モジュールで管理します。
 `settings.packages` の `lib.mkOrder` は Codex conversion → MCP → Web 検索 → LSP → Teams・Crew・Core Subagent の
 読み込み順を保つための指定です。Codex conversion のバージョンは補助バイナリと同じ定義を参照します。
 ローカル拡張は `extensions/`、プロンプトは `prompts/` に置いて `agent.nix` から配布します。
@@ -208,10 +209,16 @@ Nixpkgs のビルド定義を使ってソース・npm 依存関係・モデル�
 標準の ChatGPT 接続にはキャッシュ用ヘッダーを本文のキーに合わせる小さなパッチを適用しています。
 Pi Codex conversion が読み込まれる場合は、拡張自身の上流プロバイダー実装をそのまま使います。
 `@howaboua/pi-codex-conversion@3.0.37`、`pi-mcp-adapter@2.34.0`、`pi-web-access@0.30.0`、`@narumitw/pi-lsp@0.49.7`、
-`@melihmucuk/pi-crew@1.0.34` は
-Pi 標準のパッケージ管理で初回起動時に取得し、npm の lifecycle scripts を無効にします。
-拡張のバージョン指定は Nix 管理で、取得した依存関係とロックは `~/.pi/agent/npm/` に保存されます。
-この npm 依存関係のロックは flake.lock には含まれません。
+`@melihmucuk/pi-crew@1.0.34` は Nix で固定し、Home Manager の `settings.packages` から
+Nix ストアのパッケージを直接読み込みます。初回起動時の npm インストールは不要です。
+通常の依存関係を持つ拡張は各 `pkgs/pi-*/package.json` と `package-lock.json`、`npmDepsHash` で
+配布物と依存関係を固定し、lifecycle scripts と Pi SDK の重複インストールを無効にしてビルドします。
+Pi SDK だけに依存する LSP・Crew は npm 配布物のハッシュを固定します。
+Code Mode の実行ホストも上流の固定済み配布物を同梱し、起動時のダウンロードを不要にします。
+更新時は担当パッケージのバージョン・ロック・ハッシュを更新して NixOS の検証と適用を行います。
+`pi update --extensions` ではこれらの固定パッケージを更新しません。
+認証・会話・実行時キャッシュは引き続き `~/.pi/agent` に保存します。
+以前の `~/.pi/agent/npm/` は読み込みに使わず、自動削除もしません。
 
 [Superpowers 6.4.1](https://github.com/obra/superpowers/tree/5bf4e78011075bcfc0dc295f0724994cd123ee71)
 は [superpowers.nix](home/keewai/shared/pi/superpowers.nix) で上流リビジョンとハッシュを固定し、

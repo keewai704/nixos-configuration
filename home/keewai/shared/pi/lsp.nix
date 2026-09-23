@@ -1,8 +1,11 @@
 { lib, pkgs, ... }:
+let
+  piLsp = pkgs.callPackage ../../../../pkgs/pi-lsp { };
+in
 {
   programs.pi-coding-agent.settings.packages = lib.mkOrder 1300 [
     {
-      source = "npm:@narumitw/pi-lsp@0.49.7";
+      source = "${piLsp}";
       extensions = [ "dist/index.ts" ];
       skills = [ ];
       prompts = [ ];

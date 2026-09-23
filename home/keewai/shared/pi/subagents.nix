@@ -1,6 +1,7 @@
 { lib, pkgs, ... }:
 let
   agentTeams = pkgs.callPackage ../../../../pkgs/pi-agent-teams { };
+  piCrew = pkgs.callPackage ../../../../pkgs/pi-crew { };
   coreSubagent = pkgs.callPackage ../../../../pkgs/pi-core-subagent { };
 in
 {
@@ -10,7 +11,7 @@ in
       extensions = [ "extensions/teams/index.ts" ];
     }
     {
-      source = "npm:@melihmucuk/pi-crew@1.0.34";
+      source = "${piCrew}";
       extensions = [ "extension/index.ts" ];
     }
     {

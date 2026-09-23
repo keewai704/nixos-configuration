@@ -6,6 +6,7 @@
   ...
 }:
 let
+  adapter = pkgs.callPackage ../../../../pkgs/pi-mcp-adapter { };
   mcpServers = lib.mapAttrs (
     _: server:
     lib.filterAttrs (_: value: value != null) (
@@ -27,7 +28,7 @@ in
   programs.mcp.enable = true;
   programs.pi-coding-agent.settings.packages = lib.mkOrder 1100 [
     {
-      source = "npm:pi-mcp-adapter@2.34.0";
+      source = "${adapter}/lib/node_modules/pi-mcp-adapter";
     }
   ];
 

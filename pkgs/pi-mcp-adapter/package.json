@@ -1,0 +1,7 @@
+{
+  "name": "pi-mcp-adapter-runtime",
+  "private": true,
+  "dependencies": {
+    "pi-mcp-adapter": "2.34.0"
+  }
+}
