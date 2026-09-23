@@ -465,6 +465,150 @@ Code Mode でも委任ツールは直接呼び出し、未登録の `tools.crew_
 再起動は `systemctl --user restart pi-web` です。
 ソース、npm 依存関係、フォントは固定し、Nix のビルド中にネットワークからフォントを取得しません。
 
+### Unified CLI/Web subagents: approved design, not yet implemented
+
+This section records the approved integration design. The preceding sections
+describe the currently deployed three-plugin configuration. This design does not
+enable the replacement or claim that its implementation or validation is complete.
+
+#### Goal and ownership
+
+Replace Agent Teams, Crew, and Core Subagent in both CLI and Pi Web with one
+implementation derived from Pi Web's built-in subagents. Share role discovery,
+task scheduling, child-session lifecycle, results, and persistence. Do not keep
+the three existing engines behind a new facade.
+
+Keep the shared implementation and its CLI entry point with the Pi Web package
+sources and patches in [pkgs/pi-web/](pkgs/pi-web/). The Web adapter owns browser
+events and session presentation; the CLI adapter owns extension registration and
+terminal presentation. Neither adapter owns a second scheduler. CLI loading must
+not start Next.js or require the Web service to be running. Both adapters use the
+same packaged Pi SDK and public SDK interfaces, including provider registration
+and authentication handling.
+
+[subagents.nix](home/keewai/shared/pi/subagents.nix) owns the common delegation
+package registration, roles, and settings. [web.nix](home/keewai/shared/pi/web.nix)
+continues to own the Web application and user service. Settings and distributed
+roles remain Nix-managed, not editable through agent-management operations.
+
+#### Roles and assignment contract
+
+Provide six explicit roles: `scout` for discovery, `planner` for implementation
+plans, `oracle` for decisions, `worker` for implementation, `code-reviewer` for
+correctness, and `quality-reviewer` for maintainability. Adapt the useful role
+contracts from Crew without modifying its installed package-owned definitions;
+retain the applicable license notices. Keep the native `general-purpose`,
+`explore`, and `plan` names as compatibility aliases.
+
+Select roles by exact name. Support an explicitly supplied specialist prompt
+without fuzzy matching that silently replaces the caller's choice. Models inherit
+the parent's effective provider and model unless explicitly overridden; do not
+hard-code Crew's model allocations. Validate model and thinking overrides before
+starting work and report unavailable choices without silently substituting one.
+
+Accept self-contained assignments with `goal`, `context`, and ordered
+`instructions`. Preserve the native single-task prompt form for compatibility.
+Default to fresh conversation context, background execution, and no recursive
+delegation. Load the working directory's applicable repository instructions;
+fresh context does not mean dropping `AGENTS.md`. Tool and resource selection must
+be explicit and consistent on first start and resume. Tool restrictions and Git
+worktrees are not an operating-system sandbox.
+
+#### Tasks, communication, and presentation
+
+Support single tasks and batches with explicit IDs and dependency edges. Reuse
+the native queue with a hard maximum of four active children per parent session.
+Default to four and accept configured limits only from one through four. Enforce
+this limit for all starts and resumes, including separate batches for the same
+parent; it is not a global limit shared by unrelated parents. Validate duplicate
+IDs, unknown dependencies, and cycles before launching a batch. A dependent task
+starts only after its prerequisites succeed and receives their bounded results.
+Failure, cancellation, or unresolved input must not be passed downstream as success.
+
+Maintain a task list with assignments, dependencies, status, and child-session
+links. Allow the parent to assign pending work and send messages; allow scoped
+parent/child and sibling communication within the same delegation group. Messages
+must retain their sender and be distinguishable from user authorization. Prevent
+cross-parent control and recursive spawning by enforcing ownership and child tool
+availability, not only by prompting.
+
+Distinguish queued or dependency-blocked work, running work, input required,
+completed reports, failure, cancellation, and interruption. A structured report
+contains its outcome and complete report text; input requests also state what is
+needed. The parent can answer input requests, steer running work, follow up in the
+same child session, stop work, and close a verified delivery. Closing releases
+runtime resources without deleting the retained session or worktree. Preserve
+plain-text results from legacy native sessions.
+
+CLI and Web expose the same task and control semantics. Web presents the task
+list, dependencies, progress, messages, and inspectable child conversations; CLI
+provides equivalent tool results and compact status output. Existing native
+`Agent`, result retrieval, and steering calls remain supported. Code Mode must
+keep the native delegation tools directly callable without requiring an
+unregistered `tools.*` bridge.
+
+#### Persistence, interruption, and write isolation
+
+Use Pi sessions for child transcripts and versioned delegation metadata for task
+state and result delivery. Bound result and message payloads and keep complete
+reports inspectable without injecting every child transcript into the parent.
+Avoid rewriting old conversation history or moving credentials into task metadata.
+
+Do not add a daemon. Active execution belongs to the CLI or Web process that
+started it. Claim persistent execution ownership atomically for the parent
+session, covering all its batches and child runs. While that owner is live, a
+second process cannot enqueue another group for the same parent, control its
+children, or resume its work. Another interface may inspect persisted history
+but must report that execution is owned elsewhere rather than take it over.
+When the owner exits or restarts, unfinished work becomes interrupted and requires
+explicit resume. CLI exit does not promise detached execution. Do not
+automatically replay tasks after a crash or uncertain completion.
+
+Cancellation must finish child teardown before a run becomes resumable. Resume
+retains the task's session, workspace, role, and effective resource configuration;
+an explicit model override may resolve a provider failure. Persist result-delivery
+state and reconcile undelivered reports when the parent resumes, without silently
+starting another child or repeating an already acknowledged delivery.
+
+Parallel writers use separate Git worktrees from an explicit committed input.
+Reject an isolation request when that input cannot be provided; do not silently
+fall back to editing a shared checkout. Uncommitted parent changes are not copied
+implicitly. Passing an upstream report does not transfer its file changes: work
+requiring those changes waits for the parent to integrate them and explicitly
+release the dependent task against the integrated revision. Independent work may
+continue. Never automatically commit, merge, delete worktrees, or remove branches.
+Integration, commits, activation, and authorized cleanup remain parent-owned.
+
+#### Migration and acceptance
+
+Switch CLI and Web together: remove the three plugin registrations and their
+loaded skills/prompts, enable the shared native implementation, and update
+[APPEND_SYSTEM.md](home/keewai/shared/pi/APPEND_SYSTEM.md),
+[/review](home/keewai/shared/pi/prompts/review.md), and the delegation guidance here.
+Preserve unrelated extensions, model settings, and the existing `/pi/` exposure.
+Stop old children before starting replacement sessions; do not reload the live
+migration session. Retain downloaded old packages, historical plugin data,
+authentication, and unmerged worktrees. Old plugin run IDs are not native run IDs
+and are not automatically resumed or converted.
+
+Use the existing package test framework for shared runtime and adapter coverage.
+Use disposable agent state and synthetic local providers, not real credentials
+or paid model calls, for lifecycle integration tests. Required behaviors include
+role discovery, provider bindings, Code Mode tool availability, both adapter
+paths, concurrency, dependency failures, messages, input/follow-up/close, result
+delivery, cancellation/resume, process ownership, and retained writer changes.
+Verify that child repository instructions and tool restrictions survive resume.
+Keep detailed validation guidance in
+[nixos-validation](.agents/skills/nixos-validation/SKILL.md), not a separate check
+suite or documentation directory.
+
+After implementation, obtain a fresh-context diff review, run the relevant
+checks, and commit only task changes. Test and switch the committed configuration
+only on the verified local host, Citrus, with the repository's network, unit,
+affected-service, and running/boot-default checks. Do not deploy to Orange or
+publish remotely. Until implementation and those gates pass, the integration
+remains planned rather than deployed.
+
 ## Orange のサービスを読む
 
 各サービスは [settings.nix](hosts/orange/settings.nix) を直接読みます。
