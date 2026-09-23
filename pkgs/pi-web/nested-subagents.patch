@@ -1,0 +1,1362 @@
+diff --git a/lib/subagent-ancestry.ts b/lib/subagent-ancestry.ts
+new file mode 100644
+--- /dev/null
++++ b/lib/subagent-ancestry.ts
+@@ -0,0 +1,25 @@
++import { SessionManager } from "@earendil-works/pi-coding-agent";
++import type { SessionEntry } from "./types";
++import { canonicalParentSessionFile } from "./subagent-state";
++import { readSubagentParentSessionFile, readSubagentRun, SUBAGENT_META_TYPE } from "./subagents";
++
++export const MAX_DELEGATION_DEPTH = 2;
++
++export function subagentDepth(id: string, file: string, entries: readonly SessionEntry[]): number {
++  const seen = new Set<string>();
++  let depth = 0;
++  for (;;) {
++    const path = canonicalParentSessionFile(file);
++    if (seen.has(path)) throw new Error("Invalid cyclic subagent ancestry");
++    seen.add(path);
++    if (!entries.some((entry) => entry.type === "custom" && entry.customType === SUBAGENT_META_TYPE)) return depth;
++    const run = readSubagentRun(entries, id, file);
++    const parent = readSubagentParentSessionFile(entries);
++    if (!run || !parent || ++depth > MAX_DELEGATION_DEPTH) throw new Error("Invalid subagent ancestry or delegation depth");
++    const manager = SessionManager.open(parent);
++    if (manager.getSessionId() !== run.parentSessionId) throw new Error("Subagent ancestor identity changed");
++    id = manager.getSessionId();
++    file = parent;
++    entries = manager.getEntries() as unknown as SessionEntry[];
++  }
++}
+diff --git a/lib/subagent-controller.ts b/lib/subagent-controller.ts
+--- a/lib/subagent-controller.ts
++++ b/lib/subagent-controller.ts
+@@ -2,8 +2,11 @@
+ import { existsSync } from "node:fs";
+ import { isDeepStrictEqual } from "node:util";
+ import { getSupportedThinkingLevels } from "@earendil-works/pi-ai";
+-import { getAgentDir, SessionManager } from "@earendil-works/pi-coding-agent";
++import { getAgentDir, SessionManager, type ExtensionFactory } from "@earendil-works/pi-coding-agent";
++import type { SessionEntry } from "./types";
+ import { createSubagentChildTools } from "./subagent-child-tools";
++import { createDelegationTools } from "./subagent-tools";
++import { createSubagentNotificationOutbox } from "./subagent-notifications";
+ import {
+   createSubagentAttempt,
+   type SubagentAttempt,
+@@ -17,7 +20,7 @@
+ import { getSharedSubagentQueue, type EnqueuedSubagent } from "./subagent-queue";
+ import {
+   createSubagentSession, resolveSubagentModel, restoreSubagentSession,
+-  validateSubagentSelection,
++  validateSubagentSelection, delegationScope,
+   type ChildSessionInput, type CreatedSubagentSession, type SubagentParentHost,
+ } from "./subagent-session";
+ import { getSubagentSettingsPath, readSubagentSettings } from "./subagent-settings";
+@@ -32,7 +35,7 @@
+   type TaskInput, type TaskMessage, type TaskRecord,
+ } from "./subagent-task-types";
+ import { samePath } from "./paths";
+-import { SUBAGENT_RESULT_TYPE, SUBAGENT_STATUS_TYPE } from "./subagents";
++import { listSubagentProfiles, SUBAGENT_RESULT_TYPE, SUBAGENT_STATUS_TYPE } from "./subagents";
+ import { resolveCommitRevision } from "./worktree";
+
+ export interface DelegationControllerOptions {
+@@ -41,6 +44,7 @@
+     task: TaskRecord,
+     child: CreatedSubagentSession,
+     actor: DelegationActor,
++    ownership: { cancel(): Promise<void>; delegation?: ReturnType<typeof createDelegationController> },
+   ): SubagentSessionRegistration | void;
+ }
+
+@@ -73,6 +77,7 @@
+   actor?: DelegationActor;
+   child?: CreatedSubagentSession;
+   control?: SubagentAttempt;
++  delegation?: ReturnType<typeof createDelegationController>;
+   ticket?: EnqueuedSubagent<unknown>;
+   acceptingMessages: boolean;
+   cancelRequested: boolean;
+@@ -183,6 +188,7 @@
+     resolveModelRuntime: () => parent.resolveModelRuntime(),
+     ...(parent.prepareModel ? { prepareModel: (runtime, model) => parent.prepareModel!(runtime, model) } : {}),
+     readEntries: () => parent.readEntries(),
++    ...(parent.allowedTools ? { allowedTools: () => parent.allowedTools!() } : {}),
+     readContext: () => parent.readContext(),
+     sendNotification: (message) => parent.sendNotification(message),
+   };
+@@ -227,6 +233,7 @@
+
+   async function claim(): Promise<void> {
+     requireOpen();
++    delegationScope(host);
+     if (owner) {
+       assertOwnsState(state());
+       return;
+@@ -488,6 +495,15 @@
+
+   async function makeChild(run: ActiveTask): Promise<CreatedSubagentSession> {
+     const task = run.task!;
++    const outbox = createSubagentNotificationOutbox();
++    const lifecycle: ExtensionFactory = (pi) => {
++      pi.on("agent_before_settle", (event, ctx) => outbox.beforeSettle(event, ctx.sessionManager.getEntries() as unknown as SessionEntry[]));
++      pi.on("agent_settled", async () => {
++        if (run.delegation?.list().ownership === "local" && run.acceptingMessages) {
++          await run.delegation.reconcileDeliveries(run.delegation.parentActor);
++        }
++      });
++    };
+     const tools = createSubagentChildTools({
+       report: (value) => {
+         if (!run.actor) throw new Error("The child actor is not registered");
+@@ -498,16 +514,23 @@
+         await message(run.actor, to, text);
+       },
+     });
++    tools.push(...createDelegationTools(async (ctx) => {
++      if (!run.child || !run.delegation || !run.actor || ctx.sessionManager.getSessionId() !== run.child.session.sessionId
++        || ctx.sessionManager.getSessionFile() !== run.child.session.sessionFile) throw new Error("No active nested delegation scope");
++      requireChild(run.actor);
++      return run.delegation;
++    }, () => listSubagentProfiles(run.child?.session.sessionManager.getCwd() ?? host.cwd)));
+     if (task.historyPersisted && (!task.sessionFile || !existsSync(task.sessionFile))) {
+       throw new Error("The retained child transcript is missing; refusing to replace its history");
+     }
+     const prompt = promptFor(task, run.prerequisites, !task.sessionFile || !existsSync(task.sessionFile));
++    let child: CreatedSubagentSession;
+     if (task.sessionFile && existsSync(task.sessionFile)) {
+       if (!task.resources || !task.sessionId) throw new Error("The retained child resource snapshot is missing");
+       const restored = await restoreSubagentSession(host, task.sessionFile, task.resources, {
+         model: task.model, thinking: task.thinking,
+-      }, tools);
+-      return {
++      }, tools, lifecycle);
++      child = {
+         ...restored,
+         delegatedTask: prompt,
+         maxTurns: task.maxTurns,
+@@ -526,10 +549,34 @@
+           worktreeBranch: task.worktreeBranch,
+         },
+       };
+-    }
+-    if (task.worktreePath && !task.worktreeBranch) throw new Error("The retained worktree branch is missing");
+-    return createSubagentSession(host, childInput(task, prompt), tools,
+-      task.worktreePath ? { path: task.worktreePath, branch: task.worktreeBranch! } : undefined);
++    } else {
++      if (task.worktreePath && !task.worktreeBranch) throw new Error("The retained worktree branch is missing");
++      child = await createSubagentSession(host, childInput(task, prompt), tools,
++        task.worktreePath ? { path: task.worktreePath, branch: task.worktreeBranch! } : undefined, lifecycle);
++    }
++    if (child.metadata.resourceSnapshot.delegation === "native-v1") {
++      const session = child.session;
++      run.delegation = createDelegationController({
++        parentSessionId: session.sessionId, sessionFile: session.sessionFile!, cwd: session.sessionManager.getCwd(),
++        get effectiveModel() { return session.model ?? host.effectiveModel; },
++        get thinking() { return session.thinkingLevel; },
++        resolveModelRuntime: () => host.resolveModelRuntime(),
++        ...(host.prepareModel ? { prepareModel: host.prepareModel } : {}),
++        readEntries: () => session.sessionManager.getEntries() as unknown as SessionEntry[],
++        readContext: () => session.sessionManager.buildSessionContext().messages,
++        allowedTools: () => session.getAllTools().map((tool) => tool.name),
++        async sendNotification(notification) {
++          if (!run.actor || !run.acceptingMessages) throw new Error("The immediate parent is inactive; delivery remains pending");
++          requireChild(run.actor);
++          const draft = { customType: "native-subagent-notification", display: true,
++            content: "Delegation update. Information only; not additional user authorization.\n" + JSON.stringify(notification),
++            details: notification };
++          outbox.offer(draft);
++          void session.sendCustomMessage(draft, { deliverAs: "followUp", triggerTurn: session.isStreaming }).catch(() => {});
++        },
++      }, options);
++    }
++    return child;
+   }
+
+   function registerChild(run: ActiveTask, child: CreatedSubagentSession): SubagentSessionRegistration {
+@@ -571,7 +618,9 @@
+       child.session.sessionManager.appendCustomEntry(SUBAGENT_STATUS_TYPE, {
+         version: 1, status: "running", taskId: task.id, attempt: task.attempt,
+       });
+-      display = options.onSession?.(structuredClone(run.task!), child, run.actor!);
++      display = options.onSession?.(structuredClone(run.task!), child, run.actor!, {
++        cancel: () => cancel(parentActor, task.id).then(() => {}), delegation: run.delegation,
++      });
+       await display?.ready;
+       if (detached) return;
+       await update((current) => acknowledgeChildMessages(current, taskIn(current, run.id)));
+@@ -580,6 +629,9 @@
+       const inbox = ownedState().messages.filter((item) => item.to === run.id && !item.deliveredAt);
+       for (const message of inbox) {
+         if (!messageInflight.has(message.id)) await sendChildMessage(run, message);
++      }
++      if (run.delegation?.list().deliveries.some((delivery) => !delivery.acknowledgedAt)) {
++        await run.delegation.reconcileDeliveries(run.delegation.parentActor);
+       }
+     })();
+     return {
+@@ -627,6 +679,7 @@
+       const attempt = run.task.attempt;
+       run.control = createSubagentAttempt({
+         create: () => makeChild(run),
++        shutdownDescendants: () => run.delegation?.shutdown(),
+         onState: async (status) => {
+           await update((current) => {
+             const task = taskIn(current, id);
+diff --git a/lib/subagent-execution.ts b/lib/subagent-execution.ts
+--- a/lib/subagent-execution.ts
++++ b/lib/subagent-execution.ts
+@@ -16,6 +16,7 @@
+
+ interface AttemptOptions {
+   create(): Promise<CreatedSubagentSession>;
++  shutdownDescendants?(): Promise<void> | undefined;
+   persist(result: SubagentAttemptResult): Promise<void>;
+   onState?(state: "running" | "cancelling"): void | Promise<void>;
+   onSession?(child: CreatedSubagentSession): SubagentSessionRegistration | void;
+@@ -45,6 +46,7 @@
+   let reported: DelegationReport | undefined;
+   let aborting: Promise<void> | undefined;
+   let cancelling: Promise<void> | undefined;
++  let descendants: Promise<void> | undefined;
+   let detach: (() => void) | undefined;
+   let detached = false;
+   const errors: string[] = [];
+@@ -57,6 +59,7 @@
+   };
+   const requestAbort = () => {
+     if (!child || aborting) return;
++    descendants ??= Promise.resolve().then(() => options.shutdownDescendants?.()).catch(remember);
+     detachOnce();
+     try { aborting = child.session.abort().catch(remember); } catch (error) { remember(error); aborting = Promise.resolve(); }
+   };
+@@ -108,6 +111,8 @@
+       unsubscribe?.();
+       await cancelling;
+       await aborting;
++      descendants ??= Promise.resolve().then(() => options.shutdownDescendants?.()).catch(remember);
++      await descendants;
+       detachOnce();
+       if (child) {
+         try { await child.session.extensionRunner.emit({ type: "session_shutdown", reason: "quit" }); } catch (error) { remember(error); }
+diff --git a/lib/subagent-runtime.ts b/lib/subagent-runtime.ts
+--- a/lib/subagent-runtime.ts
++++ b/lib/subagent-runtime.ts
+@@ -9,6 +9,7 @@
+ import type { SubagentSessionRegistration } from "./subagent-execution";
+ import { canonicalParentSessionFile, readDelegationState } from "./subagent-state";
+ import { isOwnerAlive } from "./subagent-ownership";
++import { subagentDepth } from "./subagent-ancestry";
+ import { isBuiltInSubagentsEnabled } from "./subagent-settings";
+ import { listSubagentProfiles, readSubagentParentSessionFile, readSubagentRun, SUBAGENT_META_TYPE, type SubagentRunInfo } from "./subagents";
+ import type { TaskRecord } from "./subagent-task-types";
+@@ -50,12 +51,20 @@
+   const enabled = deps.isBuiltInSubagentsEnabled ?? isBuiltInSubagentsEnabled;
+   const entries = (manager: SessionManager) => manager.getEntries() as unknown as SessionEntry[];
+
+-  async function parentFile(id: string): Promise<string> {
++  async function parentFile(id: string, ancestors = new Set<string>()): Promise<string> {
++    if (ancestors.has(id)) throw new Error("Invalid cyclic subagent ancestry");
++    ancestors.add(id);
+     const path = await deps.resolveSessionPath(id);
+     if (!path) throw new Error("Parent session not found");
+     const manager = SessionManager.open(path);
+-    if (manager.getSessionId() !== id || entries(manager).some((entry) => entry.type === "custom" && entry.customType === SUBAGENT_META_TYPE)) {
+-      throw new Error("Invalid parent session identity");
++    if (manager.getSessionId() !== id) throw new Error("Invalid parent session identity");
++    const depth = subagentDepth(id, path, entries(manager));
++    if (depth) {
++      const run = readSubagentRun(entries(manager), id, path)!;
++      const savedParent = readSubagentParentSessionFile(entries(manager))!;
++      if (canonicalParentSessionFile(savedParent) !== await parentFile(run.parentSessionId, ancestors)) {
++        throw new Error("The subagent ancestor does not belong to its resolved parent");
++      }
+     }
+     return canonicalParentSessionFile(path);
+   }
+@@ -121,9 +130,8 @@
+   function bind(host: HostSession): Controller {
+     const id = host.inner.sessionId;
+     const file = canonicalParentSessionFile(host.sessionFile);
+-    if (!host.isAlive() || host.isClosing?.() || host.inner.sessionManager.getSessionId() !== id
+-      || entries(host.inner.sessionManager).some((entry) => entry.type === "custom" && entry.customType === SUBAGENT_META_TYPE)) {
+-      throw new Error("A live root parent session is required");
++    if (!host.isAlive() || host.isClosing?.() || host.inner.sessionManager.getSessionId() !== id) {
++      throw new Error("A live parent session is required");
+     }
+     const existing = bindings.get(id);
+     if (existing) {
+@@ -131,6 +139,9 @@
+         throw new Error("The previous parent session must finish delegation shutdown before replacement");
+       }
+       return existing.controller;
++    }
++    if (entries(host.inner.sessionManager).some((entry) => entry.type === "custom" && entry.customType === SUBAGENT_META_TYPE)) {
++      throw new Error("Resume a child through its immediate parent; independent ownership is not permitted");
+     }
+     let runtime = host.inner.modelRuntime;
+     let registry = new ModelRegistry(runtime as ModelRuntime);
+@@ -141,7 +152,6 @@
+       }
+       return registry;
+     });
+-    let binding: Binding;
+     const outbox = createSubagentNotificationOutbox();
+     const controller = createDelegationController({
+       parentSessionId: id, sessionFile: file, cwd: host.cwd,
+@@ -173,15 +183,23 @@
+           .catch((error) => console.error("[pi-web] native notification remains pending:", error));
+         deps.invalidateSessionList();
+       },
+-    }, { agentDir, onSession(task, child) {
++    }, { agentDir, onSession(_task, child, _actor, ownership) {
+       const registration = deps.registerSession(child.session as unknown as AgentSessionLike, {
+         exactSystemPrompt: child.metadata.resourceSnapshot?.exactSystemPrompt, chatOnly: child.chatOnly,
+-        beforeShutdown: () => binding.closing ?? controller.cancel(controller.parentActor, task.id).then(() => {}),
++        beforeShutdown: () => binding.closing ?? ownership.cancel(),
+       });
++      const childId = child.session.sessionId;
++      const childHost = deps.getSession(childId);
++      const nestedBinding = ownership.delegation && childHost
++        ? { host: childHost, controller: ownership.delegation, outbox: createSubagentNotificationOutbox() } : undefined;
++      if (nestedBinding) bindings.set(childId, nestedBinding);
+       deps.invalidateSessionList();
+-      return { ready: registration.ready, detach() { registration.detach(); deps.invalidateSessionList(); } };
++      return { ready: registration.ready, detach() {
++        if (nestedBinding && bindings.get(childId) === nestedBinding) bindings.delete(childId);
++        registration.detach(); deps.invalidateSessionList();
++      } };
+     } });
+-    binding = { host, controller, outbox };
++    const binding: Binding = { host, controller, outbox };
+     bindings.set(id, binding);
+     return controller;
+   }
+@@ -222,6 +240,14 @@
+     const view = await inspect(id);
+     if (view.ownership === "elsewhere") throw new Error("This parent is owned by another process");
+     const host = deps.getSession(id);
++    const manager = SessionManager.open(path);
++    if (subagentDepth(id, path, entries(manager)) > 0) {
++      const binding = bindings.get(id);
++      if (!binding || binding.host !== host || binding.closing || !host?.isAlive() || host.isClosing?.()) {
++        throw new Error("Resume a child through its immediate parent; independent ownership is not permitted");
++      }
++      return binding.controller;
++    }
+     const parent = host?.isAlive() ? host : await deps.reopenSession(id, path);
+     if (!parent || canonicalParentSessionFile(parent.sessionFile) !== path || parent.inner.sessionId !== id) {
+       throw new Error("Reopened parent identity changed");
+@@ -233,13 +259,16 @@
+   async function child(id: string) {
+     const file = await deps.resolveSessionPath(id);
+     if (!file) return null;
+-    const manager = SessionManager.open(file);
++    const live = existsSync(file) ? undefined : deps.getSession(id);
++    const manager = live?.isAlive() && canonicalParentSessionFile(live.sessionFile) === canonicalParentSessionFile(file)
++      ? live.inner.sessionManager : SessionManager.open(file);
+     if (manager.getSessionId() !== id) throw new Error("Child session identity changed");
+     const run = readSubagentRun(entries(manager), id, file);
+     if (!run) return null;
+     const parent = await parentFile(run.parentSessionId);
+     const savedParent = readSubagentParentSessionFile(entries(manager));
+     if (!savedParent || canonicalParentSessionFile(savedParent) !== parent) throw new Error("The child does not belong to this parent");
++    subagentDepth(id, file, entries(manager));
+     const task = (await inspect(run.parentSessionId)).tasks.find((task) => task.sessionId === id);
+     if (task?.sessionFile && canonicalParentSessionFile(task.sessionFile) !== canonicalParentSessionFile(file)) {
+       throw new Error("Child task history identity changed");
+diff --git a/lib/subagent-session.ts b/lib/subagent-session.ts
+--- a/lib/subagent-session.ts
++++ b/lib/subagent-session.ts
+@@ -5,12 +5,12 @@
+ import type { ThinkingLevel } from "@earendil-works/pi-agent-core";
+ import {
+   createAgentSessionFromServices, createAgentSessionServices, getAgentDir, initTheme, SessionManager, SettingsManager,
+-  type AgentSession, type ModelRuntime, type ToolDefinition,
++  type AgentSession, type ExtensionFactory, type ModelRuntime, type ToolDefinition,
+ } from "@earendil-works/pi-coding-agent";
+ import type { SessionEntry } from "./types";
+ import type { StartSubagentRequest } from "./subagent-extension";
+ import {
+-  readSubagentRun, readSubagentParentSessionFile, resolveSubagentProfile, selectSubagentExtensionTools, withSubagentExtensionTools,
++  readSubagentRun, readSubagentParentSessionFile, readSubagentSessionResources, resolveSubagentProfile, selectSubagentExtensionTools, withSubagentExtensionTools,
+   SUBAGENT_CONTROL_TOOL_NAMES, SUBAGENT_META_TYPE,
+   type SubagentMetadata, type SubagentResourceSnapshot, type SubagentSessionResources,
+ } from "./subagents";
+@@ -21,6 +21,7 @@
+ import { addWorktree, listWorktrees, resolveCommitRevision } from "./worktree";
+ import { reportExcerpt, type DelegationNotification } from "./subagent-task-types";
+ import { canonicalParentSessionFile } from "./subagent-state";
++import { MAX_DELEGATION_DEPTH, subagentDepth } from "./subagent-ancestry";
+
+ export interface SubagentParentHost {
+   parentSessionId: string;
+@@ -31,6 +32,7 @@
+   resolveModelRuntime(): Promise<ModelRuntime>;
+   prepareModel?(runtime: ModelRuntime, model: Model<Api>): Promise<void>;
+   readEntries(): readonly SessionEntry[];
++  allowedTools?(): readonly string[];
+   readContext(): unknown[];
+   sendNotification(message: DelegationNotification): Promise<void>;
+ }
+@@ -75,7 +77,21 @@
+   if (missing.length) throw new Error(`Missing required subagent tools: ${missing.join(", ")}`);
+ }
+
+-async function servicesFor(cwd: string, runtime: ModelRuntime, resources: SubagentSessionResources, restoring: boolean) {
++export function delegationScope(parent: SubagentParentHost) {
++  const entries = parent.readEntries();
++  const depth = subagentDepth(parent.parentSessionId, parent.sessionFile, entries);
++  const resources = depth ? readSubagentSessionResources(entries) : null;
++  const allowed = parent.allowedTools?.();
++  if (depth >= MAX_DELEGATION_DEPTH) throw new Error("The maximum delegation depth is two edges");
++  if (depth && (!resources || resources.delegation !== "native-v1" || !resources.tools.includes("Agent")
++    || (allowed && !allowed.includes("Agent")))) {
++    throw new Error("The parent resource snapshot does not permit native delegation");
++  }
++  const tools = resources?.tools.filter((name) => !allowed || allowed.includes(name));
++  return { depth, resources, tools };
++}
++
++async function servicesFor(cwd: string, runtime: ModelRuntime, resources: SubagentSessionResources, restoring: boolean, lifecycle?: ExtensionFactory) {
+   const agentDir = getAgentDir();
+   if (restoring) {
+     if ((resources.loadExtensions && !resources.extensionFiles) || (resources.loadSkills && !resources.skillFiles)) {
+@@ -89,6 +105,7 @@
+   const services = await createAgentSessionServices({
+     cwd, agentDir, modelRuntime: runtime, settingsManager: SettingsManager.create(cwd, agentDir),
+     resourceLoaderOptions: {
++      ...(lifecycle ? { extensionFactories: [lifecycle] } : {}),
+       noExtensions: restoring || !resources.loadExtensions,
+       noSkills: restoring || !resources.loadSkills,
+       noPromptTemplates: true, noThemes: true,
+@@ -116,6 +133,7 @@
+   parent: SubagentParentHost,
+   input: ChildSessionInput,
+ ) {
++  const scope = delegationScope(parent);
+   const profile = resolveSubagentProfile(parent.cwd, input.profile);
+   if (!profile) throw new Error(`Unknown or disabled subagent profile: ${input.profile}`);
+   const runtime = await parent.resolveModelRuntime();
+@@ -125,7 +143,15 @@
+   if (maxTurns !== undefined && (!Number.isSafeInteger(maxTurns) || maxTurns < 0)) throw new Error("max_turns must be a non-negative integer");
+   const writer = profile.loadExtensions || profile.tools.some((tool) => ["bash", "powershell", "write", "edit"].includes(tool));
+   if (writer && profile.isolation === "off") throw new Error("Native writers cannot disable worktree isolation");
+-  return { profile, runtime, model, thinking, maxTurns, writer };
++  if (scope.resources) {
++    const canWrite = scope.resources.loadExtensions || scope.tools!.some((tool) => ["bash", "powershell", "write", "edit"].includes(tool));
++    if (writer && !canWrite) throw new Error("A readonly child cannot delegate to a writer");
++    if (profile.loadExtensions && !scope.resources.loadExtensions) throw new Error("Delegation cannot enable additional extensions");
++    if (profile.loadSkills && !scope.resources.loadSkills) throw new Error("Delegation cannot enable additional skills");
++    const missing = resolveShellTools(profile.tools, scope.tools).filter((tool) => !scope.tools!.includes(tool));
++    if (missing.length) throw new Error(`Delegation exceeds the parent's tool scope: ${missing.join(", ")}`);
++  }
++  return { profile, runtime, model, thinking, maxTurns, writer, scope };
+ }
+
+ export async function createSubagentSession(
+@@ -133,8 +159,9 @@
+   input: ChildSessionInput,
+   customTools: ToolDefinition[] = [],
+   retained?: { path: string; branch: string },
++  lifecycle?: ExtensionFactory,
+ ): Promise<CreatedSubagentSession> {
+-  const { profile, runtime, model, thinking, maxTurns, writer } = await validateSubagentSelection(parent, input);
++  const { profile, runtime, model, thinking, maxTurns, writer, scope } = await validateSubagentSelection(parent, input);
+   await parent.prepareModel?.(runtime, model);
+   const isolated = writer || input.isolation === "worktree" || profile.isolation === "worktree" || input.inputRevision !== undefined || !!retained;
+   if (isolated && !retained && !input.inputRevision?.trim()) throw new Error("An explicit committed input revision is required for an isolated task");
+@@ -157,14 +184,24 @@
+       loadSkills: profile.loadSkills, loadExtensions: profile.loadExtensions,
+       ...(prompt.exactSystemPrompt !== undefined ? { exactSystemPrompt: prompt.exactSystemPrompt } : {}),
+     };
+-    const services = await servicesFor(cwd, runtime, resources, false);
++    if (scope.resources) {
++      resources.extensionFiles = profile.loadExtensions ? scope.resources.extensionFiles : [];
++      resources.skillFiles = profile.loadSkills ? scope.resources.skillFiles : [];
++    }
++    const services = await servicesFor(cwd, runtime, resources, !!scope.resources, lifecycle);
+     await parent.prepareModel?.(runtime, model);
+-    const extensions = services.resourceLoader.getExtensions().extensions;
++    const extensions = services.resourceLoader.getExtensions().extensions.filter((extension) => !extension.path.startsWith("<inline"));
+     const extensionTools = profile.extensionTools?.length
+       ? selectSubagentExtensionTools(extensions, profile.extensionTools)
+       : extensions.flatMap((extension) => [...extension.tools.keys()]);
+-    resources.tools = resolveShellTools(withSubagentExtensionTools(profile.tools,
+-      [...extensionTools, ...customTools.map((tool) => tool.name)]), services.settingsManager.getDefaultTools());
++    const controlTools = scope.depth === 0 ? customTools.filter((tool) => (SUBAGENT_CONTROL_TOOL_NAMES as readonly string[]).includes(tool.name)) : [];
++    if (controlTools.length) resources.delegation = "native-v1";
++    resources.tools = [...resolveShellTools(withSubagentExtensionTools(profile.tools,
++      [...extensionTools, ...customTools.map((tool) => tool.name)].filter((name) => !scope.tools || scope.tools.includes(name))), services.settingsManager.getDefaultTools()),
++      ...controlTools.map((tool) => tool.name)];
++    if (scope.tools && resources.tools.some((tool) => !scope.tools!.includes(tool))) {
++      throw new Error("Effective tools exceed the delegating parent's scope");
++    }
+     resources.extensionFiles = extensions.map((extension) => extension.path);
+     resources.skillFiles = services.resourceLoader.getSkills().skills.map((skill) => skill.filePath);
+     const manager = SessionManager.create(cwd, undefined, { parentSession: parent.sessionFile });
+@@ -179,7 +216,8 @@
+     manager.appendCustomEntry(SUBAGENT_META_TYPE, metadata);
+     manager.appendSessionInfo(metadata.description);
+     ({ session } = await createAgentSessionFromServices({ services, sessionManager: manager, model, thinkingLevel: thinking,
+-      tools: resources.tools, excludeTools: [...SUBAGENT_CONTROL_TOOL_NAMES], customTools }));
++      tools: resources.tools, excludeTools: SUBAGENT_CONTROL_TOOL_NAMES.filter((name) => !resources.tools.includes(name)),
++      customTools: customTools.filter((tool) => resources.tools.includes(tool.name)) }));
+     requireTools(session, resources.tools);
+     return { session, metadata, delegatedTask: prompt.delegatedTask, ...(maxTurns ? { maxTurns } : {}),
+       chatOnly: resources.tools.length === 0 && !resources.loadExtensions && !resources.loadSkills };
+@@ -208,7 +246,17 @@
+   resources: SubagentSessionResources,
+   overrides: { model?: string; thinking?: string } = {},
+   customTools: ToolDefinition[] = [],
++  lifecycle?: ExtensionFactory,
+ ): Promise<{ session: AgentSession; chatOnly: boolean }> {
++  const scope = delegationScope(parent);
++  if (scope.resources && (resources.tools.some((tool) => !scope.tools!.includes(tool))
++    || (resources.loadExtensions && (!scope.resources.loadExtensions || !resources.extensionFiles
++      || resources.extensionFiles.some((path) => !scope.resources!.extensionFiles?.includes(path))))
++    || (resources.loadSkills && (!scope.resources.loadSkills || !resources.skillFiles
++      || resources.skillFiles.some((path) => !scope.resources!.skillFiles?.includes(path)))))) {
++    throw new Error("Retained resources exceed the delegating parent's scope");
++  }
++  if (resources.delegation === "native-v1" && scope.depth !== 0) throw new Error("The maximum delegation depth is two edges");
+   if (!existsSync(sessionFile)) throw new Error("The child has no persisted conversation to restore");
+   const manager = SessionManager.open(sessionFile);
+   const entries = manager.getEntries() as unknown as SessionEntry[];
+@@ -230,10 +278,11 @@
+   const model = resolveSubagentModel(runtime, overrides.model, inherited);
+   const thinking = validateThinking(model, overrides.thinking ?? context.thinkingLevel ?? parent.thinking ?? "off");
+   await parent.prepareModel?.(runtime, model);
+-  const services = await servicesFor(manager.getCwd(), runtime, resources, true);
++  const services = await servicesFor(manager.getCwd(), runtime, resources, true, lifecycle);
+   await parent.prepareModel?.(runtime, model);
+   const { session } = await createAgentSessionFromServices({ services, sessionManager: manager, model, thinkingLevel: thinking,
+-    tools: resources.tools, excludeTools: [...SUBAGENT_CONTROL_TOOL_NAMES], customTools });
++    tools: resources.tools, excludeTools: SUBAGENT_CONTROL_TOOL_NAMES.filter((name) => resources.delegation !== "native-v1" || !resources.tools.includes(name)),
++    customTools: customTools.filter((tool) => resources.tools.includes(tool.name)) });
+   try {
+     requireTools(session, resources.tools);
+     if (overrides.model) manager.appendModelChange(model.provider, model.id);
+diff --git a/lib/subagent-tools.ts b/lib/subagent-tools.ts
+--- a/lib/subagent-tools.ts
++++ b/lib/subagent-tools.ts
+@@ -75,7 +75,7 @@
+       promptSnippet: "Delegate self-contained tasks to inspectable native subagents",
+       promptGuidelines: ["Batch independent tasks together and do not duplicate delegated work.",
+         "Use needs edges for prerequisites; file changes require parent integration and explicit release.",
+-        "Foreground waits are for results needed immediately. Never recursively delegate from a child."],
++        "Foreground waits are for results needed immediately. Delegation is limited to root, child, and grandchild; each immediate parent has its own concurrency limit."],
+       parameters: Type.Object({
+         tasks: Type.Optional(Type.Array(batchTaskSchema, { minItems: 1 })),
+         id: Type.Optional(Type.String()), subagent_type: Type.Optional(Type.String()),
+diff --git a/lib/subagents.ts b/lib/subagents.ts
+--- a/lib/subagents.ts
++++ b/lib/subagents.ts
+@@ -61,6 +61,7 @@
+
+ export interface SubagentResourceSnapshot {
+   version: 1;
++  delegation?: "native-v1";
+   appendSystemPrompt: string[];
+   tools: string[];
+   loadSkills: boolean;
+@@ -71,6 +72,7 @@
+ }
+
+ export interface SubagentSessionResources {
++  delegation?: "native-v1";
+   appendSystemPrompt: string[];
+   tools: string[];
+   loadSkills: boolean;
+@@ -513,11 +515,12 @@
+     && snapshot.tools.every((item) =>
+       typeof item === "string"
+       && item.length > 0
+-      && !SUBAGENT_CONTROL_TOOLS.has(item)
+-      && (BUILTIN_TOOLS.has(item) || (SUBAGENT_CHILD_TOOL_NAMES as readonly string[]).includes(item) || loadExtensions)
++      && (SUBAGENT_CONTROL_TOOLS.has(item) ? snapshot.delegation === "native-v1"
++        : BUILTIN_TOOLS.has(item) || (SUBAGENT_CHILD_TOOL_NAMES as readonly string[]).includes(item) || loadExtensions)
+     )
+   ) {
+     return {
++      ...(snapshot.delegation === "native-v1" ? { delegation: "native-v1" as const } : {}),
+       appendSystemPrompt: [...snapshot.appendSystemPrompt],
+       tools: [...new Set(snapshot.tools)],
+       loadSkills,
+diff --git a/lib/subagent-controller.test.mjs b/lib/subagent-controller.test.mjs
+--- a/lib/subagent-controller.test.mjs
++++ b/lib/subagent-controller.test.mjs
+@@ -96,7 +96,7 @@
+       streaming++;
+       peak = Math.max(peak, streaming);
+       const request = {
+-        context: structuredClone(context),
++        context: structuredClone(context), model: { provider: model.provider, id: model.id },
+         finished: false,
+         finish(value = "Fixture completed") {
+           if (request.finished) return;
+@@ -107,13 +107,15 @@
+               type: "error", reason: "aborted",
+               error: { ...base, stopReason: "aborted", errorMessage: "Fixture aborted" },
+             });
++          } else if (value?.error) {
++            stream.push({ type: "error", reason: "error", error: { ...base, stopReason: "error", errorMessage: value.error } });
+           } else if (typeof value === "object") {
+             stream.push({
+               type: "done", reason: "toolUse",
+               message: {
+                 ...base, stopReason: "toolUse",
+                 content: [{
+-                  type: "toolCall", id: randomUUID(), name: "report_subagent", arguments: value,
++                  type: "toolCall", id: randomUUID(), name: value.tool ?? "report_subagent", arguments: value.arguments ?? value,
+                 }],
+               },
+             });
+@@ -160,9 +162,9 @@
+   function controllerFor(host = parent) {
+     const controller = createDelegationController(host, {
+       agentDir,
+-      onSession(record, child, actor) {
+-        children.set(record.id, { task: record, child, actor });
+-        return options.onSession?.(record, child, actor);
++      onSession(record, child, actor, ownership) {
++        children.set(record.id, { task: record, child, actor, ownership });
++        return options.onSession?.(record, child, actor, ownership);
+       },
+     });
+     controllers.push(controller);
+@@ -801,3 +803,238 @@
+   assert.equal(writer.inputRevision, revision);
+   assert.notEqual(writer.worktreePath, f.cwd);
+ });
++
++function nestedHost(f, child) {
++  const session = child.session;
++  return {
++    parentSessionId: session.sessionId, sessionFile: session.sessionFile,
++    cwd: session.sessionManager.getCwd(), effectiveModel: session.model,
++    resolveModelRuntime: async () => f.runtime,
++    readEntries: () => session.sessionManager.getEntries(),
++    readContext: () => session.sessionManager.buildSessionContext().messages,
++    allowedTools: () => session.getAllTools().map((tool) => tool.name),
++    sendNotification: async () => {},
++  };
++}
++
++function callAgent(request, id, extra = {}) {
++  request.finish({ tool: "Agent", arguments: { id, subagent_type: "scout", prompt: `TASK:${id}`,
++    run_in_background: false, ...extra } });
++}
++
++const nativeControls = ["Agent", "get_subagent_result", "steer_subagent", "manage_subagents"];
++
++test("writer grandchildren require their own committed input and retain independent dirty worktrees", async (t) => {
++  const f = await fixture(t, { hold: true });
++  await git(f.cwd, "init", "-q");
++  await git(f.cwd, "add", "AGENTS.md");
++  const revision = await commit(f.cwd, "nested writer input");
++  await f.controller.startBatch(f.controller.parentActor, [task("writer-child", { profile: "worker", inputRevision: revision })]);
++  await until(() => f.requests.length === 1);
++  const child = f.children.get("writer-child").child;
++  writeFileSync(join(child.metadata.worktreePath, "parent-only.txt"), "Uncommitted child work");
++  callAgent(f.requests[0], "missing-input", { subagent_type: "worker" });
++  await until(() => f.requests.length === 2);
++  const result = f.requests[1].context.messages.findLast((message) => message.role === "toolResult");
++  assert.match(JSON.stringify(result.content), /explicit committed input/);
++  assert.equal(f.children.has("missing-input"), false);
++  callAgent(f.requests[1], "writer-leaf", { subagent_type: "worker", input_revision: revision });
++  await until(() => f.requests.length === 3);
++  const leaf = f.children.get("writer-leaf").child;
++  assert.notEqual(leaf.metadata.worktreePath, child.metadata.worktreePath);
++  assert.notEqual(leaf.metadata.worktreePath, f.cwd);
++  assert.equal(await git(leaf.metadata.worktreePath, "rev-parse", "HEAD"), revision);
++  assert.equal(existsSync(join(leaf.metadata.worktreePath, "parent-only.txt")), false);
++  writeFileSync(join(leaf.metadata.worktreePath, "leaf-only.txt"), "Uncommitted leaf work");
++  f.requests[2].finish({ outcome: "completed", report: "Leaf changes remain isolated" });
++  await until(() => f.requests.length === 4);
++  f.requests[3].finish({ outcome: "completed", report: "Parent changes remain isolated" });
++  await f.controller.wait(f.controller.parentActor);
++  assert.equal(readFileSync(join(leaf.metadata.worktreePath, "leaf-only.txt"), "utf8"), "Uncommitted leaf work");
++  assert.equal(existsSync(join(child.metadata.worktreePath, "leaf-only.txt")), false);
++  assert.equal(await git(f.cwd, "rev-parse", "HEAD"), revision);
++  assert.equal(await git(child.metadata.worktreePath, "rev-parse", "HEAD"), revision);
++  assert.equal(await git(leaf.metadata.worktreePath, "rev-parse", "HEAD"), revision);
++});
++
++test("grandchildren inherit only captured extension and skill paths with the delegating child's filtered tools", async (t) => {
++  const f = await fixture(t, { hold: true });
++  await git(f.cwd, "init", "-q");
++  await git(f.cwd, "add", "AGENTS.md");
++  const revision = await commit(f.cwd, "resource ceiling input");
++  const extensions = join(agentDir, "extensions");
++  const skills = join(agentDir, "skills");
++  const profile = join(agentDir, "agents", "ceiling.md");
++  const leafProfile = join(agentDir, "agents", "ceiling-leaf.md");
++  mkdirSync(join(extensions, "allowed"), { recursive: true });
++  mkdirSync(join(skills, "allowed"), { recursive: true });
++  const allowedExtension = join(extensions, "allowed", "index.ts");
++  const allowedSkill = join(skills, "allowed", "SKILL.md");
++  writeFileSync(allowedExtension, `export default function (pi) {
++    for (const name of ["allowed_tool", "hidden_tool"]) pi.registerTool({ name, label: name, description: name,
++      parameters: { type: "object", properties: {} }, execute: async () => ({ content: [{ type: "text", text: name }], details: undefined }) });
++  }`);
++  writeFileSync(allowedSkill, "---\nname: allowed\ndescription: Captured skill\n---\nUse captured fixture evidence.\n");
++  const frontmatter = (tools) => `---\ndescription: Resource ceiling\ntools: ${tools}\nload_extensions: true\nload_skills: true\n---\nInspect the fixture.\n`;
++  writeFileSync(profile, frontmatter("read, ext:allowed/allowed_tool"));
++  writeFileSync(leafProfile, frontmatter("read, ext:*"));
++  t.after(() => {
++    for (const path of [extensions, skills, profile, leafProfile]) rmSync(path, { recursive: true, force: true });
++  });
++  await f.controller.startBatch(f.controller.parentActor, [task("ceiling-child", { profile: "ceiling", inputRevision: revision })]);
++  await until(() => f.requests.length === 1);
++  const child = f.children.get("ceiling-child").child;
++  assert.deepEqual(child.metadata.resourceSnapshot.extensionFiles, [allowedExtension]);
++  assert.deepEqual(child.metadata.resourceSnapshot.skillFiles, [allowedSkill]);
++  assert.equal(child.session.getAllTools().some((tool) => tool.name === "hidden_tool"), false);
++  writeFileSync(join(extensions, "ambient.ts"), "export default function () { throw new Error('Ambient extension must not load'); }\n");
++  mkdirSync(join(skills, "ambient"));
++  writeFileSync(join(skills, "ambient", "SKILL.md"), "---\nname: ambient\ndescription: New ambient skill\n---\nDo not inherit.\n");
++  callAgent(f.requests[0], "ceiling-leaf", { subagent_type: "ceiling-leaf", input_revision: revision });
++  await until(() => f.requests.length === 2);
++  const leaf = f.children.get("ceiling-leaf").child;
++  assert.deepEqual(leaf.metadata.resourceSnapshot.extensionFiles, [allowedExtension]);
++  assert.deepEqual(leaf.metadata.resourceSnapshot.skillFiles, [allowedSkill]);
++  assert.deepEqual(leaf.session.getAllTools().map((tool) => tool.name).sort(), ["read", "allowed_tool", "report_subagent", "send_subagent_message"].sort());
++  f.requests[1].finish({ outcome: "completed", report: "Ceiling retained" });
++  await until(() => f.requests.length === 3);
++  f.requests[2].finish({ outcome: "completed", report: "Captured resources only" });
++  await f.controller.wait(f.controller.parentActor);
++});
++
++test("real SDK child delegates through Agent to a bounded grandchild and resumes both exact histories", async (t) => {
++  const f = await fixture(t, { hold: true, limit: 1,
++    onSession(_record, child) { return { ready: child.session.bindExtensions({ mode: "json" }), detach() {} }; } });
++  await f.controller.startBatch(f.controller.parentActor, [task("child")]);
++  await until(() => f.requests.length === 1);
++  const child = f.children.get("child").child;
++  const childTools = child.session.getActiveToolNames();
++  for (const name of nativeControls) assert.equal(childTools.includes(name), true);
++  callAgent(f.requests[0], "grandchild");
++  await until(() => f.requests.length === 2);
++  const grandchild = f.children.get("grandchild").child;
++  assert.equal(grandchild.metadata.parentSessionId, child.session.sessionId);
++  assert.equal(grandchild.metadata.parentSessionPath, child.session.sessionFile);
++  assert.equal(child.metadata.parentSessionId, f.parent.parentSessionId);
++  assert.deepEqual(f.requests[1].model, f.requests[0].model);
++  assert.equal(f.peak, 1);
++  for (const name of nativeControls) assert.equal(grandchild.session.getActiveToolNames().includes(name), false);
++  const illegal = f.controllerFor(nestedHost(f, grandchild));
++  await assert.rejects(illegal.startBatch(illegal.parentActor, [task("too-deep", { depth: 0 })]), /maximum delegation depth/);
++  f.requests[1].finish({ outcome: "completed", report: "Grandchild evidence" });
++  await until(() => f.requests.length >= 3);
++  assert.match(JSON.stringify(f.requests[2].context), /Grandchild evidence/);
++  assert.equal(f.notifications.some((item) => item.taskId === "grandchild"), false);
++  f.requests[2].finish("Awaiting the durable immediate-parent notification");
++  await until(() => f.requests.length >= 4);
++  f.requests[3].finish({ outcome: "completed", report: "Child evidence" });
++  const [saved] = await f.controller.wait(f.controller.parentActor);
++  const nested = readDelegationState(agentDir, child.session.sessionFile);
++  assert.equal(nested.tasks[0].status, "completed");
++  assert.equal(nested.owner, undefined);
++  const receipt = SessionManager.open(child.session.sessionFile).getEntries().find((entry) => entry.type === "custom_message"
++    && entry.details?.parentSessionId === child.session.sessionId);
++  assert.ok(receipt);
++  assert.equal(receipt.details.taskId, "grandchild");
++  assert.equal(f.notifications.find((item) => item.taskId === "child").parentSessionId, f.parent.parentSessionId);
++  const before = f.requests.length;
++  await f.controller.resume(f.controller.parentActor, "child", { message: "Resume exact child" });
++  await until(() => f.requests.length > before);
++  await delay(30);
++  assert.equal(f.requests.length, before + 1);
++  assert.equal(f.children.get("child").child.session.sessionId, saved.sessionId);
++  assert.deepEqual(f.children.get("child").child.metadata.resourceSnapshot, saved.resources);
++  f.requests.at(-1).finish({ tool: "Agent", arguments: { resume: grandchild.session.sessionId,
++    prompt: "Resume exact grandchild", run_in_background: false } });
++  await until(() => f.requests.length > before + 1);
++  assert.equal(f.children.get("grandchild").child.session.sessionId, grandchild.session.sessionId);
++  assert.deepEqual(f.children.get("grandchild").child.metadata.resourceSnapshot, nested.tasks[0].resources);
++  f.requests.at(-1).finish({ outcome: "completed", report: "Resumed grandchild" });
++  await until(() => f.requests.length > before + 2);
++  f.requests.at(-1).finish({ outcome: "completed", report: "Resumed child" });
++  await f.controller.wait(f.controller.parentActor);
++});
++
++test("readonly SDK child cannot amplify its capabilities using Agent or a runtime call", async (t) => {
++  const f = await fixture(t, { hold: true });
++  await f.controller.startBatch(f.controller.parentActor, [task("readonly")]);
++  await until(() => f.requests.length === 1);
++  callAgent(f.requests[0], "writer", { subagent_type: "worker" });
++  await until(() => f.requests.length === 2);
++  assert.match(JSON.stringify(f.requests[1].context.messages.filter((message) => message.role === "toolResult")), /readonly child/);
++  const { ownership } = f.children.get("readonly");
++  await assert.rejects(ownership.delegation.startBatch(ownership.delegation.parentActor,
++    [task("writer-direct", { profile: "worker" })]), /readonly child/);
++  assert.equal(f.children.has("writer"), false);
++  f.requests[1].finish({ outcome: "completed", report: "Scope held" });
++  await f.controller.wait(f.controller.parentActor);
++});
++
++test("foreground nested batches use per-immediate-parent slots without deadlocking at limit one", async (t) => {
++  const f = await fixture(t, { hold: true, limit: 1 });
++  await f.controller.startBatch(f.controller.parentActor, [task("first-child"), task("second-child")]);
++  await until(() => f.requests.length === 1);
++  f.requests[0].finish({ tool: "Agent", arguments: { run_in_background: false,
++    tasks: ["first-leaf", "second-leaf"].map((id) => ({ id, profile: "scout", description: id, assignment: `TASK:${id}` })) } });
++  await until(() => f.requests.length === 2);
++  assert.equal(f.children.has("second-child"), false);
++  assert.equal(f.children.has("second-leaf"), false);
++  f.requests[1].finish({ outcome: "completed", report: "First leaf" });
++  await until(() => f.requests.length === 3);
++  assert.equal(f.children.has("second-leaf"), true);
++  assert.equal(f.children.has("second-child"), false);
++  f.requests[2].finish({ outcome: "completed", report: "Second leaf" });
++  await until(() => f.requests.length === 4);
++  f.requests[3].finish({ outcome: "completed", report: "First child" });
++  await until(() => f.requests.length === 5);
++  assert.equal(f.children.has("second-child"), true);
++  f.requests[4].finish({ outcome: "completed", report: "Second child" });
++  await f.controller.wait(f.controller.parentActor);
++  assert.equal(f.peak, 1);
++});
++
++for (const ending of ["cancel", "shutdown", "report", "failure"]) {
++  test(`nested ${ending} waits for descendant SDK teardown before terminal state and ownership release`, async (t) => {
++    const gate = Promise.withResolvers();
++    let tearingDown = false;
++    const f = await fixture(t, { hold: true, onSession(record, child) {
++      if (record.id !== "leaf") return;
++      const emit = child.session.extensionRunner.emit.bind(child.session.extensionRunner);
++      child.session.extensionRunner.emit = async (event) => {
++        if (event.type === "session_shutdown") { tearingDown = true; await gate.promise; }
++        return emit(event);
++      };
++    } });
++    t.after(() => gate.resolve());
++    await f.controller.startBatch(f.controller.parentActor, [task("child")]);
++    await until(() => f.requests.length === 1);
++    callAgent(f.requests[0], "leaf", { run_in_background: ending === "report" || ending === "failure" });
++    await until(() => f.requests.length === (ending === "report" || ending === "failure" ? 3 : 2));
++    const child = f.children.get("child");
++    const leaf = f.children.get("leaf");
++    let stopping;
++    if (ending === "cancel") stopping = f.controller.cancel(f.controller.parentActor, "child");
++    else if (ending === "shutdown") stopping = f.controller.shutdown();
++    else if (ending === "report") {
++      f.requests.findLast((request) => JSON.stringify(request.context).includes("TASK:child")).finish({ outcome: "completed", report: "Child completed early" });
++      stopping = f.controller.wait(f.controller.parentActor);
++    } else {
++      f.requests.findLast((request) => JSON.stringify(request.context).includes("TASK:child")).finish({ error: "Synthetic parent failure" });
++      stopping = f.controller.wait(f.controller.parentActor);
++    }
++    await until(() => tearingDown);
++    let settled = false;
++    void stopping.then(() => { settled = true; });
++    await delay(30);
++    assert.equal(settled, false);
++    assert.ok(["running", "cancelling"].includes(f.controller.list().tasks[0].status));
++    assert.ok(readDelegationState(agentDir, child.child.session.sessionFile).owner);
++    assert.ok(readDelegationState(agentDir, f.sessionFile).owner);
++    gate.resolve();
++    await stopping;
++    assert.equal(readDelegationState(agentDir, child.child.session.sessionFile).owner, undefined);
++    assert.equal(readDelegationState(agentDir, child.child.session.sessionFile).tasks[0].status, "interrupted");
++    assert.ok(existsSync(leaf.child.session.sessionFile));
++    if (ending === "shutdown") assert.equal(readDelegationState(agentDir, f.sessionFile).owner, undefined);
++  });
++}
+diff --git a/lib/subagent-adapters.test.mjs b/lib/subagent-adapters.test.mjs
+--- a/lib/subagent-adapters.test.mjs
++++ b/lib/subagent-adapters.test.mjs
+@@ -22,19 +22,22 @@
+ const { InMemoryCredentialStore, createAssistantMessageEventStream, getCurrentTools } = await import("@earendil-works/pi-ai");
+
+ async function fixture(t, options = {}) {
+-  const cwd = mkdtempSync(join(agentDir, "workspace-"));
++  const cwd = mkdtempSync(join(agentDir, options.rootFirst ? "000-workspace-" : "workspace-"));
+   const id = randomUUID();
+   const file = join(cwd, "parent.jsonl");
+   writeFileSync(file, JSON.stringify({ type: "session", version: 3, id, cwd, timestamp: new Date().toISOString() }) + "\n");
+   const manager = SessionManager.open(file);
+   const runtime = await ModelRuntime.create({ credentials: new InMemoryCredentialStore(), modelsPath: null, refreshOnCreate: false });
+   const requests = [];
++  const requestModels = [];
+   const parentRequests = [];
+   const stream = (model, context, streamOptions) => {
+     requests.push(context);
++    requestModels.push(`${model.provider}/${model.id}`);
+     const events = createAssistantMessageEventStream();
+     const isChild = getCurrentTools(context.messages).some((tool) => tool.name === "report_subagent");
+-    if ((options.holdParent && !isChild) || (options.holdChildren && isChild)) {
++    const canDelegate = getCurrentTools(context.messages).some((tool) => tool.name === "Agent");
++    if ((options.holdParent && !isChild) || (options.holdChildren && isChild && (!options.nested || !canDelegate))) {
+       if (!isChild) parentRequests.push(context);
+       const abort = () => {
+         events.push({ type: "error", reason: "aborted", error: { role: "assistant", content: [], stopReason: "aborted",
+@@ -48,8 +51,14 @@
+       return events;
+     }
+     queueMicrotask(() => {
+-      events.push({ type: "done", reason: "stop", message: { role: "assistant", content: [{ type: "text", text: "Adapter fixture completed" }],
+-        provider: model.provider, model: model.id, api: model.api, stopReason: "stop", timestamp: Date.now(),
++      const results = context.messages.filter((message) => message.role === "toolResult" && message.toolName === "Agent").length;
++      const delegate = options.nested && canDelegate && (results === 0 || (options.nestedModels && results === 1));
++      const reason = delegate ? "toolUse" : "stop";
++      events.push({ type: "done", reason, message: { role: "assistant", content: delegate
++        ? [{ type: "toolCall", id: randomUUID(), name: "Agent", arguments: { id: "leaf", subagent_type: "scout", prompt: "Inspect nested fixture", run_in_background: false,
++          ...(options.nestedModels ? { model: results ? "adapter-fixture/one" : "adapter-fixture/two", ...(results ? { resume: "leaf" } : {}) } : {}) } }]
++        : [{ type: "text", text: "Adapter fixture completed" }],
++        provider: model.provider, model: model.id, api: model.api, stopReason: reason, timestamp: Date.now(),
+         usage: { input: 1, output: 1, cacheRead: 0, cacheWrite: 0, totalTokens: 2,
+           cost: { input: 0, output: 0, cacheRead: 0, cacheWrite: 0, total: 0 } } } });
+       events.end();
+@@ -57,8 +66,8 @@
+     return events;
+   };
+   runtime.registerNativeProvider({ id: "adapter-fixture", name: "Adapter fixture",
+-    getModels: () => [{ provider: "adapter-fixture", id: "one", name: "Fixture", api: "openai-completions", baseUrl: "http://127.0.0.1:1",
+-      reasoning: false, input: ["text"], contextWindow: 32768, maxTokens: 1024, cost: { input: 0, output: 0, cacheRead: 0, cacheWrite: 0 } }],
++    getModels: () => ["one", "two"].map((id) => ({ provider: "adapter-fixture", id, name: "Fixture", api: "openai-completions", baseUrl: "http://127.0.0.1:1",
++      reasoning: false, input: ["text"], contextWindow: 32768, maxTokens: 1024, cost: { input: 0, output: 0, cacheRead: 0, cacheWrite: 0 } })),
+     auth: { apiKey: { name: "Fixture", check: async () => ({ type: "api_key" }), resolve: async () => ({ auth: { apiKey: "fixture" } }) } }, stream, streamSimple: stream });
+   await runtime.refresh({ allowNetwork: false });
+   const sent = [];
+@@ -73,16 +82,18 @@
+         sent.push({ message, options }); manager.appendCustomMessageEntry(message.customType, message.content, message.display, message.details);
+       } } };
+   live.set(id, parent);
+-  const facade = createSubagentController({ agentDir, getSession: (id) => live.get(id),
++  const dependencies = { agentDir, getSession: (id) => live.get(id),
+     registerSession: (session) => {
+       paths.set(session.sessionId, session.sessionFile);
+-      live.set(session.sessionId, { inner: session, sessionFile: session.sessionFile });
++      live.set(session.sessionId, { inner: session, sessionFile: session.sessionFile, cwd: session.sessionManager.getCwd(),
++        isAlive: () => live.has(session.sessionId), isRunning: () => session.isStreaming, waitUntilReady: async () => {} });
+       return { ready: session.bindExtensions({ mode: "print" }), detach: () => { detached++; live.delete(session.sessionId); } };
+     }, reopenSession: async (id) => { reopened++; return live.get(id); },
+-    resolveSessionPath: async (id) => paths.get(id) ?? null, invalidateSessionList() {}, isBuiltInSubagentsEnabled: () => enabled });
++    resolveSessionPath: async (id) => paths.get(id) ?? null, invalidateSessionList() {}, isBuiltInSubagentsEnabled: () => enabled };
++  const facade = createSubagentController(dependencies);
+   t.after(() => facade.shutdownParent(id));
+   const ctx = { sessionManager: manager, cwd };
+-  return { facade, parent, live, ctx, paths, sent, requests, parentRequests, id, file, cwd,
++  return { facade, dependencies, parent, live, ctx, paths, sent, requests, requestModels, parentRequests, id, file, cwd,
+     get reopened() { return reopened; }, get detached() { return detached; }, disable() { enabled = false; } };
+ }
+
+@@ -302,7 +313,7 @@
+ test("a closing parent cannot acquire a new delegation binding", async (t) => {
+   const f = await fixture(t);
+   f.parent.isClosing = () => true;
+-  await assert.rejects(f.facade.getController(f.ctx), /closing|live root parent/i);
++  await assert.rejects(f.facade.getController(f.ctx), /closing|live parent/i);
+ });
+
+ test("deleting one live native child cancels only that task, does not reopen a parent or trigger a notification turn", async (t) => {
+@@ -326,3 +337,81 @@
+   await controller.reconcileDeliveries(controller.parentActor);
+   assert.equal(f.sent.length, 1);
+ });
++
++test("Web inspects validated grandchildren and uses their immediate active owner without taking over", async (t) => {
++  const f = await fixture(t, { nested: true, holdChildren: true });
++  const root = await f.facade.getController(f.ctx);
++  await root.startBatch(root.parentActor, [input("child")]);
++  await until(() => f.requests.length === 2);
++  const child = root.list().tasks[0];
++  const nested = await f.facade.forParent(child.sessionId);
++  const leaf = nested.list().tasks[0];
++  assert.equal((await f.facade.get(leaf.sessionId)).parentSessionId, child.sessionId);
++  assert.equal((await f.facade.tasks(child.sessionId)).tasks[0].status, "running");
++  const observer = createSubagentController(f.dependencies);
++  assert.equal((await observer.inspect(child.sessionId)).ownership, "elsewhere");
++  assert.equal((await observer.get(leaf.sessionId)).parentSessionId, child.sessionId);
++  await assert.rejects(observer.controlTask(child.sessionId, { action: "cancel", task_id: "leaf" }), /owned by another process/);
++  assert.equal(f.reopened, 0);
++  await f.facade.controlTask(child.sessionId, { action: "message", task_id: "leaf", message: "Immediate-parent information" });
++  assert.equal(nested.list().messages[0].from, "parent");
++  await f.facade.abort(leaf.sessionId);
++  await root.wait(root.parentActor);
++  assert.equal((await f.facade.get(leaf.sessionId)).status, "aborted");
++  assert.equal((await f.facade.tasks(child.sessionId)).tasks[0].status, "aborted");
++  await assert.rejects(f.facade.forParent(child.sessionId), /immediate parent/);
++  assert.equal(f.reopened, 0);
++});
++
++test("Web nested model overrides on start and exact resume keep the child model unchanged", async (t) => {
++  const f = await fixture(t, { nested: true, nestedModels: true });
++  const root = await f.facade.getController(f.ctx);
++  await root.startBatch(root.parentActor, [input("child")]);
++  await root.wait(root.parentActor);
++  const child = root.list().tasks[0];
++  const nested = await f.facade.tasks(child.sessionId);
++  assert.equal(nested.tasks.length, 1);
++  const leaf = nested.tasks[0];
++  assert.equal(leaf.attempt, 2);
++  assert.equal(leaf.status, "completed");
++  assert.equal(leaf.model, "adapter-fixture/one");
++  const leafModels = [], childModels = [];
++  for (let i = 0; i < f.requests.length; i++) {
++    (getCurrentTools(f.requests[i].messages).some((tool) => tool.name === "Agent") ? childModels : leafModels).push(f.requestModels[i]);
++  }
++  assert.deepEqual(leafModels, ["adapter-fixture/two", "adapter-fixture/one"]);
++  assert.ok(childModels.length >= 3);
++  assert.ok(childModels.every((model) => model === "adapter-fixture/one"));
++  const history = SessionManager.open(f.paths.get(leaf.sessionId));
++  assert.equal(history.getSessionId(), leaf.sessionId);
++  assert.deepEqual(history.getEntries().filter((entry) => entry.type === "custom" && entry.customType === "pi-web:subagent-status")
++    .map((entry) => entry.data.attempt), [1, 2]);
++});
++
++for (const target of ["root", "child"]) {
++  test(`deleting a live nested ${target} tolerates ownership released by ancestor teardown`, async (t) => {
++    const f = await fixture(t, { nested: true, holdChildren: true, rootFirst: true });
++    const root = await f.facade.getController(f.ctx);
++    await root.startBatch(root.parentActor, [input("child")]);
++    await until(() => f.requests.length === 2);
++    const child = root.list().tasks[0];
++    const nested = await f.facade.forParent(child.sessionId);
++    const leaf = nested.list().tasks[0];
++    assert.equal(nested.list().ownership, "local");
++    assert.ok(f.file < child.sessionFile, "Ancestor ownership must be quiesced first");
++    const plan = { deleted: [target === "root" ? { id: f.id, path: f.file } : { id: child.sessionId, path: child.sessionFile }], rewritten: [] };
++    let mutated = false;
++    await f.facade.guardDeletion(plan, async () => {}, (finalPlan) => {
++      assert.equal(nested.list().ownership, "unclaimed");
++      assert.ok(!["running", "queued", "cancelling"].includes(root.list().tasks[0].status));
++      for (const file of finalPlan.deleted) unlinkSync(file.path);
++      mutated = true;
++    });
++    assert.equal(mutated, true);
++    assert.equal(existsSync(child.sessionFile), false);
++    assert.equal(existsSync(leaf.sessionFile), false);
++    assert.equal(existsSync(f.file), target !== "root");
++    assert.equal(f.reopened, 0);
++    assert.equal(f.sent.length, 0);
++  });
++}
+diff --git a/lib/subagent-cli-extension.test.mjs b/lib/subagent-cli-extension.test.mjs
+--- a/lib/subagent-cli-extension.test.mjs
++++ b/lib/subagent-cli-extension.test.mjs
+@@ -97,7 +97,7 @@
+             type: "done", reason: "toolUse",
+             message: {
+               ...base, stopReason: "toolUse",
+-              content: [{ type: "toolCall", id: randomUUID(), name: "report_subagent", arguments: report }],
++              content: [{ type: "toolCall", id: randomUUID(), name: report.tool ?? "report_subagent", arguments: report.arguments ?? report }],
+             },
+           });
+         }
+@@ -388,7 +388,7 @@
+   assert.equal(f.requests.length, 0);
+ });
+
+-test("actual SDK child binding excludes parent controls and preserves native resources and transcript on resume", async (t) => {
++test("actual SDK child binding exposes bounded controls and preserves native resources and transcript on resume", async (t) => {
+   const f = await fixture(t, {
+     reply: (_request, index) => index === 0
+       ? { outcome: "needs_input", report: "Inspection complete", needs: "Continue?" }
+@@ -420,11 +420,11 @@
+     assert.equal(binding.data.mode, "json");
+     assert.ok(binding.data.tools.includes("report_subagent"));
+     assert.ok(binding.data.tools.includes("send_subagent_message"));
+-    for (const name of names) assert.equal(binding.data.tools.includes(name), false);
+-    for (const name of names) assert.equal(binding.data.allTools.includes(name), false);
++    for (const name of names) assert.equal(binding.data.tools.includes(name), true);
++    for (const name of names) assert.equal(binding.data.allTools.includes(name), true);
+   }
+   for (const request of f.requests) {
+-    for (const name of names) assert.equal(getCurrentTools(request.context.messages).some((tool) => tool.name === name), false);
++    for (const name of names) assert.equal(getCurrentTools(request.context.messages).some((tool) => tool.name === name), true);
+   }
+   const run = readSubagentRun(entries, second.sessionId, second.sessionFile);
+   assert.equal(run.parentSessionId, f.original.getSessionId());
+@@ -432,6 +432,58 @@
+   assert.equal(readDelegationState(agentDir, second.sessionFile), undefined);
+   assert.equal(f.sent.length, 2);
+ });
++
++test("built CLI adapter creates an actual SDK child that invokes Agent with the same provider binding", async (t) => {
++  const f = await fixture(t, { reply: (_request, index) => index === 0
++    ? { tool: "Agent", arguments: { id: "grandchild", subagent_type: "scout", prompt: "Inspect nested fixture", run_in_background: false } }
++    : { outcome: "completed", report: index === 1 ? "CLI grandchild evidence" : "CLI child evidence" } });
++  await f.activate();
++  const result = await f.execute("Agent", { id: "child", subagent_type: "scout", prompt: "Delegate once", run_in_background: false });
++  assert.equal(result.isError, undefined);
++  const child = f.state().tasks[0];
++  const nested = readDelegationState(agentDir, child.sessionFile);
++  assert.equal(nested.parentSessionId, child.sessionId);
++  assert.equal(nested.tasks[0].report.report, "CLI grandchild evidence");
++  assert.equal(nested.owner, undefined);
++  assert.equal(f.requests.length, 3);
++  for (const name of names) assert.equal(getCurrentTools(f.requests[0].context.messages).some((tool) => tool.name === name), true);
++  for (const name of names) assert.equal(getCurrentTools(f.requests[1].context.messages).some((tool) => tool.name === name), false);
++  assert.equal(f.requests[1].model.provider, "cli-fixture");
++  assert.equal(f.requests[1].model.id, "one");
++  assert.match(JSON.stringify(f.requests[2].context), /CLI grandchild evidence/);
++  assert.equal(f.sent.length, 1);
++  assert.equal(f.sent[0].message.details.taskId, "child");
++});
++
++for (const [startModel, resumeModel] of [["two", "one"], ["one", "two"]]) {
++  test(`built CLI nested model selection and exact resume use fresh provider bindings (${startModel} -> ${resumeModel})`, async (t) => {
++    const f = await fixture(t, { reply: (_request, index) => {
++      if (index === 0) return { tool: "Agent", arguments: { id: "leaf", subagent_type: "scout", prompt: "Select nested model",
++        model: `cli-fixture/${startModel}`, run_in_background: false } };
++      if (index === 2) return { tool: "Agent", arguments: { resume: "leaf", prompt: "Resume with another model",
++        model: `cli-fixture/${resumeModel}`, run_in_background: false } };
++      return { outcome: "completed", report: `Model evidence ${index}` };
++    } });
++    await f.activate();
++    const result = await f.execute("Agent", { id: "child", subagent_type: "scout", prompt: "Delegate and resume", run_in_background: false });
++    assert.equal(result.isError, undefined);
++    assert.deepEqual(f.requests.map((request) => `${request.model.provider}/${request.model.id}`),
++      ["one", startModel, "one", resumeModel, "one"].map((id) => `cli-fixture/${id}`));
++    const child = f.state().tasks[0];
++    const nested = readDelegationState(agentDir, child.sessionFile);
++    assert.equal(nested.tasks.length, 1);
++    const leaf = nested.tasks[0];
++    assert.equal(leaf.attempt, 2);
++    assert.equal(leaf.status, "completed");
++    const history = SessionManager.open(leaf.sessionFile);
++    assert.equal(history.getSessionId(), leaf.sessionId);
++    assert.equal(history.buildSessionContext().model.modelId, resumeModel);
++    assert.deepEqual(history.getEntries().filter((entry) => entry.type === "custom" && entry.customType === "pi-web:subagent-status")
++      .map((entry) => entry.data.attempt), [1, 2]);
++    assert.equal(nested.owner, undefined);
++    assert.equal(f.sent.length, 1);
++  });
++}
+
+ test("shutdown mid-cancel awaits SDK child teardown before releasing ownership", async (t) => {
+   const f = await fixture(t, { hold: true });
+diff --git a/lib/subagent-runtime.test.mjs b/lib/subagent-runtime.test.mjs
+--- a/lib/subagent-runtime.test.mjs
++++ b/lib/subagent-runtime.test.mjs
+@@ -1,6 +1,6 @@
+ import assert from "node:assert/strict";
+ import { randomUUID } from "node:crypto";
+-import { mkdtempSync, rmSync, writeFileSync } from "node:fs";
++import { mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
+ import { tmpdir } from "node:os";
+ import { join } from "node:path";
+ import test from "node:test";
+@@ -23,14 +23,15 @@
+     { type: "custom", id: "result", parentId: "metadata", timestamp, customType: "pi-web:subagent-result",
+       data: { version: 1, status: "completed", result: "Historical result", completedAt: timestamp } },
+   ].map((entry) => JSON.stringify(entry)).join("\n") + "\n");
++  const paths = new Map([[parent, parentFile], [child, childFile]]);
+   const facade = createSubagentController({
+     agentDir: dir, getSession() { assert.fail("read-only history loaded a live SDK"); },
+     registerSession() { assert.fail("read-only history created a child"); },
+     reopenSession() { assert.fail("read-only history reopened a parent"); },
+-    resolveSessionPath: async (id) => id === parent ? parentFile : id === child ? childFile : null,
++    resolveSessionPath: async (id) => paths.get(id) ?? null,
+     invalidateSessionList() {},
+   });
+-  return { facade, parent, child };
++  return { facade, parent, child, dir, paths, parentFile, childFile, header, timestamp };
+ }
+
+ test("legacy native history remains readable without ownership or SDK allocation", async (t) => {
+@@ -47,6 +48,30 @@
+   await assert.rejects(f.facade.get(f.child), /does not belong/);
+ });
+
++test("Web history validates every ancestor and rejects third-level and cyclic ancestry without ownership", async (t) => {
++  const f = fixture(t);
++  function descendant(parentId, parentFile) {
++    const id = randomUUID(), file = join(f.dir, `${id}.jsonl`);
++    writeFileSync(file, [f.header(id), { type: "custom", id: "metadata", parentId: null, timestamp: f.timestamp,
++      customType: "pi-web:subagent", data: { version: 1, parentSessionId: parentId, parentSessionPath: parentFile,
++        profile: "scout", task: "Inspect", description: "Nested history", createdAt: f.timestamp } }]
++      .map((entry) => JSON.stringify(entry)).join("\n") + "\n");
++    f.paths.set(id, file);
++    return { id, file };
++  }
++  const leaf = descendant(f.child, f.childFile);
++  assert.equal((await f.facade.get(leaf.id)).parentSessionId, f.child);
++  const third = descendant(leaf.id, leaf.file);
++  await assert.rejects(f.facade.get(third.id), /ancestry|depth/);
++  const original = readFileSync(f.childFile, "utf8");
++  const alternate = join(f.dir, "root-copy.jsonl");
++  writeFileSync(alternate, readFileSync(f.parentFile, "utf8"));
++  writeFileSync(f.childFile, original.replace(f.parentFile, alternate));
++  await assert.rejects(f.facade.get(leaf.id), /ancestor.*resolved parent/);
++  writeFileSync(f.childFile, original.replace(f.parentFile, leaf.file).replace(f.parent, leaf.id));
++  await assert.rejects(f.facade.get(leaf.id), /ancestry|depth/);
++});
++
+ test("disabled tools reject a stale invocation before looking up a parent SDK", async () => {
+   const facade = createSubagentController({
+     getSession() { assert.fail("disabled lookup"); },
+diff --git a/e2e/subagent-codemode.mjs b/e2e/subagent-codemode.mjs
+--- a/e2e/subagent-codemode.mjs
++++ b/e2e/subagent-codemode.mjs
+@@ -28,7 +28,8 @@
+   ...nativeTools, "bash", "powershell", "write", "edit",
+   "apply_patch", "exec_command", "write_stdin",
+ ];
+-const childTools = ["read", "exec", "wait", "report_subagent", "send_subagent_message"];
++const childTools = ["read", "exec", "wait", "report_subagent", "send_subagent_message", ...nativeTools];
++const forbiddenDirect = forbidden.filter((name) => !nativeTools.includes(name));
+ const readOnlyTools = ["read", "grep", "find", "ls"];
+ const sorted = (values) => [...values].sort();
+ const text = (content) => typeof content === "string" ? content
+@@ -334,8 +335,9 @@
+     const output = createAssistantMessageEventStream();
+     const names = getCurrentTools(context.messages).map((tool) => tool.name);
+     const serialized = JSON.stringify(context.messages);
+-    const isParent = names.includes("Agent");
+-    const run = isParent ? undefined : children.find((item) => serialized.includes(item.marker));
++    const isParent = names.includes("Agent") && !names.includes("report_subagent");
++    const initialTask = text(context.messages.find((message) => message.role === "user")?.content);
++    const run = isParent ? undefined : children.find((item) => initialTask.includes(item.marker));
+     const plan = isParent
+       ? [...parentPlans].reverse().find((item) => !item.used && serialized.includes(item.marker))
+       : undefined;
+@@ -534,7 +536,7 @@
+   };
+ }
+
+-function assertChild(run, task) {
++function assertChild(run, task, delegating = true) {
+   assert.equal(task.status, "completed");
+   assert.match(task.report.report, new RegExp(run.marker));
+   const observation = observations.sessions.get(task.sessionId);
+@@ -542,8 +544,9 @@
+   assert.equal(observation.mode, "json");
+   assert.equal(observation.cwd, task.worktreePath);
+   assert.equal(observation.preflightAvailable, true);
+-  assert.deepEqual(sorted(observation.all), sorted(childTools));
+-  for (const name of forbidden) assert.equal(observation.active.includes(name), false);
++  assert.deepEqual(sorted(observation.all), sorted(delegating ? childTools : childTools.filter((name) => !nativeTools.includes(name))));
++  for (const name of forbiddenDirect) assert.equal(observation.active.includes(name), false);
++  for (const name of nativeTools) assert.equal(observation.active.includes(name), delegating);
+   assert.ok(observation.active.includes("exec"));
+   assert.ok(observation.active.includes("wait"));
+   assert.equal(observation.shutdowns, 1);
+@@ -570,7 +573,8 @@
+     call.sessionId === task.sessionId && forbidden.includes(call.toolName)), [],
+   "SDK filtering, not the preflight safety net, must prevent forbidden dispatch");
+   for (const request of run.requests) {
+-    for (const name of forbidden) assert.equal(request.tools.includes(name), false);
++    for (const name of forbiddenDirect) assert.equal(request.tools.includes(name), false);
++    for (const name of nativeTools) assert.equal(request.tools.includes(name), delegating);
+     assert.ok(request.tools.includes("exec"));
+     assert.ok(request.tools.includes("wait"));
+   }
+@@ -725,6 +729,43 @@
+       assert.ok(f.state().deliveries.find((item) => item.id === delivery.id).acknowledgedAt);
+       assertChild(queued, f.state().tasks.find((task) => task.id === "foreground"));
+
++      const leafRun = f.child([
++        toolCall("exec", { code: "text(2)" }),
++        toolCall("exec", { code: probeCode }),
++      ], false);
++      const delegator = f.child([
++        toolCall("Agent", { id: "grandchild", subagent_type: "codemode-fixture", prompt: leafRun.marker,
++          input_revision: f.revision, run_in_background: false }),
++        toolCall("exec", { code: "text(2)" }),
++        toolCall("exec", { code: probeCode }),
++      ]);
++      await f.call("Agent", { id: "nested", subagent_type: "codemode-fixture", prompt: delegator.marker,
++        input_revision: f.revision, run_in_background: true });
++      await until(() => delegator.requests.length === 1, "delegating Code Mode child request");
++      delegator.release();
++      await f.delivered("nested");
++      const nestedChild = f.state().tasks.find((task) => task.id === "nested");
++      const nestedState = readDelegationState(agentDir, nestedChild.sessionFile);
++      assert.equal(nestedState.parentSessionId, nestedChild.sessionId);
++      assert.equal(nestedState.owner, undefined);
++      assert.equal(nestedState.tasks.length, 1);
++      const grandchild = nestedState.tasks[0];
++      assert.equal(grandchild.id, "grandchild");
++      assert.notEqual(grandchild.worktreePath, nestedChild.worktreePath);
++      assert.equal(await f.git(grandchild.worktreePath, "rev-parse", "HEAD"), f.revision);
++      assertChild(delegator, nestedChild);
++      assertChild(leafRun, grandchild, false);
++      const nestedEntries = SessionManager.open(nestedChild.sessionFile).getEntries();
++      const nestedResult = nestedEntries.find((entry) => entry.type === "message" && entry.message.role === "toolResult" && entry.message.toolName === "Agent");
++      assert.ok(nestedResult, "The actual child invoked the direct native Agent tool");
++      assert.match(text(nestedResult.message.content), new RegExp(leafRun.marker));
++      const grandchildMetadata = SessionManager.open(grandchild.sessionFile).getEntries().find((entry) => entry.type === "custom" && entry.customType === "pi-web:subagent").data;
++      assert.equal(grandchildMetadata.parentSessionId, nestedChild.sessionId);
++      assert.equal(grandchildMetadata.parentSessionPath, nestedChild.sessionFile);
++      assert.equal(f.state().tasks.some((task) => task.id === "grandchild"), false);
++      assert.deepEqual(grandchild.resources.extensionFiles, nestedChild.resources.extensionFiles);
++      for (const request of leafRun.requests) assert.deepEqual(request.model, { provider: "codemode-test", id: "codex-fixture", api: "openai-completions" });
++
+       for (const request of f.requests.filter((item) => item.kind === "parent")) {
+         for (const name of required) assert.ok(request.tools.includes(name), `${name} is model-declared`);
+         assert.deepEqual(request.model, {
+diff --git a/lib/subagent-deletion.ts b/lib/subagent-deletion.ts
+--- a/lib/subagent-deletion.ts
++++ b/lib/subagent-deletion.ts
+@@ -109,7 +109,9 @@
+     const owner = authorize(path, options.localOwner);
+     if (owner) owners.set(path, owner);
+   }
+-  for (const owner of owners.values()) await owner.quiesce(plan.deleted);
++  for (const path of owners.keys()) {
++    await authorize(path, (path) => owners.get(path))?.quiesce(plan.deleted);
++  }
+   plan.deleted = withPersistedHistories();
+   const attempts = new Map<string, Map<string, string>>();
+   const attemptIdentity = (task: DelegationState["tasks"][number]) => JSON.stringify([task.attempt, task.status, task.sessionId, task.sessionFile]);
+diff --git a/lib/subagent-deletion.test.mjs b/lib/subagent-deletion.test.mjs
+--- a/lib/subagent-deletion.test.mjs
++++ b/lib/subagent-deletion.test.mjs
+@@ -47,6 +47,35 @@
+   }
+   assert.equal(f.shutdowns, 0);
+   assert.equal(f.mutations, 0);
++});
++
++test("ancestor quiescence cannot authorize a replacement descendant owner", async (t) => {
++  const f = fixture(t);
++  const nested = f.session("z-nested", f.parent);
++  const leaf = f.session("zz-leaf", nested);
++  f.plan.deleted = [f.parent, nested, leaf];
++  const rootOwner = await claimParent(f.agentDir, f.parent.path);
++  const nestedOwner = await claimParent(f.agentDir, nested.path);
++  let descendantQuiesced = false;
++  const owners = new Map([
++    [f.parent.path, {
++      assertOwnsState: (state) => assert.equal(state.owner.token, rootOwner.token),
++      async quiesce() {
++        await releaseParent(f.agentDir, nested.path, nestedOwner);
++        await claimParent(f.agentDir, nested.path);
++      },
++    }],
++    [nested.path, {
++      assertOwnsState: (state) => assert.equal(state.owner.token, nestedOwner.token),
++      async quiesce() { descendantQuiesced = true; },
++    }],
++  ]);
++  f.options.localOwner = (path) => owners.get(path);
++  await assert.rejects(guardSubagentDeletion(f.options), { status: 409 });
++  assert.equal(descendantQuiesced, false);
++  assert.equal(f.shutdowns, 0);
++  assert.equal(f.mutations, 0);
++  assert.ok([f.parent, nested, leaf].every((file) => existsSync(file.path)));
+ });
+
+ test("native parent aliases and rewritten forks are included in authorization before shutdown", async (t) => {
+diff --git a/lib/rpc-manager.test.mjs b/lib/rpc-manager.test.mjs
+--- a/lib/rpc-manager.test.mjs
++++ b/lib/rpc-manager.test.mjs
+@@ -33,13 +33,11 @@
+ test("native children are restored only by the shared runner, not standalone Web startup", async () => {
+   const source = await readFile(new URL("./rpc-manager.ts", import.meta.url), "utf8");
+   const facade = await readFile(new URL("./subagent-runtime.ts", import.meta.url), "utf8");
+-  const helper = await readFile(new URL("./subagent-session.ts", import.meta.url), "utf8");
+   const startup = source.slice(source.indexOf("export async function startRpcSession"));
+   assert.match(startup, /Resume native child sessions through their parent task controls/);
+   assert.doesNotMatch(startup, /readSubagentSessionResources|subagentResources/);
+   assert.doesNotMatch(facade, /createAgentSession|addWorktree|removeWorktree|enqueue/);
+   assert.match(facade, /createDelegationController/);
+-  assert.match(helper, /excludeTools: \[\.\.\.SUBAGENT_CONTROL_TOOL_NAMES\]/);
+   assert.match(source, /ownsSession: false/);
+   assert.match(source, /beforeShutdown: \(\) => SUBAGENT_CONTROLLER.shutdownParent/);
+   assert.match(startup, /createSubagentExtension\([\s\S]*?SUBAGENT_CONTROLLER,/);

@@ -47,6 +47,7 @@ buildNpmPackage {
     ./interrupted-subagents.patch
     ./transcript-context.patch
     ./unified-subagents.patch
+    ./nested-subagents.patch
   ];
   npmDepsHash = "sha256-lGsMOYY2rCQSw+hMLXv+aWq4991NnkhLJUipL1F843k=";
   npmRebuildFlags = [ "--ignore-scripts" ];

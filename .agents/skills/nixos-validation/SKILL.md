@@ -35,10 +35,17 @@ or configuration snapshots. Format and check syntax only for changed files.
   Verify concurrency across batches/resumes, dependency failure and explicit
   integrated-change release, messages and input/follow-up/verified-close, durable
   delivery, parent process ownership, and teardown before resume. Use disposable
+  providers to exercise root/child/grandchild tool calls, immediate-parent results,
+  read-only capability ceilings, third-level rejection, and subtree cancellation
+  and shutdown. Retained pre-change children must keep their captured tool scope.
+  Confirm compact session rows and conversation shortcuts at both browser widths;
+  do not add task counters, task cards, or parent-control forms. Sessions without
+  child conversations must keep the original toolbar. Use disposable
   Git repositories with explicit committed writer inputs. Confirm no automatic
   commits, merges, worktree deletion, or restart replay; preserve abandoned work.
-  Exercise the real Web task controls at mobile and desktop widths, including
-  no-child queued tasks, inspectable messages, reconnect, and retained history.
+  Exercise original Web conversation navigation at mobile and desktop widths,
+  including reconnect and retained history. Verify task controls through native
+  tools and the shared API without introducing another management UI.
   Check managed role links are discoverable and read-only. Keep native settings
   enabled; old plugin registrations and loaded skills/prompts must be absent.
   Recheck deployed CLI/Web resource loading, native lifecycle, service health,

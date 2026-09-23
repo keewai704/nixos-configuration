@@ -855,620 +855,6 @@ index 0000000..7f95538
 +    return NextResponse.json(await manageSubagentTask(action.parentSessionId, action));
 +  } catch (error) { return failure(error, 400); }
 +}
-diff --git a/components/AgentSessionPanel.test.mjs b/components/AgentSessionPanel.test.mjs
-index d36ca55..52bac50 100644
---- a/components/AgentSessionPanel.test.mjs
-+++ b/components/AgentSessionPanel.test.mjs
-@@ -6,17 +6,17 @@ const source = await readFile(new URL("./AgentSessionPanel.tsx", import.meta.url
-
- test("keeps the main session first and makes every agent session selectable", () => {
-   const mainRow = source.indexOf("session={rootSession}");
--  const subagentRows = source.indexOf("visibleSubagents.map");
-+  const subagentRows = source.indexOf("visibleLegacySubagents.map");
-   assert.ok(mainRow > 0);
-   assert.ok(subagentRows > mainRow);
-   assert.match(source, /onSelect=\{\(\) => onSelectSession\(rootSession\)\}/);
-   assert.match(source, /onSelect=\{\(\) => onSelectSession\(session\)\}/);
--  assert.match(source, /aria-selected=\{selected\}/);
-+  assert.match(source, /aria-current=\{selected \? "page" : undefined\}/);
- });
-
- test("sorts running subagents first and enables search only for larger families", () => {
-   assert.match(source, /if \(aRunning !== bRunning\) return aRunning \? -1 : 1/);
--  assert.match(source, /subagents\.length > 8/);
-+  assert.ok(source.includes("subagents.length + (state?.tasks.length ?? 0) > 8"));
-   assert.match(source, /relation\?\.description, relation\?\.profile, session\.name, session\.firstMessage/);
-   assert.match(source, /maxHeight: "min\(58dvh, 480px\)"/);
- });
-@@ -33,3 +33,68 @@ test("shows persisted completion states while live running state takes precedenc
-   assert.match(source, /status === "failed"/);
-   assert.match(source, /status === "aborted" \|\| status === "interrupted"/);
- });
-+
-+test("uses the parent tasks endpoint and fences reads against control actions", () => {
-+  assert.ok(source.includes("/pi/api/subagents/tasks?parentSessionId=${encodeURIComponent(rootSession.id)}"));
-+  assert.ok(source.includes('fetch("/pi/api/subagents/tasks"'));
-+  assert.ok(source.includes("JSON.stringify({ parentSessionId: rootSession.id, ...action })"));
-+  assert.ok(source.includes("version !== mutationVersion.current"));
-+  assert.ok(source.includes("if (busyRef.current) return"));
-+  assert.ok(source.includes("[rootSession.id, refreshKey, reloadVersion]"));
-+  assert.doesNotMatch(source, /new EventSource|setInterval|sendAgentCommand/);
-+});
-+
-+test("renders native task identities, dependencies, reports and retained conversations", () => {
-+  for (const value of [
-+    "task.id", "task.profile", "task.description", "task.status", "task.attempt",
-+    "task.needs.map", "dependency.taskId", "dependency.input",
-+    "task.report.report", "task.report.needs",
-+    "task.model", "task.thinking",
-+  ]) assert.ok(source.includes(value), value);
-+  assert.ok(source.includes('href={`/pi/?session=${encodeURIComponent(task.sessionId)}`}'));
-+  assert.ok(source.includes("onOpenSession(task.sessionId!)"));
-+});
-+
-+test("shows queued and delivered message history with its sender and informational provenance", () => {
-+  for (const value of ["messages.map", "item.from", "item.to", "item.text", "item.createdAt", "item.deliveredAt",
-+    't("tasks.messageProvenance")', 't("tasks.messagesOmitted"', "state.messages.filter"]) assert.ok(source.includes(value), value);
-+});
-+
-+test("keeps controls labelled and other-process ownership read-only", () => {
-+  assert.ok(source.includes('role="region"'));
-+  assert.doesNotMatch(source, /role="listbox"|role="option"/);
-+  assert.ok(source.includes('readOnly={state.ownership === "elsewhere" || Boolean(loadError)}'));
-+  assert.ok(source.includes("<fieldset disabled={readOnly || busy}"));
-+  for (const name of ["message", "role", "inputRevision", "releaseRevision", "verified", "modelOverride", "thinkingOverride"]) {
-+    assert.ok(source.includes(`aria-label={label("tasks.${name}")}`), name);
-+  }
-+  for (const action of ["message", "cancel", "resume", "assign", "release", "close"]) {
-+    assert.ok(source.includes(`action: "${action}"`), action);
-+  }
-+});
-+
-+test("uses discovered roles, explicit writer input and current verified deliveries", () => {
-+  assert.ok(source.includes("roles={state.roles}"));
-+  assert.ok(source.includes("roles.map((item)"));
-+  assert.ok(source.includes('const [inputRevision, setInputRevision] = useState("")'));
-+  assert.ok(source.includes("writer && !inputRevision.trim()"));
-+  assert.ok(source.includes('task.attempt === 0 && ["blocked", "interrupted"].includes(task.status)'));
-+  assert.ok(source.includes("deliveryId={task.reportDeliveryId}"));
-+  assert.ok(source.includes("task.sessionId && task.historyPresent"));
-+  assert.ok(source.includes("role?.requiresInputRevision"));
-+  assert.ok(source.includes("disabled={!verified}"));
-+  assert.ok(source.includes('action: "close", delivery_id: deliveryId'));
-+  assert.ok(source.includes('task.status === "needs_input" && !message.trim()'));
-+});
-+
-+test("provides every task status and ownership message in existing locales", async () => {
-+  for (const locale of ["en", "zh-CN", "zh-TW"]) {
-+    const messages = await readFile(new URL(`../lib/i18n/messages/${locale}.ts`, import.meta.url), "utf8");
-+    for (const status of ["blocked", "queued", "running", "cancelling", "needs_input", "interrupted", "completed", "failed", "aborted"]) {
-+      assert.ok(messages.includes(`"agentSwitcher.status.${status}"`), `${locale}: ${status}`);
-+    }
-+    for (const ownership of ["unclaimed", "local", "elsewhere", "interrupted"]) {
-+      assert.ok(messages.includes(`"tasks.ownership.${ownership}"`), `${locale}: ${ownership}`);
-+    }
-+  }
-+});
-diff --git a/components/AgentSessionPanel.tsx b/components/AgentSessionPanel.tsx
-index 3e362f9..4198cd7 100644
---- a/components/AgentSessionPanel.tsx
-+++ b/components/AgentSessionPanel.tsx
-@@ -1,8 +1,13 @@
- "use client";
-
--import { useMemo, useState } from "react";
-+import { useEffect, useMemo, useRef, useState, type CSSProperties } from "react";
- import { useI18n } from "@/hooks/useI18n";
- import type { SessionInfo, SubagentSessionStatus } from "@/lib/types";
-+import type {
-+  SubagentTaskActionRequest,
-+  SubagentTasksResponse,
-+  SubagentTaskView,
-+} from "@/lib/api-types";
-
- interface Props {
-   rootSession: SessionInfo;
-@@ -10,6 +15,327 @@ interface Props {
-   selectedSessionId: string;
-   runningSessionIds: ReadonlySet<string>;
-   onSelectSession: (session: SessionInfo) => void;
-+  onOpenSession: (sessionId: string) => void;
-+  refreshKey: number;
-+}
-+
-+type TaskAction = Omit<SubagentTaskActionRequest, "parentSessionId">;
-+
-+const taskInputStyle: CSSProperties = {
-+  width: "100%",
-+  padding: "6px 8px",
-+  border: "1px solid var(--border)",
-+  borderRadius: 5,
-+  background: "var(--bg)",
-+  color: "var(--text)",
-+  fontSize: 12,
-+};
-+
-+const taskButtonStyle: CSSProperties = {
-+  padding: "5px 8px",
-+  border: "1px solid var(--border)",
-+  borderRadius: 5,
-+  background: "var(--bg-panel)",
-+  color: "var(--text)",
-+  fontSize: 12,
-+};
-+
-+function TaskRow({
-+  task,
-+  roles,
-+  messages,
-+  deliveryId,
-+  readOnly,
-+  busy,
-+  onAction,
-+  onOpenSession,
-+}: {
-+  task: SubagentTaskView;
-+  roles: SubagentTasksResponse["roles"];
-+  messages: SubagentTasksResponse["messages"];
-+  deliveryId?: string;
-+  readOnly: boolean;
-+  busy: boolean;
-+  onAction: (action: TaskAction) => Promise<boolean>;
-+  onOpenSession: Props["onOpenSession"];
-+}) {
-+  const { t } = useI18n();
-+  const [message, setMessage] = useState("");
-+  const [profile, setProfile] = useState(task.profile ?? "");
-+  const [inputRevision, setInputRevision] = useState("");
-+  const [revision, setRevision] = useState("");
-+  const [model, setModel] = useState("");
-+  const [thinking, setThinking] = useState<NonNullable<SubagentTaskActionRequest["thinking"]> | "">("");
-+  const [verified, setVerified] = useState(false);
-+  const label = (key: string) => `${t(key)} (${task.id})`;
-+  const role = roles.find((item) => item.name === profile);
-+  const writer = role?.requiresInputRevision;
-+  const canAssign = task.attempt === 0 && ["blocked", "interrupted"].includes(task.status);
-+  const canResume = Boolean(task.profile)
-+    && ["needs_input", "interrupted", "completed", "failed", "aborted"].includes(task.status);
-+  const canCancel = ["blocked", "queued", "running", "interrupted"].includes(task.status);
-+  const canRelease = task.status === "completed" && task.report?.outcome === "completed";
-+  const canClose = Boolean(task.report && deliveryId && !task.closedAt)
-+    && ["completed", "failed", "needs_input", "aborted", "interrupted"].includes(task.status);
-+  const overrides = {
-+    ...(model.trim() ? { model: model.trim() } : {}),
-+    ...(thinking ? { thinking } : {}),
-+  };
-+  const apply = async (action: Omit<TaskAction, "task_id">) => {
-+    if (!await onAction({ ...action, task_id: task.id })) return;
-+    if (action.action === "message" || action.action === "resume") setMessage("");
-+    setVerified(false);
-+  };
-+
-+  return (
-+    <article
-+      aria-label={`${task.id}: ${task.description}`}
-+      style={{ padding: 12, borderBottom: "1px solid var(--border)", fontSize: 12, overflowWrap: "anywhere" }}
-+    >
-+      <div style={{ display: "flex", justifyContent: "space-between", gap: 8 }}>
-+        <strong>{task.id} · {task.profile ?? t("tasks.unassigned")}</strong>
-+        <span style={{ color: statusColor(task.status) }}>
-+          {t(`agentSwitcher.status.${task.status}`)}
-+        </span>
-+      </div>
-+      <div style={{ marginTop: 4 }}>{task.description}</div>
-+      <div style={{ marginTop: 4, color: "var(--text-dim)" }}>
-+        {t("tasks.attempt", { count: task.attempt })}
-+      </div>
-+      {(task.model || task.thinking) && (
-+        <div
-+          title={[task.model, task.thinking].filter(Boolean).join(" · ")}
-+          style={{ marginTop: 4, color: "var(--text-muted)", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}
-+        >
-+          {[task.model, task.thinking].filter(Boolean).join(" · ")}
-+        </div>
-+      )}
-+      {task.needs.length > 0 && (
-+        <div style={{ marginTop: 8 }}>
-+          <strong>{t("tasks.dependencies")}</strong>
-+          <ul style={{ margin: "4px 0", paddingLeft: 18 }}>
-+            {task.needs.map((dependency) => (
-+              <li key={`${dependency.taskId}:${dependency.input}`}>
-+                {dependency.taskId} · {t(`tasks.input.${dependency.input}`)}
-+              </li>
-+            ))}
-+          </ul>
-+        </div>
-+      )}
-+      {task.blockedReason && <p>{task.blockedReason}</p>}
-+      {task.report?.needs && (
-+        <p><strong>{t("tasks.needs")}: </strong>{task.report.needs}</p>
-+      )}
-+      {messages.length > 0 && (
-+        <details style={{ marginTop: 8 }}>
-+          <summary>{t("tasks.messages")}</summary>
-+          <p>{t("tasks.messageProvenance")}</p>
-+          <ol style={{ paddingLeft: 18 }}>
-+            {messages.map((item) => (
-+              <li key={item.id} style={{ marginTop: 8 }}>
-+                <strong>{item.from} → {item.to}</strong>
-+                <div style={{ color: "var(--text-dim)" }}>
-+                  <time dateTime={item.createdAt}>{item.createdAt}</time>
-+                  {" · "}{t(item.deliveredAt ? "tasks.messageDelivered" : "tasks.messageQueued")}
-+                </div>
-+                <div style={{ whiteSpace: "pre-wrap" }}>{item.text}</div>
-+              </li>
-+            ))}
-+          </ol>
-+        </details>
-+      )}
-+      {task.sessionId && task.historyPresent && (
-+        <a
-+          href={`/pi/?session=${encodeURIComponent(task.sessionId)}`}
-+          aria-label={label("tasks.openChild")}
-+          style={{ display: "inline-block", marginTop: 8, color: "var(--accent)" }}
-+          onClick={(event) => {
-+            if (event.ctrlKey || event.metaKey || event.shiftKey || event.altKey) return;
-+            event.preventDefault();
-+            onOpenSession(task.sessionId!);
-+          }}
-+        >
-+          {t("tasks.openChild")}
-+        </a>
-+      )}
-+      <details style={{ marginTop: 8 }}>
-+        <summary>{t("tasks.details")}</summary>
-+        <dl style={{ margin: "8px 0" }}>
-+          {([
-+            ["tasks.group", task.groupId],
-+            ["tasks.sessionFile", task.sessionFile],
-+            ["tasks.worktree", task.worktreePath],
-+            ["tasks.branch", task.worktreeBranch],
-+            ["tasks.inputRevision", task.inputRevision],
-+            ["tasks.releaseRevision", task.releaseRevision],
-+            ["tasks.closed", task.closedAt],
-+          ] as const).map(([key, value]) => value ? (
-+            <div key={key} style={{ marginTop: 6 }}>
-+              <dt style={{ color: "var(--text-dim)" }}>{t(key)}</dt>
-+              <dd style={{ margin: 0 }}>{value}</dd>
-+            </div>
-+          ) : null)}
-+        </dl>
-+        {task.report && (
-+          <>
-+            <strong>{t("tasks.report")} · {t(`agentSwitcher.status.${task.report.outcome}`)}</strong>
-+            <pre style={{ whiteSpace: "pre-wrap", overflowWrap: "anywhere", fontFamily: "inherit" }}>
-+              {task.report.report}
-+            </pre>
-+          </>
-+        )}
-+      </details>
-+      <details style={{ marginTop: 8 }}>
-+        <summary>{t("tasks.controls")}</summary>
-+        <fieldset disabled={readOnly || busy} style={{ border: 0, padding: 0, margin: "8px 0 0", minWidth: 0 }}>
-+          <legend>{task.id}</legend>
-+          <label style={{ display: "grid", gap: 4 }}>
-+            {t("tasks.message")}
-+            <textarea
-+              aria-label={label("tasks.message")}
-+              value={message}
-+              onChange={(event) => setMessage(event.target.value)}
-+              rows={3}
-+              style={taskInputStyle}
-+            />
-+          </label>
-+          <p style={{ color: "var(--text-dim)" }}>{t("tasks.messageHint")}</p>
-+          {(canAssign || canResume) && (
-+            <div style={{ display: "grid", gap: 8, marginBottom: 8 }}>
-+              <label style={{ display: "grid", gap: 4 }}>
-+                {t("tasks.modelOverride")}
-+                <input
-+                  aria-label={label("tasks.modelOverride")}
-+                  value={model}
-+                  onChange={(event) => setModel(event.target.value)}
-+                  style={taskInputStyle}
-+                />
-+              </label>
-+              <label style={{ display: "grid", gap: 4 }}>
-+                {t("tasks.thinkingOverride")}
-+                <select
-+                  aria-label={label("tasks.thinkingOverride")}
-+                  value={thinking}
-+                  onChange={(event) => setThinking(event.target.value as typeof thinking)}
-+                  style={taskInputStyle}
-+                >
-+                  <option value="">{t("tasks.keepConfiguration")}</option>
-+                  {(["off", "minimal", "low", "medium", "high", "xhigh", "max"] as const).map((value) => (
-+                    <option key={value} value={value}>{value}</option>
-+                  ))}
-+                </select>
-+              </label>
-+            </div>
-+          )}
-+          <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
-+            <button type="button" style={taskButtonStyle} disabled={!message.trim()} onClick={() => void apply({ action: "message", message })}>
-+              {t("tasks.sendMessage")}
-+            </button>
-+            {canResume && (
-+              <button
-+                type="button"
-+                style={taskButtonStyle}
-+                disabled={task.status === "needs_input" && !message.trim()}
-+                onClick={() => void apply({ action: "resume", ...(message.trim() ? { message } : {}), ...overrides })}
-+              >
-+                {t("tasks.resume")}
-+              </button>
-+            )}
-+            {canCancel && (
-+              <button type="button" style={taskButtonStyle} onClick={() => void apply({ action: "cancel" })}>
-+                {t("tasks.cancel")}
-+              </button>
-+            )}
-+          </div>
-+          {canAssign && (
-+            <div style={{ display: "grid", gap: 8, marginTop: 12 }}>
-+              <label style={{ display: "grid", gap: 4 }}>
-+                {t("tasks.role")}
-+                <select
-+                  aria-label={label("tasks.role")}
-+                  value={role ? profile : ""}
-+                  onChange={(event) => setProfile(event.target.value)}
-+                  style={taskInputStyle}
-+                >
-+                  <option value="">{t("tasks.chooseRole")}</option>
-+                  {roles.map((item) => (
-+                    <option key={item.name} value={item.name} title={item.description}>{item.name}</option>
-+                  ))}
-+                </select>
-+              </label>
-+              <label style={{ display: "grid", gap: 4 }}>
-+                {t("tasks.inputRevision")}
-+                <input
-+                  aria-label={label("tasks.inputRevision")}
-+                  value={inputRevision}
-+                  onChange={(event) => setInputRevision(event.target.value)}
-+                  required={Boolean(writer)}
-+                  style={taskInputStyle}
-+                />
-+              </label>
-+              <span style={{ color: "var(--text-dim)" }}>{t("tasks.inputRevisionHint")}</span>
-+              <button
-+                type="button"
-+                style={taskButtonStyle}
-+                disabled={!role || Boolean(writer && !inputRevision.trim())}
-+                onClick={() => void apply({
-+                  action: "assign",
-+                  profile,
-+                  ...(inputRevision.trim() ? { input_revision: inputRevision.trim() } : {}),
-+                  ...overrides,
-+                })}
-+              >
-+                {t("tasks.assign")}
-+              </button>
-+            </div>
-+          )}
-+          {canRelease && (
-+            <div style={{ display: "grid", gap: 8, marginTop: 12 }}>
-+              <label style={{ display: "grid", gap: 4 }}>
-+                {t("tasks.releaseRevision")}
-+                <input
-+                  aria-label={label("tasks.releaseRevision")}
-+                  value={revision}
-+                  onChange={(event) => setRevision(event.target.value)}
-+                  style={taskInputStyle}
-+                />
-+              </label>
-+              <span style={{ color: "var(--text-dim)" }}>{t("tasks.releaseHint")}</span>
-+              <button
-+                type="button"
-+                style={taskButtonStyle}
-+                disabled={!/^(?:[a-f0-9]{40}|[a-f0-9]{64})$/.test(revision.trim())}
-+                onClick={() => void apply({ action: "release", revision: revision.trim() })}
-+              >
-+                {t("tasks.release")}
-+              </button>
-+            </div>
-+          )}
-+          {canClose && (
-+            <div style={{ display: "grid", gap: 8, marginTop: 12 }}>
-+              <label>
-+                <input
-+                  type="checkbox"
-+                  checked={verified}
-+                  onChange={(event) => setVerified(event.target.checked)}
-+                  aria-label={label("tasks.verified")}
-+                />{" "}
-+                {t("tasks.verified")}
-+              </label>
-+              <button
-+                type="button"
-+                style={taskButtonStyle}
-+                disabled={!verified}
-+                onClick={() => void apply({ action: "close", delivery_id: deliveryId })}
-+              >
-+                {t("tasks.close")}
-+              </button>
-+            </div>
-+          )}
-+        </fieldset>
-+      </details>
-+    </article>
-+  );
- }
-
- function sessionTitle(session: SessionInfo): string {
-@@ -91,8 +417,7 @@ function AgentRow({
-   return (
-     <button
-       type="button"
--      role="option"
--      aria-selected={selected}
-+      aria-current={selected ? "page" : undefined}
-       onClick={onSelect}
-       style={{
-         width: "100%",
-@@ -150,9 +475,80 @@ function AgentRow({
-   );
- }
-
--export function AgentSessionPanel({ rootSession, subagents, selectedSessionId, runningSessionIds, onSelectSession }: Props) {
-+export function AgentSessionPanel({ rootSession, subagents, selectedSessionId, runningSessionIds, onSelectSession, onOpenSession, refreshKey }: Props) {
-   const { t } = useI18n();
-   const [query, setQuery] = useState("");
-+  const [state, setState] = useState<SubagentTasksResponse | null>(null);
-+  const [loadError, setLoadError] = useState<string | null>(null);
-+  const [actionError, setActionError] = useState<string | null>(null);
-+  const [busy, setBusy] = useState(false);
-+  const [reloadVersion, setReloadVersion] = useState(0);
-+  const busyRef = useRef(false);
-+  const mutationVersion = useRef(0);
-+  const mounted = useRef(true);
-+
-+  useEffect(() => {
-+    mounted.current = true;
-+    return () => {
-+      mounted.current = false;
-+      mutationVersion.current++;
-+    };
-+  }, []);
-+
-+  useEffect(() => {
-+    if (busyRef.current) return;
-+    const controller = new AbortController();
-+    const version = mutationVersion.current;
-+    void (async () => {
-+      try {
-+        const response = await fetch(`/pi/api/subagents/tasks?parentSessionId=${encodeURIComponent(rootSession.id)}`, {
-+          cache: "no-store",
-+          signal: controller.signal,
-+        });
-+        const data = await response.json() as SubagentTasksResponse & { error?: string };
-+        if (!response.ok || data.error) throw new Error(data.error ?? `HTTP ${response.status}`);
-+        if (controller.signal.aborted || version !== mutationVersion.current) return;
-+        setState(data);
-+        setLoadError(null);
-+      } catch (cause) {
-+        if (controller.signal.aborted || version !== mutationVersion.current) return;
-+        setLoadError(cause instanceof Error ? cause.message : String(cause));
-+      }
-+    })();
-+    return () => controller.abort();
-+  }, [rootSession.id, refreshKey, reloadVersion]);
-+
-+  const onTaskAction = async (action: TaskAction): Promise<boolean> => {
-+    if (busyRef.current || !state || state.ownership === "elsewhere" || loadError) return false;
-+    busyRef.current = true;
-+    const version = ++mutationVersion.current;
-+    setBusy(true);
-+    setActionError(null);
-+    try {
-+      const response = await fetch("/pi/api/subagents/tasks", {
-+        method: "POST",
-+        headers: { "Content-Type": "application/json" },
-+        body: JSON.stringify({ parentSessionId: rootSession.id, ...action }),
-+      });
-+      const data = await response.json() as SubagentTasksResponse & { error?: string };
-+      if (!response.ok || data.error) throw new Error(data.error ?? `HTTP ${response.status}`);
-+      if (!mounted.current || version !== mutationVersion.current) return false;
-+      setState(data);
-+      return true;
-+    } catch (cause) {
-+      if (mounted.current && version === mutationVersion.current) {
-+        setActionError(cause instanceof Error ? cause.message : String(cause));
-+      }
-+      return false;
-+    } finally {
-+      busyRef.current = false;
-+      if (mounted.current && version === mutationVersion.current) {
-+        setBusy(false);
-+        setReloadVersion((value) => value + 1);
-+      }
-+    }
-+  };
-+
-   const sortedSubagents = useMemo(() => [...subagents].sort((a, b) => {
-     const aRunning = runningSessionIds.has(a.id);
-     const bRunning = runningSessionIds.has(b.id);
-@@ -168,11 +564,16 @@ export function AgentSessionPanel({ rootSession, subagents, selectedSessionId, r
-       })
-     : sortedSubagents;
-   const runningCount = subagents.filter((session) => runningSessionIds.has(session.id)).length;
-+  const visibleTasks = (state?.tasks ?? []).filter((task) => !normalizedQuery
-+    || [task.id, task.profile, task.description, task.status, ...task.needs.map((need) => need.taskId)]
-+      .some((value) => value?.toLowerCase().includes(normalizedQuery)));
-+  const visibleLegacySubagents = visibleSubagents.filter((session) => !state?.tasks.some((task) => task.sessionId === session.id));
-
-   return (
-     <div
--      role="listbox"
-+      role="region"
-       aria-label={t("agentSwitcher.title")}
-+      aria-busy={busy}
-       style={{
-         background: "var(--bg-panel)",
-         borderLeft: "1px solid var(--border)",
-@@ -195,7 +596,28 @@ export function AgentSessionPanel({ rootSession, subagents, selectedSessionId, r
-             </span>
-           )}
-         </div>
--        {subagents.length > 8 && (
-+        <div style={{ padding: "8px 12px", borderBottom: "1px solid var(--border)", fontSize: 12 }}>
-+          {state ? (
-+            <>
-+              <strong>{t("tasks.count", { count: state.tasks.length })}</strong>
-+              <p style={{ margin: "6px 0", color: "var(--text-muted)" }}>
-+                {t(`tasks.ownership.${state.ownership}`)}
-+              </p>
-+              {state.messagesOmitted > 0 && <p>{t("tasks.messagesOmitted", { count: state.messagesOmitted })}</p>}
-+            </>
-+          ) : !loadError ? <span role="status">{t("agents.loading")}</span> : null}
-+          <button
-+            type="button"
-+            style={taskButtonStyle}
-+            disabled={busy}
-+            onClick={() => setReloadVersion((value) => value + 1)}
-+          >
-+            {t("tasks.refresh")}
-+          </button>
-+          {loadError && <p role="alert">{loadError}</p>}
-+          {actionError && <p role="alert">{actionError}</p>}
-+        </div>
-+        {subagents.length + (state?.tasks.length ?? 0) > 8 && (
-           <div style={{ padding: 8, borderBottom: "1px solid var(--border)" }}>
-             <input
-               type="search"
-@@ -219,7 +641,22 @@ export function AgentSessionPanel({ rootSession, subagents, selectedSessionId, r
-             running={runningSessionIds.has(rootSession.id)}
-             onSelect={() => onSelectSession(rootSession)}
-           />
--          {visibleSubagents.map((session) => (
-+          {state && visibleTasks.map((task) => {
-+            return (
-+              <TaskRow
-+                key={`${task.id}:${task.attempt}:${task.reportDeliveryId ?? ""}`}
-+                task={task}
-+                roles={state.roles}
-+                messages={state.messages.filter((item) => item.to === task.id || item.from === task.id)}
-+                deliveryId={task.reportDeliveryId}
-+                readOnly={state.ownership === "elsewhere" || Boolean(loadError)}
-+                busy={busy}
-+                onAction={onTaskAction}
-+                onOpenSession={onOpenSession}
-+              />
-+            );
-+          })}
-+          {visibleLegacySubagents.map((session) => (
-             <AgentRow
-               key={session.id}
-               session={session}
-@@ -228,7 +665,7 @@ export function AgentSessionPanel({ rootSession, subagents, selectedSessionId, r
-               onSelect={() => onSelectSession(session)}
-             />
-           ))}
--          {visibleSubagents.length === 0 && (
-+          {state && visibleTasks.length === 0 && visibleLegacySubagents.length === 0 && (
-             <div style={{ padding: "22px 12px", color: "var(--text-dim)", fontSize: 12, textAlign: "center" }}>
-               {t("agentSwitcher.noMatches")}
-             </div>
 diff --git a/components/AgentsConfig.test.mjs b/components/AgentsConfig.test.mjs
 index 89dda61..972bb1a 100644
 --- a/components/AgentsConfig.test.mjs
@@ -1737,72 +1123,22 @@ index c5b6c02..bd279d3 100644
                      <Field label={t("agents.saveScope")}>
                        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 3, padding: 3, border: "1px solid var(--border)", borderRadius: 5, background: "var(--bg-panel)" }}>
 diff --git a/components/AppShell.mobile-toolbar.test.mjs b/components/AppShell.mobile-toolbar.test.mjs
-index ab8aa66..3c4d7de 100644
+index ab8aa66..ee55e9e 100644
 --- a/components/AppShell.mobile-toolbar.test.mjs
 +++ b/components/AppShell.mobile-toolbar.test.mjs
-@@ -24,12 +24,19 @@ test("uses a compact narrow-mobile toolbar with a floating action layer", () =>
-   }
+@@ -37,6 +37,7 @@ test("keeps the Agents panel open while switching sessions and positions it at t
+     /if \(activeTopPanel === "agents"\)[\s\S]*?left: topBarRect\.left[\s\S]*?width: Math\.min\(AGENT_PANEL_WIDTH, topBarRect\.width\)/,
+   );
+   assert.match(source, /<AgentSessionPanel[\s\S]*?onSelectSession=\{handleSelectSession\}/);
++  assert.match(source, /<AgentSessionPanel\s+key=\{activeSessionFamily.root.id\}/);
  });
 
--test("only renders the Agents switcher when the active session family has subagents", () => {
--  assert.match(source, /const hasSubagentSessions = Boolean\(activeSessionFamily\?\.subagents\.length\)/);
--  assert.match(source, /\{hasSubagentSessions && \(\s*<button[\s\S]*?toggleTopPanel\("agents", mobile\)/);
-+test("makes pending tasks accessible before a child session exists", () => {
-+  assert.match(source, /const hasAgentPanel = Boolean\(activeSessionFamily\)/);
-+  assert.match(source, /\{hasAgentPanel && \(\s*<button[\s\S]*?toggleTopPanel\("agents", mobile\)/);
-   assert.match(source, /activeTopPanel === "agents" && activeSessionFamily && selectedSession/);
- });
-
-+test("reuses running-session refreshes and the existing conversation opener", () => {
-+  assert.ok(source.includes("setAgentTasksRefreshKey((value) => value + 1)"));
-+  assert.ok(source.includes("key={activeSessionFamily.root.id}"));
-+  assert.ok(source.includes("onOpenSession={handleOpenSession}"));
-+  assert.ok(source.includes("refreshKey={refreshKey + agentTasksRefreshKey + sessionKey}"));
-+});
-+
- test("keeps the Agents panel open while switching sessions and positions it at the left", () => {
-   assert.match(source, /const AGENT_PANEL_WIDTH = 420/);
-   assert.match(
+ test("only renders branch toolbar controls for sessions with branches", () => {
 diff --git a/components/AppShell.tsx b/components/AppShell.tsx
-index 5316944..dc030f5 100644
+index 5316944..288311b 100644
 --- a/components/AppShell.tsx
 +++ b/components/AppShell.tsx
-@@ -134,9 +134,11 @@ export function AppShell() {
-     () => getSessionFamily(sessionsWithSelection, selectedSession?.id),
-     [selectedSession?.id, sessionsWithSelection],
-   );
--  const hasSubagentSessions = Boolean(activeSessionFamily?.subagents.length);
-+  const hasAgentPanel = Boolean(activeSessionFamily);
-+  const [agentTasksRefreshKey, setAgentTasksRefreshKey] = useState(0);
-   const [runningSessionIds, setRunningSessionIds] = useState<Set<string>>(() => new Set());
-   const handleRunningSessionIdsChange = useCallback((ids: Set<string>) => {
-+    setAgentTasksRefreshKey((value) => value + 1);
-     setRunningSessionIds((previous) => {
-       if (previous.size === ids.size && [...ids].every((id) => previous.has(id))) return previous;
-       return ids;
-@@ -327,10 +329,10 @@ export function AppShell() {
-   }, [sessionHasBranches]);
-
-   useEffect(() => {
--    if (!hasSubagentSessions) {
-+    if (!hasAgentPanel) {
-       setActiveTopPanel((panel) => panel === "agents" ? null : panel);
-     }
--  }, [hasSubagentSessions]);
-+  }, [hasAgentPanel]);
-
-   useEffect(() => {
-     if (rightPanelFullWidth) setActiveTopPanel(null);
-@@ -1396,7 +1398,7 @@ export function AppShell() {
-             </button>
-           );
-         })()}
--        {hasSubagentSessions && (
-+        {hasAgentPanel && (
-           <button
-             type="button"
-             onClick={() => toggleTopPanel("agents", mobile)}
-@@ -2023,11 +2025,14 @@ export function AppShell() {
+@@ -2023,6 +2023,7 @@ export function AppShell() {
              }}>
                {activeTopPanel === "agents" && activeSessionFamily && selectedSession && (
                  <AgentSessionPanel
@@ -1810,13 +1146,127 @@ index 5316944..dc030f5 100644
                    rootSession={activeSessionFamily.root}
                    subagents={activeSessionFamily.subagents}
                    selectedSessionId={selectedSession.id}
-                   runningSessionIds={runningSessionIds}
-                   onSelectSession={handleSelectSession}
-+                  onOpenSession={handleOpenSession}
-+                  refreshKey={refreshKey + agentTasksRefreshKey + sessionKey}
-                 />
-               )}
-               {activeTopPanel === "system" && (
+diff --git a/components/MessageView.test.mjs b/components/MessageView.test.mjs
+index 6303944..182d051 100644
+--- a/components/MessageView.test.mjs
++++ b/components/MessageView.test.mjs
+@@ -128,6 +128,28 @@ test("keeps streamed tool input out of collapsed markup while counting it", () =
+   assert.equal(getTokenEstimateText(block), block.rawInput);
+ });
+
++test("native single, batch and historical results retain the original session shortcut", () => {
++  const block = { type: "toolCall", toolCallId: "native-call", toolName: "Agent", input: { description: "Inspect" } };
++  for (const [details, count] of [
++    [{ kind: "native-subagents", tasks: [{ sessionId: "child", description: "Inspect" }] }, 1],
++    [{ kind: "native-subagents", task: { sessionId: "child" } }, 1],
++    [{ kind: "native-subagents", historical: { sessionId: "old-child" } }, 1],
++    [{ kind: "native-subagents", tasks: [{ sessionId: "one" }, { sessionId: "two" }, { sessionId: "one" }, { id: "queued" }, null] }, 2],
++    [{ kind: "native-subagents", tasks: Array.from({ length: 13 }, (_, index) => ({ sessionId: `child-${index}` })) }, 13],
++    [{ kind: "native-subagents", tasks: [{ id: "queued" }, { sessionId: "" }] }, 0],
++    [{ kind: "unrelated", tasks: [{ sessionId: "child" }] }, 0],
++  ]) {
++    const result = { role: "toolResult", toolCallId: block.toolCallId, content: [{ type: "text", text: "Native result" }], details };
++    const html = renderMessage({ role: "assistant", content: [block] }, {
++      toolResults: new Map([[block.toolCallId, result]]), onOpenSession() {},
++    });
++    assert.equal((html.match(/aria-label="Open sub-agent session/g) ?? []).length, count);
++    if (count > 1) assert.match(html, /flex-wrap:wrap/);
++    assert.match(html, /border:1px solid rgba\(34,197,94,0\.25\)/);
++    assert.doesNotMatch(html, /Native result/);
++  }
++});
++
+ test("renders subagents as standard tool calls with only an extra session button", () => {
+   const block = {
+     type: "toolCall",
+diff --git a/components/MessageView.tsx b/components/MessageView.tsx
+index 89552b8..a2b7347 100644
+--- a/components/MessageView.tsx
++++ b/components/MessageView.tsx
+@@ -17,7 +17,6 @@ import { isThinkingExpandedByDefault, THINKING_EXPANDED_EVENT } from "@/lib/thin
+ import { TurnWrittenFiles } from "./TurnWrittenFiles";
+ import type { WrittenFile } from "@/lib/turn-written-files";
+ import { skillExpansionToCommand } from "@/lib/slash-display";
+-import type { SubagentToolDetails } from "@/lib/subagent-extension";
+ import type {
+   AgentMessage,
+   UserMessage,
+@@ -1037,10 +1036,21 @@ export function ThinkingBlock({ block, duration, sessionId, entryId, blockIndex
+   );
+ }
+
+-function isSubagentToolDetails(value: unknown): value is SubagentToolDetails {
+-  if (!value || typeof value !== "object") return false;
+-  const details = value as Partial<SubagentToolDetails>;
+-  return details.kind === "pi-web-subagent" && typeof details.sessionId === "string";
++function subagentSessionLinks(value: unknown): Array<{ sessionId: string; description: string }> {
++  if (!value || typeof value !== "object") return [];
++  const details = value as Record<string, unknown>;
++  const candidates = details.kind === "pi-web-subagent" ? [details]
++    : details.kind === "native-subagents"
++      ? [...(Array.isArray(details.tasks) ? details.tasks : []), details.task, details.historical]
++      : [];
++  const links = new Map<string, { sessionId: string; description: string }>();
++  for (const candidate of candidates) {
++    if (!candidate || typeof candidate !== "object") continue;
++    const { sessionId, description } = candidate as Record<string, unknown>;
++    if (typeof sessionId !== "string" || !sessionId) continue;
++    links.set(sessionId, { sessionId, description: typeof description === "string" ? description : sessionId });
++  }
++  return [...links.values()];
+ }
+
+ function ToolCallBlock({ block, result, duration, onOpenSession }: { block: ToolCallContent; result?: ToolResultMessage; duration?: number; onOpenSession?: (sessionId: string) => void }) {
+@@ -1068,7 +1078,7 @@ function ToolCallBlock({ block, result, duration, onOpenSession }: { block: Tool
+   const resultIsEmpty = resultText === null ? false : (resultText.trim() === "(no output)" || resultText.trim() === "");
+   const isError = (result?.isError ?? false)
+     || (isApplyPatchToolName(block.toolName) && applyPatchResultHasFailures(result?.details));
+-  const subagent = isSubagentToolDetails(result?.details) ? result.details : null;
++  const subagents = subagentSessionLinks(result?.details);
+
+   return (
+     <div
+@@ -1081,7 +1091,7 @@ function ToolCallBlock({ block, result, duration, onOpenSession }: { block: Tool
+       }}
+     >
+       {/* ── Tool call header ── */}
+-      <div style={{ display: "flex", alignItems: "stretch", minWidth: 0 }}>
++      <div style={{ display: "flex", flexWrap: "wrap", alignItems: "stretch", minWidth: 0 }}>
+         <button
+           onClick={toggleExpanded}
+           style={{
+@@ -1089,6 +1099,7 @@ function ToolCallBlock({ block, result, duration, onOpenSession }: { block: Tool
+             alignItems: "center",
+             gap: 7,
+             flex: 1,
++            flexBasis: subagents.length > 1 ? "50%" : undefined,
+             minWidth: 0,
+             padding: "6px 10px",
+             background: "none",
+@@ -1112,17 +1123,18 @@ function ToolCallBlock({ block, result, duration, onOpenSession }: { block: Tool
+             <polyline points="2 3.5 5 6.5 8 3.5" />
+           </svg>
+         </button>
+-        {subagent && onOpenSession && (
++        {onOpenSession && subagents.map((subagent) => (
+           <button
++            key={subagent.sessionId}
+             type="button"
+             onClick={() => onOpenSession(subagent.sessionId)}
+-            title={t("subagent.open")}
+-            aria-label={t("subagent.open")}
+-            style={{ width: 32, display: "grid", placeItems: "center", border: "none", borderLeft: "1px solid var(--border)", background: "none", color: "var(--text-muted)", cursor: "pointer", flexShrink: 0 }}
++            title={`${t("subagent.open")}: ${subagent.description}`}
++            aria-label={subagents.length === 1 ? t("subagent.open") : `${t("subagent.open")}: ${subagent.description}`}
++            style={{ width: 32, minHeight: subagents.length > 1 ? 32 : undefined, display: "grid", placeItems: "center", border: "none", borderLeft: "1px solid var(--border)", background: "none", color: "var(--text-muted)", cursor: "pointer", flexShrink: 0 }}
+           >
+             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M15 3h6v6" /><path d="M10 14 21 3" /><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6" /></svg>
+           </button>
+-        )}
++        ))}
+       </div>
+
+       {/* ── Expanded: input args (only when no richer view exists) ── */}
 diff --git a/e2e/run.mjs b/e2e/run.mjs
 index 53126be..0837279 100644
 --- a/e2e/run.mjs
@@ -2674,10 +2124,10 @@ index 0000000..9e76dda
 +}
 diff --git a/e2e/subagents.mjs b/e2e/subagents.mjs
 new file mode 100644
-index 0000000..2e7e345
+index 0000000..f3d6647
 --- /dev/null
 +++ b/e2e/subagents.mjs
-@@ -0,0 +1,191 @@
+@@ -0,0 +1,236 @@
 +import assert from "node:assert/strict";
 +import { execFileSync } from "node:child_process";
 +import { randomUUID } from "node:crypto";
@@ -2746,16 +2196,17 @@ index 0000000..2e7e345
 +        const resources = { version: 1, appendSystemPrompt: [], tools: [], loadSkills: false, loadExtensions: false };
 +        const report = name === "done" ? { outcome: "completed", report: "Fixture evidence verified" }
 +          : { outcome: "needs_input", report: "Waiting for parent input", needs: "Choose the next fixture step" };
-+        const task = { id: name, groupId: "fixture", profile: "scout", description: `Fixture ${name}`, assignment: "Inspect fixture only",
++        const task = { id: name, groupId: "fixture", profile: "scout", description: name === "done" ? "Review changes" : "Inspect configuration", assignment: "Inspect fixture only",
 +          needs: [], status: report.outcome, attempt: 1, createdAt: timestamp, updatedAt: timestamp,
 +          sessionId, sessionFile, resources, historyPersisted: true, report, model: `e2e-native/fixture-${width}`, thinking: "off" };
 +        tasks.push(task);
 +        const metadata = { version: 1, parentSessionId: id, parentSessionPath: file, parentToolCallId: name,
 +          profile: "scout", description: task.description, task: task.assignment, runInBackground: true, createdAt: timestamp,
 +          resourceSnapshot: resources };
-+        writeFileSync(sessionFile, [header(sessionId), entries[0],
-+          { type: "custom", id: "metadata", parentId: "model", timestamp, customType: "pi-web:subagent", data: metadata },
-+          { type: "message", id: "child-user", parentId: "metadata", timestamp,
++        writeFileSync(sessionFile, [{ ...header(sessionId), parentSession: file },
++          { type: "custom", id: "metadata", parentId: null, timestamp, customType: "pi-web:subagent", data: metadata },
++          { ...entries[0], parentId: "metadata" },
++          { type: "message", id: "child-user", parentId: "model", timestamp,
 +            message: { role: "user", content: `E2E retained child ${width} ${name}`, timestamp: Date.now() } },
 +        ].map((entry) => JSON.stringify(entry)).join("\n") + "\n");
 +        const deliveryId = randomUUID();
@@ -2775,7 +2226,55 @@ index 0000000..2e7e345
 +        state.deliveries.push(...deliveries);
 +      });
 +      sessionIds.push(id);
-+      fixtures.set(width, { id, file, revision, state: () => readDelegationState(agentDir, file),
++      const auxiliary = {};
++      for (const name of ["empty", "pending", "large"]) {
++        const sessionId = randomUUID();
++        const sessionFile = join(sessionDir, `2026-08-23T00-00-00-000Z_${sessionId}.jsonl`);
++        const auxiliaryEntries = [header(sessionId), entries[0], {
++          type: "message", id: "user", parentId: "model", timestamp,
++          message: { role: "user", content: `E2E ${name} parent ${width}`, timestamp: Date.now() },
++        }];
++        if (name === "large") {
++          const links = [];
++          for (let index = 0; index < 13; index++) {
++            const childId = randomUUID();
++            const description = `Retained child ${index + 1}`;
++            links.push({ sessionId: childId, description });
++            const metadata = { version: 1, parentSessionId: sessionId, parentSessionPath: sessionFile,
++              parentToolCallId: "list", profile: "scout", description, task: description,
++              runInBackground: true, createdAt: timestamp };
++            writeFileSync(join(sessionDir, `2026-08-23T00-00-00-000Z_${childId}.jsonl`), [
++              { ...header(childId), parentSession: sessionFile },
++              { type: "custom", id: "metadata", parentId: null, timestamp, customType: "pi-web:subagent", data: metadata },
++              { type: "message", id: "child-user", parentId: "metadata", timestamp,
++                message: { role: "user", content: `${description} transcript ${width}`, timestamp: Date.now() } },
++            ].map((entry) => JSON.stringify(entry)).join("\n") + "\n");
++            sessionIds.push(childId);
++          }
++          auxiliaryEntries.push({ type: "message", id: "list", parentId: "user", timestamp, message: {
++            role: "assistant", api: "openai-completions", provider: "e2e-native", model: `fixture-${width}`,
++            stopReason: "toolUse", timestamp: Date.now(),
++            usage: { input: 0, output: 0, cacheRead: 0, cacheWrite: 0, totalTokens: 0,
++              cost: { input: 0, output: 0, cacheRead: 0, cacheWrite: 0, total: 0 } },
++            content: [{ type: "toolCall", id: "list", name: "manage_subagents", arguments: { action: "list" } }],
++          } }, { type: "message", id: "result", parentId: "list", timestamp, message: {
++            role: "toolResult", toolCallId: "list", toolName: "manage_subagents", isError: false,
++            timestamp: Date.now(), content: [{ type: "text", text: "Retained conversations" }],
++            details: { kind: "native-subagents", tasks: links },
++          } });
++        }
++        writeFileSync(sessionFile, auxiliaryEntries.map((entry) => JSON.stringify(entry)).join("\n") + "\n");
++        if (name === "pending") await updateDelegationState(agentDir, sessionFile, (state) => {
++          state.parentSessionId = sessionId;
++          state.groups.push({ id: "fixture", createdAt: timestamp });
++          state.tasks.push({ id: "unassigned", groupId: "fixture", description: "Awaiting role assignment",
++            assignment: "Inspect fixture only", needs: [], status: "blocked", attempt: 0,
++            createdAt: timestamp, updatedAt: timestamp });
++        });
++        auxiliary[name] = sessionId;
++        sessionIds.push(sessionId);
++      }
++      fixtures.set(width, { id, file, revision, auxiliary, state: () => readDelegationState(agentDir, file),
 +        requests: () => requests.filter((request) => request.model === `fixture-${width}`) });
 +    }
 +    return { fixtures, sessionIds, close };
@@ -2783,11 +2282,8 @@ index 0000000..2e7e345
 +}
 +
 +export async function checkSubagents(page, base, fixture, artifacts, width) {
-+  const get = async () => {
-+    const response = await page.request.get(`${base}/api/subagents/tasks?parentSessionId=${fixture.id}`);
-+    assert.equal(response.status(), 200);
-+    return response.json();
-+  };
++  const title = enLocale.messages["agentSwitcher.title"];
++  const panel = () => page.getByRole("listbox", { name: title, exact: true });
 +  const until = async (predicate) => {
 +    const deadline = Date.now() + 30_000;
 +    while (!await predicate()) {
@@ -2795,79 +2291,78 @@ index 0000000..2e7e345
 +      await delay(100);
 +    }
 +  };
-+  const open = async () => {
-+    const response = await page.goto(`${base}/?session=${fixture.id}`, { waitUntil: "domcontentloaded" });
-+    assert.equal(response.status(), 200, "Native task page must compile before UI assertions");
-+    await page.locator('[data-entry-id="user"]:not([data-message-role])')
-+      .getByText(`E2E native parent ${width}`, { exact: true }).waitFor();
++  const open = async (id, text) => {
++    const response = await page.goto(`${base}/?session=${id}`, { waitUntil: "domcontentloaded" });
++    assert.equal(response.status(), 200);
++    await page.locator('[data-entry-id="user"]:not([data-message-role])').getByText(text, { exact: true }).waitFor();
 +    if (width < 600) await page.locator('[aria-controls="mobile-toolbar-actions"]').click();
-+    await page.getByRole("button", { name: enLocale.messages["agentSwitcher.title"], exact: true }).click();
-+    await page.getByRole("article", { name: "needs-input: Fixture needs-input", exact: true }).waitFor();
 +  };
-+  const row = (id) => page.getByRole("article", { name: `${id}: Fixture ${id}`, exact: true });
-+  const controls = async (id) => {
-+    const summary = row(id).getByText("Parent controls", { exact: true });
-+    if (!await summary.locator("..").evaluate((element) => element.open)) await summary.click();
-+    return row(id);
++  for (const name of ["empty", "pending"]) {
++    await open(fixture.auxiliary[name], `E2E ${name} parent ${width}`);
++    assert.equal(await page.getByRole("button", { name: title, exact: true }).count(), 0,
++      "The original toolbar does not show task management for sessions without child conversations");
++  }
++  await open(fixture.auxiliary.large, `E2E large parent ${width}`);
++  const shortcuts = page.getByRole("button", { name: /^Open sub-agent session:/ });
++  assert.equal(await shortcuts.count(), 13);
++  for (const shortcut of await shortcuts.all()) {
++    assert.ok(await shortcut.evaluate((button) => {
++      const bounds = button.getBoundingClientRect();
++      const container = button.parentElement.getBoundingClientRect();
++      return bounds.width > 0 && bounds.height > 0 && bounds.left >= container.left
++        && bounds.right <= container.right + 1 && bounds.bottom <= container.bottom + 1;
++    }), "Every retained conversation shortcut must remain inside the tool header");
++  }
++  await shortcuts.last().click();
++  await page.getByText(`Retained child 13 transcript ${width}`, { exact: true }).waitFor();
++  if (width >= 600) {
++    await open(fixture.auxiliary.large, `E2E large parent ${width}`);
++    await page.getByRole("button", { name: title, exact: true }).click();
++    await panel().getByRole("searchbox").fill("Retained child 13");
++    assert.equal(await panel().getByRole("option").count(), 2);
++    await page.getByText(`E2E native parent ${width}`, { exact: true }).click();
++    await panel().getByRole("option", { name: /^Inspect configuration / }).waitFor();
++    assert.equal(await panel().getByRole("searchbox").count(), 0);
++    assert.equal(await panel().getByRole("option").count(), 3, "Changing families resets the hidden search");
++  }
++  const openFamily = async () => {
++    await open(fixture.id, `E2E native parent ${width}`);
++    await page.getByRole("button", { name: title, exact: true }).click();
++    await panel().getByRole("option", { name: /^Inspect configuration / }).waitFor();
++    assert.equal(await panel().getByRole("option").count(), 3, "Only main and child conversations are listed");
++    assert.equal(await panel().getByRole("article").count(), 0, "Native task cards are not part of the original UI");
++    assert.equal(await panel().getByText("Parent controls", { exact: true }).count(), 0);
++    assert.equal(await panel().getByText(/4 tasks|needs-input ·/).count(), 0);
++    assert.equal(await panel().getByRole("searchbox").count(), 0);
 +  };
-+  const act = async (id, button) => {
-+    const response = page.waitForResponse((response) => response.url().endsWith("/api/subagents/tasks")
-+      && response.request().method() === "POST" && response.request().postDataJSON().task_id === id);
-+    await row(id).getByRole("button", { name: button, exact: true }).click();
-+    const result = await response;
-+    assert.equal(result.status(), 200, await result.text());
-+  };
-+  await open();
-+  await row("needs-input").getByText("Choose the next fixture step", { exact: false }).waitFor();
-+  assert.match(await row("dependent").innerText(), /done/);
-+  await row("dependent").getByText("Interrupted", { exact: true }).waitFor();
-+  assert.equal(fixture.requests().length, 0, "Viewing tasks must not start a model");
-+  await controls("needs-input");
-+  assert.equal(await row("needs-input").getByRole("button", { name: "Resume", exact: true }).isDisabled(), true);
-+  const message = `Evidence from browser ${width}`;
-+  await row("needs-input").getByLabel("Message or resume input (needs-input)", { exact: true }).fill(message);
-+  await act("needs-input", "Send message");
-+  await row("needs-input").getByText("Messages", { exact: true }).click();
-+  await row("needs-input").getByText(message, { exact: true }).waitFor();
-+  assert.match(await row("needs-input").innerText(), /parent → needs-input/);
-+  assert.ok(fixture.state().messages.some((item) => item.to === "needs-input" && item.from === "parent" && item.text === message));
-+  assert.equal((await get()).tasks.find((task) => task.id === "needs-input").status, "needs_input");
-+  assert.equal(fixture.requests().length, 0, "Sending information must not resume paused work");
-+  await row("needs-input").getByLabel("Message or resume input (needs-input)", { exact: true }).fill("Proceed with the fixture");
-+  await act("needs-input", "Resume");
-+  await until(async () => (await get()).tasks.find((task) => task.id === "needs-input").status === "completed");
-+  assert.ok(fixture.requests().some((request) => JSON.stringify(request.messages).includes(message)));
-+  const resumed = fixture.state().tasks.find((task) => task.id === "needs-input");
-+  assert.match(readFileSync(resumed.sessionFile, "utf8"), new RegExp(message));
-+  await controls("dependent");
-+  await row("dependent").getByLabel("Exact role (dependent)", { exact: true }).selectOption("worker");
-+  assert.equal(await row("dependent").getByRole("button", { name: "Assign pending task", exact: true }).isDisabled(), true);
-+  await row("dependent").getByLabel("Exact role (dependent)", { exact: true }).selectOption("scout");
-+  await act("dependent", "Assign pending task");
-+  assert.equal((await get()).tasks.find((task) => task.id === "dependent").status, "blocked");
-+  await controls("done");
-+  await row("done").getByLabel("Integrated commit OID (done)", { exact: true }).fill(fixture.revision);
-+  await act("done", "Release integrated revision");
-+  await until(async () => (await get()).tasks.find((task) => task.id === "dependent").status === "completed");
-+  await controls("done");
-+  assert.equal(await row("done").getByRole("button", { name: "Close verified delivery", exact: true }).isDisabled(), true);
-+  await row("done").getByLabel("I verified this report and its evidence (done)", { exact: true }).check();
-+  await act("done", "Close verified delivery");
-+  assert.ok(fixture.state().tasks.find((task) => task.id === "done").closedAt);
-+  await controls("cancel-me");
-+  await act("cancel-me", "Cancel task");
-+  assert.equal((await get()).tasks.find((task) => task.id === "cancel-me").status, "aborted");
-+  await until(async () => (await get()).pendingDeliveries.length === 0);
-+  await page.screenshot({ path: join(artifacts, `native-tasks-${width}.png`) });
-+  const attempts = fixture.state().tasks.map((task) => [task.id, task.attempt]);
-+  await open();
-+  assert.deepEqual(fixture.state().tasks.map((task) => [task.id, task.attempt]), attempts);
-+  assert.equal((await get()).tasks.some((task) => ["queued", "running"].includes(task.status)), false);
-+  await row("needs-input").getByRole("link", { name: "Open child conversation (needs-input)", exact: true }).click();
-+  await page.waitForURL((url) => url.searchParams.get("session") === resumed.sessionId);
++  await openFamily();
++  assert.equal(fixture.requests().length, 0, "Viewing conversations must not start a model");
++  await page.screenshot({ path: join(artifacts, `native-compact-${width}.png`) });
++  const child = fixture.state().tasks.find((task) => task.id === "needs-input");
++  await panel().getByRole("option", { name: /^Inspect configuration / }).click();
++  await page.waitForURL((url) => url.searchParams.get("session") === child.sessionId);
 +  await page.locator('[data-entry-id="child-user"]:not([data-message-role])')
 +    .getByText(`E2E retained child ${width} needs-input`, { exact: true }).waitFor();
-+  console.log(`PASS: ${width}px native task states, messages, assign/resume/cancel/release/verified-close, retained history and reconnect`);
++  await until(async () => await panel().getByRole("option", { name: /^Inspect configuration / }).getAttribute("aria-selected") === "true");
++  await panel().getByRole("option", { name: /^Main agent / }).click();
++  await page.waitForURL((url) => url.searchParams.get("session") === fixture.id);
++
++  const response = await page.request.post(`${base}/api/subagents/tasks`, {
++    data: { parentSessionId: fixture.id, action: "resume", task_id: "needs-input", message: "Proceed with the fixture" },
++  });
++  assert.equal(response.status(), 200, await response.text());
++  await until(async () => {
++    const result = await page.request.get(`${base}/api/subagents/tasks?parentSessionId=${fixture.id}`);
++    assert.equal(result.status(), 200);
++    return (await result.json()).tasks.find((task) => task.id === "needs-input").status === "completed";
++  });
++  assert.equal(fixture.state().tasks.find((task) => task.id === "needs-input").sessionId, child.sessionId);
++  assert.ok(fixture.requests().some((request) => JSON.stringify(request.messages).includes("Proceed with the fixture")));
++  await openFamily();
++  await panel().getByRole("option", { name: /^Inspect configuration / }).click();
++  await page.waitForURL((url) => url.searchParams.get("session") === child.sessionId);
++  await page.getByText("E2E native completion", { exact: true }).last().waitFor();
++  console.log(`PASS: ${width}px original agent list, no task management cards, child navigation, API resume and retained history`);
 +}
 diff --git a/lib/api-types.ts b/lib/api-types.ts
 index 6b193ed..f411e69 100644

@@ -479,14 +479,19 @@ Crew の固定ソースから役割本文を生成して MIT ライセンスを�
 子への拡張の継承は既定で無効です。ツール制限・worktree は OS サンドボックスではありません。
 
 既定は fresh context・バックグラウンドです。独立作業は1バッチ、前提は `needs` に指定します。
-同じ親の全バッチ・resume を共通キューで最大4子に制限します（設定範囲1〜4）。
+同じ直属の親の全バッチ・resume を共通キューで最大4子に制限します（設定範囲1〜4）。
+委任は親→子→孫まで対応し、孫からの再委任は禁止します。子の権限・ツール範囲を
+広げる委任は認めず、読み取り専用の子から writer は作成できません。
+適用前に作成した子は保存済みのツール範囲を維持するため、孫への委任には新しい子を作成します。
 writer は明示した `input_revision` のコミットから独立 worktree に作成します。
 未コミット変更は転送されず、`integrated_changes` 依存は親が統合後のコミット OID で
 前提タスクを release するまで開始しません。自動コミット・マージ・worktree 削除は行いません。
 
-Web のタスク一覧から未割当・依存待ち・実行中・入力待ち・完了・失敗・中断を確認でき、
-割当、メッセージ、回答、resume、cancel、統合 release、検証済み close を操作できます。
-直近100件の送信者付きメッセージを表示し、それ以前もメタデータに保持します。
+Web は元のコンパクトなエージェント一覧・会話切替を維持し、孫の会話も同じ一覧で開けます。
+追加のタスク件数・タスクカード・親操作フォームは表示しません。子の会話がない場合は
+元のツールバーのままとし、未開始タスクの確認や割当、メッセージ、回答、resume、cancel、
+統合 release、検証済み close は共通の委任ツール/API で行います。
+ツール/API は直近100件の送信者付きメッセージを返し、それ以前もメタデータに保持します。
 子の会話はリンクから確認できます。close には現行レポートの delivery ID が必要で、履歴は残ります。
 
 同じ親の実行所有権は1プロセスだけが保持します。他の CLI/Web は閲覧できますが操作できません。
@@ -545,11 +550,15 @@ starting work and report unavailable choices without silently substituting one.
 
 Accept self-contained assignments with `goal`, `context`, and ordered
 `instructions`. Preserve the native single-task prompt form for compatibility.
-Default to fresh conversation context, background execution, and no recursive
-delegation. Load the working directory's applicable repository instructions;
+Default to fresh conversation context and background execution. Allow delegation
+through two edges (root -> child -> grandchild), without widening a child's
+effective capabilities. Grandchildren cannot delegate. Load the working
+directory's applicable repository instructions;
 fresh context does not mean dropping `AGENTS.md`. Tool and resource selection must
 be explicit and consistent on first start and resume. Tool restrictions and Git
 worktrees are not an operating-system sandbox.
+Retained children keep their captured capabilities; start a new child to use
+nested delegation when the retained session predates that capability.
 
 #### Tasks, communication, and presentation
 
@@ -566,8 +575,12 @@ Maintain a task list with assignments, dependencies, status, and child-session
 links. Allow the parent to assign pending work and send messages; allow scoped
 parent/child and sibling communication within the same delegation group. Messages
 must retain their sender and be distinguishable from user authorization. Prevent
-cross-parent control and recursive spawning by enforcing ownership and child tool
-availability, not only by prompting.
+cross-parent control, capability escalation, and delegation beyond grandchildren
+by enforcing ownership and child tool availability, not only by prompting.
+Stopping a parent must await descendant teardown before disposing its session.
+Keep upstream compact conversation rows and session shortcuts as the Web
+presentation. Do not add task counters, task cards, or parent-control forms;
+task coordination remains available through native tools and the shared API.
 
 Distinguish queued or dependency-blocked work, running work, input required,
 completed reports, failure, cancellation, and interruption. A structured report
@@ -577,9 +590,9 @@ same child session, stop work, and close a verified delivery. Closing releases
 runtime resources without deleting the retained session or worktree. Preserve
 plain-text results from legacy native sessions.
 
-CLI and Web expose the same task and control semantics. Web presents the task
-list, dependencies, progress, messages, and inspectable child conversations; CLI
-provides equivalent tool results and compact status output. Existing native
+CLI and Web tools expose the same task and control semantics. Web preserves its
+original agent conversation list; CLI provides equivalent tool results and
+compact status output. Existing native
 `Agent`, result retrieval, and steering calls remain supported. Code Mode must
 keep the native delegation tools directly callable without requiring an
 unregistered `tools.*` bridge.
@@ -671,7 +684,8 @@ The plan is not an implementation-completion or deployment record.
 - "Do not keep the three existing engines behind a new facade."
 - "Default to four and accept configured limits only from one through four."
 - "Models inherit the parent's effective provider and model unless explicitly overridden."
-- "Default to fresh conversation context, background execution, and no recursive delegation."
+- "Default to fresh conversation context and background execution."
+- "Allow delegation through two edges (root -> child -> grandchild), without widening a child's effective capabilities."
 - "Do not add a daemon."
 - "Claim persistent execution ownership atomically for the parent session, covering all its batches and child runs."
 - "Never automatically commit, merge, delete worktrees, or remove branches."
@@ -1035,41 +1049,40 @@ callbacks. Both construct `SubagentParentHost` and call the same controller.
   retain their intended permissions. Rerun the adapter tests, regenerate/check
   the patch, and retain the tested adapter checkpoint for independent review.
 
-#### Task 6: Present tasks and controls in Web
+#### Task 6: Preserve original Web presentation and shared control APIs
 
 **Files:** Modify `components/AgentSessionPanel.tsx`, `components/AgentsConfig.tsx`,
 their tests, `components/AppShell.tsx`, `lib/api-types.ts`,
 `app/api/subagents/[id]/route.ts`, settings/profile routes and relevant tests.
-Create `app/api/subagents/tasks/route.ts` and its route tests. Add task display and
-action coverage to the existing package-local `e2e/run.mjs` flow; add translation
-keys to the existing `en`, `zh-CN`, and `zh-TW` message files.
+Retain `app/api/subagents/tasks/route.ts` and its route tests. Cover native
+conversation navigation and API resume in the existing package-local
+`e2e/run.mjs` flow without adding a task-management UI.
 
 **Interfaces:** `GET /pi/api/subagents/tasks?parentSessionId=...` returns inspectable
 task state and ownership. POST accepts the same parent control actions as
 `manage_subagents`. Resolve the actual parent and actor on the server before
 calling the controller; client input does not grant ownership or arbitrary file
-access. Active work owned elsewhere is viewable but its controls are disabled.
+access. Active work owned elsewhere is viewable but cannot be controlled.
 
 - [ ] Add failing route tests for missing parents, cross-parent child IDs,
   rejected owners, each control action, input-required reports, and read-only
-  managed settings. Add UI coverage for task/assignee/dependency/status display,
-  opening the existing child conversation, and accessible labelled controls.
+  managed settings. Add UI coverage for the original session list and child
+  navigation, with no additional task count, task cards, or parent-control forms.
 - [ ] Run `node --experimental-strip-types --test
   'app/api/subagents/**/*.test.mjs' components/AgentSessionPanel.test.mjs
   components/AgentsConfig.test.mjs` and capture the new failures.
-- [ ] Extend the existing agent panel rather than create another execution UI.
-  Render task state from the common API, keep child conversation links, and use
-  the existing SSE/session refresh path for updates. Preserve `/pi/` in every
-  new fetch URL, following the current subpath patch. Expose model/role details
-  without leaking credentials or entire prompts into compact status rows.
+- [ ] Keep the original agent panel and toolbar. Adapt native single/batch tool
+  results to the existing child-conversation shortcut. Preserve `/pi/` and the
+  existing SSE/session refresh path. Task state and controls remain in the
+  shared tools/API rather than replacing conversation rows.
 - [ ] Report Nix-managed settings/profiles as read-only with an explanatory UI
   state; reject mutations server-side before writing. Preserve existing editable
   unmanaged project profiles. Do not add a new configuration owner or locale.
 - [ ] Extend the existing disposable E2E fixture with seeded native tasks and
   run `node e2e/run.mjs` against its isolated server and browser. Use the `/pi/`
   base URL and a Nix-provided browser; do not download a mutable browser or use
-  real user sessions. Verify dependency-blocked and input-required states,
-  message/control delivery, and reconnect without resurrecting completed work.
+  real user sessions. Verify original rows at mobile and desktop widths,
+  API resume, and reconnect without resurrecting completed work.
   If the browser prerequisite is unavailable, record the blocker rather than
   claiming a source-pattern assertion proves the UI behavior.
 - [ ] Rerun affected route/component tests, regenerate/check the patch, and

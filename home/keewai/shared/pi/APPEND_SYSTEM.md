@@ -66,7 +66,10 @@ extension-dependent checks with the parent unless availability is verified.
 
 Use Agent tasks for independent work in one batch and needs edges only for real
 dependencies. The shared queue enforces one through four active children per
-canonical parent across all batches and resumes. Do not recurse or spawn idle
+canonical immediate parent across all batches and resumes. A child may delegate
+one further level: root -> child -> grandchild. Grandchildren must not delegate.
+Nested delegation must stay within the child's assigned authority and effective
+tool/resource scope; a read-only child cannot create a writer. Do not spawn idle
 children. Default to fresh context and background execution; handle complementary
 work while children run. Do not duplicate delegated investigations. Foreground
 waits are for results needed immediately, not idle polling.
