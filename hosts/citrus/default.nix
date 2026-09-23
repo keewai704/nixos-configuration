@@ -11,6 +11,7 @@
     ./apple-device-usb.nix
     ./nvidia.nix
     ./noctalia.nix
+    ./sunshine.nix
     ./web.nix
     ./stylix.nix
   ];

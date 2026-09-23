@@ -6,21 +6,10 @@
   ...
 }:
 let
-  piWeb = pkgs.callPackage ../../../../pkgs/pi-web {
-    pi-coding-agent = config.programs.pi-coding-agent.package;
-    runtimePackages = config.programs.pi-coding-agent.extraPackages;
-  };
+  piWeb = import ./web-package.nix { inherit config pkgs; };
 in
 {
   home.packages = [ piWeb ];
-  home.file.".pi/agent/agents".source = pkgs.writeTextDir "settings.json" (
-    builtins.toJSON {
-      version = 1;
-      builtInEnabled = false;
-      maxConcurrent = 4;
-    }
-  );
-
   systemd.user.services.pi-web = {
     Unit.Description = "Pi Web coding agent interface";
     Service = {

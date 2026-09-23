@@ -40,13 +40,13 @@
       };
       brightness.enable_ddcutil = osConfig.hardware.i2c.enable;
       lockscreen = {
-        enabled = true;
-        lock_before_suspend = true;
+        enabled = false;
+        lock_before_suspend = false;
         fingerprint = osConfig.services.fprintd.enable;
       };
       idle.behavior = {
         lock = {
-          enabled = true;
+          enabled = false;
           timeout = 600;
           action = "lock";
         };
@@ -57,7 +57,6 @@
         };
       };
       hooks = {
-        started = "noctalia msg session lock";
         colors_changed = "${pkgs.hyprland}/bin/hyprctl reload";
       };
     };

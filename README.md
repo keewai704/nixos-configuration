@@ -108,6 +108,7 @@ Nix に慣れていない場合は、まず次の構文が分かれば読み進�
 | デスクトップのパネル、ランチャー、アプリの配色 | [desktop/noctalia.nix](home/keewai/desktop/noctalia.nix) |
 | Discord クライアントとテーマ | [desktop/legcord.nix](home/keewai/desktop/legcord.nix)、[legcord-system24.nix](home/keewai/desktop/legcord-system24.nix) |
 | Steam と Millennium | [hosts/citrus/steam.nix](hosts/citrus/steam.nix)、[desktop/steam-theme.nix](home/keewai/desktop/steam-theme.nix) |
+| Sunshine 配信と仮想画面 | [hosts/citrus/sunshine.nix](hosts/citrus/sunshine.nix)、[sunshine-display](pkgs/sunshine-display/) |
 | 共通の色、フォント、壁紙 | [themes/tokyo-night-black/default.nix](themes/tokyo-night-black/default.nix) |
 | Orange の保存先、ポート、URL | [hosts/orange/settings.nix](hosts/orange/settings.nix) |
 
@@ -123,8 +124,9 @@ Apple USB CLI は [shared/apple-device-usb.nix](home/keewai/shared/apple-device-
 
 パネル、ランチャー、通知、クリップボード、壁紙、認証ダイアログ、ロックとアイドル制御は
 nixpkgs の [Noctalia v5](https://docs.noctalia.dev/noctalia/) が管理します。
-シェル起動時にロックし、アイドル 600 秒でロック、660 秒で画面を消灯します。
-ロック画面のメディア表示は Noctalia 標準のものを使います。
+Sunshine 配信のため画面ロックは無効です。起動時・アイドル時・サスペンド前のロックとロック用キーは無効にし、
+Noctalia のロック画面・ロック操作も無効にしています。アイドル 660 秒での画面消灯は維持します。
+無人時もデスクトップへアクセスできるため、端末とペアリング済みクライアントの管理に注意してください。
 GTK・Qt・Kitty・Hyprland の配色は Noctalia のテンプレートを優先し、対応する Stylix の配色は無効です。
 Home Manager はテンプレートの読み込み先を宣言し、生成される色ファイルは Noctalia が更新します。
 Stylix はフォント・カーソル・アイコン、起動時の表示と未対応アプリの設定に残します。
@@ -138,33 +140,64 @@ Home Manager は `useUserPackages = true` で NixOS に統合されています�
 ユーザーのパッケージは `/etc/profiles/per-user/keewai` に入り、適用には NixOS の再構築を使います。
 パッケージの所有場所を変えても、アプリの実行権限やサンドボックスは変わりません。
 
+### citrus の Sunshine 配信
+
+Sunshine は Hyprland セッションで起動し、物理モニターがなくても `SUNSHINE` 仮想画面を
+NVENC で配信します。入力用の uinput・udev と Avahi の統合は NixOS モジュール、
+Moonlight クライアントのインストールは Home Manager が担当します。
+管理画面は citrus 上の `https://localhost:47990` からのみ利用でき、UPnP は無効です。
+Moonlight には LAN の citrus または Tailscale の citrus アドレスを追加してペアリングします。
+
+| アプリ | 動作 |
+| --- | --- |
+| `Extend Display` | 既存画面の右に仮想画面を配置 |
+| `Steam Big Picture` | クライアントのみの表示に切り替え、Steam Big Picture を起動 |
+| `Client Only` | 他の画面を無効にして仮想画面だけに表示 |
+
+解像度とリフレッシュレートは接続時のクライアント設定に合わせます。
+HDR は有効にせず、まず 1920×1080・60 FPS・20 Mbps を測定の出発点にします。
+120 Hz 対応クライアントでは、1080p・120 FPS・40 Mbps・H.264・ハードウェアデコード、
+V-Sync とフレームペーシング無効を低遅延候補にできます。ティアリングが気になる場合は V-Sync を戻します。
+Moonlight の CLI では `moonlight stream citrus "Extend Display" --1080 --fps 120 --bitrate 40000 --video-codec H.264 --video-decoder hardware --no-vsync --no-frame-pacing --no-hdr` で指定できます。
+2026-09-21 の citrus 内 Moonlight/Weston ループバック測定では、描画 59.94 → 119.87 FPS、
+ホスト処理平均 2.2 → 2.2 ms、デコード平均 0.28 → 0.06 ms、ネットワーク欠落はいずれも 0% でした。
+これは合成映像・同一 GPU の測定で、外部端末や LAN/Wi-Fi、ゲーム負荷時の性能は保証しません。
+単なる切断ではアプリが継続するため、画面を戻すときは Moonlight の「アプリを終了」を使います。
+サービス停止時にも復元処理が走ります。サービス稼働中は仮想画面を維持します。
+終了時は Hyprland の設定を再読み込みして、宣言済みの画面設定と接続中の画面のワークスペース配置を戻します。
+途中で取り外した画面は、再接続時に宣言済みの設定を使います。その画面の以前のワークスペース配置や電源状態は復元できません。
+一時的な `hyprctl` の設定変更は再読み込みにより解除されます。
+`SUNSHINE` はサービス専用の予約出力名です。稼働中に同名の出力を手動で作り直さないでください。
+
 ## Pi・MCP・スキル
 
 | 場所 | 役割 |
 | --- | --- |
 | [shared/pi/default.nix](home/keewai/shared/pi/default.nix) | 全ホスト共通の Pi 設定の入口 |
 | [shared/pi/agent.nix](home/keewai/shared/pi/agent.nix) | 本体・実行環境、モデル、ローカル拡張と指示の配布 |
-| [skills/superpowers/](skills/superpowers/) | Superpowers 6.4.1 の Pi / Astra 向けローカルスキル |
+| [shared/pi/superpowers.nix](home/keewai/shared/pi/superpowers.nix) | Superpowers 6.4.1 公式 Pi パッケージの固定と読み込み |
 | [shared/pi/codex-conversion.nix](home/keewai/shared/pi/codex-conversion.nix) | Pi Codex conversion の導入、補助バイナリ、ツール・Remote context management・互換設定 |
 | [shared/pi/mcp.nix](home/keewai/shared/pi/mcp.nix) | Pi MCP アダプターの導入、共通 MCP サーバーの登録と設定変換 |
 | [shared/pi/lsp.nix](home/keewai/shared/pi/lsp.nix) | Pi LSP 拡張の導入、言語サーバーと診断設定 |
 | [shared/pi/web-search.nix](home/keewai/shared/pi/web-search.nix) | Pi Web 検索拡張の導入、検索・取得経路、CLI / Web 共通の設定ファイル |
 | [shared/pi/web.nix](home/keewai/shared/pi/web.nix) | Pi Web の導入、ユーザーサービス、ホストごとの tailnet 許可 |
-| [shared/pi/subagents.nix](home/keewai/shared/pi/subagents.nix) | Agent Teams・Crew・Core Subagent の固定版と読み込み対象 |
+| [shared/pi/subagents.nix](home/keewai/shared/pi/subagents.nix) | CLI/Web 共通のネイティブ委任・ロール・設定 |
 | [shared/pi/APPEND_SYSTEM.md](home/keewai/shared/pi/APPEND_SYSTEM.md) | 全プロジェクト共通の追加システム指示 |
 | [shared/pi/extensions/](home/keewai/shared/pi/extensions/)、[prompts/](home/keewai/shared/pi/prompts/) | キャッシュ監視・CLI 完了通知のローカル拡張、レビュー用プロンプト |
 | [desktop/pi/default.nix](home/keewai/desktop/pi/default.nix) | デスクトップ専用連携の入口 |
 | [desktop/pi/cua.nix](home/keewai/desktop/pi/cua.nix) | デスクトップ操作用ドライバーと MCP |
 | [shared/skills.nix](home/keewai/shared/skills.nix)、[skills/](skills/) | Pi 以外とも共有できる個人スキルの配布と編集元 |
 | [pkgs/pi-coding-agent/](pkgs/pi-coding-agent/)、[pkgs/pi-web/](pkgs/pi-web/) | アプリ本体のビルド定義とパッチ |
+| [pkgs/pi-codex-conversion/](pkgs/pi-codex-conversion/)、[pi-mcp-adapter/](pkgs/pi-mcp-adapter/)、[pi-web-access/](pkgs/pi-web-access/)、[pi-lsp/](pkgs/pi-lsp/) | 拡張本体と実行時依存関係の固定・ビルド |
 | [modules/common.nix](modules/common.nix) | ログイン前にもユーザーサービスを起動するための linger |
 | [citrus/web.nix](hosts/citrus/web.nix)、[orange/services/web.nix](hosts/orange/services/web.nix) | 既存の Tailscale Serve と nginx による HTTPS 公開 |
 
 共通プロフィールは `shared/pi/`、デスクトッププロフィールは追加で `desktop/pi/` を読み込みます。
 設定を追加するときは、既存の機能別ファイルへ追記するか、同じディレクトリに名前の明確な
 モジュールを作り、その `default.nix` の `imports` に追加します。
-拡張のバージョン・読み込み対象は、その機能を担当するモジュールで設定と一緒に管理します。
-`settings.packages` の `lib.mkOrder` は Codex conversion → MCP → Web 検索 → LSP → Teams・Crew・Core Subagent の
+npm 拡張のバージョンと依存関係は `pkgs/pi-*/`、読み込み対象と設定は担当の Home Manager モジュールで管理します。
+Superpowers の固定は `shared/pi/superpowers.nix` が担当します。
+`settings.packages` の `lib.mkOrder` は Codex conversion → MCP → Web 検索 → LSP → ネイティブ委任 → フィルター付き Superpowers の
 読み込み順を保つための指定です。Codex conversion のバージョンは補助バイナリと同じ定義を参照します。
 ローカル拡張は `extensions/`、プロンプトは `prompts/` に置いて `agent.nix` から配布します。
 共有スキル、パッケージのビルド、OS の公開設定は Pi 専用設定と役割が異なるため、
@@ -208,22 +241,43 @@ Nixpkgs のビルド定義を使ってソース・npm 依存関係・モデル�
 標準の ChatGPT 接続にはキャッシュ用ヘッダーを本文のキーに合わせる小さなパッチを適用しています。
 Pi Codex conversion が読み込まれる場合は、拡張自身の上流プロバイダー実装をそのまま使います。
 `@howaboua/pi-codex-conversion@3.0.37`、`pi-mcp-adapter@2.34.0`、`pi-web-access@0.30.0`、`@narumitw/pi-lsp@0.49.7`、
-`@melihmucuk/pi-crew@1.0.34` は
-Pi 標準のパッケージ管理で初回起動時に取得し、npm の lifecycle scripts を無効にします。
-拡張のバージョン指定は Nix 管理で、取得した依存関係とロックは `~/.pi/agent/npm/` に保存されます。
-この npm 依存関係のロックは flake.lock には含まれません。
+以上の4拡張は Nix で固定し、Home Manager の `settings.packages` から
+Nix ストアのパッケージを直接読み込みます。初回起動時の npm インストールは不要です。
+通常の依存関係を持つ拡張は各 `pkgs/pi-*/package.json` と `package-lock.json`、`npmDepsHash` で
+配布物と依存関係を固定し、lifecycle scripts と Pi SDK の重複インストールを無効にしてビルドします。
+Pi SDK だけに依存する LSP は npm 配布物のハッシュを固定します。
+Code Mode の実行ホストも上流の固定済み配布物を同梱し、起動時のダウンロードを不要にします。
+更新時は担当パッケージのバージョン・ロック・ハッシュを更新して NixOS の検証と適用を行います。
+`pi update --extensions` ではこれらの固定パッケージを更新しません。
+認証・会話・実行時キャッシュは引き続き `~/.pi/agent` に保存します。
+以前の `~/.pi/agent/npm/` は読み込みに使わず、自動削除もしません。
 
 [Superpowers 6.4.1](https://github.com/obra/superpowers/tree/5bf4e78011075bcfc0dc295f0724994cd123ee71)
-の全15スキルを、[Astra の公式ガイド](https://developers.openai.com/api/docs/guides/latest-model#prompting-best-practices)
-に合わせたローカル版として [skills/superpowers/](skills/superpowers/) で管理します。
-上流リビジョンと MIT ライセンスを保持し、Home Manager が `~/.agents/skills/superpowers/` へ配布します。
-Pi の標準探索を使い、`/skill:using-superpowers`、`/skill:brainstorming`、
-`/skill:systematic-debugging` などで呼び出せます。開発時は `APPEND_SYSTEM.md` が入口スキルを案内します。
-不要な承認待ち、固定回数のレビュー・テスト、別ハーネス専用ツールの指示を調整し、
-変更に必要な検証、独立レビュー、許可された作業の完遂を重視します。
-Ponytail、利用者の明示指示、AGENTS.md の配置・検証・承認規則を維持します。
-上流のブートストラップ拡張、ブラウザー補助、実行スクリプト、会話のエクスポート機能は配布しません。
-スキルは npm では取得せず、このリポジトリで更新します。適用後は新しいタスクで読み込んでください。
+は [superpowers.nix](home/keewai/shared/pi/superpowers.nix) で上流リビジョンとハッシュを固定し、
+改変せず Nix ストアから公式 Pi パッケージとして読み込みます。
+Pi 標準の `extensions = []` で bootstrap 拡張を無効にし、`skills` フィルターで
+`using-superpowers` を通常の探索・スキルコマンドから除外します。残り14スキルは利用できます。
+開始時・コンパクション後の自動注入と、入口スキルの通常候補への掲載は行いません。
+通常は Superpowers を使わず、[APPEND_SYSTEM.md](home/keewai/shared/pi/APPEND_SYSTEM.md) の条件で選択します。
+
+| 作業 | 運用 |
+| --- | --- |
+| 原因・修正方針が明確なバグ修正、通常の設定変更 | Superpowers なし。範囲と必要な確認を明確にして直接実施 |
+| 要件や設計に重要な未決事項がある変更 | `brainstorming` で認識を合わせる |
+| 複数段階の調整・計画が必要な変更 | `writing-plans` と `executing-plans`（Native execution）を優先 |
+| 高リスクな変更、厳密な検証の明示依頼 | 必要なデバッグ・テスト・検証スキルだけを選択 |
+| 独立した実装作業を分担する利点が明確な変更 | `subagent-driven-development` を検討。規模だけでは選ばない |
+
+`/skill:brainstorming`、`/skill:executing-plans` などで個別に指定できます。
+フル運用を明示依頼した場合だけ、Pi 設定にある固定パッケージ内の
+`skills/using-superpowers/SKILL.md` を直接読み込みます。通常の `/skill:using-superpowers` は登録しません。
+上流の広い発動条件や「1%」ルールよりこの選択方針を優先し、1スキルの利用から全工程へ自動展開しません。
+Native execution は親が現在のセッションで実装し、最後に別コンテキストで変更全体をレビューします。
+Superpowers を使わない場合も、必要な確認・独立レビュー・コミット・適用の規則は省略しません。
+ローカル改変版は配布せず、`~/.agents/skills/superpowers/` との二重読み込みを避けます。
+Ponytail、利用者の明示指示、AGENTS.md の配置・検証・承認規則は引き続き優先します。
+更新は Nix の固定リビジョンとハッシュを変更して行います。既存の会話に読み込まれた指示は消えないため、
+適用後は新しい Pi セッションで利用してください。モデルと effort の既定値はこの運用変更では変えません。
 
 [Pi 0.86.0](https://github.com/earendil-works/pi/blob/v0.86.0/packages/coding-agent/CHANGELOG.md) は
 プロバイダーへ渡すシステム指示・ツール定義を `TranscriptContext.messages` 内へ移しました。
@@ -245,7 +299,7 @@ Codex 対象モデルでは **Code Mode** と実験的 **Context management: Rem
 `tools.exec_command`、`tools.write_stdin`、`tools.apply_patch`、`tools.view_image` を組み合わせます。
 既存の MCP・検索・LSP・サブエージェントなどは維持し、Code Mode の登録 API に対応した拡張だけが
 `exec` 内にも公開されます。非対象モデルでは通常の Pi ツールに戻ります。
-初回実行では上流が固定した Code Mode ホストをチェックサム検証付きでキャッシュへ取得します。
+Code Mode ホストもハッシュを固定して Nix パッケージへ同梱し、初回実行時の取得は不要です。
 Notebook Mode は有効にしません。
 
 Remote は Codex のサーバー側 history / notes を暗号化された契約で利用し、
@@ -395,75 +449,730 @@ Web 版と CLI は `~/.pi/agent` の認証、設定、拡張、スキル、会�
 Pi Web が内部で使う Pi SDK も、このリポジトリのキャッシュ修正版を使います。
 Home Manager が管理する設定・モデル・スキルの変更は、Web 画面ではなく Nix の編集元で行います。
 
-### Pi の委任拡張
+### Pi のネイティブ委任
 
-[Agent Teams](https://github.com/tmustier/pi-agent-teams)、
-[Crew](https://github.com/melihmucuk/pi-crew)、
-[Core Subagent](https://github.com/arhen/pi-extensions/tree/main/packages/core/pi-core-subagent) を
-[subagents.nix](home/keewai/shared/pi/subagents.nix) で管理します。
-同名の別実装ではなく、上記の scoped npm パッケージを固定して読み込みます。
-Teams 0.5.5 は [pkgs/pi-agent-teams](pkgs/pi-agent-teams/default.nix)、Core 1.3.55 は
-[pkgs/pi-core-subagent](pkgs/pi-core-subagent/default.nix) で npm 配布物をハッシュ固定します。
-Teams には明示ツールリストでも子の `team_message` を有効にする修正を適用します。
-さらに Teams の起動時 GC・終了時削除、Core の起動時自動復旧コミット・既存ブランチ掃除を止め、
-未統合の worktree とブランチを保持します。後片付けは内容と統合状況を確認し、明示的な許可を得て行います。
-Core の取消は子の終了処理後に run を終端状態へ移し、取消直後の resume との競合を防ぎます。
-実行時の依存は Pi SDK を使い、Teams と Core の取得に初回起動時の npm は使いません。
-旧 pi-subagents のパッケージ・設定・専用 config.json の配布は廃止します。
-Pi Web 内蔵側は引き続き `agents/settings.json` の `builtInEnabled: false` で無効にします。
+CLI と Web は [Pi Web パッケージ](pkgs/pi-web/default.nix) の同じ実装を使います。
+[subagents.nix](home/keewai/shared/pi/subagents.nix) が登録・共通設定、
+[web.nix](home/keewai/shared/pi/web.nix) が Web サービスを所有し、
+[web-package.nix](home/keewai/shared/pi/web-package.nix) で同じ SDK・派生を共有します。
+CLI は `pi-web-native-subagents/subagent-cli-extension.js` のみを読み込み、Web サーバーを起動しません。
+Web 内では CLI エントリーとの二重登録を抑止します。
 
-| 拡張 | 主な用途と操作 |
+| ツール | 操作 |
 | --- | --- |
-| Crew | 通常の委任。`crew_list`、`crew_spawn`、`crew_status`、`crew_respond`、`crew_done`、`crew_abort` |
-| Core Subagent | 呼び出しごとの専門役・依存関係付きタスク。`subagent`、`subagent_status`、`subagent_result`、`await_subagent`、`steer_subagent`、`resume_subagent`、`subagent_cancel`、`reply_subagent` |
-| Agent Teams | 共有タスク一覧・チーム間メッセージ。`teams` ツール、`/team`、`/swarm` |
+| `Agent` | 単独・バッチの委任、明示的な resume |
+| `get_subagent_result` | 結果・状態・保持した子履歴の取得 |
+| `steer_subagent` | 実行中・待機中の子への情報伝達 |
+| `manage_subagents` | list / assign / message / answer / cancel / close / release |
 
-Crew の役割は同梱の `scout`、`planner`、`oracle`、`worker`、`code-reviewer`、`quality-reviewer` を使い、
-独自プロファイルへ複製しません。`crew_spawn` の `task` は `goal`・`context`・`instructions` を持つ構造です。
-結果は自動通知され、確認後に `crew_done` で閉じます。追加指示は完了済み・入力待ちの子に
-`crew_respond` で渡します。実行中の子への steering や失敗後の resume と同じ操作ではありません。
-同梱スキルと `/pi-crew-plan`・`/pi-crew-review` も読み込み、共通 `/review` は `code-reviewer` を利用します。
-同梱の読み取り専用役にも `bash` があり、読み取り専用は指示上の制約であってサンドボックスではありません。
-親の Astra・`xhigh` は維持し、Crew のモデル・推論指定は同梱役割に従います。
+Crew から明確な役割と構造化依頼・検証後 close、Core からバッチ依存関係・明示 resume、
+Teams から共有タスク・送信者付きメッセージを取り込みました。旧3エンジンのラッパーではありません。
+`pkgs/pi-crew/` の旧ビルド定義は保持していますが、Crew 拡張は登録・読み込みしません。
+`scout`、`planner`、`oracle`、`worker`、`code-reviewer`、`quality-reviewer` を提供し、
+Crew の固定ソースから役割本文を生成して MIT ライセンスを同梱します。
+`general-purpose`、`explore`、`plan` は互換名です。モデルは親の実効モデルを継承します。
 
-Core は `subagent({ agent: "auditor", prompt: "...", task: "...", cwd: "..." })` のように役割を渡します。
-既定は fresh context・バックグラウンド・読み取り専用で、起動後に一度 status を確認し、完了通知後に result を取得します。
-同じ呼び出しの結果を直ちに使う場合は `autoAwait: true`、並列処理は `tasks`、本当の依存関係だけに `needs` を使います。
-子は ambient 拡張を読み込まず、モデル未指定なら親のモデルを継承します。旧 pi-subagents の役割・API ではありません。
-`bash`・`edit`・`write` を持つ子は Git worktree に分離され、終了時に拡張が自動コミットします。
-このリポジトリではコミットを親が担当するため、Core は読み取り専用の委任に使います。
-差分レビューでは親が実際の未コミット差分・新規ファイルを渡し、別 worktree に自動転送されるとは扱いません。
+`manage_subagents(action: "list")` で現在のワークスペースの役割・タスクを確認します。
+単独なら `subagent_type`、バッチなら `profile` を完全一致で指定します。
+依頼は `assignment: {goal, context, instructions}`、独自専門性は明示的な `specialist_prompt` です。
+読み取り専用ロールはシェルを持たないため、レビューには読める差分ファイルと新規ファイルを渡します。
+子への拡張の継承は既定で無効です。ツール制限・worktree は OS サンドボックスではありません。
 
-Teams は共有タスクとメッセージが必要な場合に選びます。`contextMode: "fresh"` を優先し、
-並列編集には `workspaceMode: "worktree"`、使用する名前は `teammates` で明示します。
-Crew は親と同じ cwd で起動するため、並列編集では親が用意した checkout への絶対パス操作を指示します。
-Crew 自体が cwd を分離する機能ではありません。
-Teams の hooks は既定の無効のままとし、追加の自動チェックループは構成しません。
-各拡張は異なる状態管理を持つため、同じ仕事を複数へ投入したり ID を使い回したりしません。
-Pi Web の旧内蔵一覧がこれらの実行一覧に変わるわけではありません。
+既定は fresh context・バックグラウンドです。独立作業は1バッチ、前提は `needs` に指定します。
+同じ親の全バッチ・resume を共通キューで最大4子に制限します（設定範囲1〜4）。
+writer は明示した `input_revision` のコミットから独立 worktree に作成します。
+未コミット変更は転送されず、`integrated_changes` 依存は親が統合後のコミット OID で
+前提タスクを release するまで開始しません。自動コミット・マージ・worktree 削除は行いません。
 
-[APPEND_SYSTEM.md](home/keewai/shared/pi/APPEND_SYSTEM.md) により、調査・計画・実装・レビューでは
-早い段階で有用な部分を自動委任します。単なる応答や即答には起動せず、明示的な無効化指示を優先します。
-3拡張を合わせて同時4子までという運用方針を守り、再帰的なチームや不要な子は作りません。
-これは共通スケジューラーによる強制制限ではありません。Core のバッチには `concurrency: 4` 以下を渡します。
-委任しても監査・リモート操作・公開などの権限は広がらず、統合・コミット・適用は親が担当します。
-変更後は fresh context の独立レビューを取得し、実際の差分と結果を確認してからコミットします。
-失敗時は親が補完し、独立レビュー済みとは扱いません。子もモデルの利用枠を消費します。
+Web のタスク一覧から未割当・依存待ち・実行中・入力待ち・完了・失敗・中断を確認でき、
+割当、メッセージ、回答、resume、cancel、統合 release、検証済み close を操作できます。
+直近100件の送信者付きメッセージを表示し、それ以前もメタデータに保持します。
+子の会話はリンクから確認できます。close には現行レポートの delivery ID が必要で、履歴は残ります。
 
-Code Mode でも委任ツールは直接呼び出し、未登録の `tools.crew_spawn`・`tools.teams`・`tools.subagent` が
-`exec` 内にあるとは仮定しません。拡張・ツールの継承方法は3パッケージで異なるため、
-検索や拡張依存の検証は、子の実ツールを確認できた場合以外は親が担当します。
-共有設定は Nix の編集元で変更し、パッケージ同梱の役割を管理操作で書き換えません。
-`~/.pi/agent/agents` の Pi Web 無効化設定は読み取り専用の Nix Store ディレクトリを維持します。
+同じ親の実行所有権は1プロセスだけが保持します。他の CLI/Web は閲覧できますが操作できません。
+終了・クラッシュ後は自動実行せず、明示的な resume が必要です。CLI 終了後の常駐実行は保証しません。
+Code Mode でも4ツールは直接利用し、未登録の `tools.Agent` 等を仮定しません。
+委任は有用な場合に限定し、独立レビューとリポジトリの検証・適用ゲートを維持します。
 
-旧パッケージの取得済み npm ファイル・実行履歴・認証情報は自動削除せず、旧 ID を新拡張へ自動移行しません。
-移行前の子を終了してから新しいセッションを開始してください。既存セッションの実行中に `/reload` しません。
-旧内蔵履歴の中断表示用 [interrupted-subagents.patch](pkgs/pi-web/interrupted-subagents.patch) は維持します。
-新しい実行は選択した拡張のツール結果・状態・子のセッションファイルで確認します。
+旧 Teams・Crew・Core の登録と同梱スキル・プロンプトの読み込みを解除します。
+取得済み npm ファイル、認証、旧履歴、未統合 worktree、ロールバック用レシピは削除しません。
+旧プラグイン ID は自動移行されません。旧子を終了してから新しいセッションを開始し、
+移行中のセッションで `/reload` しないでください。Nix 管理の設定・ロールは画面から変更できません。
 
-状態確認は `systemctl --user status pi-web`、ログは `journalctl --user -u pi-web`、
-再起動は `systemctl --user restart pi-web` です。
-ソース、npm 依存関係、フォントは固定し、Nix のビルド中にネットワークからフォントを取得しません。
+状態は `systemctl --user status pi-web`、ログは `journalctl --user -u pi-web` で確認します。
+ソース・依存・フォントは固定し、既存 `/pi/` の公開経路を維持します。
+
+### Unified CLI/Web subagents: approved design
+
+This section records the approved contract. The implementation is carried by the
+package patch and common Nix registration above. Implementation checks and local
+activation are separate gates; the plan below is not a deployment record.
+
+#### Goal and ownership
+
+Replace Agent Teams, Crew, and Core Subagent in both CLI and Pi Web with one
+implementation derived from Pi Web's built-in subagents. Share role discovery,
+task scheduling, child-session lifecycle, results, and persistence. Do not keep
+the three existing engines behind a new facade.
+
+Keep the shared implementation and its CLI entry point with the Pi Web package
+sources and patches in [pkgs/pi-web/](pkgs/pi-web/). The Web adapter owns browser
+events and session presentation; the CLI adapter owns extension registration and
+terminal presentation. Neither adapter owns a second scheduler. CLI loading must
+not start Next.js or require the Web service to be running. Both adapters use the
+same packaged Pi SDK and public SDK interfaces, including provider registration
+and authentication handling.
+
+[subagents.nix](home/keewai/shared/pi/subagents.nix) owns the common delegation
+package registration, roles, and settings. [web.nix](home/keewai/shared/pi/web.nix)
+continues to own the Web application and user service. Settings and distributed
+roles remain Nix-managed, not editable through agent-management operations.
+
+#### Roles and assignment contract
+
+Provide six explicit roles: `scout` for discovery, `planner` for implementation
+plans, `oracle` for decisions, `worker` for implementation, `code-reviewer` for
+correctness, and `quality-reviewer` for maintainability. Adapt the useful role
+contracts from Crew without modifying its installed package-owned definitions;
+retain the applicable license notices. Keep the native `general-purpose`,
+`explore`, and `plan` names as compatibility aliases.
+
+Select roles by exact name. Support an explicitly supplied specialist prompt
+without fuzzy matching that silently replaces the caller's choice. Models inherit
+the parent's effective provider and model unless explicitly overridden; do not
+hard-code Crew's model allocations. Validate model and thinking overrides before
+starting work and report unavailable choices without silently substituting one.
+
+Accept self-contained assignments with `goal`, `context`, and ordered
+`instructions`. Preserve the native single-task prompt form for compatibility.
+Default to fresh conversation context, background execution, and no recursive
+delegation. Load the working directory's applicable repository instructions;
+fresh context does not mean dropping `AGENTS.md`. Tool and resource selection must
+be explicit and consistent on first start and resume. Tool restrictions and Git
+worktrees are not an operating-system sandbox.
+
+#### Tasks, communication, and presentation
+
+Support single tasks and batches with explicit IDs and dependency edges. Reuse
+the native queue with a hard maximum of four active children per parent session.
+Default to four and accept configured limits only from one through four. Enforce
+this limit for all starts and resumes, including separate batches for the same
+parent; it is not a global limit shared by unrelated parents. Validate duplicate
+IDs, unknown dependencies, and cycles before launching a batch. A dependent task
+starts only after its prerequisites succeed and receives their bounded results.
+Failure, cancellation, or unresolved input must not be passed downstream as success.
+
+Maintain a task list with assignments, dependencies, status, and child-session
+links. Allow the parent to assign pending work and send messages; allow scoped
+parent/child and sibling communication within the same delegation group. Messages
+must retain their sender and be distinguishable from user authorization. Prevent
+cross-parent control and recursive spawning by enforcing ownership and child tool
+availability, not only by prompting.
+
+Distinguish queued or dependency-blocked work, running work, input required,
+completed reports, failure, cancellation, and interruption. A structured report
+contains its outcome and complete report text; input requests also state what is
+needed. The parent can answer input requests, steer running work, follow up in the
+same child session, stop work, and close a verified delivery. Closing releases
+runtime resources without deleting the retained session or worktree. Preserve
+plain-text results from legacy native sessions.
+
+CLI and Web expose the same task and control semantics. Web presents the task
+list, dependencies, progress, messages, and inspectable child conversations; CLI
+provides equivalent tool results and compact status output. Existing native
+`Agent`, result retrieval, and steering calls remain supported. Code Mode must
+keep the native delegation tools directly callable without requiring an
+unregistered `tools.*` bridge.
+
+#### Persistence, interruption, and write isolation
+
+Use Pi sessions for child transcripts and versioned delegation metadata for task
+state and result delivery. Bound result and message payloads and keep complete
+reports inspectable without injecting every child transcript into the parent.
+Avoid rewriting old conversation history or moving credentials into task metadata.
+
+Do not add a daemon. Active execution belongs to the CLI or Web process that
+started it. Claim persistent execution ownership atomically for the parent
+session, covering all its batches and child runs. While that owner is live, a
+second process cannot enqueue another group for the same parent, control its
+children, or resume its work. Another interface may inspect persisted history
+but must report that execution is owned elsewhere rather than take it over.
+When the owner exits or restarts, unfinished work becomes interrupted and requires
+explicit resume. CLI exit does not promise detached execution. Do not
+automatically replay tasks after a crash or uncertain completion.
+
+Cancellation must finish child teardown before a run becomes resumable. Resume
+retains the task's session, workspace, role, and effective resource configuration;
+an explicit model override may resolve a provider failure. Persist result-delivery
+state and reconcile undelivered reports when the parent resumes, without silently
+starting another child or repeating an already acknowledged delivery.
+
+Parallel writers use separate Git worktrees from an explicit committed input.
+Reject an isolation request when that input cannot be provided; do not silently
+fall back to editing a shared checkout. Uncommitted parent changes are not copied
+implicitly. Passing an upstream report does not transfer its file changes: work
+requiring those changes waits for the parent to integrate them and explicitly
+release the dependent task against the integrated revision. Independent work may
+continue. Never automatically commit, merge, delete worktrees, or remove branches.
+Integration, commits, activation, and authorized cleanup remain parent-owned.
+
+#### Migration and acceptance
+
+Switch CLI and Web together: remove the three plugin registrations and their
+loaded skills/prompts, enable the shared native implementation, and update
+[APPEND_SYSTEM.md](home/keewai/shared/pi/APPEND_SYSTEM.md),
+[/review](home/keewai/shared/pi/prompts/review.md), and the delegation guidance here.
+Preserve unrelated extensions, model settings, and the existing `/pi/` exposure.
+Stop old children before starting replacement sessions; do not reload the live
+migration session. Retain downloaded old packages, historical plugin data,
+authentication, and unmerged worktrees. Old plugin run IDs are not native run IDs
+and are not automatically resumed or converted.
+
+Use the existing package test framework for shared runtime and adapter coverage.
+Use disposable agent state and synthetic local providers, not real credentials
+or paid model calls, for lifecycle integration tests. Required behaviors include
+role discovery, provider bindings, Code Mode tool availability, both adapter
+paths, concurrency, dependency failures, messages, input/follow-up/close, result
+delivery, cancellation/resume, process ownership, and retained writer changes.
+Verify that child repository instructions and tool restrictions survive resume.
+Keep detailed validation guidance in
+[nixos-validation](.agents/skills/nixos-validation/SKILL.md), not a separate check
+suite or documentation directory.
+
+After implementation, obtain a fresh-context diff review, run the relevant
+checks, and commit only task changes. Test and switch the committed configuration
+only on the verified local host, Citrus, with the repository's network, unit,
+affected-service, and running/boot-default checks. Do not deploy to Orange or
+publish remotely. Until implementation and those gates pass, the integration
+remains planned rather than deployed.
+
+### Unified CLI/Web subagents implementation plan
+
+> **For agentic workers:** Use `superpowers:subagent-driven-development` or
+> `superpowers:executing-plans` after the user reviews this plan and selects the
+> execution method. The parent owns staging, commits, integration, and activation.
+
+**Goal:** Replace the three delegation plugins in CLI and Web with the same
+Pi Web-derived runtime, six roles, durable task coordination, and safe recovery.
+
+**Architecture:** Extend the existing native controller and queue rather than
+wrapping the old engines. Extract shared child-session construction, persistent
+task state, and parent execution ownership. Thin CLI and Web adapters supply
+parent context and presentation; a bundled CLI entry uses the same source.
+
+**Tech stack:** TypeScript, Node.js, the pinned Pi 0.87.1 SDK, existing `node:test`
+and `jiti` tests, React/Next.js, existing `proper-lockfile`, and Nix/Home Manager.
+
+**Spec:** [Approved design](#unified-cliweb-subagents-approved-design).
+The plan is not an implementation-completion or deployment record.
+
+#### Global constraints
+
+- "Do not keep the three existing engines behind a new facade."
+- "Default to four and accept configured limits only from one through four."
+- "Models inherit the parent's effective provider and model unless explicitly overridden."
+- "Default to fresh conversation context, background execution, and no recursive delegation."
+- "Do not add a daemon."
+- "Claim persistent execution ownership atomically for the parent session, covering all its batches and child runs."
+- "Never automatically commit, merge, delete worktrees, or remove branches."
+- "Uncommitted parent changes are not copied implicitly."
+- "Old plugin run IDs are not native run IDs and are not automatically resumed or converted."
+- "Do not deploy to Orange or publish remotely."
+- Retain `/pi/`, the packaged SDK, other plugins, authentication, and history.
+  Use package-local tests; do not create repository-local check suites or docs.
+
+#### Review focus
+
+1. A registered provider or Code Mode changes the effective tool set: test the
+   actual SDK-created child and its resumed session, not only declared profiles
+   (Tasks 3 and 5).
+2. CLI and Web race for the same parent, or a PID is reused: exactly one execution
+   owner wins; uncertain liveness never permits takeover (Task 2).
+3. A cancelled child is still tearing down while another batch or resume arrives:
+   preserve the four-child bound and reject overlapping attempts (Tasks 3 and 4).
+4. A notification is queued but not persisted, or the CLI changes parent sessions:
+   do not lose reports, duplicate acknowledged reports, or notify the wrong parent
+   (Tasks 4 and 5).
+5. An upstream writer reports success with unmerged changes: retain clean and
+   dirty worktrees and keep file-dependent work blocked until explicit integration
+   release; test paths containing spaces (Tasks 3 and 4).
+
+#### Source and patch workflow
+
+Keep repository edits in the task worktree, separate from the occupied main
+index. Prepare a disposable Pi Web source checkout from the pinned source in
+`pkgs/pi-web/default.nix`, apply its four existing patches in order, and record
+that as the patch baseline. Never edit Nix Store files. Restore development
+dependencies offline from that derivation's `npmDeps` cache into the disposable
+checkout, after running `use-packaged-pi-sdk.mjs` on its manifests. Use the same
+SDK symlinks as `postConfigure`. Do not install mutable global dependencies or
+run baseline builds unrelated to a changed behavior.
+
+All `lib/`, `components/`, `app/`, and `e2e/` paths below refer to that disposable
+Pi Web checkout. Carry its changes in the new
+`pkgs/pi-web/unified-subagents.patch`, appended after the existing four patches.
+Generate the patch from the recorded baseline, including new source files and
+package-local tests. Apply it to a second clean copy of that same patched
+baseline with `git apply --check` before each task commit. Update only task files;
+parent commits use explicit paths, never `git add .` in the Nix checkout.
+Tasks 1 through 6 leave tested checkpoints in that task diff. Do not commit
+implementation checkpoints before an independent review of their actual diff;
+the native execution path consolidates them in the reviewed Task 7 commit.
+
+#### Task 1: Define roles, task contracts, and the hard concurrency limit
+
+**Files:** Modify `lib/subagents.ts`, `lib/subagent-settings.ts`,
+`lib/subagent-queue.ts`, and their existing tests. Create
+`lib/subagent-task-types.ts`, `lib/subagent-task-types.test.mjs`, and generated
+`lib/subagent-role-data.json`. Add the patch and role-generation build wiring to
+`pkgs/pi-web/default.nix`; create `pkgs/pi-web/build-subagent-roles.mjs`.
+
+**Interfaces:** Keep native v1 metadata readable. Use the following shared types;
+`context` remains an array, matching the approved structured assignment contract.
+
+```ts
+export type Assignment = string | {
+  goal: string;
+  context: string[];
+  instructions: string[];
+};
+export type Dependency = { taskId: string; input: 'report' | 'integrated_changes' };
+export type DelegationReport =
+  | { outcome: 'completed' | 'failed'; report: string }
+  | { outcome: 'needs_input'; report: string; needs: string };
+export type TaskStatus =
+  | 'blocked' | 'queued' | 'running' | 'cancelling' | 'needs_input'
+  | 'completed' | 'failed' | 'aborted' | 'interrupted';
+export interface TaskInput {
+  id: string;
+  profile: string;
+  description: string;
+  assignment: Assignment;
+  needs: Dependency[];
+  inputRevision?: string;
+  specialistPrompt?: string;
+  model?: string;
+  thinking?: ThinkingLevel;
+}
+```
+
+- [ ] Add failing tests for six canonical roles and three native aliases,
+  structured and plain assignments, blank fields, unknown report outcomes,
+  `needs_input` without `needs`, and the boundary values below.
+
+  ```js
+  import assert from 'node:assert/strict';
+  import test from 'node:test';
+  import { createJiti } from 'jiti';
+  const { validateSubagentLimit } = await createJiti(import.meta.url)
+    .import('./subagent-settings.ts');
+  test('enforces the native limit', () => {
+    for (const value of [1, 4]) assert.equal(validateSubagentLimit(value), value);
+    for (const value of [0, 5, 1.5, NaN]) {
+      assert.throws(() => validateSubagentLimit(value));
+    }
+  });
+  ```
+
+- [ ] Run `node --experimental-strip-types --test lib/subagent-settings.test.mjs
+  lib/subagent-queue.test.mjs lib/subagents.test.mjs
+  lib/subagent-task-types.test.mjs`; confirm the new assertions fail before fixes.
+- [ ] Define the shared schemas and `formatAssignment(assignment: Assignment):
+  string`. Reject whitespace-only required strings and empty instructions. Set
+  missing concurrency to four and reject explicit invalid settings. Call this
+  same validation at the queue boundary instead of clamping arbitrary values.
+
+  ```ts
+  export function validateSubagentLimit(value: number): number {
+    if (!Number.isInteger(value) || value < 1 || value > 4) {
+      throw new Error('maxConcurrent must be an integer from 1 through 4');
+    }
+    return value;
+  }
+  ```
+
+- [ ] Fetch only the fixed Crew 1.0.34 source as a build input from
+  `https://registry.npmjs.org/@melihmucuk/pi-crew/-/pi-crew-1.0.34.tgz`, with NAR
+  hash `sha256-VICdpdnYu+JdtT2t+4DEARiPkY9kGBVkKBpX17qLU9U=`. Generate role body
+  and description data from its six `agents/*.md` files after `postConfigure`,
+  when the existing YAML parser is available; preserve its MIT notice.
+  Do not import its runtime or model allocations. Non-worker defaults use the
+  native read-only tool preset; worker uses coding tools and worktree isolation.
+  Keep exact role selection and explicit specialist prompts. Map
+  `general-purpose -> worker`, `explore -> scout`, and `plan -> planner` only as
+  built-in aliases, without overriding an exact user-defined profile.
+- [ ] Rerun the focused tests. Package-local tests must verify generated roles,
+  not mirror a hand-maintained list in a second runtime. Regenerate/check the
+  patch and retain this tested checkpoint for the independent diff review.
+
+#### Task 2: Persist task state and claim one owner per parent
+
+**Files:** Create `lib/subagent-state.ts`, `lib/subagent-state.test.mjs`,
+`lib/subagent-ownership.ts`, and `lib/subagent-ownership.test.mjs`. Extend shared
+types in `lib/subagent-task-types.ts`.
+
+**Interfaces:** `readDelegationState(agentDir, parentSessionFile)` returns the
+versioned state or no state. `updateDelegationState(agentDir, parentSessionFile,
+mutate)` performs a locked read-modify-atomic-write. `claimParent`, `assertOwner`,
+and `releaseParent` use a token containing parent identity and process identity.
+`validateBatch(tasks: TaskInput[]): void` validates a complete batch before any
+session or worktree creation. `readyTaskIds(state): string[]` is a pure selector.
+
+- [ ] Add tests that two processes cannot claim the same parent, separate parents
+  can proceed, PID reuse is not mistaken for the old owner, and uncertain process
+  identity fails closed. Test malformed/unsupported state, duplicate IDs, unknown
+  or self dependencies, cycles, unassigned work, and failed prerequisites.
+
+  ```js
+  import assert from 'node:assert/strict';
+  import { createJiti } from 'jiti';
+  const { validateBatch } = await createJiti(import.meta.url)
+    .import('./subagent-state.ts');
+  const task = (id, needs = []) => ({
+    id, profile: 'scout', description: id, assignment: 'Inspect', needs,
+  });
+  assert.throws(() => validateBatch([
+    task('a', [{ taskId: 'b', input: 'report' }]),
+    task('b', [{ taskId: 'a', input: 'report' }]),
+  ]), /cycle/i);
+  assert.doesNotThrow(() => validateBatch([
+    task('a'), task('b', [{ taskId: 'a', input: 'report' }]),
+  ]));
+  ```
+
+- [ ] Run `node --experimental-strip-types --test lib/subagent-state.test.mjs
+  lib/subagent-ownership.test.mjs`; confirm the new behavior is absent.
+- [ ] Store state under the writable agent directory's `native-subagents/`, keyed
+  by a hash of the canonical parent session path. Do not write into the managed
+  `agents/` directory. Use private directories and files (0700 and 0600).
+  State records parent/group/task IDs, assignment, role,
+  dependencies, attempt, child session, resource snapshot, workspace, report,
+  messages, pending deliveries, and `closedAt`. Preserve terminal outcomes when
+  closing a delivery. Reject unsupported versions rather than overwriting them.
+- [ ] Reuse `proper-lockfile` for short metadata critical sections and
+  `writePrivateFileAtomicSync` for replacement. Persist a random ownership token,
+  PID, Linux boot identity and process-start identity. Check actual process
+  identity before recovering ownership; a stale lock timestamp alone is not
+  permission to take over. Claim at the parent level, covering all its batches.
+  Read-only inspection never claims ownership or starts work. Recover unfinished
+  work as interrupted, never by automatically enqueueing it.
+- [ ] Implement DAG validation and readiness without a second execution queue.
+  Report dependencies require completed reports. Integrated-change dependencies
+  additionally require a parent-approved commit OID. Bound messages to 8 KiB,
+  structured reports to 256 KiB, and injected report excerpts to 32 KiB, measured
+  as UTF-8 bytes; retain links to complete reports and reject oversized writes.
+- [ ] Rerun the two test files and the queue tests. Regenerate/check the patch and
+  retain the tested state/ownership checkpoint for independent review.
+
+#### Task 3: Share child-session creation, recovery, and write isolation
+
+**Files:** Create `lib/subagent-session.ts` and `lib/subagent-session.test.mjs`.
+Modify `lib/subagent-runtime.ts`, `lib/subagent-prompt.ts`, `lib/worktree.ts`,
+`lib/pi-types.ts`, and their existing runtime, prompt, isolation, and worktree tests.
+
+**Interfaces:** The shared controller receives a parent port rather than requiring
+the parent's full `AgentSession`. SDK types below come from the packaged Pi SDK.
+`createSubagentSession(parent, input, snapshot?)` and
+`restoreSubagentSession(parent, sessionFile, snapshot, modelOverride?)` return an
+SDK child session; the shared runtime owns its lifecycle. The host may register
+that session for display but must not separately construct it on resume.
+
+```ts
+export interface SubagentParentHost {
+  parentSessionId: string;
+  sessionFile: string;
+  cwd: string;
+  effectiveModel: { provider: string; id: string };
+  thinking?: ThinkingLevel;
+  resolveModelRuntime(): Promise<ModelRuntime>;
+  readEntries(): readonly SessionEntry[];
+  readContext(): unknown[];
+  sendNotification(message: DelegationNotification): Promise<void>;
+}
+```
+
+- [ ] Extend the runtime tests' injected-host pattern with a deferred abort and
+  real temporary Git repositories. Cover start/resume using one queue, no fifth
+  active child, queued and running cancellation, a resume rejected while
+  cancelling, preserved resource snapshots, unsupported model/thinking overrides,
+  and fresh/exact prompts that still contain applicable repository instructions.
+
+  ```js
+  import assert from 'node:assert/strict';
+  let finishAbort;
+  const abortFinished = new Promise((resolve) => { finishAbort = resolve; });
+  const child = { abort: () => abortFinished };
+  let released = false;
+  const stopped = child.abort().then(() => { released = true; });
+  assert.equal(released, false);
+  finishAbort();
+  await stopped;
+  assert.equal(released, true);
+  ```
+
+  Apply this deferred-abort sequence through the real controller fixture: call
+  cancel, assert resume is rejected and its slot remains occupied, resolve abort,
+  await persisted cancellation, then assert resume can start exactly once.
+- [ ] Run `node --experimental-strip-types --test lib/subagent-session.test.mjs
+  lib/subagent-runtime.test.mjs lib/subagent-prompt.test.mjs
+  lib/subagent-isolation.test.mjs lib/worktree.test.mjs` and capture failures.
+- [ ] Move child resource restoration out of Web-only `startRpcSession` into the
+  shared helper. Use public SDK services, validate the effective model before
+  construction, and persist the effective tool/resource selection. Reuse existing
+  prompt and resource readers; do not reintroduce the removed direct mutation of
+  `agent.state.systemPrompt`. Remove `noContextFiles: true` from child paths and
+  retain repository instructions even with an exact specialist prompt. Missing
+  required restored resources are errors, not silent permission changes.
+- [ ] Extend `addWorktree` with an optional resolved commit input without changing
+  its ordinary UI callers. Native writers must supply `inputRevision`, resolve it
+  locally to a commit OID, and create a new isolated branch from that OID. Keep
+  native plain-prompt syntax, but report a clear error when a writer omits this
+  required isolation input. Never use an implicit remote tip or shared-checkout
+  fallback. Remove native worktree cleanup on success, failure, cancellation,
+  close, and setup failure; return any created path when setup later fails.
+- [ ] Unify start and resume completion handling. `cancel` transitions through
+  cancelling, awaits abort/prompt completion and terminal persistence, and only
+  then releases the queue slot. Retain session/worktree identity on resume;
+  explicitly resumed tasks that never acquired a session perform their first
+  execution and report that fact rather than claim restored conversation history.
+- [ ] Test clean and dirty worktree retention, a parent dirty file absent from a
+  child, exact commit selection, and paths with spaces. Rerun the focused tests,
+  regenerate/check the patch, and retain the tested lifecycle checkpoint.
+
+#### Task 4: Execute task graphs, scoped communication, and durable results
+
+**Files:** Modify `lib/subagent-runtime.ts`, `lib/subagent-state.ts`,
+`lib/subagent-extension.ts`, `lib/subagents.ts`, `lib/types.ts`, and their tests.
+
+**Interfaces:** Add controller operations `startBatch`, `list`, `assign`,
+`resume`, `cancel`, `release`, `message`, `close`, and `reconcileDeliveries`.
+Each takes a registered parent host or child actor, never trusts a tool-supplied
+parent identity, and uses Task 2 state plus Task 3 session operations. `release`
+takes a task ID and integrated commit OID. `close` takes a task ID and delivery ID.
+
+```ts
+export type DelegationActor =
+  | { kind: 'parent'; parentSessionId: string }
+  | { kind: 'child'; parentSessionId: string; taskId: string; sessionId: string };
+export interface DelegationNotification {
+  deliveryId: string;
+  parentSessionId: string;
+  taskId: string;
+  attempt: number;
+  report: DelegationReport;
+}
+```
+
+- [ ] Add controller and extension tests for rejected batches with zero launch
+  side effects, dependency success/failure/input wait, pending role assignment,
+  integrated-change release, cross-parent rejection, sibling sender identity,
+  answer/follow-up in the same child session, stale delivery IDs, and close
+  without deleting files. Simulate crashes before send, while queued, and after
+  parent transcript persistence but before delivery-state persistence.
+- [ ] Run `node --experimental-strip-types --test lib/subagent-runtime.test.mjs
+  lib/subagent-state.test.mjs lib/subagent-extension.test.mjs
+  lib/subagents.test.mjs` and confirm the new lifecycle tests fail.
+- [ ] Extend `Agent` with structured assignments, batches, explicit specialist
+  prompts, committed writer inputs, and resume model overrides. Retain native
+  `get_subagent_result` and `steer_subagent`. Add one parent control tool,
+  `manage_subagents`, for list/assign/message/answer/cancel/close/release. Add only
+  `report_subagent` and `send_subagent_message` to children, with actor identity
+  bound by the runtime. Exclude all parent control tools from child sessions.
+- [ ] A child report terminates its turn but does not free a slot until SDK
+  teardown completes. `needs_input` keeps the session for explicit answer/resume.
+  Successful prerequisites release report-only dependents; file-dependent tasks
+  remain blocked until the parent supplies an integrated revision. Assigning work
+  may change a pending task's role and assignment, never mutate a running attempt.
+- [ ] Give each attempt a stable delivery ID. Save the report and pending
+  delivery before notifying. Move delivery responsibility from the extension's
+  completion callback into the runtime. Treat the matching persisted parent
+  `custom_message.details.deliveryId` as the receipt; a resolved send Promise is
+  insufficient. Keep an in-process inflight set until receipt or owner teardown,
+  and reconcile against parent entries before redelivery. Scope all messages to
+  their group and label agent messages as information, not new user authority.
+- [ ] Verify legacy result text, queued/blocked result retrieval, sender checks,
+  input-required payloads, payload byte limits, and no double completion callback.
+  Rerun the focused tests, regenerate/check the patch, and retain the tested
+  task-coordination checkpoint for independent review.
+
+#### Task 5: Connect CLI and Web to the shared controller
+
+**Files:** Create `lib/subagent-cli-extension.ts` and
+`lib/subagent-cli-extension.test.mjs`. Modify `lib/rpc-manager.ts`, its runtime and
+shutdown tests, and `lib/subagent-extension.ts`. Create
+`lib/subagent-adapters.test.mjs` for disposable SDK integration coverage.
+
+**Interfaces:** CLI exports the standard `(pi: ExtensionAPI) => void` extension
+factory. Web supplies the existing wrapper registration and event invalidation
+callbacks. Both construct `SubagentParentHost` and call the same controller.
+
+- [ ] Add tests that both adapters expose one copy of every native tool, load no
+  old engine, and produce the same child metadata/results. Use temporary agent
+  state and registered synthetic providers that return deterministic tool calls;
+  inspect actual SDK child tools, provider bindings, and resumed resources. Test
+  a parent session switch with an undelivered report and a shutdown mid-cancel.
+- [ ] Run `node --experimental-strip-types --test
+  lib/subagent-cli-extension.test.mjs lib/subagent-adapters.test.mjs
+  lib/rpc-manager.test.mjs lib/rpc-manager-shutdown.test.mjs` before wiring.
+- [ ] The CLI factory registers tools without starting resources. Bind a parent
+  port at session start and release it after awaited shutdown. Build the child
+  `ModelRuntime` with public `ModelRuntime.create`, register the parent's public
+  native/configured providers, and transfer only necessary runtime authentication
+  through public APIs. Disable network model discovery. Do not read private
+  `ModelRegistry.runtime`, persist credentials in task state, or silently fall
+  back to another model. Keep selected model/thinking validation in Task 3.
+- [ ] In Web, retain the native inline extension and register children for the
+  existing inspectable session UI. Extend the existing precedence filter to
+  suppress only the known packaged CLI entry when the native inline entry is
+  active. Preserve unrelated tools, extensions, and diagnostics. Both routes must
+  restore children through Task 3, not recreate independent Web-only state.
+- [ ] When CLI moves to another parent session, do not send an old parent's
+  report into the new one. Keep that delivery pending and reconcile only when
+  its owner parent is active again. On shutdown, abort and persist unfinished
+  children before releasing ownership; no detached child execution is promised.
+- [ ] Load the configured Code Mode extension in disposable integration tests
+  and prove that native delegation tools remain directly callable while children
+  retain their intended permissions. Rerun the adapter tests, regenerate/check
+  the patch, and retain the tested adapter checkpoint for independent review.
+
+#### Task 6: Present tasks and controls in Web
+
+**Files:** Modify `components/AgentSessionPanel.tsx`, `components/AgentsConfig.tsx`,
+their tests, `components/AppShell.tsx`, `lib/api-types.ts`,
+`app/api/subagents/[id]/route.ts`, settings/profile routes and relevant tests.
+Create `app/api/subagents/tasks/route.ts` and its route tests. Add task display and
+action coverage to the existing package-local `e2e/run.mjs` flow; add translation
+keys to the existing `en`, `zh-CN`, and `zh-TW` message files.
+
+**Interfaces:** `GET /pi/api/subagents/tasks?parentSessionId=...` returns inspectable
+task state and ownership. POST accepts the same parent control actions as
+`manage_subagents`. Resolve the actual parent and actor on the server before
+calling the controller; client input does not grant ownership or arbitrary file
+access. Active work owned elsewhere is viewable but its controls are disabled.
+
+- [ ] Add failing route tests for missing parents, cross-parent child IDs,
+  rejected owners, each control action, input-required reports, and read-only
+  managed settings. Add UI coverage for task/assignee/dependency/status display,
+  opening the existing child conversation, and accessible labelled controls.
+- [ ] Run `node --experimental-strip-types --test
+  'app/api/subagents/**/*.test.mjs' components/AgentSessionPanel.test.mjs
+  components/AgentsConfig.test.mjs` and capture the new failures.
+- [ ] Extend the existing agent panel rather than create another execution UI.
+  Render task state from the common API, keep child conversation links, and use
+  the existing SSE/session refresh path for updates. Preserve `/pi/` in every
+  new fetch URL, following the current subpath patch. Expose model/role details
+  without leaking credentials or entire prompts into compact status rows.
+- [ ] Report Nix-managed settings/profiles as read-only with an explanatory UI
+  state; reject mutations server-side before writing. Preserve existing editable
+  unmanaged project profiles. Do not add a new configuration owner or locale.
+- [ ] Extend the existing disposable E2E fixture with seeded native tasks and
+  run `node e2e/run.mjs` against its isolated server and browser. Use the `/pi/`
+  base URL and a Nix-provided browser; do not download a mutable browser or use
+  real user sessions. Verify dependency-blocked and input-required states,
+  message/control delivery, and reconnect without resurrecting completed work.
+  If the browser prerequisite is unavailable, record the blocker rather than
+  claiming a source-pattern assertion proves the UI behavior.
+- [ ] Rerun affected route/component tests, regenerate/check the patch, and
+  retain the tested Web checkpoint for independent review.
+
+#### Task 7: Package and migrate the common implementation
+
+**Files:** Modify `pkgs/pi-web/default.nix` and the patched `package.json`.
+Create `pkgs/pi-web/build-subagent-extension.mjs` and
+`home/keewai/shared/pi/web-package.nix`. Modify
+`home/keewai/shared/pi/{subagents.nix,web.nix,APPEND_SYSTEM.md,prompts/review.md}`,
+the delegation references in `AGENTS.md`, this README, and
+`.agents/skills/nixos-validation/SKILL.md`. Preserve the separately deployed
+official Superpowers package and selective activation policy. Its package-owned
+skills remain unchanged; do not restore the removed local skill copies.
+
+**Interfaces:** Both Nix modules import `web-package.nix` to obtain the same Pi Web
+derivation. Its packaged `pi-web-native-subagents/subagent-cli-extension.js` is the sole configured delegation
+extension; the service still uses the existing `pi-web` executable.
+
+- [ ] Add package-local adapter tests for the packaged CLI entry, six roles,
+  provider/tool bindings, no Next.js startup on CLI load, and one registration
+  under Web. Add a disposable combined-resource check including Code Mode and
+  the preserved MCP/search/LSP extensions. Do not load real credentials.
+- [ ] Bundle the CLI entry using the already pinned SDK's `esbuild` library,
+  leaving SDK and npm dependencies external. Do not bundle a second Pi SDK.
+
+  ```js
+  const { buildSync } = createRequire(import.meta.url)(process.argv[2]);
+  buildSync({
+    entryPoints: ['lib/subagent-cli-extension.ts'],
+    outfile: 'pi-web-native-subagents/subagent-cli-extension.js',
+    bundle: true,
+    platform: 'node',
+    format: 'esm',
+    packages: 'external',
+  });
+  ```
+
+  Import `createRequire` from `node:module` in the build helper. Pass the fixed
+  SDK's `node_modules/esbuild` path from Nix `postBuild`. Include the artifact in
+  npm package files and declare it under `pi.extensions`. Preserve the existing
+  packaged SDK symlinks and add a disposable extension-load install check.
+- [ ] Replace the three registrations in `subagents.nix` with the packaged
+  native entry and empty package skill/prompt/theme filters. Move the managed
+  native settings there from `web.nix`, enabling the feature with limit four.
+  Keep the source of role data build-only and copy its license into the output.
+  Do not delete old downloaded packages, metadata, or worktrees. Leave unused
+  old package recipes as rollback material unless separately requested to remove
+  them; they are no longer part of the active delegation configuration.
+- [ ] Update the selective-delegation policy and `/review` to exact native tool
+  and role names, structured tickets, explicit writer revisions, the enforced
+  limit, and verified close. Keep native routing in the shared guidance rather
+  than editing the official package's skills.
+  Preserve unrelated Superpowers behavior and existing model settings.
+- [ ] Update validation guidance to the new runtime and remove the obsolete gate
+  asserting native tools are disabled. Replace the README's old deployment guide
+  with accurate new usage after validation; keep the design/plan labelled pending
+  until their execution gates pass. Format only task Nix/Markdown/source files,
+  stage new files before Git-flake checks, and inspect the task-only diff.
+- [ ] Run focused package tests and configured LSP diagnostics on affected source
+  files in the disposable checkout. Diagnose missing LSP commands as configuration
+  errors, not passing checks. Obtain the selected workflow's independent review
+  of the actual task diff, fix defects, and commit task changes before activation.
+
+#### Task 8: Verify the committed migration and activate only locally
+
+**Files:** No new implementation files. Repair only defects caused by this change
+and rerun their affected checks. The task checkout and its commits remain the
+source of truth while the original checkout's index contains unrelated changes.
+
+- [ ] Check spec coverage, native test results, patch applicability, file
+  responsibilities, and the final independent review. Confirm that all intended
+  changes are committed and no task changes are uncommitted. Do not stage, reset,
+  or merge over the original checkout's occupied index.
+- [ ] Reconfirm the execution host if its identity has become uncertain, require
+  `nixosConfigurations.citrus`, and record the expected system store path and
+  network/failed-unit/Pi Web baseline. End old children before changing deployed
+  delegation packages. Do not reload the active migration session.
+- [ ] Use the required rebuild's evaluation, package build, type checks, and
+  `npm test`, rather than prebuilding the same system output:
+
+  ```sh
+  sudo nixos-rebuild test --flake /tmp/nixos-pi-unified-subagents.4lLknp/checkout#citrus --no-write-lock-file
+  ```
+
+- [ ] After test activation, check network connectivity, failed system and user
+  units, Pi Web service health, loopback listeners, and the canonical `/pi/` page,
+  assets, and event stream. In new disposable CLI/Web sessions, verify deployed
+  native tool/role discovery and the tested synthetic-provider lifecycle. Confirm
+  managed settings and other configured extensions still load. A failed required
+  gate blocks switch; do not substitute mocked tests for these deployment checks.
+- [ ] Only after those gates pass, switch the same committed configuration:
+
+  ```sh
+  sudo nixos-rebuild switch --flake /tmp/nixos-pi-unified-subagents.4lLknp/checkout#citrus --no-write-lock-file
+  ```
+
+- [ ] Repeat network, unit, and affected-service checks after switch. Confirm both
+  `/run/current-system` and `/nix/var/nix/profiles/system` match the tested store
+  path. Report task commits, clean task status, local live/boot-default outcomes,
+  the retained original index and worktrees, and any blocked integration. Do not
+  push, publish, deploy remotely, or automatically clean old artifacts.
 
 ## Orange のサービスを読む
 

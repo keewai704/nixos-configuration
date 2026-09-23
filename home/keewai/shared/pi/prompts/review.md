@@ -9,14 +9,13 @@ and relevant untracked source files. Review both diffs and those new files; a
 tracked-file diff alone is not the complete change. Exclude ignored/generated
 artifacts and secret material, and mention exclusions that limit the review.
 If a target is supplied, keep the review within that scope.
-When crew_spawn is available, delegate an independent fresh-context assessment
-to pi-crew's code-reviewer automatically. Give it the exact target and checkout, not
-your conclusions. Use a fresh run rather than resuming the implementation child.
-Use the structured goal, context, and instructions fields and prohibit edits,
-staging, and commits. Verify its delivered report before closing it with crew_done.
-If only core subagent is available, use an inline read-only reviewer and supply
-the complete diff and paths; adding bash would create a different worktree that
-does not include the original uncommitted changes. Collect subagent_result.
+When native Agent is available, delegate an independent fresh-context assessment
+with subagent_type: "code-reviewer". Give it the exact target and checkout, not
+your conclusions. Use a fresh task rather than resuming the implementation child.
+Use assignment with goal, context, and ordered instructions; prohibit edits,
+staging, and commits. Supply a readable complete diff and relevant new-file paths
+because the read-only role has no shell. Retrieve get_subagent_result, verify its
+report, then manage_subagents(action: "close") with the returned delivery_id.
 Do not create a repository or commit just to run a reviewer.
 Verify findings and synthesize one report.
 If delegation is unavailable or fails, review locally and state that limitation.

@@ -19,6 +19,16 @@ hl.monitor({
     vrr = 2,
 })
 
+local sunshine_instance = os.getenv("HYPRLAND_INSTANCE_SIGNATURE")
+if sunshine_instance then
+    local sunshine_layout = os.getenv("XDG_RUNTIME_DIR") .. "/sunshine-display/" .. sunshine_instance .. "/layout.lua"
+    local sunshine_file = io.open(sunshine_layout, "r")
+    if sunshine_file then
+        sunshine_file:close()
+        dofile(sunshine_layout)
+    end
+end
+
 hl.env("XCURSOR_SIZE", tostring(cursor.size))
 hl.env("XCURSOR_THEME", cursor.name)
 hl.env("QT_QPA_PLATFORM", "wayland")
@@ -191,7 +201,6 @@ bind(
 )
 bind(main_mod .. " + V", hl.dsp.exec_cmd(ipc .. "panel-toggle clipboard"), "Open clipboard")
 bind(main_mod .. " + ALT + C", hl.dsp.exec_cmd(ipc .. "panel-toggle session"), "Open session menu")
-bind(main_mod .. " + ALT + L", hl.dsp.exec_cmd(ipc .. "session lock"), "Lock session")
 bind(main_mod .. " + comma", hl.dsp.exec_cmd(ipc .. "settings-toggle"), "Open Noctalia settings")
 bind("ALT + Tab", hl.dsp.exec_cmd(ipc .. "window-switcher"), "Switch windows")
 bind("Print", hl.dsp.exec_cmd(ipc .. "screenshot-region"), "Take region screenshot")
@@ -326,7 +335,7 @@ bind(main_mod .. " + F1", function()
             "Super+N: notifications    Super+V: clipboard",
             "Print: region    Shift+Print: all screens    Ctrl+Print: active window",
             "Super+D: Noctalia bar    Super+comma: settings",
-            "Super+Alt+C: session    Super+Alt+L: lock",
+            "Super+Alt+C: session",
             "Alt+[: brightness down    Alt+]: brightness up",
             "Super+F: fullscreen",
             "Alt+Tab: cycle windows",

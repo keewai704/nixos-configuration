@@ -1,5 +1,6 @@
 { lib, pkgs, ... }:
 let
+  webAccess = pkgs.callPackage ../../../../pkgs/pi-web-access { };
   webSearchConfig = (pkgs.formats.json { }).generate "pi-web-search.json" {
     searchRouting = {
       providers = [ "openai" ];
@@ -15,7 +16,7 @@ in
 {
   programs.pi-coding-agent.settings.packages = lib.mkOrder 1200 [
     {
-      source = "npm:pi-web-access@0.30.0";
+      source = "${webAccess}/lib/node_modules/pi-web-access";
       extensions = [ "dist/index.js" ];
       skills = [ ];
       prompts = [ ];

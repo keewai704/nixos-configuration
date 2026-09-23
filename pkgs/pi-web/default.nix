@@ -3,6 +3,7 @@
   buildNpmPackage,
   fetchFromGitHub,
   fetchurl,
+  fetchzip,
   autoPatchelfHook,
   makeWrapper,
   nodejs,
@@ -13,6 +14,10 @@
   runtimePackages ? [ ],
 }:
 let
+  crewRoles = fetchzip {
+    url = "https://registry.npmjs.org/@melihmucuk/pi-crew/-/pi-crew-1.0.34.tgz";
+    hash = "sha256-VICdpdnYu+JdtT2t+4DEARiPkY9kGBVkKBpX17qLU9U=";
+  };
   fontRevision = "92345ac0dbb28d27dbd32f3a782e84c55eaac214";
   notoSansMono = fetchurl {
     name = "noto-sans-mono.ttf";
@@ -41,6 +46,7 @@ buildNpmPackage {
     ./subpath.patch
     ./interrupted-subagents.patch
     ./transcript-context.patch
+    ./unified-subagents.patch
   ];
   npmDepsHash = "sha256-lGsMOYY2rCQSw+hMLXv+aWq4991NnkhLJUipL1F843k=";
   npmRebuildFlags = [ "--ignore-scripts" ];
@@ -69,13 +75,17 @@ buildNpmPackage {
       ln -s "pi-coding-agent/node_modules/@earendil-works/$package" \
         "node_modules/@earendil-works/$package"
     done
+    ${lib.getExe nodejs} ${./build-subagent-roles.mjs} ${crewRoles}
   '';
 
   doCheck = true;
   nativeCheckInputs = [ git ];
+  postBuild = ''
+    ${lib.getExe nodejs} ${./build-subagent-extension.mjs} ${piRoot}/node_modules/esbuild
+  '';
   checkPhase = ''
     runHook preCheck
-    npm test
+    PI_WEB_NATIVE_SUBAGENT_EXTENSION="$PWD/pi-web-native-subagents/subagent-cli-extension.js" npm test
     runHook postCheck
   '';
 
@@ -99,6 +109,7 @@ buildNpmPackage {
     done
     mkdir -p "$out/share/licenses/pi-web"
     cp ${fontLicense} "$out/share/licenses/pi-web/NotoSansMono-OFL.txt"
+    cp ${crewRoles}/LICENSE "$out/share/licenses/pi-web/Crew-MIT.txt"
   '';
 
   postFixup = ''
@@ -113,6 +124,12 @@ buildNpmPackage {
     "$out/bin/pi-web" --help >/dev/null
     ${lib.getExe nodejs} -e 'require(process.argv[1])' \
       "$out/lib/node_modules/@agegr/pi-web/node_modules/node-pty"
+    test_home=$(mktemp -d)
+    HOME="$test_home" PI_CODING_AGENT_DIR="$test_home" ${lib.getExe nodejs} --input-type=module -e '
+      const { default: extension } = await import(process.argv[1]);
+      if (typeof extension !== "function") throw new Error("Missing native delegation extension");
+    ' "$out/lib/node_modules/@agegr/pi-web/pi-web-native-subagents/subagent-cli-extension.js"
+    rm -r "$test_home"
     runHook postInstallCheck
   '';
 

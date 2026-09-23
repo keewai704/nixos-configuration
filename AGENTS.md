@@ -1,9 +1,10 @@
 # Repository working agreement
 
 This file defines ownership, authorization, and completion requirements.
-Parent model selection lives in `home/keewai/shared/pi/agent.nix`; agent teams,
-crew, and core subagent packages live in `home/keewai/shared/pi/subagents.nix`.
-Prefer package-owned roles or per-call task definitions over duplicate profiles. Cross-project behavior and
+Parent model selection lives in `home/keewai/shared/pi/agent.nix`; shared native
+CLI/Web delegation is registered in `home/keewai/shared/pi/subagents.nix` and
+implemented in `pkgs/pi-web/`. Prefer packaged roles or explicit specialist
+prompts over duplicate profiles. Cross-project behavior and
 skill routing live in `home/keewai/shared/pi/APPEND_SYSTEM.md`. Personal skills
 live in `skills/`; repository-only skills live in `.agents/skills/`.
 Use [README.md](README.md) for architecture, examples, and editing entry points

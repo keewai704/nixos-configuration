@@ -4,6 +4,7 @@
     pkgs.brightnessctl
     pkgs.ddcutil
     pkgs.grimblast
+    pkgs.moonlight-qt
     pkgs.pavucontrol
   ];
 }

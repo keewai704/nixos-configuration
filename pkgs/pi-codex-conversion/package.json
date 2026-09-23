@@ -1,0 +1,7 @@
+{
+  "name": "pi-codex-conversion-runtime",
+  "private": true,
+  "dependencies": {
+    "@howaboua/pi-codex-conversion": "3.0.37"
+  }
+}
