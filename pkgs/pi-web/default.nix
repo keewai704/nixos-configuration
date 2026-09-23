@@ -103,6 +103,7 @@ buildNpmPackage {
 
   postFixup = ''
     wrapProgram "$out/bin/pi-web" \
+      --set PI_SUBAGENTS_PI_CODING_AGENT_PACKAGE_ROOT ${piRoot} \
       --prefix PATH : ${lib.makeBinPath (lib.unique ([ nodejs ] ++ runtimePackages))}
   '';
 

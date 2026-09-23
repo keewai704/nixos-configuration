@@ -233,6 +233,8 @@ Pi Web はビルド時も実行時も同じ Pi SDK を参照し、
 [transcript-context.patch](pkgs/pi-web/transcript-context.patch) でタイトル生成・専用システム指示・
 セッション一覧の同時刻の並び順を新しい SDK に合わせます。
 会話履歴や読み取り専用の `agent.state.systemPrompt` は書き換えません。
+Pi Web のラッパーは同じ SDK の場所を `PI_SUBAGENTS_PI_CODING_AGENT_PACKAGE_ROOT` で伝え、
+通常と異なる Nix の配置でもバックグラウンドの子が本体を解決できるようにします。
 
 [Pi Codex conversion](https://github.com/IgorWarzocha/howaboua-pi-stuff/tree/main/packages/pi-codex-conversion) は
 公開 npm パッケージを改変せず、CLI と Pi Web の両方で読み込みます。Codex CLI の導入は不要です。
