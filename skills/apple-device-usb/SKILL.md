@@ -17,20 +17,16 @@ pymobiledevice3 11.5.0 and iPadOS 27.0; that is not verification of later versio
 For older devices, inspect the installed `pymobiledevice3 --help` and upstream
 transport guidance instead of forcing this helper's connection path.
 
-## Use Jev for diagnosis and research
+## Protect device data during diagnosis and research
 
-For unclear failures or upstream research, follow the available Jev analysis
-tools' data-handling and fallback rules. Never send UDIDs, serial numbers,
-personal device names, pairing records or keys, credentials, account data,
-screenshots, clipboard contents, or typed input. Do not send the initial device
-event unchanged or include device identifiers in web queries. If sensitivity or
-transmission authority is uncertain, continue locally without Jev.
+Keep UDIDs, serial numbers, personal device names, pairing records or keys,
+credentials, account data, screenshots, clipboard contents, and typed input out
+of web queries and external diagnostic uploads. Do not upload the initial device
+event unchanged. If sensitivity or transmission authority is uncertain,
+diagnose locally.
 
-Jev results do not authorize repairs, reconnecting, or replaying input. These
-tools do not inspect images, choose touch coordinates, or send USB input. Keep
-screenshot inspection and frame-bound commands below; do not substitute
-`jev_browser` for USB control, expose screenshots through a web bridge, or call
-Jev for every frame. Its output is not visual confirmation of an operation.
+External advice does not authorize repairs, reconnecting, or replaying input.
+Use the screenshot inspection and frame-bound commands below to verify actions.
 
 ## Connect once
 

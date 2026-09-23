@@ -36,18 +36,6 @@ or configuration snapshots. Format and check syntax only for changed files.
   Never read real auth/session data or contact paid model APIs for these checks.
   Recheck deployed settings and affected behavior after each activation gate;
   isolated mock tests do not prove live provider authentication or deployment.
-- Jev computer integration: use a disposable GTK/Qt window with synthetic data,
-  never the user's existing documents or account screens. Type-check with
-  `home/keewai/desktop/pi/jev-computer/tsconfig.json`, which extends the shared
-  configuration. Check native inspection,
-  editable-text readback, button effects, and two-sample exact predicates. Exercise
-  missing/duplicate targets, stale tokens, process/window replacement, private
-  roles, size limits, cancellation, low-confidence/invalid model answers, and the
-  shared Jev lock with disposable commands or mocked providers. A live TypeSafe
-  check may send only the synthetic fixture, not incidental desktop content.
-  Test consent handling separately; mocked test consent is not a user grant for
-  real applications. Recheck deployed inspection and fixture behavior after both
-  activation gates. Model stop reasons and deterministic verification are separate.
 - Another host only: locally evaluate the changed attributes, or build the affected
   output when package implementation or build logic changed. Shared settings do
   not require every host's build unless host-specific branches need validation.

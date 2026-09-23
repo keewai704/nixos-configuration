@@ -152,13 +152,10 @@ Home Manager は `useUserPackages = true` で NixOS に統合されています�
 | [shared/pi/web.nix](home/keewai/shared/pi/web.nix) | Pi Web の導入、ユーザーサービス、ホストごとの tailnet 許可 |
 | [shared/pi/subagents.nix](home/keewai/shared/pi/subagents.nix) | pi-subagents の固定版、実行設定、同梱役割と子の拡張連携 |
 | [shared/pi/APPEND_SYSTEM.md](home/keewai/shared/pi/APPEND_SYSTEM.md) | 全プロジェクト共通の追加システム指示 |
-| [shared/pi/extensions/](home/keewai/shared/pi/extensions/)、[prompts/](home/keewai/shared/pi/prompts/) | キャッシュ監視・Jev 分析・CLI 完了通知のローカル拡張、レビュー用プロンプト |
+| [shared/pi/extensions/](home/keewai/shared/pi/extensions/)、[prompts/](home/keewai/shared/pi/prompts/) | キャッシュ監視・CLI 完了通知のローカル拡張、レビュー用プロンプト |
 | [desktop/pi/default.nix](home/keewai/desktop/pi/default.nix) | デスクトップ専用連携の入口 |
 | [desktop/pi/cua.nix](home/keewai/desktop/pi/cua.nix) | デスクトップ操作用ドライバーと MCP |
-| [desktop/pi/jev-computer/](home/keewai/desktop/pi/jev-computer/) | Jev と Linux AT-SPI の限定アクセシビリティ操作ループ |
-| [desktop/pi/jev-browser/](home/keewai/desktop/pi/jev-browser/) | Jev と Browser Harness の導入、Pi の限定ブラウザー操作ツールとランナー |
 | [shared/skills.nix](home/keewai/shared/skills.nix)、[skills/](skills/) | Pi 以外とも共有できる個人スキルの配布と編集元 |
-| [shared/typesafe.nix](home/keewai/shared/typesafe.nix) | Jev と Pi プラグインが共有する TypeSafe 認証ファイルの場所 |
 | [pkgs/pi-coding-agent/](pkgs/pi-coding-agent/)、[pkgs/pi-web/](pkgs/pi-web/) | アプリ本体のビルド定義とパッチ |
 | [modules/common.nix](modules/common.nix) | ログイン前にもユーザーサービスを起動するための linger |
 | [citrus/web.nix](hosts/citrus/web.nix)、[orange/services/web.nix](hosts/orange/services/web.nix) | 既存の Tailscale Serve と nginx による HTTPS 公開 |
@@ -170,7 +167,7 @@ Home Manager は `useUserPackages = true` で NixOS に統合されています�
 `settings.packages` の `lib.mkOrder` は Codex conversion → MCP → Web 検索 → LSP → pi-subagents の
 読み込み順を保つための指定です。Codex conversion のバージョンは補助バイナリと同じ定義を参照します。
 ローカル拡張は `extensions/`、プロンプトは `prompts/` に置いて `agent.nix` から配布します。
-共有スキル・TypeSafe 認証、パッケージのビルド、OS の公開設定は Pi 専用設定と役割が異なるため、
+共有スキル、パッケージのビルド、OS の公開設定は Pi 専用設定と役割が異なるため、
 上表の担当場所に残します。配置の整理で `~/.pi/agent` などの配布先やホストごとの有効機能は変えません。
 
 Codex CLI、Remote Control、ChatGPT Desktop とそのブラウザー・URL 連携は導入しません。
@@ -528,8 +525,6 @@ Nix ファイルを読むと依存関係・権限・起動条件がわかり、�
 | ディレクトリ | 独自変更の目的 |
 | --- | --- |
 | [brave-origin/](pkgs/brave-origin/) | Nixpkgs の Brave Origin に日本語設定を追加 |
-| [browser-harness/](pkgs/browser-harness/) | Jev のブラウザー接続と Python 依存関係、Linux の Brave 検出 |
-| [jev-ultrafast/](pkgs/jev-ultrafast/) | 固定した Jev ソース、ローカル inspector、上流のオフラインテスト |
 | [cua-driver/](pkgs/cua-driver/) | デスクトップ操作用ドライバーの実行環境 |
 | [fprintd-cs9711/](pkgs/fprintd-cs9711/) | CS9711 指紋センサーと認証キャンセルの修正 |
 | [hyprland/](pkgs/hyprland/) | 入力メソッドの修飾キー処理の修正 |
@@ -599,228 +594,6 @@ Firefox は固定した `keewai704/my-firefox-nix` の `main` を利用し、Sin
 設定は AutoConfig で固定し、最初の適用時にプロフィールを準備してから Sine を配置します。
 Firefox の見た目は Sine/Natsumi が担当するため、Stylix の Firefox 対応は無効です。
 この非公開入力の取得には GitHub の読み取り認証が必要です。
-
-</details>
-
-<details>
-<summary>TypeSafe の共有認証（Jev / Pi プラグイン）</summary>
-
-### TypeSafe の共有認証
-
-TypeSafe の API キーは `~/.config/typesafe/api-key` にキー本体だけを1行で保存します。
-`TYPESAFE_API_KEY=` のような変数名や引用符は付けません。
-キーはユーザーが管理する通常ファイルで、Git・Nix Store・Pi の設定 JSON には入れません。
-ホスト間でキーを同期しません。
-
-```sh
-install -d -m 700 ~/.config/typesafe
-touch ~/.config/typesafe/api-key
-chmod 600 ~/.config/typesafe/api-key
-```
-
-ローカルのエディターでキーを設定します。ディレクトリは `700`、ファイルは `600` を保ちます。
-Home Manager は秘密値ではなく `TYPESAFE_API_KEY_FILE` にファイルの絶対パスだけを設定します。
-新しいログインセッションの Pi CLI と Pi Web が同じ場所を参照できます。
-既存の端末・Pi は環境変数を引き継ぐため、再ログインしてから起動し直してください。
-
-今後の Pi プラグインは `process.env.TYPESAFE_API_KEY_FILE` を読み書き先に使います。
-未設定時は `${XDG_CONFIG_HOME:-~/.config}/typesafe/api-key` を使います。
-設定画面で受け取ったキーは、同じディレクトリの権限 `600` の一時ファイルへ書き、
-rename で置き換えてください。キーを会話・ツール引数・ログ・セッション履歴へ保存せず、
-API 呼び出しの都度読み直します。ログ・検索用の Jev 拡張もこの共有ファイルを利用します。
-
-`jev` の起動ラッパーが共有ファイルを読み、上流標準の `TYPESAFE_API_KEY` 環境変数で渡します。
-Jev 本体へのパッチはありません。プラグインからキーを変更した後は、Jev を再起動してください。
-優先順位は、明示的な `TYPESAFE_API_KEY` 環境変数、共有ファイル、Jev の `.env` の順です。
-共有運用ではキーを二重管理しないよう、Jev の `.env` の `TYPESAFE_API_KEY` は空のままにします。
-
-</details>
-
-<details>
-<summary>Jev でログの一次切り分け・検索結果の順位付け</summary>
-
-### Pi の Jev 分析ツール
-
-全ホストの Pi CLI / Pi Web に `jev_log_triage` と `jev_search_rank` を配置します。
-[shared/pi/agent.nix](home/keewai/shared/pi/agent.nix) が
-[jev-analysis.ts](home/keewai/shared/pi/extensions/jev-analysis.ts) を配布します。
-ブラウザー、追加の npm パッケージ、文字生成モデル、常駐サービスは不要です。
-適用後、既存の Pi は `/reload` で読み込みます。Jevの指定や呼び出しごとの確認は不要です。
-ツールの標準指示で、単純でないビルド・テスト・コマンドの失敗と、複数の検索候補に対して積極的に使います。
-主モデルが同じ分類・比較に多くのトークンを使う前にJevへ任せ、選ばれた根拠や上位候補から確認します。
-ログは必要な抜粋だけ、検索は短い説明文の候補をまとめて1回で渡し、順位付けのためだけに全文を取得しません。
-自明な失敗、単一候補、必要な情報源が既に明確な場合は省略し、入力が同じなら結果を再利用します。
-根拠不足・矛盾があれば読む範囲を広げ、必要な検証を削って節約しません。トークン削減率は未測定です。
-エージェントの選択方針であり、すべてのログ・検索を捕捉する常駐フックではありません。
-
-- 「この公開ビルドの失敗を調べて」
-- 「このテーマを調べて、根拠のURLも示して」
-
-`jev_log_triage` には連続したログ抜粋、出典ラベル `source`、元の開始行 `firstLine` を渡します。
-ツール自体はファイルを読みません。最大200行で、送信する構造化データ全体は24,000 UTF-8バイトまでです。
-途中の行を黙って省略せず、必要な範囲を明示して渡します。マスキングする場合も行数を保ち、出典ラベルに明記します。
-出典ラベルはTypeSafeへ送りません。
-失敗の確率、原因分類と確信度、選んだ根拠の1行と前後最大2行を返します。
-情報不足や低確信度では `inconclusive`、それ以外も `tentative` であり、原因の確定ではありません。
-確信度0.6などのしきい値は未校正の目安です。元ログの確認、終了コード、実際の検証を置き換えません。
-
-`jev_search_rank` には検索語と、取得済みの1〜20候補の `id / url / title / snippet` を渡します。
-先に既存の `web_search` / `get_search_content` で実際の候補を取得し、説明文を創作しません。
-検索語と候補全体は24,000 UTF-8バイトまでで、URLの取得や既存の検索結果の書き換えは行いません。
-関連度0〜3と確信度を返し、元ID・URL・入力位置を保持します。同点は入力順を維持し、低得点の候補も残します。
-関連度は事実確認・情報源の信頼性ではないため、重要な主張は原文で確認します。
-
-この2ツールは利用者の自動利用設定に従い、確認UIなしでもTypeSafeへ送信し、別途API料金が発生します。
-公開情報または外部送信が許可された機密を含まない抜粋だけを選び、秘密値・私的情報を渡さないでください。
-機密性や送信許可が不明ならJevを使わず通常の解析を続けます。認証不足やAPIエラーでも自動再試行せず通常処理に戻ります。
-自動マスキングはありません。ツール引数と結果は通常のPiセッション履歴にも残ります。
-ログ・会話履歴の自動収集や書き換え、コマンド実行・修復のフックは追加しません。
-`jev_browser` の明示的な依頼・対話承認の条件は変更しません。
-
-認証は明示的な `TYPESAFE_API_KEY`、共有ファイルの順です。ブラウザー用 `.env` は読みません。
-送信先はTypeSafe公式APIに固定し、リダイレクトや他社へのフォールバックは認めません。
-1回につきAPI要求は1回、応答待ちは最大30秒です。
-入力超過は切り捨てず拒否し、失敗・キャンセル時も自動再試行しません。
-応答は最大128 KB、結果は最大48 KBに制限します。キャンセル後も送信済みの要求は課金される場合があります。
-結果にはAPIの入出力トークン数と、入力100万トークンあたり$0.042・出力無料で計算した概算額を表示します。
-これは請求額・残高ではなく、料金改定にも自動追従しません。ChatGPT契約の利用枠とは別です。
-
-</details>
-
-<details>
-<summary>Jev と AT-SPI を組み合わせた高速 GUI 操作</summary>
-
-### Jev computer
-
-デスクトップの Pi に `computer_inspect` と `jev_computer` を配布します。既存の `cua-driver` は維持し、
-短い状態依存の操作を、主モデルへクリックごとに戻らずツール内で進めます。
-高速経路は GTK / Qt の AT-SPI を直接使い、CUA の Hyprland IPC 形式への依存を避けます。
-プロセス・コンポジターから対象 PID を特定し、`computer_inspect` に渡してウィンドウ名を確認します。
-さらに正確な `window_title` を指定して要素を読み、`jev_computer` に `pid`、`window_title`、目的と候補を渡します。
-`computer_inspect` は読み取り専用で、TypeSafe には送信しません。
-候補は正確な `role` / `label` の組で、`value` を省略すると最初の公開アクセシビリティ・アクション、
-指定すると編集可能なテキスト・フィールド全体の置換です。
-同名・同ロールが複数ある場合や無効な要素は操作対象にしません。入力文字列は主モデルが事前に用意し、
-Jev は候補選択だけを担当します。別の文字生成モデルやスクリーンショット送信は不要です。
-ブラウザーのページ操作には既存の `jev_browser`、既知の固定手順や API / CLI 処理には決定的な処理を使います。
-
-開始時に対象、目的、候補、アクセシビリティ本文・値の TypeSafe 送信と別料金を確認します。
-既定は操作ごとの承認で、隔離したテストアプリの自動実行は利用者だけが選択できます。
-私的・ログイン済みアカウント情報、秘密値、端末、本番の購入・投稿・削除・権限変更には使いません。
-これは OS やネットワークのサンドボックスではなく、公開情報でも機密が混ざる画面は対象外です。
-呼び出し元は必要に応じて通常の CUA の画像と突き合わせ、信頼できるネイティブのアクセシビリティ・ツリーに限定します。
-
-各操作の前後で状態を取得し、判断・承認待ちの間に状態が変わった場合も停止します。
-同一ユーザーの PID・開始時刻と正確なウィンドウ名に固定し、古い要素トークンを再利用しません。
-曖昧な対象、変化なし、部分的な操作結果、低確信度では再試行せず、主モデルへ戻します。
-クリック後のツリー変化は進捗の手掛かりであり、目的の達成を保証しません。
-0.7 の確信度しきい値は未校正の目安で、安全性の保証ではありません。
-座標、キー操作、前面化、アプリ起動、ブラウザーのデバッグ設定への自動切り替えはありません。
-AT-SPI ワーカーは実行中だけ専用 stdio 接続で起動し、終了後はそのプロセスを止めて対象アプリを残します。
-新しい常駐サービス・待受け・MCP サーバーは追加しません。ブラウザー版 Jev と共有するロックで多重実行を拒否しますが、
-通常の CUA や人の入力を遮断するものではないため、同じアプリを並行操作しないでください。
-
-既定は8操作・120秒、最大20候補・20操作・300秒です。観測は最大80要素・16 KB、結果は48 KB未満です。
-`expect` は新しい観測で2回連続して確認する述語です。`role` / `label` は正確な一致を使い、
-必要なら `value` / `selected` も指定します。`stop_reason: done` と検査結果は独立し、
-`unknown` や検査未指定は成功を意味しません。アクセシビリティ検査だけで視覚的・タスク全体の成功を保証しません。
-処理時間、Jev 判断時間、要求回数、取得できた利用量に基づく概算料金を返します。速度の倍率は保証しません。
-認証・送信制限・応答検証は共有の [Jev 分析実装](home/keewai/shared/pi/extensions/jev-analysis.ts) を再利用します。
-適用後、既存セッションでは `/reload`、または新しいセッションで読み込みます。
-
-</details>
-
-<details>
-<summary>Jev Ultrafast の起動と認証</summary>
-
-### Jev Ultrafast
-
-デスクトップでは `jev` と `browser-harness` を Home Manager で導入します。
-[desktop/pi/jev-browser/default.nix](home/keewai/desktop/pi/jev-browser/default.nix) が導入先です。
-既存の Brave Origin を使い、既定の Firefox・URL ハンドラーは変更しません。
-サービスの自動起動、外部公開、Pi の MCP 登録は行いません。
-両コマンドでは Browser Harness のテレメトリーと更新通知を無効にしています。
-更新はこのリポジトリの Nix パッケージ定義で行います。
-
-```sh
-install -d -m 700 ~/.config/jev-ultrafast
-jev_root=$(dirname "$(dirname "$(readlink -f "$(command -v jev)")")")
-cp -n "$jev_root/share/jev-ultrafast/env.example" ~/.config/jev-ultrafast/.env
-chmod 600 ~/.config/jev-ultrafast/.env
-```
-
-TypeSafe キーは上の[共有認証](#typesafe-の共有認証)で設定します。
-Jev の判断は TypeSafe 公式の `https://api.typesafe.ai/v1/systemone` へ送ります。
-[TypeSafe の公式仕様](https://docs.typesafe.ai/)では Jev は文字生成を行いません。
-TypeSafe キーを `TEXT_MODEL_API_KEY` に流用せず、文字生成を使う場合だけ、別の対応サービスのキーを
-この `.env` の `TEXT_MODEL_API_KEY` に設定します。キーがなければ選択・クリックは使えますが、文字入力時に停止します。
-テンプレートの文字生成先は OpenRouter の `inception/mercury-2.5` です。
-キーを Nix、Git、チャットに書かず、既存の認証ファイルを上書きしないでください。
-別の OpenAI 互換サービスを使う場合は `TEXT_MODEL_BASE_URL`、`TEXT_MODEL`、
-`TEXT_MODEL_REASONING` も合わせて変更します。API 呼び出しには料金が発生します。
-
-Brave Origin で `brave://inspect/#remote-debugging` を開き、必要な場合だけリモートデバッグを許可します。
-接続時の許可ダイアログも自分で確認してください。既存プロフィールのタブとログイン状態にアクセスでき、
-実行時にはページの内容や操作履歴がモデル提供元へ送られます。個人情報を含むタスクには注意してください。
-
-```sh
-cd ~/.config/jev-ultrafast
-jev
-```
-
-`http://127.0.0.1:8766` を開き、`Start demo` から操作します。終了は端末の `Ctrl-C` です。
-`.env` は起動ディレクトリから読み込み、キーなしでも画面表示までは確認できます。
-接続の診断は `browser-harness --doctor`、接続デーモンの停止は `browser-harness --reload` です。
-録画は Browser Harness の既定で無効です。モデルの `DONE` だけで成功とは判断せず、結果も確認してください。
-
-### Pi から使う
-
-デスクトップの Pi には `jev_browser` ツールも配置します。既存の Pi は `/reload`、
-または新しいセッションで読み込みます。たとえば「Jev でこのテスト用ページの検索フォームを確認して」と
-明示して依頼します。通常の検索・API・CLI・回帰テストを置き換える用途ではありません。
-Orange には配置せず、常駐サービスや MCP サーバーも追加しません。
-開始承認後、普段の Brave Origin が起動済みならそのまま接続し、未起動なら通常のコマンドで起動します。
-別プロフィール、headless、デバッグポートなどのブラウザー起動オプションは追加しません。
-Pi Web でもユーザーセッションの表示環境を使います。表示環境がない場合は自動で headless に切り替えず停止します。
-デバッグ接続は通常の Brave が公開するループバックの接続先だけを使います。
-未設定なら `browser_setup_required` で停止するので、利用者自身が `brave://inspect/#remote-debugging` で許可し、
-次の実行時の接続ダイアログも確認してください。ブラウザー設定を自動変更したり、許可操作を代行したりしません。
-
-開始時に URL、目的、外部送信と課金の説明を確認し、操作ごとの承認か、隔離したテスト環境向けの自動実行を選びます。
-自動実行はモデルの引数では選べません。確認 UI のない実行は拒否します。
-操作ごとの承認では、クリック先や文字生成後の実際の入力値を実行前に表示します。
-テスト環境かどうかは利用者が確認するもので、技術的なサンドボックスではありません。
-私的・ログイン済みアカウントの情報、秘密値、本番の購入・投稿・削除・権限変更には使わないでください。
-普段の Brave のプロフィールとログイン状態を共有します。既存タブを操作対象にはしませんが、
-専用タブにも同じ Cookie が適用されるため、公開 URL でも私的情報を表示するページは対象にしないでください。
-プロフィール・ネットワーク・OS 権限を分離するサンドボックスではありません。
-
-既定は最大12回の判断・120秒、上限は30回・300秒です。時間にはブラウザー起動と操作承認待ちも含みます。
-Pi のキャンセルとセッション終了でランナーを停止します。実行ごとの一時的な systemd ユーザースコープで
-ランナーと接続デーモンだけを管理し、終了後に停止と接続用一時ファイルの削除を確認します。
-Brave を自動起動するときは別のユーザーアプリ単位で起動し、タスクの停止ではブラウザー全体を終了しません。
-作成したタブだけを閉じ、既存タブ・通常のプロフィールは削除しません。
-Pi が異常終了してもランナーはスコープの制限時間で停止しますが、その場合のタブ・一時ファイルの後片付けは保証しません。
-停止処理には数秒の猶予があります。同じ利用者の Jev ツールは排他実行します。
-CUA で同じブラウザーを同時操作しないでください。
-開始 URL と異なる origin を観測すると、以降のモデル送信と操作を停止します。
-リダイレクトそのもの、ページ内 JavaScript、第三者への通信を遮断する機能ではありません。
-
-`expect.urlContains` と `expect.textContains` は終了前に新しく観測した URL・表示本文への文字列検査です。
-`agent_status` と `verification.status` を別々に返し、検査を指定しなければ `not_requested`、
-最終観測がなければ `unknown` とします。検査成功もタスク全体の正しさを保証しません。
-証拠は現在の表示領域の本文6,000 UTF-8バイト・最大20要素（合計4 KiBまで）・最大30操作に限定し、
-スクリーンショットや生のモデル要求は保存しません。結果全体が48 KBを超えた場合は証拠を省略し、検査結果を `unknown` にします。
-本文・操作要約は Pi の通常のセッション履歴に残ります。失敗やキャンセル後は副作用が起きた可能性を確認し、
-自動で再実行しないでください。タブのクローズが確認できなければ `cleanup` にその旨を返します。
-`browser_cleanup` は通常のブラウザーを残したこと、`runner_cleanup` はランナー・デーモン停止と接続用一時ファイル削除を示します。
-スコープ停止を確認できない場合はエラーにし、調査用のスコープ名・一時ディレクトリを示します。
-
-ランナーは起動ディレクトリによらず `~/.config/jev-ultrafast/.env`（XDG_CONFIG_HOME に対応）を読みます。
-TypeSafe キーは既存の共有ファイルを利用し、明示的な環境変数、共有ファイル、`.env` の順に優先します。
-文字生成先・認証は上の Jev 設定を再利用し、Pi の ChatGPT 認証を流用しません。
-`TEXT_MODEL_API_KEY` が TypeSafe キーと同一なら、別サービスへの誤送信を防ぐため文字生成を拒否します。
-モデル呼び出し回数は結果に含めますが、実請求額や残高の表示ではありません。
 
 </details>
 
