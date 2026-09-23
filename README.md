@@ -150,7 +150,7 @@ Home Manager は `useUserPackages = true` で NixOS に統合されています�
 | [shared/pi/lsp.nix](home/keewai/shared/pi/lsp.nix) | Pi LSP 拡張の導入、言語サーバーと診断設定 |
 | [shared/pi/web-search.nix](home/keewai/shared/pi/web-search.nix) | Pi Web 検索拡張の導入、検索・取得経路、CLI / Web 共通の設定ファイル |
 | [shared/pi/web.nix](home/keewai/shared/pi/web.nix) | Pi Web の導入、ユーザーサービス、ホストごとの tailnet 許可 |
-| [shared/pi/subagents.nix](home/keewai/shared/pi/subagents.nix) | Agent Teams・Crew・Core Subagent の固定版と読み込み対象 |
+| [shared/pi/subagents.nix](home/keewai/shared/pi/subagents.nix) | CLI/Web 共通のネイティブ委任・ロール・設定 |
 | [shared/pi/APPEND_SYSTEM.md](home/keewai/shared/pi/APPEND_SYSTEM.md) | 全プロジェクト共通の追加システム指示 |
 | [shared/pi/extensions/](home/keewai/shared/pi/extensions/)、[prompts/](home/keewai/shared/pi/prompts/) | キャッシュ監視・CLI 完了通知のローカル拡張、レビュー用プロンプト |
 | [desktop/pi/default.nix](home/keewai/desktop/pi/default.nix) | デスクトップ専用連携の入口 |
@@ -207,8 +207,7 @@ Pi 本体は [pi-coding-agent/default.nix](pkgs/pi-coding-agent/default.nix) で
 Nixpkgs のビルド定義を使ってソース・npm 依存関係・モデルカタログのハッシュを検証します。
 標準の ChatGPT 接続にはキャッシュ用ヘッダーを本文のキーに合わせる小さなパッチを適用しています。
 Pi Codex conversion が読み込まれる場合は、拡張自身の上流プロバイダー実装をそのまま使います。
-`@howaboua/pi-codex-conversion@3.0.37`、`pi-mcp-adapter@2.34.0`、`pi-web-access@0.30.0`、`@narumitw/pi-lsp@0.49.7`、
-`@melihmucuk/pi-crew@1.0.34` は
+`@howaboua/pi-codex-conversion@3.0.37`、`pi-mcp-adapter@2.34.0`、`pi-web-access@0.30.0`、`@narumitw/pi-lsp@0.49.7` は
 Pi 標準のパッケージ管理で初回起動時に取得し、npm の lifecycle scripts を無効にします。
 拡張のバージョン指定は Nix 管理で、取得した依存関係とロックは `~/.pi/agent/npm/` に保存されます。
 この npm 依存関係のロックは flake.lock には含まれません。
@@ -395,81 +394,63 @@ Web 版と CLI は `~/.pi/agent` の認証、設定、拡張、スキル、会�
 Pi Web が内部で使う Pi SDK も、このリポジトリのキャッシュ修正版を使います。
 Home Manager が管理する設定・モデル・スキルの変更は、Web 画面ではなく Nix の編集元で行います。
 
-### Pi の委任拡張
+### Pi のネイティブ委任
 
-[Agent Teams](https://github.com/tmustier/pi-agent-teams)、
-[Crew](https://github.com/melihmucuk/pi-crew)、
-[Core Subagent](https://github.com/arhen/pi-extensions/tree/main/packages/core/pi-core-subagent) を
-[subagents.nix](home/keewai/shared/pi/subagents.nix) で管理します。
-同名の別実装ではなく、上記の scoped npm パッケージを固定して読み込みます。
-Teams 0.5.5 は [pkgs/pi-agent-teams](pkgs/pi-agent-teams/default.nix)、Core 1.3.55 は
-[pkgs/pi-core-subagent](pkgs/pi-core-subagent/default.nix) で npm 配布物をハッシュ固定します。
-Teams には明示ツールリストでも子の `team_message` を有効にする修正を適用します。
-さらに Teams の起動時 GC・終了時削除、Core の起動時自動復旧コミット・既存ブランチ掃除を止め、
-未統合の worktree とブランチを保持します。後片付けは内容と統合状況を確認し、明示的な許可を得て行います。
-Core の取消は子の終了処理後に run を終端状態へ移し、取消直後の resume との競合を防ぎます。
-実行時の依存は Pi SDK を使い、Teams と Core の取得に初回起動時の npm は使いません。
-旧 pi-subagents のパッケージ・設定・専用 config.json の配布は廃止します。
-Pi Web 内蔵側は引き続き `agents/settings.json` の `builtInEnabled: false` で無効にします。
+CLI と Web は [Pi Web パッケージ](pkgs/pi-web/default.nix) の同じ実装を使います。
+[subagents.nix](home/keewai/shared/pi/subagents.nix) が登録・共通設定、
+[web.nix](home/keewai/shared/pi/web.nix) が Web サービスを所有し、
+[web-package.nix](home/keewai/shared/pi/web-package.nix) で同じ SDK・派生を共有します。
+CLI は `pi-web-native-subagents/subagent-cli-extension.js` のみを読み込み、Web サーバーを起動しません。
+Web 内では CLI エントリーとの二重登録を抑止します。
 
-| 拡張 | 主な用途と操作 |
+| ツール | 操作 |
 | --- | --- |
-| Crew | 通常の委任。`crew_list`、`crew_spawn`、`crew_status`、`crew_respond`、`crew_done`、`crew_abort` |
-| Core Subagent | 呼び出しごとの専門役・依存関係付きタスク。`subagent`、`subagent_status`、`subagent_result`、`await_subagent`、`steer_subagent`、`resume_subagent`、`subagent_cancel`、`reply_subagent` |
-| Agent Teams | 共有タスク一覧・チーム間メッセージ。`teams` ツール、`/team`、`/swarm` |
+| `Agent` | 単独・バッチの委任、明示的な resume |
+| `get_subagent_result` | 結果・状態・保持した子履歴の取得 |
+| `steer_subagent` | 実行中・待機中の子への情報伝達 |
+| `manage_subagents` | list / assign / message / answer / cancel / close / release |
 
-Crew の役割は同梱の `scout`、`planner`、`oracle`、`worker`、`code-reviewer`、`quality-reviewer` を使い、
-独自プロファイルへ複製しません。`crew_spawn` の `task` は `goal`・`context`・`instructions` を持つ構造です。
-結果は自動通知され、確認後に `crew_done` で閉じます。追加指示は完了済み・入力待ちの子に
-`crew_respond` で渡します。実行中の子への steering や失敗後の resume と同じ操作ではありません。
-同梱スキルと `/pi-crew-plan`・`/pi-crew-review` も読み込み、共通 `/review` は `code-reviewer` を利用します。
-同梱の読み取り専用役にも `bash` があり、読み取り専用は指示上の制約であってサンドボックスではありません。
-親の Astra・`xhigh` は維持し、Crew のモデル・推論指定は同梱役割に従います。
+Crew から明確な役割と構造化依頼・検証後 close、Core からバッチ依存関係・明示 resume、
+Teams から共有タスク・送信者付きメッセージを取り込みました。旧3エンジンのラッパーではありません。
+`scout`、`planner`、`oracle`、`worker`、`code-reviewer`、`quality-reviewer` を提供し、
+Crew の固定ソースから役割本文を生成して MIT ライセンスを同梱します。
+`general-purpose`、`explore`、`plan` は互換名です。モデルは親の実効モデルを継承します。
 
-Core は `subagent({ agent: "auditor", prompt: "...", task: "...", cwd: "..." })` のように役割を渡します。
-既定は fresh context・バックグラウンド・読み取り専用で、起動後に一度 status を確認し、完了通知後に result を取得します。
-同じ呼び出しの結果を直ちに使う場合は `autoAwait: true`、並列処理は `tasks`、本当の依存関係だけに `needs` を使います。
-子は ambient 拡張を読み込まず、モデル未指定なら親のモデルを継承します。旧 pi-subagents の役割・API ではありません。
-`bash`・`edit`・`write` を持つ子は Git worktree に分離され、終了時に拡張が自動コミットします。
-このリポジトリではコミットを親が担当するため、Core は読み取り専用の委任に使います。
-差分レビューでは親が実際の未コミット差分・新規ファイルを渡し、別 worktree に自動転送されるとは扱いません。
+`manage_subagents(action: "list")` で現在のワークスペースの役割・タスクを確認します。
+単独なら `subagent_type`、バッチなら `profile` を完全一致で指定します。
+依頼は `assignment: {goal, context, instructions}`、独自専門性は明示的な `specialist_prompt` です。
+読み取り専用ロールはシェルを持たないため、レビューには読める差分ファイルと新規ファイルを渡します。
+子への拡張の継承は既定で無効です。ツール制限・worktree は OS サンドボックスではありません。
 
-Teams は共有タスクとメッセージが必要な場合に選びます。`contextMode: "fresh"` を優先し、
-並列編集には `workspaceMode: "worktree"`、使用する名前は `teammates` で明示します。
-Crew は親と同じ cwd で起動するため、並列編集では親が用意した checkout への絶対パス操作を指示します。
-Crew 自体が cwd を分離する機能ではありません。
-Teams の hooks は既定の無効のままとし、追加の自動チェックループは構成しません。
-各拡張は異なる状態管理を持つため、同じ仕事を複数へ投入したり ID を使い回したりしません。
-Pi Web の旧内蔵一覧がこれらの実行一覧に変わるわけではありません。
+既定は fresh context・バックグラウンドです。独立作業は1バッチ、前提は `needs` に指定します。
+同じ親の全バッチ・resume を共通キューで最大4子に制限します（設定範囲1〜4）。
+writer は明示した `input_revision` のコミットから独立 worktree に作成します。
+未コミット変更は転送されず、`integrated_changes` 依存は親が統合後のコミット OID で
+前提タスクを release するまで開始しません。自動コミット・マージ・worktree 削除は行いません。
 
-[APPEND_SYSTEM.md](home/keewai/shared/pi/APPEND_SYSTEM.md) により、調査・計画・実装・レビューでは
-早い段階で有用な部分を自動委任します。単なる応答や即答には起動せず、明示的な無効化指示を優先します。
-3拡張を合わせて同時4子までという運用方針を守り、再帰的なチームや不要な子は作りません。
-これは共通スケジューラーによる強制制限ではありません。Core のバッチには `concurrency: 4` 以下を渡します。
-委任しても監査・リモート操作・公開などの権限は広がらず、統合・コミット・適用は親が担当します。
-変更後は fresh context の独立レビューを取得し、実際の差分と結果を確認してからコミットします。
-失敗時は親が補完し、独立レビュー済みとは扱いません。子もモデルの利用枠を消費します。
+Web のタスク一覧から未割当・依存待ち・実行中・入力待ち・完了・失敗・中断を確認でき、
+割当、メッセージ、回答、resume、cancel、統合 release、検証済み close を操作できます。
+直近100件の送信者付きメッセージを表示し、それ以前もメタデータに保持します。
+子の会話はリンクから確認できます。close には現行レポートの delivery ID が必要で、履歴は残ります。
 
-Code Mode でも委任ツールは直接呼び出し、未登録の `tools.crew_spawn`・`tools.teams`・`tools.subagent` が
-`exec` 内にあるとは仮定しません。拡張・ツールの継承方法は3パッケージで異なるため、
-検索や拡張依存の検証は、子の実ツールを確認できた場合以外は親が担当します。
-共有設定は Nix の編集元で変更し、パッケージ同梱の役割を管理操作で書き換えません。
-`~/.pi/agent/agents` の Pi Web 無効化設定は読み取り専用の Nix Store ディレクトリを維持します。
+同じ親の実行所有権は1プロセスだけが保持します。他の CLI/Web は閲覧できますが操作できません。
+終了・クラッシュ後は自動実行せず、明示的な resume が必要です。CLI 終了後の常駐実行は保証しません。
+Code Mode でも4ツールは直接利用し、未登録の `tools.Agent` 等を仮定しません。
+委任は有用な場合に限定し、独立レビューとリポジトリの検証・適用ゲートを維持します。
 
-旧パッケージの取得済み npm ファイル・実行履歴・認証情報は自動削除せず、旧 ID を新拡張へ自動移行しません。
-移行前の子を終了してから新しいセッションを開始してください。既存セッションの実行中に `/reload` しません。
-旧内蔵履歴の中断表示用 [interrupted-subagents.patch](pkgs/pi-web/interrupted-subagents.patch) は維持します。
-新しい実行は選択した拡張のツール結果・状態・子のセッションファイルで確認します。
+旧 Teams・Crew・Core の登録と同梱スキル・プロンプトの読み込みを解除します。
+取得済み npm ファイル、認証、旧履歴、未統合 worktree、ロールバック用レシピは削除しません。
+旧プラグイン ID は自動移行されません。旧子を終了してから新しいセッションを開始し、
+移行中のセッションで `/reload` しないでください。Nix 管理の設定・ロールは画面から変更できません。
 
-状態確認は `systemctl --user status pi-web`、ログは `journalctl --user -u pi-web`、
-再起動は `systemctl --user restart pi-web` です。
-ソース、npm 依存関係、フォントは固定し、Nix のビルド中にネットワークからフォントを取得しません。
+状態は `systemctl --user status pi-web`、ログは `journalctl --user -u pi-web` で確認します。
+ソース・依存・フォントは固定し、既存 `/pi/` の公開経路を維持します。
 
-### Unified CLI/Web subagents: approved design, not yet implemented
+### Unified CLI/Web subagents: approved design
 
-This section records the approved integration design. The preceding sections
-describe the currently deployed three-plugin configuration. This design does not
-enable the replacement or claim that its implementation or validation is complete.
+This section records the approved contract. The implementation is carried by the
+package patch and common Nix registration above. Implementation checks and local
+activation are separate gates; the plan below is not a deployment record.
 
 #### Goal and ownership
 
@@ -626,7 +607,7 @@ parent context and presentation; a bundled CLI entry uses the same source.
 **Tech stack:** TypeScript, Node.js, the pinned Pi 0.87.1 SDK, existing `node:test`
 and `jiti` tests, React/Next.js, existing `proper-lockfile`, and Nix/Home Manager.
 
-**Spec:** [Approved design](#unified-cliweb-subagents-approved-design-not-yet-implemented).
+**Spec:** [Approved design](#unified-cliweb-subagents-approved-design).
 The plan is not an implementation-completion or deployment record.
 
 #### Global constraints
@@ -1049,7 +1030,7 @@ the delegation references in `AGENTS.md`, this README, and
 in `skills/superpowers/{using-superpowers,dispatching-parallel-agents,requesting-code-review}/SKILL.md`.
 
 **Interfaces:** Both Nix modules import `web-package.nix` to obtain the same Pi Web
-derivation. Its packaged `subagents/index.mjs` is the sole configured delegation
+derivation. Its packaged `pi-web-native-subagents/subagent-cli-extension.js` is the sole configured delegation
 extension; the service still uses the existing `pi-web` executable.
 
 - [ ] Add package-local adapter tests for the packaged CLI entry, six roles,
@@ -1063,7 +1044,7 @@ extension; the service still uses the existing `pi-web` executable.
   const { buildSync } = createRequire(import.meta.url)(process.argv[2]);
   buildSync({
     entryPoints: ['lib/subagent-cli-extension.ts'],
-    outfile: 'subagents/index.mjs',
+    outfile: 'pi-web-native-subagents/subagent-cli-extension.js',
     bundle: true,
     platform: 'node',
     format: 'esm',
@@ -1082,7 +1063,7 @@ extension; the service still uses the existing `pi-web` executable.
   Do not delete old downloaded packages, metadata, or worktrees. Leave unused
   old package recipes as rollback material unless separately requested to remove
   them; they are no longer part of the active delegation configuration.
-- [ ] Update the automatic-delegation policy and `/review` to exact native tool
+- [ ] Update the selective-delegation policy and `/review` to exact native tool
   and role names, structured tickets, explicit writer revisions, the enforced
   limit, and verified close. Replace only stale routing references in distributed
   skills, loading the applicable skill-editing guidance before editing them.

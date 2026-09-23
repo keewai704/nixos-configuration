@@ -13,10 +13,11 @@ each child can make useful progress from available inputs. Keep dependent work
 sequential and avoid sending several agents to investigate the same failure.
 
 Use the configured delegation tools and roles by their real capabilities. In Pi,
-prefer pi-crew's bundled roles for ordinary work, core subagent for inline tasks
-or dependency graphs, and agent teams for shared task queues. Use one orchestrator
-per workstream and inspect its schema when the API is unclear; do not assume
-Claude's Task tool, obsolete Agent profiles, or unlimited parallelism.
+use native Agent tasks with exact roles or explicit specialist_prompt values.
+Declare needs edges for real dependencies; integrated_changes edges wait for
+parent integration and explicit manage_subagents release. The shared queue
+enforces at most four active children per parent across batches and resumes.
+Inspect its schema; do not assume another harness's Task tool or old plugin IDs.
 
 Each task needs its objective, exact checkout and input revision, allowed
 actions/files, relevant constraints, acceptance criteria, and expected evidence.

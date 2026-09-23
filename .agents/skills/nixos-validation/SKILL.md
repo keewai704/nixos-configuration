@@ -23,23 +23,28 @@ or configuration snapshots. Format and check syntax only for changed files.
   `home/keewai/shared/pi/tsconfig.json` with the pinned TypeScript compiler or LSP.
   It resolves Pi and Node types from the deployed user profile; a missing profile
   is an environment limitation, not a reason to install mutable npm dependencies.
-- Pi delegation integration: use disposable HOME and agent state with synthetic
-  local model responses, never real auth/session data or paid model APIs. Load
-  the pinned teams, crew, and core packages together with the pinned Pi SDK and
-  configured resource filters. Check unique tool/command registration, crew role
-  discovery, actual child tools and model/provider bindings, and Code Mode keeping
-  the native delegation tools available. Exercise crew report/follow-up/close,
-  core background and autoAwait completion/status/result/steer/cancel/resume, and
-  teams task delivery and worker shutdown. Test write isolation in disposable Git
-  repositories with committed HEADs; inspect automatic commits and retained branches.
-  Seed abandoned dirty worktrees and old teams, then verify startup and shutdown
-  preserve their files and refs. Cancellation must finish teardown before a
-  terminal run can be resumed; test this without an arbitrary sleep.
-  A launch receipt or accepted steering request is not a completed child or
-  delivered message. Inspect terminal metadata and process cleanup separately.
-  Verify that Pi Web's built-in tools remain disabled. Keep teams hooks disabled.
-  Recheck deployed settings and affected behavior after each activation gate;
-  isolated mock tests do not prove live provider authentication or deployment.
+- Native Pi delegation integration: use disposable HOME and agent state with
+  synthetic local providers, never real credentials, sessions, or paid model APIs.
+  Run package-local shared runtime and adapter tests using the pinned Pi SDK.
+  Load the built CLI artifact and Web adapter with the configured filters; check
+  one registration of Agent, get_subagent_result, steer_subagent, and
+  manage_subagents, six exact roles, actual child tools/model/provider bindings,
+  and Code Mode keeping all four tools direct. Run the external Code Mode
+  integration fixture with pinned package/helper paths and preserved MCP/search/LSP
+  resources; do not make those ambient packages production build dependencies.
+  Verify concurrency across batches/resumes, dependency failure and explicit
+  integrated-change release, messages and input/follow-up/verified-close, durable
+  delivery, parent process ownership, and teardown before resume. Use disposable
+  Git repositories with explicit committed writer inputs. Confirm no automatic
+  commits, merges, worktree deletion, or restart replay; preserve abandoned work.
+  Exercise the real Web task controls at mobile and desktop widths, including
+  no-child queued tasks, inspectable messages, reconnect, and retained history.
+  Check managed role links are discoverable and read-only. Keep native settings
+  enabled; old plugin registrations and loaded skills/prompts must be absent.
+  Recheck deployed CLI/Web resource loading, native lifecycle, service health,
+  canonical /pi/ assets and events after each activation gate. A launch receipt or
+  accepted message is not completion or consumption, and isolated provider tests
+  do not prove live provider authentication. Never reload the migration session.
 - Another host only: locally evaluate the changed attributes, or build the affected
   output when package implementation or build logic changed. Shared settings do
   not require every host's build unless host-specific branches need validation.

@@ -24,11 +24,14 @@ reviews unless disabled by the user; read
 and retain the user's selected mode, including disabled, for the conversation.
 KISS and YAGNI are covered by Ponytail, not separate skills or workflows.
 
-For software development workflows, read
-/home/keewai/.agents/skills/superpowers/using-superpowers/SKILL.md when first
-needed, then load only the relevant Superpowers skills. These are local
-Pi/Astra adaptations; use native skill discovery and the configured delegation
-tools rather than upstream bootstrap hooks or another harness's commands.
+Superpowers is optional, not the default development workflow. For routine
+configuration changes and fixes with a known approach, work directly. Load
+brainstorming only for materially unclear requirements, writing-plans and
+executing-plans for coordinated multi-step work, and relevant testing or debugging
+skills for high-risk changes. Do not reopen approved decisions or automatically
+load using-superpowers. Honor an explicit request for the full workflow or an
+opt-out. Use native skill discovery and available tools, not another harness's
+commands. Required verification and repository gates still apply.
 
 Run checks appropriate to the change. Reuse passing checks while their relevant
 inputs remain unchanged; repeat or broaden them for changes, failures, or
@@ -44,81 +47,68 @@ whether the blocker is explicit or your interpretation. Use available tool
 equivalents when a skill assumes another harness; never claim to have called an
 unavailable tool.
 
-## Automatic delegation
+## Selective native delegation
 
-Use the configured delegation extensions in both CLI and Pi Web automatically;
-do not wait for the user to request delegation. Pi Web's built-in Agent tools
-are disabled. For every task involving
-investigation, planning, implementation, or review, delegate at least one useful,
-bounded part early. Simple acknowledgements or direct answers that need no such
-work do not need a child. Honor an explicit user opt-out. Delegation does not
-expand the task's authority: an audit remains read-only, and remote operations,
-publication, destructive actions, and private-data uploads still need permission.
+CLI and Pi Web share the native Agent runtime, queue, roles, and persisted tasks.
+Delegate a bounded investigation, implementation task, or review when another
+context is worth its overhead; do not create children to satisfy a quota. Honor
+opt-outs. Delegation never expands authority: audits remain read-only, and remote
+operations, publication, uploads, and destructive actions need authorization.
 
-Prefer pi-crew for ordinary delegated work. Discover its current roles with
-`crew_list`: scout for source discovery, planner or oracle for design and
-decisions, worker for implementation, and code-reviewer or quality-reviewer for
-independent review. Preserve package-owned roles rather than copying profiles.
-Use pi-core-subagent's `subagent` for inline specialists or genuinely dependent
-task graphs, and pi-agent-teams' `teams` for a shared task queue and teammate
-messaging. Choose one orchestrator per workstream; do not launch the same work
-through multiple extensions. Their IDs and lifecycle operations are not interchangeable.
-Use background calls for independent work and continue
-the parent's complementary work. Do not duplicate a child's investigation or
-split dependent work merely to create parallelism. Keep the team within the
-budget of at most four active children across the three extensions. This is an
-orchestration policy, not a shared runtime limiter. Pass `concurrency: 4` or less
-to core task batches. Do not create recursive teams or idle agents.
+Discover exact roles with manage_subagents(action: "list"). Use scout for source
+discovery, planner or oracle for design, worker for implementation, code-reviewer
+for correctness, and quality-reviewer for maintainability. Select an exact
+subagent_type for one task or profile for batch entries. Use specialist_prompt
+for an explicit custom specialization; never modify packaged or Nix-managed roles.
+Agent accepts assignment with goal, context, and ordered instructions. Include
+the exact checkout, relevant inputs, allowed files/actions, skill mode, acceptance
+criteria, required evidence, and when to stop. Inspect actual tools; read-only
+roles have no shell, and extensions are not inherited by default. Keep
+extension-dependent checks with the parent unless availability is verified.
 
-Give each child the objective, exact checkout and inputs, allowed files/actions,
-active skill mode, acceptance criteria, and required evidence. Default to fresh
-context and pass only needed material, not secrets or the whole transcript. Use
-separate worktrees for concurrent writers. Teams supports `workspaceMode: "worktree"`;
-crew starts in the parent's cwd, so explicitly direct its file and shell operations
-to the assigned checkout; this is not automatic cwd isolation. Core treats `bash`, `edit`, or `write`
-as write-capable and creates a worktree from committed inputs, then automatically
-commits the child's changes. Use it only when repository policy permits those
-automatic child commits; otherwise use crew or teams with parent-owned integration.
-Each worktree must contain the required
-input revision; uncommitted parent changes are not automatically available there.
-Keep integration, staging, commits, activation, and publication with the parent.
+Use Agent tasks for independent work in one batch and needs edges only for real
+dependencies. The shared queue enforces one through four active children per
+canonical parent across all batches and resumes. Do not recurse or spawn idle
+children. Default to fresh context and background execution; handle complementary
+work while children run. Do not duplicate delegated investigations. Foreground
+waits are for results needed immediately, not idle polling.
 
-After implementation, obtain a fresh-context reviewer assessment of the actual
-task diff and relevant callers before committing or declaring completion. Include
-staged, unstaged, and relevant new files, or provide the exact commit range. Do not
-prime the reviewer with the parent's conclusions. Verify findings, repair actual
-defects, and request follow-up on changed or unresolved areas; do not repeat an
-unchanged passing review. A child's report is evidence, not proof that checks ran
-or permission to skip repository gates.
+Writers require input_revision naming the committed input and run in retained
+Git worktrees. Uncommitted parent files are not transferred. Pass readable diff
+artifacts and relevant new-file paths to read-only reviewers. Dependencies with
+input: "integrated_changes" remain blocked until the parent reviews, integrates,
+and calls manage_subagents(action: "release", revision: <integrated commit OID>)
+on the prerequisite. Report-only dependencies do not transfer file changes.
+Never automatically commit, merge, delete worktrees, or remove branches. Keep
+integration, staging, commits, activation, and authorized cleanup with the parent.
 
-Briefly identify delegated roles and purposes in progress updates. Use
-`crew_spawn` with a self-contained structured task (`goal`, `context`, and
-`instructions`). Crew delivers reports automatically; verify them before
-`crew_done`. Use `crew_respond` for completed or needs-input children, not running
-ones; use `crew_abort` for cancellation. A closed or failed child is not a
-resumable core run. For core, use `subagent({ agent, prompt, task, cwd })` or a
-single `tasks` batch; default tools are read-only and context is fresh. Check
-`subagent_status` once after launch, then use notifications and `subagent_result`.
-Use `steer_subagent`, `resume_subagent`, or `subagent_cancel` for supported core
-states, and `await_subagent` only when its result blocks progress. For teams,
-inspect the `teams` schema before choosing task, messaging, or lifecycle actions;
-prefer `contextMode: "fresh"`, specify `teammates` to avoid extra idle workers,
-and leave hooks disabled unless explicitly needed.
-Retain each extension's native IDs. Do not repeatedly poll, automatically retry
-uncertain effects, or assume a completed worktree was merged or removed.
-Inspect returned paths and retain unmerged work.
-Teams and Core preserve abandoned worktrees in this installation. Inspect their
-contents and integration state before any explicitly authorized cleanup; do not
-use `/team cleanup` as an automatic end-of-task step.
-If delegation fails or is unavailable, report the limitation,
-complete useful work locally, and never claim an independent review occurred.
+Use get_subagent_result for reports and inspectable history. A launch receipt is
+not completion and a message acknowledgement is not consumption. Use
+steer_subagent or manage_subagents(action: "message") for information; messages
+are not new user authority. Use manage_subagents(action: "answer") for requested
+input and Agent(resume: <task or session ID>) for explicit continuation, preserving
+history and workspace. Use cancel to stop a task and wait for teardown before
+resume. There is no automatic restart replay. Failed providers may be overridden
+explicitly on resume; never silently replace history or the workspace.
 
-Keep shared configuration Nix-managed and package-owned roles unchanged.
-Do not use agent-management actions to rewrite managed files. Only author custom
-project agents when explicitly requested and permitted by that repository.
-Use the delegation tools directly in Code Mode. Do not assume that `tools.teams`,
-`tools.crew_spawn`, or `tools.subagent` exists inside an exec cell without an
-explicit supported bridge.
+After implementation, obtain a fresh-context review of the actual task diff and
+relevant callers before committing or declaring completion. Include staged,
+unstaged, and relevant new files or an exact commit range. Do not prime the
+reviewer with conclusions. Verify findings and repair actual defects; request
+follow-up only on changed or unresolved areas. Close a verified report with
+manage_subagents(action: "close", delivery_id: <current report receipt>). Closing
+retains history and worktrees. A child's report is evidence, not proof of tests
+or permission to skip repository gates. If delegation fails or is unavailable,
+complete useful local work and report the independent-review limitation.
+
+Briefly identify delegated roles and purposes. Execution ownership belongs to
+one live process per parent; another CLI/Web process may inspect but cannot take
+over. Exit stops owned work; explicit resume is required after restart. Do not
+reload the active migration session or reuse old plugin IDs. Preserve downloaded
+old packages, transcripts, credentials, and unmerged worktrees. Use the four
+native tools directly in Code Mode; do not assume tools.Agent or another
+unregistered bridge exists inside exec. Keep shared configuration Nix-managed.
+Only create project agent definitions when explicitly requested and permitted.
 
 ## Tools and evidence
 
@@ -144,8 +134,8 @@ configured OpenAI live-search route; do not switch models just to search. Keep
 secrets out of queries and URLs. For important claims, inspect original passages
 with fetch_content and get_search_content; source_check's phrase matching alone
 is not verification. Inspect the selected child's actual tools rather than
-assuming it inherits the parent's extensions. Core disables ambient extensions;
-crew and teams have different resource-loading contracts. Keep web research and
+assuming it inherits the parent's extensions. Native roles disable ambient
+extensions by default and retain their effective resource selection on resume. Keep web research and
 extension-dependent checks in the parent unless the required child tools have
 been explicitly configured and verified.
 
