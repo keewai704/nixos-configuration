@@ -1360,3 +1360,167 @@ diff --git a/lib/rpc-manager.test.mjs b/lib/rpc-manager.test.mjs
    assert.match(source, /ownsSession: false/);
    assert.match(source, /beforeShutdown: \(\) => SUBAGENT_CONTROLLER.shutdownParent/);
    assert.match(startup, /createSubagentExtension\([\s\S]*?SUBAGENT_CONTROLLER,/);
+diff --git a/components/AgentSessionPanel.test.mjs b/components/AgentSessionPanel.test.mjs
+index d36ca55..3516072 100644
+--- a/components/AgentSessionPanel.test.mjs
++++ b/components/AgentSessionPanel.test.mjs
+@@ -1,8 +1,36 @@
+ import assert from "node:assert/strict";
+ import { readFile } from "node:fs/promises";
+ import test from "node:test";
++import { createJiti } from "jiti";
+
+ const source = await readFile(new URL("./AgentSessionPanel.tsx", import.meta.url), "utf8");
++const jiti = createJiti(import.meta.url, { jsx: { runtime: "automatic" }, tsconfigPaths: true });
++const React = await jiti.import("react");
++const { renderToStaticMarkup } = await jiti.import("react-dom/server");
++const { AgentSessionPanel } = await jiti.import("./AgentSessionPanel.tsx");
++const { I18nProvider } = await jiti.import("@/hooks/useI18n");
++
++test("keeps grandchildren directly below their own parent with one level of indentation", () => {
++  const session = (id, parent, modified) => ({
++    id, name: id, firstMessage: id, modified,
++    ...(parent ? { relation: { kind: "subagent", parentSessionId: parent, description: id, profile: "scout" } } : {}),
++  });
++  const root = session("root", null, "2026-09-20");
++  const children = [session("parent-a", "root", "2026-09-21"), session("parent-b", "root", "2026-09-22"),
++    session("grandchild-a", "parent-a", "2026-09-23"), session("grandchild-b", "parent-b", "2026-09-24"),
++    session("grandchild-a-running", "parent-a", "2026-09-20")];
++  const html = renderToStaticMarkup(React.createElement(I18nProvider, null,
++    React.createElement(AgentSessionPanel, {
++      rootSession: root, subagents: children, selectedSessionId: "grandchild-a",
++      runningSessionIds: new Set(["parent-a", "grandchild-a-running"]), onSelectSession() {},
++    })));
++  const rows = [...html.matchAll(/<button\b[^>]*role="option"[^>]*>[\s\S]*?<\/button>/g)].map(([row]) => row);
++  assert.deepEqual(rows.map((row) => row.match(/title="([^"]+)"/)[1]),
++    ["Main agent", "parent-a", "grandchild-a-running", "grandchild-a", "parent-b", "grandchild-b"]);
++  for (const index of [2, 3, 5]) assert.match(rows[index], /padding-left:32px/);
++  for (const index of [0, 1, 4]) assert.doesNotMatch(rows[index], /padding-left:32px/);
++  assert.match(rows[3], /aria-selected="true"/);
++});
+
+ test("keeps the main session first and makes every agent session selectable", () => {
+   const mainRow = source.indexOf("session={rootSession}");
+diff --git a/components/AgentSessionPanel.tsx b/components/AgentSessionPanel.tsx
+index 3e362f9..80f0450 100644
+--- a/components/AgentSessionPanel.tsx
++++ b/components/AgentSessionPanel.tsx
+@@ -72,12 +72,14 @@ function AgentRow({
+   main,
+   selected,
+   running,
++  depth = 0,
+   onSelect,
+ }: {
+   session: SessionInfo;
+   main?: boolean;
+   selected: boolean;
+   running: boolean;
++  depth?: number;
+   onSelect: () => void;
+ }) {
+   const { locale, t } = useI18n();
+@@ -102,6 +104,7 @@ function AgentRow({
+         alignItems: "center",
+         gap: 9,
+         padding: "7px 12px",
++        paddingLeft: 12 + depth * 20,
+         border: "none",
+         borderBottom: "1px solid var(--border)",
+         borderLeft: selected ? "2px solid var(--accent)" : "2px solid transparent",
+@@ -160,13 +163,27 @@ export function AgentSessionPanel({ rootSession, subagents, selectedSessionId, r
+     return b.modified.localeCompare(a.modified);
+   }), [runningSessionIds, subagents]);
+   const normalizedQuery = query.trim().toLowerCase();
+-  const visibleSubagents = normalizedQuery
+-    ? sortedSubagents.filter((session) => {
++  const visibleSubagents = useMemo(() => {
++    const children = new Map<string, SessionInfo[]>();
++    for (const session of sortedSubagents) {
++      const parentId = session.relation?.kind === "subagent" ? session.relation.parentSessionId : rootSession.id;
++      const siblings = children.get(parentId) ?? [];
++      siblings.push(session);
++      children.set(parentId, siblings);
++    }
++    const visited = new Set([rootSession.id]);
++    const rows = (parentId: string, depth: number): Array<{ session: SessionInfo; depth: number }> =>
++      (children.get(parentId) ?? []).flatMap((session) => {
++        if (visited.has(session.id)) return [];
++        visited.add(session.id);
++        const descendants = rows(session.id, depth + 1);
+         const relation = session.relation?.kind === "subagent" ? session.relation : null;
+-        return [relation?.description, relation?.profile, session.name, session.firstMessage]
++        const matches = !normalizedQuery || [relation?.description, relation?.profile, session.name, session.firstMessage]
+           .some((value) => value?.toLowerCase().includes(normalizedQuery));
+-      })
+-    : sortedSubagents;
++        return matches || descendants.length ? [{ session, depth }, ...descendants] : [];
++      });
++    return rows(rootSession.id, 0);
++  }, [normalizedQuery, rootSession.id, sortedSubagents]);
+   const runningCount = subagents.filter((session) => runningSessionIds.has(session.id)).length;
+
+   return (
+@@ -219,10 +236,11 @@ export function AgentSessionPanel({ rootSession, subagents, selectedSessionId, r
+             running={runningSessionIds.has(rootSession.id)}
+             onSelect={() => onSelectSession(rootSession)}
+           />
+-          {visibleSubagents.map((session) => (
++          {visibleSubagents.map(({ session, depth }) => (
+             <AgentRow
+               key={session.id}
+               session={session}
++              depth={depth}
+               selected={session.id === selectedSessionId}
+               running={runningSessionIds.has(session.id)}
+               onSelect={() => onSelectSession(session)}
+diff --git a/e2e/subagents.mjs b/e2e/subagents.mjs
+index f3d6647..281191a 100644
+--- a/e2e/subagents.mjs
++++ b/e2e/subagents.mjs
+@@ -110,11 +110,13 @@ export async function seedSubagents(agentDir, project, sessionDir) {
+             const childId = randomUUID();
+             const description = `Retained child ${index + 1}`;
+             links.push({ sessionId: childId, description });
+-            const metadata = { version: 1, parentSessionId: sessionId, parentSessionPath: sessionFile,
++            const parentId = index === 12 ? links[0].sessionId : sessionId;
++            const parentFile = index === 12 ? join(sessionDir, `2026-08-23T00-00-00-000Z_${parentId}.jsonl`) : sessionFile;
++            const metadata = { version: 1, parentSessionId: parentId, parentSessionPath: parentFile,
+               parentToolCallId: "list", profile: "scout", description, task: description,
+               runInBackground: true, createdAt: timestamp };
+             writeFileSync(join(sessionDir, `2026-08-23T00-00-00-000Z_${childId}.jsonl`), [
+-              { ...header(childId), parentSession: sessionFile },
++              { ...header(childId), parentSession: parentFile },
+               { type: "custom", id: "metadata", parentId: null, timestamp, customType: "pi-web:subagent", data: metadata },
+               { type: "message", id: "child-user", parentId: "metadata", timestamp,
+                 message: { role: "user", content: `${description} transcript ${width}`, timestamp: Date.now() } },
+@@ -185,11 +187,28 @@ export async function checkSubagents(page, base, fixture, artifacts, width) {
+   }
+   await shortcuts.last().click();
+   await page.getByText(`Retained child 13 transcript ${width}`, { exact: true }).waitFor();
++  if (width < 600) await page.locator('[aria-controls="mobile-toolbar-actions"]').click();
++  await page.getByRole("button", { name: title, exact: true }).click();
++  const parentRow = panel().getByRole("option", { name: /^Retained child 1 / });
++  const grandchildRow = panel().getByRole("option", { name: /^Retained child 13 / });
++  await grandchildRow.waitFor();
++  const labels = await panel().getByRole("option").allTextContents();
++  assert.equal(labels.findIndex((label) => label.startsWith("Retained child 13")),
++    labels.findIndex((label) => label.startsWith("Retained child 1scout")) + 1);
++  const leftPadding = (row) => row.evaluate((element) => parseFloat(getComputedStyle(element).paddingLeft));
++  assert.equal(await leftPadding(grandchildRow) - await leftPadding(parentRow), 20);
++  assert.equal(await grandchildRow.getAttribute("aria-selected"), "true");
++  await panel().getByRole("searchbox").fill("Retained child 13");
++  assert.equal(await panel().getByRole("option").count(), 3, "Search retains the grandchild's parent for context");
++  await page.screenshot({ path: join(artifacts, `native-tree-${width}.png`) });
++  await parentRow.click();
++  await page.getByText(`Retained child 1 transcript ${width}`, { exact: true }).waitFor();
++  console.log(`PASS: ${width}px grandchild ordering, one-level indentation, selection and search ancestry`);
+   if (width >= 600) {
+     await open(fixture.auxiliary.large, `E2E large parent ${width}`);
+     await page.getByRole("button", { name: title, exact: true }).click();
+     await panel().getByRole("searchbox").fill("Retained child 13");
+-    assert.equal(await panel().getByRole("option").count(), 2);
++    assert.equal(await panel().getByRole("option").count(), 3);
+     await page.getByText(`E2E native parent ${width}`, { exact: true }).click();
+     await panel().getByRole("option", { name: /^Inspect configuration / }).waitFor();
+     assert.equal(await panel().getByRole("searchbox").count(), 0);
