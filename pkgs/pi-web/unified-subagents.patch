@@ -1818,7 +1818,7 @@ index 5316944..dc030f5 100644
                )}
                {activeTopPanel === "system" && (
 diff --git a/e2e/run.mjs b/e2e/run.mjs
-index 53126be..f477a0f 100644
+index 53126be..0837279 100644
 --- a/e2e/run.mjs
 +++ b/e2e/run.mjs
 @@ -12,6 +12,7 @@ import { chromium } from "playwright";
@@ -1829,7 +1829,23 @@ index 53126be..f477a0f 100644
 
  const root = dirname(dirname(fileURLToPath(import.meta.url)));
  const mode = process.env.E2E_SERVER_MODE || "dev";
-@@ -51,6 +52,7 @@ let browser;
+@@ -36,7 +37,14 @@ const text = (i) => `E2E message ${String(i).padStart(4, "0")}`;
+ const ids = (start, end) => Array.from({ length: end - start }, (_, i) => `e${start + i}`);
+
+ function message(id, parentId, role, content) {
+-  return { type: "message", id, parentId, timestamp, message: { role, content } };
++  return { type: "message", id, parentId, timestamp, message: {
++    role, content,
++    ...(role === "assistant" ? {
++      api: "openai-completions", provider: "e2e-native", model: "fixture-1280", stopReason: "stop",
++      usage: { input: 0, output: 0, cacheRead: 0, cacheWrite: 0, totalTokens: 0,
++        cost: { input: 0, output: 0, cacheRead: 0, cacheWrite: 0, total: 0 } },
++    } : {}),
++  } };
+ }
+
+ function writeSession(id, entries) {
+@@ -51,6 +59,7 @@ let browser;
  let page;
  let context;
  let serverError;
@@ -1837,7 +1853,7 @@ index 53126be..f477a0f 100644
  const serverLog = createWriteStream(join(artifacts, "server.log"));
  const interrupt = () => {
    process.exitCode = 1;
-@@ -61,6 +63,7 @@ process.once("SIGINT", interrupt);
+@@ -61,6 +70,7 @@ process.once("SIGINT", interrupt);
  process.once("SIGTERM", interrupt);
 
  try {
@@ -1845,7 +1861,7 @@ index 53126be..f477a0f 100644
    // Seed before startup so the first catalogue scan sees every fixture.
    mkdirSync(join(agentDir, "extensions"));
    writeFileSync(join(agentDir, "extensions", "e2e-dialog.js"), extensionSource);
-@@ -131,10 +134,11 @@ try {
+@@ -131,10 +141,11 @@ try {
    await once(probe, "listening");
    const port = probe.address().port;
    await new Promise((resolve, reject) => probe.close((error) => error ? reject(error) : resolve()));
@@ -1860,7 +1876,7 @@ index 53126be..f477a0f 100644
      stdio: ["ignore", "pipe", "pipe"],
    });
    server.once("error", (error) => { serverError = error; });
-@@ -166,7 +170,7 @@ try {
+@@ -166,7 +177,7 @@ try {
      const response = await fetch(`${base}/api/sessions`, { signal: AbortSignal.timeout(5000) }).catch(() => null);
      if (response?.ok) {
        const { sessions } = await response.json();
@@ -1869,7 +1885,7 @@ index 53126be..f477a0f 100644
        break;
      }
      assert.ok(Date.now() < deadline, "Server readiness timed out; see server.log");
-@@ -218,8 +222,12 @@ try {
+@@ -218,8 +229,12 @@ try {
      console.log("PASS: external session-file appends are visible on force/mount reads");
    }
 
@@ -1884,7 +1900,7 @@ index 53126be..f477a0f 100644
      context = await browser.newContext({ viewport, locale: "en-US" });
      await context.tracing.start({ screenshots: true, snapshots: true });
      page = await context.newPage();
-@@ -231,9 +239,10 @@ try {
+@@ -231,9 +246,10 @@ try {
      page.on("response", (response) => {
        if (response.url().startsWith(base) && response.status() >= 500) errors.push(`${response.status()} ${response.url()}`);
        const url = new URL(response.url());
@@ -1897,7 +1913,7 @@ index 53126be..f477a0f 100644
      await page.goto(`${base}/?session=${LONG}`, { waitUntil: "domcontentloaded" });
      assert.equal((await stateReady).status(), 200);
      await page.getByText(text(4999), { exact: true }).waitFor();
-@@ -246,7 +255,7 @@ try {
+@@ -246,7 +262,7 @@ try {
      // Exercise the real IntersectionObserver and prepend path, twice.
      for (let turn = 0; turn < 2; turn++) {
        const responsePromise = page.waitForResponse((response) =>
@@ -1906,7 +1922,7 @@ index 53126be..f477a0f 100644
        await sentinel.evaluate((element) => element.scrollIntoView({ block: "start", behavior: "instant" }));
        const response = await responsePromise;
        const older = (await response.json()).context;
-@@ -426,6 +435,7 @@ try {
+@@ -426,6 +442,7 @@ try {
      clearTimeout(forceKill);
    }
    serverLog.end();
@@ -2658,7 +2674,7 @@ index 0000000..9e76dda
 +}
 diff --git a/e2e/subagents.mjs b/e2e/subagents.mjs
 new file mode 100644
-index 0000000..21e8641
+index 0000000..2e7e345
 --- /dev/null
 +++ b/e2e/subagents.mjs
 @@ -0,0 +1,191 @@
@@ -2804,7 +2820,7 @@ index 0000000..21e8641
 +  await open();
 +  await row("needs-input").getByText("Choose the next fixture step", { exact: false }).waitFor();
 +  assert.match(await row("dependent").innerText(), /done/);
-+  assert.match(await row("dependent").innerText(), /Blocked/);
++  await row("dependent").getByText("Interrupted", { exact: true }).waitFor();
 +  assert.equal(fixture.requests().length, 0, "Viewing tasks must not start a model");
 +  await controls("needs-input");
 +  assert.equal(await row("needs-input").getByRole("button", { name: "Resume", exact: true }).isDisabled(), true);
