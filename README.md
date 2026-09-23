@@ -144,7 +144,7 @@ Home Manager は `useUserPackages = true` で NixOS に統合されています�
 | --- | --- |
 | [shared/pi/default.nix](home/keewai/shared/pi/default.nix) | 全ホスト共通の Pi 設定の入口 |
 | [shared/pi/agent.nix](home/keewai/shared/pi/agent.nix) | 本体・実行環境、モデル、ローカル拡張と指示の配布 |
-| [skills/superpowers/](skills/superpowers/) | Superpowers 6.4.1 の Pi / Astra 向けローカルスキル |
+| [shared/pi/superpowers.nix](home/keewai/shared/pi/superpowers.nix) | Superpowers 6.4.1 公式 Pi パッケージの固定と読み込み |
 | [shared/pi/codex-conversion.nix](home/keewai/shared/pi/codex-conversion.nix) | Pi Codex conversion の導入、補助バイナリ、ツール・Remote context management・互換設定 |
 | [shared/pi/mcp.nix](home/keewai/shared/pi/mcp.nix) | Pi MCP アダプターの導入、共通 MCP サーバーの登録と設定変換 |
 | [shared/pi/lsp.nix](home/keewai/shared/pi/lsp.nix) | Pi LSP 拡張の導入、言語サーバーと診断設定 |
@@ -213,16 +213,31 @@ Pi 標準のパッケージ管理で初回起動時に取得し、npm の lifecy
 この npm 依存関係のロックは flake.lock には含まれません。
 
 [Superpowers 6.4.1](https://github.com/obra/superpowers/tree/5bf4e78011075bcfc0dc295f0724994cd123ee71)
-の全15スキルを、[Astra の公式ガイド](https://developers.openai.com/api/docs/guides/latest-model#prompting-best-practices)
-に合わせたローカル版として [skills/superpowers/](skills/superpowers/) で管理します。
-上流リビジョンと MIT ライセンスを保持し、Home Manager が `~/.agents/skills/superpowers/` へ配布します。
-Pi の標準探索を使い、`/skill:using-superpowers`、`/skill:brainstorming`、
-`/skill:systematic-debugging` などで呼び出せます。開発時は `APPEND_SYSTEM.md` が入口スキルを案内します。
-不要な承認待ち、固定回数のレビュー・テスト、別ハーネス専用ツールの指示を調整し、
-変更に必要な検証、独立レビュー、許可された作業の完遂を重視します。
-Ponytail、利用者の明示指示、AGENTS.md の配置・検証・承認規則を維持します。
-上流のブートストラップ拡張、ブラウザー補助、実行スクリプト、会話のエクスポート機能は配布しません。
-スキルは npm では取得せず、このリポジトリで更新します。適用後は新しいタスクで読み込んでください。
+は [superpowers.nix](home/keewai/shared/pi/superpowers.nix) で上流リビジョンとハッシュを固定し、
+改変せず Nix ストアから公式 Pi パッケージとして読み込みます。
+Pi 標準の `extensions = []` で bootstrap 拡張を無効にし、`skills` フィルターで
+`using-superpowers` を通常の探索・スキルコマンドから除外します。残り14スキルは利用できます。
+開始時・コンパクション後の自動注入と、入口スキルの通常候補への掲載は行いません。
+通常は Superpowers を使わず、[APPEND_SYSTEM.md](home/keewai/shared/pi/APPEND_SYSTEM.md) の条件で選択します。
+
+| 作業 | 運用 |
+| --- | --- |
+| 原因・修正方針が明確なバグ修正、通常の設定変更 | Superpowers なし。範囲と必要な確認を明確にして直接実施 |
+| 要件や設計に重要な未決事項がある変更 | `brainstorming` で認識を合わせる |
+| 複数段階の調整・計画が必要な変更 | `writing-plans` と `executing-plans`（Native execution）を優先 |
+| 高リスクな変更、厳密な検証の明示依頼 | 必要なデバッグ・テスト・検証スキルだけを選択 |
+| 独立した実装作業を分担する利点が明確な変更 | `subagent-driven-development` を検討。規模だけでは選ばない |
+
+`/skill:brainstorming`、`/skill:executing-plans` などで個別に指定できます。
+フル運用を明示依頼した場合だけ、Pi 設定にある固定パッケージ内の
+`skills/using-superpowers/SKILL.md` を直接読み込みます。通常の `/skill:using-superpowers` は登録しません。
+上流の広い発動条件や「1%」ルールよりこの選択方針を優先し、1スキルの利用から全工程へ自動展開しません。
+Native execution は親が現在のセッションで実装し、最後に別コンテキストで変更全体をレビューします。
+Superpowers を使わない場合も、必要な確認・独立レビュー・コミット・適用の規則は省略しません。
+ローカル改変版は配布せず、`~/.agents/skills/superpowers/` との二重読み込みを避けます。
+Ponytail、利用者の明示指示、AGENTS.md の配置・検証・承認規則は引き続き優先します。
+更新は Nix の固定リビジョンとハッシュを変更して行います。既存の会話に読み込まれた指示は消えないため、
+適用後は新しい Pi セッションで利用してください。モデルと effort の既定値はこの運用変更では変えません。
 
 [Pi 0.86.0](https://github.com/earendil-works/pi/blob/v0.86.0/packages/coding-agent/CHANGELOG.md) は
 プロバイダーへ渡すシステム指示・ツール定義を `TranscriptContext.messages` 内へ移しました。
@@ -1026,8 +1041,9 @@ Create `pkgs/pi-web/build-subagent-extension.mjs` and
 `home/keewai/shared/pi/web-package.nix`. Modify
 `home/keewai/shared/pi/{subagents.nix,web.nix,APPEND_SYSTEM.md,prompts/review.md}`,
 the delegation references in `AGENTS.md`, this README, and
-`.agents/skills/nixos-validation/SKILL.md`. Update only obsolete routing references
-in `skills/superpowers/{using-superpowers,dispatching-parallel-agents,requesting-code-review}/SKILL.md`.
+`.agents/skills/nixos-validation/SKILL.md`. Preserve the separately deployed
+official Superpowers package and selective activation policy. Its package-owned
+skills remain unchanged; do not restore the removed local skill copies.
 
 **Interfaces:** Both Nix modules import `web-package.nix` to obtain the same Pi Web
 derivation. Its packaged `pi-web-native-subagents/subagent-cli-extension.js` is the sole configured delegation
@@ -1065,8 +1081,8 @@ extension; the service still uses the existing `pi-web` executable.
   them; they are no longer part of the active delegation configuration.
 - [ ] Update the selective-delegation policy and `/review` to exact native tool
   and role names, structured tickets, explicit writer revisions, the enforced
-  limit, and verified close. Replace only stale routing references in distributed
-  skills, loading the applicable skill-editing guidance before editing them.
+  limit, and verified close. Keep native routing in the shared guidance rather
+  than editing the official package's skills.
   Preserve unrelated Superpowers behavior and existing model settings.
 - [ ] Update validation guidance to the new runtime and remove the obsolete gate
   asserting native tools are disabled. Replace the README's old deployment guide
