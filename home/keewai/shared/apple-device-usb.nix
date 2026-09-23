@@ -1,10 +1,14 @@
 { lib, pkgs, ... }:
 let
   mobileDeviceCommand =
-    name: command:
+    {
+      name,
+      command,
+      runtimeInputs ? [ ],
+    }:
     pkgs.writeShellApplication {
       inherit name;
-      runtimeInputs = [ pkgs.stdenv.cc ];
+      runtimeInputs = [ pkgs.stdenv.cc ] ++ runtimeInputs;
       text = ''
         export LD_LIBRARY_PATH="${
           lib.makeLibraryPath [
@@ -27,7 +31,14 @@ in
   '';
 
   home.packages = [
-    (mobileDeviceCommand "pymobiledevice3" "pymobiledevice3")
-    (mobileDeviceCommand "apple-device-usb" "python ${../../../skills/apple-device-usb/scripts/control.py}")
+    (mobileDeviceCommand {
+      name = "pymobiledevice3";
+      command = "pymobiledevice3";
+    })
+    (mobileDeviceCommand {
+      name = "apple-device-usb";
+      command = "python ${../../../skills/apple-device-usb/scripts}/control.py";
+      runtimeInputs = [ pkgs.iproute2 ];
+    })
   ];
 }
