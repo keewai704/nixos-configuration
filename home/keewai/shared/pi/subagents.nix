@@ -10,8 +10,8 @@ in
 {
   programs.pi-coding-agent.settings.packages = lib.mkOrder 1500 [
     {
-      source = "${piWeb}/lib/node_modules/@agegr/pi-web";
-      extensions = [ "pi-web-native-subagents/subagent-cli-extension.js" ];
+      source = "${piWeb.delegation}/lib/node_modules/pi-web-delegation";
+      extensions = [ "dist/extension.js" ];
       skills = [ ];
       prompts = [ ];
       themes = [ ];

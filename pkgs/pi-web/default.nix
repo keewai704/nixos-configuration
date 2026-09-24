@@ -28,15 +28,20 @@ let
 in
 buildNpmPackage {
   pname = "pi-web";
-  version = "0.9.1-unstable-2026-09-19";
+  version = "0.9.1-unstable-2026-09-24";
+  outputs = [
+    "out"
+    "delegation"
+  ];
 
   src = fetchFromGitHub {
     owner = "keewai704";
     repo = "pi-web";
-    rev = "e7260730755d092dc485f22a3b916c621e697d19";
-    hash = "sha256-IEVXUsf4+18eOn8ZALWW1qge7KdQPmnw79fStkA2Q+I=";
+    rev = "df6658493555b7ad58adb9c207872627bd62b812";
+    hash = "sha256-vu10JZNBbfSJ1qPhwxfyTzZxLoXsRMyXkwl3WzdsXns=";
   };
-  npmDepsHash = "sha256-lGsMOYY2rCQSw+hMLXv+aWq4991NnkhLJUipL1F843k=";
+  patches = [ ./deployment.patch ];
+  npmDepsHash = "sha256-dgS9gBmbN2Ed/xRlL2FIw7b1WKfBYP++1U6IbyGtqEU=";
   npmRebuildFlags = [ "--ignore-scripts" ];
   npmPackFlags = [ "--ignore-scripts" ];
 
@@ -63,17 +68,17 @@ buildNpmPackage {
       ln -s "pi-coding-agent/node_modules/@earendil-works/$package" \
         "node_modules/@earendil-works/$package"
     done
-    ${lib.getExe nodejs} scripts/build-subagent-roles.mjs roles
   '';
 
   doCheck = true;
   nativeCheckInputs = [ git ];
-  postBuild = ''
-    ${lib.getExe nodejs} scripts/build-subagent-extension.mjs ${piRoot}/node_modules/esbuild
-  '';
   checkPhase = ''
     runHook preCheck
-    PI_WEB_NATIVE_SUBAGENT_EXTENSION="$PWD/pi-web-native-subagents/subagent-cli-extension.js" npm test
+    npm test
+    (
+      cd plugins/pi-web-delegation
+      PI_WEB_NATIVE_SUBAGENT_EXTENSION="$PWD/dist/extension.js" npm test
+    )
     runHook postCheck
   '';
 
@@ -97,7 +102,14 @@ buildNpmPackage {
     done
     mkdir -p "$out/share/licenses/pi-web"
     cp ${fontLicense} "$out/share/licenses/pi-web/NotoSansMono-OFL.txt"
-    cp roles/LICENSE "$out/share/licenses/pi-web/Crew-MIT.txt"
+    plugin_dir="$delegation/lib/node_modules/pi-web-delegation"
+    mkdir -p "$plugin_dir/node_modules/@earendil-works"
+    cp -r plugins/pi-web-delegation/{dist,roles,package.json,README.md,LICENSE} "$plugin_dir/"
+    ln -s ${piRoot} "$plugin_dir/node_modules/@earendil-works/pi-coding-agent"
+    for package in pi-ai pi-agent-core pi-tui; do
+      ln -s "${piRoot}/node_modules/@earendil-works/$package" \
+        "$plugin_dir/node_modules/@earendil-works/$package"
+    done
   '';
 
   postFixup = ''
@@ -116,7 +128,11 @@ buildNpmPackage {
     HOME="$test_home" PI_CODING_AGENT_DIR="$test_home" ${lib.getExe nodejs} --input-type=module -e '
       const { default: extension } = await import(process.argv[1]);
       if (typeof extension !== "function") throw new Error("Missing native delegation extension");
-    ' "$out/lib/node_modules/@agegr/pi-web/pi-web-native-subagents/subagent-cli-extension.js"
+    ' "$delegation/lib/node_modules/pi-web-delegation/dist/extension.js"
+    HOME="$test_home" PI_CODING_AGENT_DIR="$test_home" ${lib.getExe nodejs} --input-type=module -e '
+      const { default: plugin } = await import(process.argv[1]);
+      if (typeof plugin !== "function") throw new Error("Missing delegation web plugin");
+    ' "$delegation/lib/node_modules/pi-web-delegation/dist/server.mjs"
     rm -r "$test_home"
     runHook postInstallCheck
   '';
@@ -128,6 +144,7 @@ buildNpmPackage {
       lib.licenses.mit
       lib.licenses.ofl
     ];
+    outputsToInstall = [ "out" ];
     platforms = [ "x86_64-linux" ];
     mainProgram = "pi-web";
   };

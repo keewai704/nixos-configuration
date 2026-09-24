@@ -1,0 +1,1564 @@
+--- a/app/api/web-auth/route.ts
++++ b/app/api/web-auth/route.ts
+@@ -43,7 +43,7 @@
+     httpOnly: true,
+     sameSite: "lax",
+     secure: isSecureRequest(request),
+-    path: "/",
++    path: "/pi/",
+     maxAge: 0,
+   });
+ }
+@@ -100,7 +100,7 @@
+     httpOnly: true,
+     sameSite: "lax",
+     secure: isSecureRequest(request),
+-    path: "/",
++    path: "/pi/",
+     maxAge: PI_WEB_SESSION_MAX_AGE,
+   });
+   return response;
+--- a/app/login/page.tsx
++++ b/app/login/page.tsx
+@@ -6,7 +6,7 @@
+ 
+ function safeDestination(): string {
+   const destination = new URLSearchParams(window.location.search).get("next");
+-  return destination?.startsWith("/") && !destination.startsWith("//") ? destination : "/";
++  return destination?.startsWith("/pi/") ? destination : "/pi/";
+ }
+ 
+ function LoginForm() {
+@@ -27,7 +27,7 @@
+     setBusy(true);
+     setError("");
+     try {
+-      const response = await fetch("/api/web-auth", {
++      const response = await fetch("/pi/api/web-auth", {
+         method: "POST",
+         headers: { "Content-Type": "application/json" },
+         body: JSON.stringify({ password }),
+@@ -48,7 +48,7 @@
+     <main className="web-login-page">
+       <div className="web-login-shell">
+         <header className="web-login-brand">
+-          <Image src="/icons/apple-touch-icon.png" width={52} height={52} alt="" priority />
++          <Image src="/pi/icons/apple-touch-icon.png" width={52} height={52} alt="" priority />
+           <div>
+             <h1>Pi Web</h1>
+             <p>{t("auth.prompt")}</p>
+--- a/app/manifest.ts
++++ b/app/manifest.ts
+@@ -2,12 +2,12 @@
+ 
+ export default function manifest(): MetadataRoute.Manifest {
+   return {
+-    id: "/",
++    id: "/pi/",
+     name: "Pi Web",
+     short_name: "Pi Web",
+     description: "Local web interface for the pi coding agent",
+-    start_url: "/",
+-    scope: "/",
++    start_url: "/pi/",
++    scope: "/pi/",
+     display: "standalone",
+     background_color: "#ffffff",
+     theme_color: "#1a1a1a",
+@@ -15,13 +15,13 @@
+     lang: "en",
+     icons: [
+       {
+-        src: "/icons/icon-192.png",
++        src: "/pi/icons/icon-192.png",
+         sizes: "192x192",
+         type: "image/png",
+         purpose: "any",
+       },
+       {
+-        src: "/icons/icon-512.png",
++        src: "/pi/icons/icon-512.png",
+         sizes: "512x512",
+         type: "image/png",
+         purpose: "any",
+--- a/components/ChatInput.tsx
++++ b/components/ChatInput.tsx
+@@ -1025,7 +1025,7 @@
+     const fetchCwd = cwd;
+     const query = atQueryText;
+     const timer = setTimeout(() => {
+-      fetch(`/api/file-index?cwd=${encodeURIComponent(fetchCwd)}&q=${encodeURIComponent(query)}`)
++      fetch(`/pi/api/file-index?cwd=${encodeURIComponent(fetchCwd)}&q=${encodeURIComponent(query)}`)
+         .then((res) => {
+           if (!res.ok) throw new Error(`file search failed: ${res.status}`);
+           return res.json() as Promise<{ matches?: FileIndexEntry[] }>;
+@@ -1068,7 +1068,7 @@
+     fileIndexFetchingRef.current = cwd;
+     const fetchCwd = cwd;
+     setFileIndexLoading(true);
+-    fetch(`/api/file-index?cwd=${encodeURIComponent(fetchCwd)}`)
++    fetch(`/pi/api/file-index?cwd=${encodeURIComponent(fetchCwd)}`)
+       .then((res) => {
+         if (!res.ok) throw new Error(`file index failed: ${res.status}`);
+         return res.json() as Promise<{ files?: string[]; truncated?: boolean }>;
+@@ -1453,7 +1453,7 @@
+     const requestCwd = cwd;
+     let cancelled = false;
+     setSkillDormancyState({ cwd: requestCwd, values: {} });
+-    fetch(`/api/skills?cwd=${encodeURIComponent(requestCwd)}`)
++    fetch(`/pi/api/skills?cwd=${encodeURIComponent(requestCwd)}`)
+       .then((res) => {
+         if (!res.ok) throw new Error(`skills fetch failed: ${res.status}`);
+         return res.json() as Promise<Partial<SkillsResponse>>;
+--- a/components/ChatWindow.tsx
++++ b/components/ChatWindow.tsx
+@@ -97,7 +97,7 @@
+ 
+   useEffect(() => {
+     const controller = new AbortController();
+-    void fetch("/api/app-update", { signal: controller.signal })
++    void fetch("/pi/api/app-update", { signal: controller.signal })
+       .then(async (response) => {
+         if (!response.ok) return null;
+         return response.json() as Promise<AppUpdateResponse>;
+@@ -1348,7 +1348,7 @@
+           <div className="mb-3 w-full" style={{ paddingLeft: 16, paddingRight: isMobile ? 16 : 52 }}>
+             <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12, maxWidth: "var(--chat-content-max-width, 820px)", margin: "0 auto", fontFamily: "var(--font-mono)" }}>
+               <div style={{ display: "flex", alignItems: "center", gap: isMobile ? 7 : 10, minWidth: 0, flex: 1, lineHeight: 1.4, overflow: "hidden" }}>
+-                <Image src="/icons/apple-touch-icon.png" width={32} height={32} alt="" priority style={{ flexShrink: 0 }} />
++                <Image src="/pi/icons/apple-touch-icon.png" width={32} height={32} alt="" priority style={{ flexShrink: 0 }} />
+                 <span style={{ fontSize: 22, color: "var(--text)", fontWeight: 700, flexShrink: 0, whiteSpace: "nowrap" }}>Pi Web</span>
+                 <NewSessionUpdateLink label={(version) => t("appUpdate.releaseNotes", { version })} />
+               </div>
+--- a/components/DirectoryPicker.tsx
++++ b/components/DirectoryPicker.tsx
+@@ -19,7 +19,7 @@
+ 
+ async function loadDirectories(directory?: string): Promise<BrowseResponse> {
+   const query = directory ? `?path=${encodeURIComponent(directory)}` : "";
+-  const response = await fetch(`/api/cwd/browse${query}`);
++  const response = await fetch(`/pi/api/cwd/browse${query}`);
+   const data = await response.json() as BrowseResponse;
+   if (!response.ok || data.error) throw new Error(data.error ?? `HTTP ${response.status}`);
+   return data;
+--- a/components/FileExplorer.tsx
++++ b/components/FileExplorer.tsx
+@@ -80,7 +80,7 @@
+ 
+ async function fetchEntries(dirPath: string): Promise<FileNode[]> {
+   const encoded = encodeFilePathForApi(dirPath);
+-  const res = await fetch(`/api/files/${encoded}?type=list`);
++  const res = await fetch(`/pi/api/files/${encoded}?type=list`);
+   if (!res.ok) {
+     let message = `Failed to load files (HTTP ${res.status})`;
+     try {
+@@ -104,7 +104,7 @@
+ 
+ async function fetchGitStatus(cwd: string): Promise<GitStatusResponse> {
+   const params = new URLSearchParams({ cwd });
+-  const res = await fetch(`/api/git/status?${params.toString()}`);
++  const res = await fetch(`/pi/api/git/status?${params.toString()}`);
+   if (!res.ok) throw new Error(`Failed to load Git status (HTTP ${res.status})`);
+   return res.json() as Promise<GitStatusResponse>;
+ }
+@@ -163,7 +163,7 @@
+     const xhr = new XMLHttpRequest();
+     xhr.open(
+       "POST",
+-      `/api/files/${encodeFilePathForApi(targetDirectory)}?type=upload&conflict=${strategy}`,
++      `/pi/api/files/${encodeFilePathForApi(targetDirectory)}?type=upload&conflict=${strategy}`,
+     );
+     xhr.upload.onprogress = (event) => {
+       if (event.lengthComputable && event.total > 0) {
+@@ -397,7 +397,7 @@
+         )}
+         {hovered && !node.isDir && (
+           <a
+-            href={`/api/files/${encodeFilePathForApi(node.fullPath)}?type=download`}
++            href={`/pi/api/files/${encodeFilePathForApi(node.fullPath)}?type=download`}
+             download
+             onClick={(e) => e.stopPropagation()}
+             title={t("files.download")}
+@@ -634,7 +634,7 @@
+     setSearchLoading(true);
+     setSearchError(false);
+     const timer = setTimeout(() => {
+-      fetch(`/api/file-index?cwd=${encodeURIComponent(cwd)}&q=${encodeURIComponent(query)}`, { signal: controller.signal })
++      fetch(`/pi/api/file-index?cwd=${encodeURIComponent(cwd)}&q=${encodeURIComponent(query)}`, { signal: controller.signal })
+         .then((response) => response.ok ? response.json() as Promise<{ matches?: FileIndexEntry[] }> : Promise.reject(new Error("Search failed")))
+         .then((data) => setSearchPaths((data.matches ?? []).filter((entry) => !entry.isDir).map((entry) => entry.path)))
+         .catch(() => {
+@@ -770,7 +770,7 @@
+ 
+     try {
+       const res = await fetch(
+-        `/api/files/${encodeFilePathForApi(cwd)}?type=upload-check`,
++        `/pi/api/files/${encodeFilePathForApi(cwd)}?type=upload-check`,
+         {
+           method: "POST",
+           headers: { "Content-Type": "application/json" },
+--- a/components/FileIcons.tsx
++++ b/components/FileIcons.tsx
+@@ -39,7 +39,7 @@
+   | "yaml"
+   | "go";
+ 
+-const CATPPUCCIN_ICONS_ROOT = "/icons/catppuccin";
++const CATPPUCCIN_ICONS_ROOT = "/pi/icons/catppuccin";
+ 
+ function CatppuccinIcon({ name, size = 14 }: IconProps & { name: CatppuccinIconName }) {
+   const style = {
+--- a/components/FileViewer.tsx
++++ b/components/FileViewer.tsx
+@@ -222,7 +222,7 @@
+   for (const [key, value] of Object.entries(params)) {
+     if (value !== undefined) searchParams.set(key, String(value));
+   }
+-  return `/api/files/${encoded}?${searchParams.toString()}`;
++  return `/pi/api/files/${encoded}?${searchParams.toString()}`;
+ }
+ 
+ function DownloadLink({ filePath, sourceSessionId }: { filePath: string; sourceSessionId?: string | null }) {
+@@ -1247,7 +1247,7 @@
+ 
+     try {
+       const params = new URLSearchParams({ cwd, path: targetPath });
+-      const response = await fetch(`/api/git/diff?${params.toString()}`);
++      const response = await fetch(`/pi/api/git/diff?${params.toString()}`);
+       const next = await response.json() as GitFileDiffResponse & { error?: string };
+       if (requestId !== gitDiffRequestRef.current) return;
+       setGitDiff(response.ok && next.supported && typeof next.patch === "string" ? next : null);
+--- a/components/MarkdownBody.tsx
++++ b/components/MarkdownBody.tsx
+@@ -29,7 +29,7 @@
+   const href = typeof src === "string" ? src : undefined;
+   const filePath = href ? resolveLocalFileHref(href, cwd) : null;
+   const imageSrc = filePath
+-    ? `/api/files/${encodeFilePathForApi(filePath)}?type=read`
++    ? `/pi/api/files/${encodeFilePathForApi(filePath)}?type=read`
+     : href;
+   // Dynamic local paths are served directly by the file API.
+   // eslint-disable-next-line @next/next/no-img-element
+--- a/components/MarkdownBody.test.mjs
++++ b/components/MarkdownBody.test.mjs
+@@ -150,7 +150,7 @@
+   const remoteHtml = renderMarkdown("![logo](https://example.com/logo.png)");
+ 
+   assert.match(localHtml, /<button[^>]+aria-label="Preview image: chart"[^>]*>/);
+-  assert.match(localHtml, /<img[^>]+src="\/api\/files\/home\/me\/project\/docs\/tmp\/chart\.png\?type=read"/);
++  assert.match(localHtml, /<img[^>]+src="\/pi\/api\/files\/home\/me\/project\/docs\/tmp\/chart\.png\?type=read"/);
+   assert.match(localHtml, /<img[^>]+alt="chart"/);
+   assert.match(remoteHtml, /<button[^>]+aria-label="Preview image: logo"[^>]*>/);
+   assert.match(remoteHtml, /<img[^>]+src="https:\/\/example\.com\/logo\.png"/);
+--- a/components/ModelsConfig.tsx
++++ b/components/ModelsConfig.tsx
+@@ -325,7 +325,7 @@
+     setDiscoveryState({ phase: "loading" });
+     setSelectedModelIds([]);
+     try {
+-      const res = await fetch("/api/models-config/discover", {
++      const res = await fetch("/pi/api/models-config/discover", {
+         method: "POST",
+         headers: { "Content-Type": "application/json" },
+         body: JSON.stringify({ providerName: name, provider: { ...provider, models: undefined } }),
+@@ -879,7 +879,7 @@
+     if (!model.id.trim() || testState.phase === "testing") return;
+     setTestState({ phase: "testing" });
+     try {
+-      const res = await fetch("/api/models-config/test", {
++      const res = await fetch("/pi/api/models-config/test", {
+         method: "POST",
+         headers: { "Content-Type": "application/json" },
+         body: JSON.stringify({ providerName, provider, model }),
+@@ -919,7 +919,7 @@
+     try {
+       const params = new URLSearchParams({ q: query, provider: providerName, limit: "50" });
+       if (provider.baseUrl?.trim()) params.set("baseUrl", provider.baseUrl.trim());
+-      const res = await fetch(`/api/models-config/catalog?${params}`);
++      const res = await fetch(`/pi/api/models-config/catalog?${params}`);
+       const data = await res.json() as { recommendation?: ModelCatalogRecommendation; error?: string };
+       if (requestId !== catalogRequestIdRef.current) return;
+       if (!res.ok || data.error || !data.recommendation) {
+@@ -1314,7 +1314,7 @@
+     setLoginState({ phase: "connecting" });
+     setInputValue("");
+ 
+-    const es = new EventSource(`/api/auth/login/${encodeURIComponent(provider.id)}`);
++    const es = new EventSource(`/pi/api/auth/login/${encodeURIComponent(provider.id)}`);
+     eventSourceRef.current = es;
+ 
+     es.onmessage = (e) => {
+@@ -1361,7 +1361,7 @@
+   }, [provider.id, onRefresh]);
+ 
+   const handleLogout = useCallback(async () => {
+-    await fetch(`/api/auth/logout/${encodeURIComponent(provider.id)}`, { method: "POST" });
++    await fetch(`/pi/api/auth/logout/${encodeURIComponent(provider.id)}`, { method: "POST" });
+     setLoginState({ phase: "idle" });
+     onRefresh();
+   }, [provider.id, onRefresh]);
+@@ -1370,7 +1370,7 @@
+     if (!code.trim()) return;
+     setLoginState({ phase: "progress", message: "Verifying…" });
+     try {
+-      const res = await fetch(`/api/auth/login/${encodeURIComponent(provider.id)}`, {
++      const res = await fetch(`/pi/api/auth/login/${encodeURIComponent(provider.id)}`, {
+         method: "POST",
+         headers: { "Content-Type": "application/json" },
+         body: JSON.stringify({ token, code: code.trim() }),
+@@ -1390,7 +1390,7 @@
+   const submitSelection = useCallback(async (token: string, value: string) => {
+     setLoginState({ phase: "progress", message: "Continuing…" });
+     try {
+-      const res = await fetch(`/api/auth/login/${encodeURIComponent(provider.id)}`, {
++      const res = await fetch(`/pi/api/auth/login/${encodeURIComponent(provider.id)}`, {
+         method: "POST",
+         headers: { "Content-Type": "application/json" },
+         body: JSON.stringify({ token, code: value }),
+@@ -1571,7 +1571,7 @@
+     setError(null);
+     setSavedOk(false);
+     try {
+-      const res = await fetch(`/api/auth/api-key/${encodeURIComponent(provider.id)}`, {
++      const res = await fetch(`/pi/api/auth/api-key/${encodeURIComponent(provider.id)}`, {
+         method: "POST",
+         headers: { "Content-Type": "application/json" },
+         body: JSON.stringify({ apiKey: apiKey.trim() }),
+@@ -1596,7 +1596,7 @@
+     setRemoving(true);
+     setError(null);
+     try {
+-      const res = await fetch(`/api/auth/api-key/${encodeURIComponent(provider.id)}`, { method: "DELETE" });
++      const res = await fetch(`/pi/api/auth/api-key/${encodeURIComponent(provider.id)}`, { method: "DELETE" });
+       const d = await res.json() as { success?: boolean; error?: string };
+       if (!res.ok || d.error) setError(d.error ?? `HTTP ${res.status}`);
+       else onRefresh();
+@@ -1835,7 +1835,7 @@
+   const [pickerOpen, setPickerOpen] = useState(false);
+ 
+   const refreshAuthProviders = useCallback(() => {
+-    fetch("/api/auth/providers")
++    fetch("/pi/api/auth/providers")
+       .then((r) => r.json())
+       .then((d: { oauthProviders?: OAuthProvider[]; apiKeyProviders?: ApiKeyProvider[] }) => {
+         if (Array.isArray(d.oauthProviders)) setOauthProviders(d.oauthProviders);
+@@ -1845,7 +1845,7 @@
+   }, []);
+ 
+   useEffect(() => {
+-    fetch("/api/models-config")
++    fetch("/pi/api/models-config")
+       .then((r) => r.json())
+       .then((d: ModelsJson) => {
+         const normalized = d.providers ? d : { ...d, providers: {} };
+@@ -1958,7 +1958,7 @@
+     setSaveError(null);
+     setSavedOk(false);
+     try {
+-      const res = await fetch("/api/models-config", {
++      const res = await fetch("/pi/api/models-config", {
+         method: "PUT",
+         headers: { "Content-Type": "application/json" },
+         body: JSON.stringify(config),
+--- a/components/ProviderIcon.tsx
++++ b/components/ProviderIcon.tsx
+@@ -54,7 +54,7 @@
+         fill={icon.color ? undefined : "currentColor"}
+         style={{ color: "var(--text-muted)", flexShrink: 0 }}
+       >
+-        <use href={`/provider-icons.svg#${icon.symbol}`} />
++        <use href={`/pi/provider-icons.svg#${icon.symbol}`} />
+       </svg>
+     );
+   }
+--- a/components/ProviderUsageSummary.tsx
++++ b/components/ProviderUsageSummary.tsx
+@@ -62,7 +62,7 @@
+     setQuerying(true);
+     setError(null);
+     try {
+-      const response = await fetch("/api/provider-usage/query", {
++      const response = await fetch("/pi/api/provider-usage/query", {
+         method: "POST",
+         headers: { "Content-Type": "application/json" },
+         body: JSON.stringify({ providerId }),
+--- a/components/PwaRegistration.tsx
++++ b/components/PwaRegistration.tsx
+@@ -10,10 +10,10 @@
+ 
+     const register = () => {
+       const appVersion = process.env.NEXT_PUBLIC_APP_VERSION ?? "dev";
+-      const scriptUrl = `/sw.js?v=${encodeURIComponent(appVersion)}`;
++      const scriptUrl = `/pi/sw.js?v=${encodeURIComponent(appVersion)}`;
+ 
+       void navigator.serviceWorker.register(scriptUrl, {
+-        scope: "/",
++        scope: "/pi/",
+         updateViaCache: "none",
+       }).catch((error: unknown) => {
+         console.error("Failed to register the Pi Web service worker:", error);
+--- a/components/SessionSearch.tsx
++++ b/components/SessionSearch.tsx
+@@ -26,7 +26,7 @@
+     setState({ query: search });
+     const timer = setTimeout(async () => {
+       try {
+-        const res = await fetch(`/api/sessions/search?${new URLSearchParams({ q: search })}`, { signal: controller.signal });
++        const res = await fetch(`/pi/api/sessions/search?${new URLSearchParams({ q: search })}`, { signal: controller.signal });
+         if (!res.ok) throw new Error(`HTTP ${res.status}`);
+         const data = await res.json() as SessionSearchResponse;
+         if (!controller.signal.aborted) setState({ query: search, response: data });
+--- a/components/SessionSidebar.tsx
++++ b/components/SessionSidebar.tsx
+@@ -488,7 +488,7 @@
+     const loadId = ++sessionLoadIdRef.current;
+     try {
+       if (showLoading) setLoading(true);
+-      const res = await fetch(force ? "/api/sessions?force=1" : "/api/sessions", {
++      const res = await fetch(force ? "/pi/api/sessions?force=1" : "/pi/api/sessions", {
+         cache: "no-store",
+       });
+       if (!res.ok) throw new Error(`HTTP ${res.status}`);
+@@ -571,7 +571,7 @@
+       controller?.abort();
+       controller = current;
+       try {
+-        const res = await fetch("/api/agent/running", {
++        const res = await fetch("/pi/api/agent/running", {
+           cache: "no-store",
+           signal: current.signal,
+         });
+@@ -681,7 +681,7 @@
+   }, [explorerRefreshKey]);
+ 
+   useEffect(() => {
+-    fetch("/api/home").then((r) => r.json()).then((d: { home?: string }) => {
++    fetch("/pi/api/home").then((r) => r.json()).then((d: { home?: string }) => {
+       if (d.home) setHomeDir(d.home);
+     }).catch(() => {});
+   }, []);
+@@ -755,7 +755,7 @@
+     }
+     let cancelled = false;
+     setWorktreeLoadingCwd(selectedCwd);
+-    fetch(`/api/worktrees?cwd=${encodeURIComponent(selectedCwd)}`)
++    fetch(`/pi/api/worktrees?cwd=${encodeURIComponent(selectedCwd)}`)
+       .then((r) => r.json())
+       .then((d: { projectRoot?: string; projectKey?: string; isGit?: boolean; isTopLevel?: boolean; currentWorktreePath?: string | null; worktrees?: WorktreeEntry[]; error?: string }) => {
+         if (cancelled) return;
+@@ -824,7 +824,7 @@
+     setCustomPathValidating(true);
+     setCustomPathError(null);
+     try {
+-      const res = await fetch("/api/cwd/validate", {
++      const res = await fetch("/pi/api/cwd/validate", {
+         method: "POST",
+         headers: { "Content-Type": "application/json" },
+         body: JSON.stringify({ cwd: path }),
+@@ -863,7 +863,7 @@
+   }, []);
+   const handleDefaultCwd = useCallback(async () => {
+     try {
+-      const res = await fetch("/api/default-cwd", { method: "POST" });
++      const res = await fetch("/pi/api/default-cwd", { method: "POST" });
+       const data = await res.json() as { cwd?: string; error?: string };
+       if (data.cwd) {
+         setSelectedCwd(data.cwd);
+@@ -882,7 +882,7 @@
+     setWtBusy(true);
+     setWtError(null);
+     try {
+-      const res = await fetch("/api/worktrees", {
++      const res = await fetch("/pi/api/worktrees", {
+         method: "POST",
+         headers: { "Content-Type": "application/json" },
+         body: JSON.stringify({ cwd: worktreeState.projectRoot, branch }),
+@@ -918,7 +918,7 @@
+     setWtBusy(true);
+     setWtError(null);
+     try {
+-      const res = await fetch("/api/worktrees", {
++      const res = await fetch("/pi/api/worktrees", {
+         method: "DELETE",
+         headers: { "Content-Type": "application/json" },
+         body: JSON.stringify({ cwd: worktreeState.projectRoot, path, force }),
+@@ -2140,7 +2140,7 @@
+     // a skill-invoked session stays a no-op instead of persisting raw XML.)
+     if (renameValue === title || name === (session.name ?? "")) return;
+     try {
+-      await fetch(`/api/sessions/${encodeURIComponent(session.id)}`, {
++      await fetch(`/pi/api/sessions/${encodeURIComponent(session.id)}`, {
+         method: "PATCH",
+         headers: { "Content-Type": "application/json" },
+         body: JSON.stringify({ name }),
+@@ -2156,7 +2156,7 @@
+     setConfirmDelete(false);
+     setDeleting(true);
+     try {
+-      await fetch(`/api/sessions/${encodeURIComponent(session.id)}`, { method: "DELETE" });
++      await fetch(`/pi/api/sessions/${encodeURIComponent(session.id)}`, { method: "DELETE" });
+       onDeleted?.(session.id);
+     } catch {
+       setDeleting(false);
+--- a/components/SessionSidebar.file-search.test.mjs
++++ b/components/SessionSidebar.file-search.test.mjs
+@@ -7,7 +7,7 @@
+ 
+ test("provides a debounced file search UI and opens selected results", () => {
+   assert.match(source, /searchQuery/);
+-  assert.match(source, /\/api\/file-index\?cwd=\$\{encodeURIComponent\(cwd\)\}&q=\$\{encodeURIComponent\(query\)\}/);
++  assert.match(source, /\/pi\/api\/file-index\?cwd=\$\{encodeURIComponent\(cwd\)\}&q=\$\{encodeURIComponent\(query\)\}/);
+   assert.match(source, /setTimeout\(\(\) =>/);
+   assert.match(source, /onOpenFile\(node\.fullPath, node\.name\)/);
+ });
+--- a/components/SessionSidebar.test.mjs
++++ b/components/SessionSidebar.test.mjs
+@@ -62,8 +62,8 @@
+ });
+ 
+ test("polls running sessions only while the tab is visible", () => {
+-  assert.doesNotMatch(source, /new EventSource\("\/api\/agent\/running\/events"\)/);
+-  assert.match(source, /fetch\("\/api\/agent\/running"/);
++  assert.doesNotMatch(source, /new EventSource\("\/pi\/api\/agent\/running\/events"\)/);
++  assert.match(source, /fetch\("\/pi\/api\/agent\/running"/);
+   assert.match(source, /document\.visibilityState !== "visible"/);
+   assert.match(source, /document\.addEventListener\("visibilitychange", onVisibilityChange\)/);
+ });
+@@ -125,7 +125,7 @@
+ });
+ 
+ test("lifecycle refreshes bypass the cache while cross-window polling reuses it", () => {
+-  assert.match(source, /force \? "\/api\/sessions\?force=1" : "\/api\/sessions"/);
++  assert.match(source, /force \? "\/pi\/api\/sessions\?force=1" : "\/pi\/api\/sessions"/);
+   assert.match(source, /cache: "no-store"/);
+   assert.match(source, /loadSessions\(isFirst, !isFirst\)/);
+   assert.match(source, /data\.sessionListVersion !== sessionListVersionRef\.current[\s\S]*?await loadSessions\(\)/);
+--- a/components/SkillsConfig.tsx
++++ b/components/SkillsConfig.tsx
+@@ -263,7 +263,7 @@
+     setSearchError(null);
+     setResults([]);
+     try {
+-      const res = await fetch("/api/skills/search", {
++      const res = await fetch("/pi/api/skills/search", {
+         method: "POST",
+         headers: { "Content-Type": "application/json" },
+         body: JSON.stringify({ query: q.trim() }),
+@@ -290,7 +290,7 @@
+       setInstalling(pkg);
+       setInstallError(null);
+       try {
+-        const res = await fetch("/api/skills/install", {
++        const res = await fetch("/pi/api/skills/install", {
+           method: "POST",
+           headers: { "Content-Type": "application/json" },
+           body: JSON.stringify({ package: pkg, scope, cwd }),
+@@ -579,7 +579,7 @@
+     setLoading(true);
+     setError(null);
+     try {
+-      const res = await fetch(`/api/skills?cwd=${encodeURIComponent(cwd)}`);
++      const res = await fetch(`/pi/api/skills?cwd=${encodeURIComponent(cwd)}`);
+       const d = (await res.json()) as Partial<SkillsResponse> & { error?: string };
+       if (!res.ok || d.error) throw new Error(d.error ?? `HTTP ${res.status}`);
+       const list = d.skills ?? [];
+@@ -622,7 +622,7 @@
+     setCheckingUpdates((current) => new Set([...current, ...keys]));
+     if (!skill) setCheckingAll(true);
+     try {
+-      const res = await fetch("/api/skills/check", {
++      const res = await fetch("/pi/api/skills/check", {
+         method: "POST",
+         headers: { "Content-Type": "application/json" },
+         body: JSON.stringify({
+@@ -661,7 +661,7 @@
+     setUpdatingSkill(key);
+     setUpdateError(null);
+     try {
+-      const res = await fetch("/api/skills/update", {
++      const res = await fetch("/pi/api/skills/update", {
+         method: "POST",
+         headers: { "Content-Type": "application/json" },
+         body: JSON.stringify({
+@@ -702,7 +702,7 @@
+     setToggling((s) => new Set(s).add(skill.filePath));
+     setSaveError(null);
+     try {
+-      const res = await fetch("/api/skills", {
++      const res = await fetch("/pi/api/skills", {
+         method: "PATCH",
+         headers: { "Content-Type": "application/json" },
+         body: JSON.stringify({
+--- a/components/TerminalPanel.tsx
++++ b/components/TerminalPanel.tsx
+@@ -97,7 +97,7 @@
+     const connect = () => {
+       if (disposed || exited || !navigator.onLine) return;
+       events?.close();
+-      events = new EventSource(`/api/terminal/${encodeURIComponent(id)}/events${offset === undefined ? "" : `?after=${offset}`}`);
++      events = new EventSource(`/pi/api/terminal/${encodeURIComponent(id)}/events${offset === undefined ? "" : `?after=${offset}`}`);
+       events.onmessage = (message) => {
+         const event = JSON.parse(message.data) as TerminalEvent;
+         if (event.type === "output") {
+@@ -135,9 +135,9 @@
+       fitAndResize();
+       if (restored || reconnectKey > 0) {
+         // Restoring a tab must never silently launch a replacement shell.
+-        await terminalRequest(`/api/terminal/${encodeURIComponent(id)}`);
++        await terminalRequest(`/pi/api/terminal/${encodeURIComponent(id)}`);
+       } else {
+-        await terminalRequest("/api/terminal", {
++        await terminalRequest("/pi/api/terminal", {
+           method: "POST",
+           headers: { "Content-Type": "application/json" },
+           body: JSON.stringify({ id, cwd, cols: terminal.cols, rows: terminal.rows }),
+@@ -188,7 +188,7 @@
+     void (async () => {
+       await startRef.current;
+       await writerRef.current?.stop();
+-      await terminalRequest(`/api/terminal/${encodeURIComponent(id)}`, { method: "DELETE", keepalive: true });
++      await terminalRequest(`/pi/api/terminal/${encodeURIComponent(id)}`, { method: "DELETE", keepalive: true });
+       if (!cancelled) callbacksRef.current.onClosed();
+     })().catch((reason: Error) => {
+       if (cancelled) return;
+--- a/lib/file-links.ts
++++ b/lib/file-links.ts
+@@ -109,7 +109,7 @@
+   const normalizedHref = normalizeFilePathSlashes(decodedHref);
+   const lowerHref = normalizedHref.toLowerCase();
+ 
+-  if (lowerHref.startsWith("/api/") || lowerHref.startsWith("/_next/")) return null;
++  if (lowerHref.startsWith("/pi/api/") || lowerHref.startsWith("/pi/_next/")) return null;
+   if (!isBackslashUncPath && normalizedHref.startsWith("//")) return null;
+   if (/^[a-zA-Z][a-zA-Z0-9+.-]*:/i.test(normalizedHref) && !lowerHref.startsWith("file:") && !/^[a-zA-Z]:\//.test(normalizedHref)) {
+     return null;
+--- a/lib/file-links.test.mjs
++++ b/lib/file-links.test.mjs
+@@ -96,7 +96,7 @@
+ test("does not treat app or external URLs as file links", async () => {
+   const { resolveLocalFileHref } = await loadSubject();
+ 
+-  assert.equal(resolveLocalFileHref("/api/files/home/me/project/a.ts", "/home/me/project"), null);
++  assert.equal(resolveLocalFileHref("/pi/api/files/home/me/project/a.ts", "/home/me/project"), null);
+   assert.equal(resolveLocalFileHref("https://example.com/a.ts", "/home/me/project"), null);
+   assert.equal(resolveLocalFileHref("ftp://example.com/a.ts", "/home/me/project"), null);
+   assert.equal(resolveLocalFileHref("//example.com/a.ts", "/home/me/project"), null);
+--- a/lib/push-client.ts
++++ b/lib/push-client.ts
+@@ -32,7 +32,7 @@
+ 
+   const attempt = (async () => {
+     try {
+-      const configResponse = await fetch("/api/push/config");
++      const configResponse = await fetch("/pi/api/push/config");
+       if (!configResponse.ok) return false;
+       const { publicKey } = await configResponse.json() as { publicKey?: string };
+       if (!publicKey) return false;
+@@ -46,7 +46,7 @@
+         });
+       }
+ 
+-      const response = await fetch("/api/push/subscribe", {
++      const response = await fetch("/pi/api/push/subscribe", {
+         method: "POST",
+         headers: { "Content-Type": "application/json" },
+         body: JSON.stringify({ subscription: subscription.toJSON(), locale }),
+--- a/lib/terminal-client.ts
++++ b/lib/terminal-client.ts
+@@ -17,7 +17,7 @@
+     pending = pending.then(async () => {
+       if (stopped) return;
+       if (body === bufferedInput) bufferedInput = null;
+-      await terminalRequest(`/api/terminal/${encodeURIComponent(id)}`, {
++      await terminalRequest(`/pi/api/terminal/${encodeURIComponent(id)}`, {
+         method: "POST",
+         headers: { "Content-Type": "application/json" },
+         body: JSON.stringify(body),
+--- a/lib/web-push.ts
++++ b/lib/web-push.ts
+@@ -150,7 +150,7 @@
+       const payloadFor = (locale: string) => ({
+         title: sessionName ?? localeText(locale, "sessionComplete"),
+         body: localeText(locale, "taskFinished"),
+-        url: `/?session=${encodeURIComponent(sessionId)}`,
++        url: `/pi/?session=${encodeURIComponent(sessionId)}`,
+         tag: `pi-session-complete:${sessionId}`,
+       });
+ 
+--- a/lib/web-push.test.mjs
++++ b/lib/web-push.test.mjs
+@@ -103,13 +103,13 @@
+   assert.deepEqual(JSON.parse(en.payload), {
+     title: "My session",
+     body: "Task finished.",
+-    url: "/?session=session-1",
++    url: "/pi/?session=session-1",
+     tag: "pi-session-complete:session-1",
+   });
+   assert.deepEqual(JSON.parse(zh.payload), {
+     title: "My session",
+     body: "任务已完成。",
+-    url: "/?session=session-1",
++    url: "/pi/?session=session-1",
+     tag: "pi-session-complete:session-1",
+   });
+ });
+@@ -123,7 +123,7 @@
+   assert.deepEqual(JSON.parse(sent[0].payload), {
+     title: "任务完成",
+     body: "任务已完成。",
+-    url: "/?session=unknown-session",
++    url: "/pi/?session=unknown-session",
+     tag: "pi-session-complete:unknown-session",
+   });
+ });
+--- a/lib/web-auth-proxy.test.mjs
++++ b/lib/web-auth-proxy.test.mjs
+@@ -19,7 +19,8 @@
+ });
+ 
+ function request(path, headers = {}) {
+-  return new NextRequest(`http://localhost${path}`, {
++  return new NextRequest(`http://localhost/pi${path}`, {
++    nextConfig: { basePath: "/pi" },
+     headers: { Host: "localhost", ...headers },
+   });
+ }
+@@ -27,7 +28,7 @@
+ test("redirects page navigation to the login page and preserves its query", () => {
+   const response = proxy(request("/?session=abc"));
+   assert.equal(response.status, 307);
+-  assert.equal(response.headers.get("location"), "http://localhost/login?next=%2F%3Fsession%3Dabc");
++  assert.equal(response.headers.get("location"), "http://localhost/pi/login?next=%2Fpi%2F%3Fsession%3Dabc");
+ });
+ 
+ test("accepts a signed session for pages", () => {
+--- a/proxy.ts
++++ b/proxy.ts
+@@ -27,7 +27,7 @@
+   const password = process.env.PI_WEB_PASSWORD;
+   if (!isWebPasswordEnabled(password)) {
+     if (request.nextUrl.pathname === "/login") {
+-      return NextResponse.redirect(new URL("/", request.url));
++      return NextResponse.redirect(new URL("/pi/", request.url));
+     }
+     return NextResponse.next();
+   }
+@@ -36,16 +36,16 @@
+     || (isApiRequest && isValidBasicAuthorization(request.headers.get("authorization"), password));
+   if (request.nextUrl.pathname === "/login") {
+     return authenticated
+-      ? NextResponse.redirect(new URL("/", request.url))
++      ? NextResponse.redirect(new URL("/pi/", request.url))
+       : NextResponse.next();
+   }
+   if (request.nextUrl.pathname === "/api/web-auth") return NextResponse.next();
+ 
+   if (!authenticated) {
+     if (!isApiRequest) {
+-      const loginUrl = new URL("/login", request.url);
++      const loginUrl = new URL("/pi/login", request.url);
+       if (request.nextUrl.search) {
+-        loginUrl.searchParams.set("next", `${request.nextUrl.pathname}${request.nextUrl.search}`);
++        loginUrl.searchParams.set("next", `${request.nextUrl.basePath}${request.nextUrl.pathname}${request.nextUrl.search}`);
+       }
+       return NextResponse.redirect(loginUrl);
+     }
+--- a/public/offline.html
++++ b/public/offline.html
+@@ -74,7 +74,7 @@
+   </head>
+   <body>
+     <main>
+-      <img src="/icons/icon-192.png" alt="" />
++      <img src="/pi/icons/icon-192.png" alt="" />
+       <h1>Pi Web is offline</h1>
+       <p>Reconnect to the local Pi Web server, then try again.</p>
+       <button type="button" onclick="location.reload()">Try again</button>
+--- a/public/sw.js
++++ b/public/sw.js
+@@ -1,13 +1,13 @@
+-const CACHE_PREFIX = "pi-web";
++const CACHE_PREFIX = "pi-web-pi";
+ const CACHE_VERSION = new URL(self.location.href).searchParams.get("v") || "dev";
+ const STATIC_CACHE = `${CACHE_PREFIX}-static-${CACHE_VERSION}`;
+-const OFFLINE_URL = "/offline.html";
++const OFFLINE_URL = "/pi/offline.html";
+ const PRECACHE_URLS = [
+   OFFLINE_URL,
+-  "/manifest.webmanifest",
+-  "/icons/icon-192.png",
+-  "/icons/icon-512.png",
+-  "/icons/apple-touch-icon.png",
++  "/pi/manifest.webmanifest",
++  "/pi/icons/icon-192.png",
++  "/pi/icons/icon-512.png",
++  "/pi/icons/apple-touch-icon.png",
+ ];
+ // A reachable port backed by a dead upstream accepts the connection and then
+ // never answers: fetch() neither resolves nor rejects, so the navigation hangs
+@@ -47,7 +47,7 @@
+   if (url.origin !== self.location.origin) return;
+ 
+   // Session data and live agent traffic must always come from the local server.
+-  if (url.pathname.startsWith("/api/") || url.pathname === "/sw.js") return;
++  if (url.pathname.startsWith("/pi/api/") || url.pathname === "/pi/sw.js") return;
+ 
+   if (request.mode === "navigate") {
+     event.respondWith(
+@@ -60,7 +60,7 @@
+   }
+ 
+   const isStaticAsset =
+-    url.pathname.startsWith("/_next/static/") ||
++    url.pathname.startsWith("/pi/_next/static/") ||
+     PRECACHE_URLS.includes(url.pathname);
+ 
+   if (isStaticAsset) {
+@@ -87,7 +87,7 @@
+   event.waitUntil(
+     self.registration.showNotification(title, {
+       body,
+-      data: { url: typeof url === "string" && url ? url : "/" },
++      data: { url: typeof url === "string" && url ? url : "/pi/" },
+       ...(typeof tag === "string" && tag ? { tag, renotify: true } : {}),
+     }),
+   );
+@@ -98,11 +98,13 @@
+ 
+   const requestedUrl = typeof event.notification.data?.url === "string"
+     ? event.notification.data.url
+-    : "/";
+-  let targetUrl = new URL("/", self.location.origin);
++    : "/pi/";
++  let targetUrl = new URL("/pi/", self.location.origin);
+   try {
+     const candidate = new URL(requestedUrl, self.location.origin);
+-    if (candidate.origin === self.location.origin) targetUrl = candidate;
++    if (candidate.origin === self.location.origin && candidate.pathname.startsWith("/pi/")) {
++      targetUrl = candidate;
++    }
+   } catch {
+     // Keep the root URL when notification data is malformed.
+   }
+@@ -111,10 +113,10 @@
+ });
+ 
+ async function focusOrOpenWindow(targetUrl) {
+-  const windowClients = await self.clients.matchAll({
++  const windowClients = (await self.clients.matchAll({
+     type: "window",
+     includeUncontrolled: true,
+-  });
++  })).filter((client) => new URL(client.url).pathname.startsWith("/pi/"));
+   const exactClient = windowClients.find((client) => client.url === targetUrl);
+   const candidates = exactClient
+     ? [exactClient, ...windowClients.filter((client) => client !== exactClient)]
+--- a/public/sw.test.mjs
++++ b/public/sw.test.mjs
+@@ -4,7 +4,7 @@
+ const listeners = new Map();
+ globalThis.self = {
+   location: {
+-    href: "https://pi.test/sw.js?v=test",
++    href: "https://pi.test/pi/sw.js?v=test",
+     origin: "https://pi.test",
+   },
+   addEventListener: (type, listener) => listeners.set(type, listener),
+@@ -48,12 +48,12 @@
+     {
+       title: "Session complete",
+       body: "Task finished.",
+-      url: "/?session=session-1",
++      url: "/pi/?session=session-1",
+       tag: "pi-session-complete:session-1",
+     },
+     [
+-      { url: "https://pi.test/?session=other", visibilityState: "hidden" },
+-      { url: "https://pi.test/?session=session-1", visibilityState: "visible" },
++      { url: "https://pi.test/pi/?session=other", visibilityState: "hidden" },
++      { url: "https://pi.test/pi/?session=session-1", visibilityState: "visible" },
+     ],
+   );
+   await event.pending;
+@@ -64,7 +64,7 @@
+     title: "Session complete",
+     options: {
+       body: "Task finished.",
+-      data: { url: "/?session=session-1" },
++      data: { url: "/pi/?session=session-1" },
+       tag: "pi-session-complete:session-1",
+       renotify: true,
+     },
+@@ -84,7 +84,7 @@
+ test("notification click focuses an existing client at the session URL", async () => {
+   const calls = [];
+   const focusedClient = {
+-    url: "https://pi.test/?session=session-1",
++    url: "https://pi.test/pi/?session=session-1",
+     focus: async () => { calls.push("focus"); },
+     navigate: async () => assert.fail("exact client should not navigate"),
+   };
+@@ -93,7 +93,7 @@
+     openWindow: async () => assert.fail("existing client should be reused"),
+   };
+ 
+-  const event = dispatchNotificationClick({ url: "/?session=session-1" });
++  const event = dispatchNotificationClick({ url: "/pi/?session=session-1" });
+   await event.pending;
+ 
+   assert.equal(event.wasClosed(), true);
+@@ -106,7 +106,7 @@
+     focus: async () => { calls.push("focus"); },
+   };
+   const existingClient = {
+-    url: "https://pi.test/?session=other-session",
++    url: "https://pi.test/pi/?session=other-session",
+     navigate: async (url) => {
+       calls.push(["navigate", url]);
+       return navigatedClient;
+@@ -118,11 +118,11 @@
+     openWindow: async () => assert.fail("existing client should be reused"),
+   };
+ 
+-  const event = dispatchNotificationClick({ url: "/?session=session-1" });
++  const event = dispatchNotificationClick({ url: "/pi/?session=session-1" });
+   await event.pending;
+ 
+   assert.deepEqual(calls, [
+-    ["navigate", "https://pi.test/?session=session-1"],
++    ["navigate", "https://pi.test/pi/?session=session-1"],
+     "focus",
+   ]);
+ });
+@@ -137,7 +137,7 @@
+   const event = dispatchNotificationClick({ url: "https://example.com/redirect" });
+   await event.pending;
+ 
+-  assert.deepEqual(opened, ["https://pi.test/"]);
++  assert.deepEqual(opened, ["https://pi.test/pi/"]);
+ });
+ 
+ // A reachable port backed by a dead upstream answers nothing at all, so these
+@@ -191,7 +191,7 @@
+ 
+   mock.timers.enable({ apis: ["setTimeout"] });
+   try {
+-    const pending = dispatchFetch("https://pi.test/", { mode: "navigate" });
++    const pending = dispatchFetch("https://pi.test/pi/", { mode: "navigate" });
+     await flushMicrotasks();
+     mock.timers.tick(8000);
+     const response = await pending;
+@@ -209,7 +209,7 @@
+ 
+   mock.timers.enable({ apis: ["setTimeout"] });
+   try {
+-    const pending = dispatchFetch("https://pi.test/_next/static/chunks/app.js");
++    const pending = dispatchFetch("https://pi.test/pi/_next/static/chunks/app.js");
+     // cacheFirst awaits the cache lookup before it reaches the network.
+     await flushMicrotasks();
+     mock.timers.tick(8000);
+@@ -234,7 +234,7 @@
+ 
+   mock.timers.enable({ apis: ["setTimeout"] });
+   try {
+-    const response = await dispatchFetch("https://pi.test/", { mode: "navigate" });
++    const response = await dispatchFetch("https://pi.test/pi/", { mode: "navigate" });
+     // The budget only covers time to first byte: a long-lived body keeps
+     // streaming past it (Next.js streams its SSR payload).
+     mock.timers.tick(60000);
+--- a/components/AppShell.tsx
++++ b/components/AppShell.tsx
+@@ -533,7 +533,7 @@
+     setInitialCwdStatus("validating");
+     setInitialCwdError(null);
+ 
+-    void fetch("/api/cwd/validate", {
++    void fetch("/pi/api/cwd/validate", {
+       method: "POST",
+       headers: { "Content-Type": "application/json" },
+       body: JSON.stringify({ cwd: requestedCwd }),
+@@ -571,7 +571,7 @@
+     const token = ++workspaceRestoreTokenRef.current;
+     const lastOpenSessionId = getLastOpenSession(projectKey);
+     if (!lastOpenSessionId) return;
+-    void fetch("/api/sessions")
++    void fetch("/pi/api/sessions")
+       .then((r) => (r.ok ? (r.json() as Promise<{ sessions: SessionInfo[] }>) : null))
+       .then((d) => {
+         if (token !== workspaceRestoreTokenRef.current) return; // stale switch
+@@ -680,7 +680,7 @@
+       // the default welcome page when none is remembered.
+       restoreWorkspaceContext(newProject, cwd);
+     }
+-    router.replace(typeof window !== "undefined" ? window.location.pathname : "/", { scroll: false });
++    router.replace("/", { scroll: false });
+   }, [activeCwd, activeFileTabId, invalidateWorkspaceRestore, newSessionCwd, router, selectedSession, restoreWorkspaceContext]);
+ 
+   const handleSelectSession = useCallback((session: SessionInfo, isRestore = false, entryId?: string, blockIndex?: number) => {
+@@ -755,7 +755,7 @@
+     setSystemInfoLoading(false);
+     setActiveTopPanel(null);
+     if (isMobile) setSidebarOpen(false);
+-    router.replace(typeof window !== "undefined" ? window.location.pathname : "/", { scroll: false });
++    router.replace("/", { scroll: false });
+   }, [invalidateWorkspaceRestore, router, isMobile]);
+ 
+   // Global keyboard shortcuts (handles Esc, Ctrl+Alt+N etc.)
+@@ -769,7 +769,7 @@
+   // handleCwdChange relies on. Hydrate it from the session list so switching
+   // worktrees right after creating a session doesn't close the chat.
+   const hydrateSelectedSession = useCallback((sessionId: string) => {
+-    void fetch("/api/sessions", { cache: "no-store" })
++    void fetch("/pi/api/sessions", { cache: "no-store" })
+       .then((r) => (r.ok ? (r.json() as Promise<{ sessions: SessionInfo[] }>) : null))
+       .then((d) => {
+         const full = d?.sessions.find((s) => s.id === sessionId);
+@@ -785,7 +785,7 @@
+ 
+   const handleOpenSession = useCallback(async (sessionId: string) => {
+     try {
+-      const response = await fetch(`/api/sessions/${encodeURIComponent(sessionId)}`, { cache: "no-store" });
++      const response = await fetch(`/pi/api/sessions/${encodeURIComponent(sessionId)}`, { cache: "no-store" });
+       const data = await response.json() as { info?: SessionInfo; error?: string };
+       if (!response.ok || !data.info) throw new Error(data.error ?? `HTTP ${response.status}`);
+       handleSelectSession(data.info);
+@@ -820,7 +820,7 @@
+     if (!("Notification" in window)) return;
+ 
+     const fire = () => {
+-      const sessionUrl = targetSession ? `/?session=${encodeURIComponent(targetSession.id)}` : "/";
++      const sessionUrl = targetSession ? `/pi/?session=${encodeURIComponent(targetSession.id)}` : "/pi/";
+       void showBrowserNotification({
+         title,
+         body,
+@@ -933,7 +933,7 @@
+       setSystemTools(null);
+       setSystemInfoLoading(false);
+       setActiveTopPanel(null);
+-      router.replace(typeof window !== "undefined" ? window.location.pathname : "/", { scroll: false });
++      router.replace("/", { scroll: false });
+     }
+   }, [invalidateWorkspaceRestore, selectedSession, router]);
+ 
+@@ -1018,7 +1018,7 @@
+     if (!projectTrustCwd) return;
+ 
+     const controller = new AbortController();
+-    fetch(`/api/project-trust?cwd=${encodeURIComponent(projectTrustCwd)}`, {
++    fetch(`/pi/api/project-trust?cwd=${encodeURIComponent(projectTrustCwd)}`, {
+       signal: controller.signal,
+     })
+       .then(async (response) => {
+@@ -1038,7 +1038,7 @@
+     setProjectTrustBusy(true);
+     setProjectTrustError(null);
+     try {
+-      const response = await fetch("/api/project-trust", {
++      const response = await fetch("/pi/api/project-trust", {
+         method: "POST",
+         headers: { "Content-Type": "application/json" },
+         body: JSON.stringify({ cwd: projectTrustCwd }),
+--- a/components/MessageView.tsx
++++ b/components/MessageView.tsx
+@@ -163,7 +163,7 @@
+   }
+ 
+   const request = fetch(
+-    `/api/sessions/${encodeURIComponent(sessionId)}/entries/${encodeURIComponent(entryId)}/thinking?blockIndex=${blockIndex}`,
++    `/pi/api/sessions/${encodeURIComponent(sessionId)}/entries/${encodeURIComponent(entryId)}/thinking?blockIndex=${blockIndex}`,
+   ).then(async (response) => {
+     if (!response.ok) throw new Error(`HTTP ${response.status}`);
+     const data = await response.json() as { thinking?: unknown };
+@@ -1876,7 +1876,7 @@
+   const isPending = !message.output && message.exitCode === undefined && !message.cancelled;
+   const isError = message.cancelled || (message.exitCode !== undefined && message.exitCode !== 0);
+   const fullOutputUrl = sessionId && message.fullOutputPath
+-    ? `/api/agent/${encodeURIComponent(sessionId)}/bash-output?path=${encodeURIComponent(message.fullOutputPath)}`
++    ? `/pi/api/agent/${encodeURIComponent(sessionId)}/bash-output?path=${encodeURIComponent(message.fullOutputPath)}`
+     : null;
+   const showFullButton = message.truncated && fullOutputUrl && fullOutput === null;
+   const displayOutput = fullOutput ?? message.output;
+--- a/components/SettingsPanel.tsx
++++ b/components/SettingsPanel.tsx
+@@ -80,7 +80,7 @@
+ 
+   useEffect(() => {
+     setThinkingExpanded(isThinkingExpandedByDefault());
+-    void fetch("/api/web-auth")
++    void fetch("/pi/api/web-auth")
+       .then((response) => response.ok ? response.json() : null)
+       .then((data: { enabled?: boolean } | null) => setWebAuthEnabled(data?.enabled === true))
+       .catch(() => {});
+@@ -90,9 +90,9 @@
+     setLoggingOut(true);
+     setLogoutError("");
+     try {
+-      const response = await fetch("/api/web-auth", { method: "DELETE" });
++      const response = await fetch("/pi/api/web-auth", { method: "DELETE" });
+       if (!response.ok) throw new Error(`HTTP ${response.status}`);
+-      window.location.replace("/login");
++      window.location.replace("/pi/login");
+     } catch {
+       setLogoutError(t("auth.logoutFailed"));
+     } finally {
+@@ -102,7 +102,7 @@
+ 
+   useEffect(() => {
+     let cancelled = false;
+-    void fetch("/api/tools/settings")
++    void fetch("/pi/api/tools/settings")
+       .then(async (response) => {
+         const data = await response.json() as ShellToolSettingsResponse & { error?: string };
+         if (!response.ok || data.error) throw new Error(data.error ?? `HTTP ${response.status}`);
+@@ -118,7 +118,7 @@
+     setShellSaving(true);
+     setShellError(null);
+     try {
+-      const response = await fetch("/api/tools/settings", {
++      const response = await fetch("/pi/api/tools/settings", {
+         method: "PUT",
+         headers: { "Content-Type": "application/json" },
+         body: JSON.stringify({ enabled }),
+--- a/components/PluginsConfig.tsx
++++ b/components/PluginsConfig.tsx
+@@ -706,7 +706,7 @@
+     setLoading(true);
+     setError(null);
+     try {
+-      const res = await fetch(`/api/plugins?cwd=${encodeURIComponent(cwd)}`);
++      const res = await fetch(`/pi/api/plugins?cwd=${encodeURIComponent(cwd)}`);
+       const next = (await res.json()) as PluginsResponse & { error?: string };
+       if (!res.ok || next.error) throw new Error(next.error ?? `HTTP ${res.status}`);
+       setData(next);
+@@ -748,7 +748,7 @@
+     setCheckingUpdates((current) => new Set([...current, ...keys]));
+     if (!pkg) setCheckingAll(true);
+     try {
+-      const res = await fetch("/api/plugins/check", {
++      const res = await fetch("/pi/api/plugins/check", {
+         method: "POST",
+         headers: { "Content-Type": "application/json" },
+         body: JSON.stringify({
+@@ -787,7 +787,7 @@
+     setActionMessage(null);
+     setUpdateError(null);
+     try {
+-      const res = await fetch("/api/plugins", {
++      const res = await fetch("/pi/api/plugins", {
+         method: "POST",
+         headers: { "Content-Type": "application/json" },
+         body: JSON.stringify({ action: "update", cwd }),
+@@ -814,7 +814,7 @@
+     setActionError(null);
+     setActionMessage(null);
+     try {
+-      const res = await fetch("/api/plugins", {
++      const res = await fetch("/pi/api/plugins", {
+         method: "POST",
+         headers: { "Content-Type": "application/json" },
+         body: JSON.stringify({ action, source: pkg.source, scope: pkg.scope, cwd }),
+@@ -868,7 +868,7 @@
+     setActionError(null);
+     setActionMessage(null);
+     try {
+-      const res = await fetch("/api/plugins", {
++      const res = await fetch("/pi/api/plugins", {
+         method: "POST",
+         headers: { "Content-Type": "application/json" },
+         body: JSON.stringify({ action: "install", source, scope: installScope, cwd }),
+--- a/lib/agent-client.ts
++++ b/lib/agent-client.ts
+@@ -31,7 +31,7 @@
+   sessionId: string,
+   command: Record<string, unknown>,
+ ): Promise<T> {
+-  const res = await fetch(`/api/agent/${encodeURIComponent(sessionId)}`, {
++  const res = await fetch(`/pi/api/agent/${encodeURIComponent(sessionId)}`, {
+     method: "POST",
+     headers: { "Content-Type": "application/json" },
+     body: JSON.stringify(command),
+--- a/hooks/useAgentSession.ts
++++ b/hooks/useAgentSession.ts
+@@ -392,7 +392,7 @@
+ 
+   if (!eventConnectionRef.current) {
+     eventConnectionRef.current = new AgentEventConnection({
+-      createSource: (sid) => new EventSource(`/api/agent/${encodeURIComponent(sid)}/events`),
++      createSource: (sid) => new EventSource(`/pi/api/agent/${encodeURIComponent(sid)}/events`),
+       onEvent: (event) => handleAgentEventRef.current?.(event as AgentEvent),
+       shouldMaintain: (sid) => (
+         sessionHookMountedRef.current
+@@ -519,7 +519,7 @@
+       if (showLoading) setLoading(true);
+       const params = new URLSearchParams({ deferThinking: "1", deferMedia: "1" });
+       if (options?.force) params.set("force", "1");
+-      const res = await fetch(`/api/sessions/${encodeURIComponent(sid)}?${params}`);
++      const res = await fetch(`/pi/api/sessions/${encodeURIComponent(sid)}?${params}`);
+       if (sessionIdRef.current !== sid || loadGeneration !== sessionLoadGenerationRef.current) return null;
+       if (res.status === 404) {
+         if (showLoading) {
+@@ -568,7 +568,7 @@
+       if (!includeState) return null;
+ 
+       try {
+-        const stateRes = await fetch(`/api/sessions/${encodeURIComponent(sid)}/state`);
++        const stateRes = await fetch(`/pi/api/sessions/${encodeURIComponent(sid)}/state`);
+         if (!stateRes.ok) throw new Error(`HTTP ${stateRes.status}`);
+         const agentState = await stateRes.json() as { running: boolean; state?: AgentStateResponse };
+         if (sessionIdRef.current !== sid) return null;
+@@ -606,7 +606,7 @@
+       // then prepend them. Omitting `before` fetches the most-recent `tail`.
+       if (before) params.set("before", before);
+       if (options?.tail) params.set("tail", String(options.tail));
+-      const url = `/api/sessions/${encodeURIComponent(sid)}/context?${params}`;
++      const url = `/pi/api/sessions/${encodeURIComponent(sid)}/context?${params}`;
+       const res = await fetch(url, { signal: options?.signal });
+       if (!res.ok) throw new Error(`HTTP ${res.status}`);
+       const d = await res.json() as { context: SessionData["context"] };
+@@ -689,7 +689,7 @@
+       const selectedThinkingLevel = thinkingLevelOverrideRef.current;
+       if (selectedModel) setPendingModel(selectedModel);
+       const toolNames = getToolNamesForPreset(toolPreset);
+-      const res = await fetch("/api/agent/new", {
++      const res = await fetch("/pi/api/agent/new", {
+         method: "POST",
+         headers: { "Content-Type": "application/json" },
+         body: JSON.stringify({
+@@ -813,7 +813,7 @@
+       if (disposed || renewing) return;
+       renewing = true;
+       try {
+-        const response = await fetch(`/api/agent/${encodeURIComponent(sid)}/lease`, {
++        const response = await fetch(`/pi/api/agent/${encodeURIComponent(sid)}/lease`, {
+           method: "POST",
+           cache: "no-store",
+         });
+@@ -976,7 +976,7 @@
+       ) return;
+ 
+       try {
+-        const res = await fetch(`/api/agent/${encodeURIComponent(sid)}`);
++        const res = await fetch(`/pi/api/agent/${encodeURIComponent(sid)}`);
+         if (!res.ok) throw new Error(`HTTP ${res.status}`);
+         const data = await res.json() as { running?: boolean; state?: AgentStateResponse };
+         if (
+@@ -1052,7 +1052,7 @@
+     while (agentRunningRef.current && Date.now() - startedAt < PROMPT_SETTLE_MAX_MS) {
+       if (runId !== undefined && promptRunIdRef.current !== runId) return;
+       try {
+-        const res = await fetch(`/api/agent/${encodeURIComponent(sid)}`);
++        const res = await fetch(`/pi/api/agent/${encodeURIComponent(sid)}`);
+         if (res.ok) {
+           const data = await res.json() as { running?: boolean; state?: AgentStateResponse };
+           const state = data.state;
+@@ -1080,7 +1080,7 @@
+     ) {
+       await delay(BASH_STATE_RECONCILE_MS);
+       try {
+-        const res = await fetch(`/api/agent/${encodeURIComponent(sid)}`);
++        const res = await fetch(`/pi/api/agent/${encodeURIComponent(sid)}`);
+         if (!res.ok) continue;
+         const data = await res.json() as { state?: AgentStateResponse };
+         syncLiveModel(data.state);
+@@ -1107,7 +1107,7 @@
+     if (!agentRunningRef.current || sessionIdRef.current !== sid) return;
+     const runId = promptRunIdRef.current;
+     try {
+-      const res = await fetch(`/api/agent/${encodeURIComponent(sid)}`);
++      const res = await fetch(`/pi/api/agent/${encodeURIComponent(sid)}`);
+       if (!res.ok) return;
+       const data = await res.json() as { running?: boolean; state?: AgentStateResponse };
+       // A slow response can straddle a run boundary (previous run finished
+@@ -1201,7 +1201,7 @@
+         dispatch({ type: "end" });
+         if (sessionIdRef.current) {
+           loadSession(sessionIdRef.current);
+-          fetch(`/api/agent/${encodeURIComponent(sessionIdRef.current)}`)
++          fetch(`/pi/api/agent/${encodeURIComponent(sessionIdRef.current)}`)
+             .then((r) => r.json())
+             .then((d: { state?: AgentStateResponse }) => {
+               syncLiveModel(d.state);
+@@ -1720,7 +1720,7 @@
+ 
+   const loadModels = useCallback(async (signal?: AbortSignal) => {
+     const modelCwd = newSessionCwd ?? session?.cwd ?? "";
+-    const modelsUrl = modelCwd ? `/api/models?cwd=${encodeURIComponent(modelCwd)}` : "/api/models";
++    const modelsUrl = modelCwd ? `/pi/api/models?cwd=${encodeURIComponent(modelCwd)}` : "/pi/api/models";
+     let d: ModelsResponse;
+     try {
+       const res = await fetch(modelsUrl, signal ? { signal } : undefined);
+--- a/hooks/useAgentSession.test.mjs
++++ b/hooks/useAgentSession.test.mjs
+@@ -71,7 +71,7 @@
+ 
+   assert.match(source, /const EVENT_STREAM_IDLE_GRACE_MS = 30_000/);
+   assert.match(graceSource, /setTimeout\(\(\) => void checkServerIdle\(\), EVENT_STREAM_IDLE_GRACE_MS\)/);
+-  assert.match(graceSource, /fetch\(`\/api\/agent\/\$\{encodeURIComponent\(sid\)\}`\)/);
++  assert.match(graceSource, /fetch\(`\/pi\/api\/agent\/\$\{encodeURIComponent\(sid\)\}`\)/);
+   assert.match(graceSource, /closeEvents\(\)/);
+   assert.match(finishSource, /scheduleEventStreamClose\(sid\)/);
+   assert.doesNotMatch(finishSource, /closeEvents\(\)/);
+@@ -377,7 +377,7 @@
+   );
+   assert.match(source, /sessionPropIdRef\.current === sid/);
+   assert.match(source, /SESSION_LEASE_RENEW_INTERVAL_MS = 30_000/);
+-  assert.match(source, /fetch\(`\/api\/agent\/\$\{encodeURIComponent\(sid\)\}\/lease`/);
++  assert.match(source, /fetch\(`\/pi\/api\/agent\/\$\{encodeURIComponent\(sid\)\}\/lease`/);
+   assert.match(source, /setInterval\(\(\) => void renewLease\(\), SESSION_LEASE_RENEW_INTERVAL_MS\)/);
+   assert.match(source, /result\.renewed === 0[\s\S]*?closeEvents\(\)[\s\S]*?maintainEventsConnected\(sid\)/);
+   assert.match(source, /if \(sessionPropIdRef\.current === sid\) \{[\s\S]*?cancelEventStreamGrace\(\);[\s\S]*?return;/);
+--- a/lib/request-security.test.mjs
++++ b/lib/request-security.test.mjs
+@@ -7,7 +7,7 @@
+ 
+ test("allows same-origin and non-browser API requests", async () => {
+   const { isApiRequestAllowed } = await loadSubject();
+-  assert.equal(isApiRequestAllowed(new Request("http://localhost:30141/api/test", {
++  assert.equal(isApiRequestAllowed(new Request("http://localhost:30141/pi/api/test", {
+     method: "POST",
+     headers: {
+       host: "localhost:30141",
+@@ -15,7 +15,7 @@
+       "sec-fetch-site": "same-origin",
+     },
+   })), true);
+-  assert.equal(isApiRequestAllowed(new Request("http://localhost:30141/api/test", {
++  assert.equal(isApiRequestAllowed(new Request("http://localhost:30141/pi/api/test", {
+     method: "POST",
+     headers: { host: "localhost:30141" },
+   })), true);
+@@ -23,7 +23,7 @@
+ 
+ test("allows LAN same-origin requests when Next.js uses an internal localhost URL", async () => {
+   const { isApiRequestAllowed } = await loadSubject();
+-  const request = new Request("http://localhost:30141/api/test", {
++  const request = new Request("http://localhost:30141/pi/api/test", {
+     method: "POST",
+     headers: {
+       host: "192.168.32.7:30141",
+@@ -36,7 +36,7 @@
+ 
+ test("allows IPv6 and an explicitly configured hostname", async () => {
+   const { isApiRequestAllowed } = await loadSubject();
+-  const ipv6 = new Request("http://localhost:30141/api/test", {
++  const ipv6 = new Request("http://localhost:30141/pi/api/test", {
+     method: "POST",
+     headers: {
+       host: "[::1]:30141",
+@@ -44,7 +44,7 @@
+       "sec-fetch-site": "same-origin",
+     },
+   });
+-  const configured = new Request("http://localhost:30141/api/test", {
++  const configured = new Request("http://localhost:30141/pi/api/test", {
+     method: "POST",
+     headers: {
+       host: "pi-web.internal:30141",
+@@ -58,7 +58,7 @@
+ 
+ test("rejects cross-origin browser API requests", async () => {
+   const { isApiRequestAllowed, shouldCheckApiRequestOrigin } = await loadSubject();
+-  const post = new Request("http://localhost:30141/api/test", {
++  const post = new Request("http://localhost:30141/pi/api/test", {
+     method: "POST",
+     headers: {
+       host: "localhost:30141",
+@@ -66,7 +66,7 @@
+       "sec-fetch-site": "cross-site",
+     },
+   });
+-  const crossSiteGet = new Request("http://localhost:30141/api/sessions", {
++  const crossSiteGet = new Request("http://localhost:30141/pi/api/sessions", {
+     headers: { host: "localhost:30141", "sec-fetch-site": "cross-site" },
+   });
+   assert.equal(shouldCheckApiRequestOrigin(post), true);
+@@ -77,7 +77,7 @@
+ 
+ test("does not globally trust opaque iframe or alternate loopback origins", async () => {
+   const { isApiRequestAllowed } = await loadSubject();
+-  const previewUrl = "http://localhost:30141/api/files/tmp/test.docx?type=preview";
++  const previewUrl = "http://localhost:30141/pi/api/files/tmp/test.docx?type=preview";
+   const opaqueIframe = new Request(previewUrl, {
+     headers: {
+       host: "localhost:30141",
+@@ -101,14 +101,14 @@
+ 
+ test("rejects cross-site document navigation to APIs even after a user gesture", async () => {
+   const { isApiRequestAllowed } = await loadSubject();
+-  assert.equal(isApiRequestAllowed(new Request("http://127.0.0.1:30141/api/sessions", {
++  assert.equal(isApiRequestAllowed(new Request("http://127.0.0.1:30141/pi/api/sessions", {
+     headers: { host: "127.0.0.1:30141", "sec-fetch-site": "cross-site", "sec-fetch-mode": "navigate", "sec-fetch-dest": "document", "sec-fetch-user": "?1" },
+   })), false);
+ });
+ 
+ test("rejects an origin that does not match the external request host", async () => {
+   const { isApiRequestAllowed } = await loadSubject();
+-  const request = new Request("http://localhost:30141/api/test", {
++  const request = new Request("http://localhost:30141/pi/api/test", {
+     method: "POST",
+     headers: {
+       host: "192.168.32.7:30141",
+@@ -121,7 +121,7 @@
+ 
+ test("rejects DNS rebinding even when browser headers say same-origin", async () => {
+   const { isApiRequestAllowed } = await loadSubject();
+-  const request = new Request("http://localhost:30141/api/skills/install", {
++  const request = new Request("http://localhost:30141/pi/api/skills/install", {
+     method: "POST",
+     headers: {
+       host: "attacker.example:30141",
+@@ -135,11 +135,11 @@
+ 
+ test("rejects missing, malformed, and unconfigured Host headers", async () => {
+   const { isApiRequestAllowed } = await loadSubject();
+-  assert.equal(isApiRequestAllowed(new Request("http://localhost:30141/api/test")), false);
+-  assert.equal(isApiRequestAllowed(new Request("http://localhost:30141/api/test", {
++  assert.equal(isApiRequestAllowed(new Request("http://localhost:30141/pi/api/test")), false);
++  assert.equal(isApiRequestAllowed(new Request("http://localhost:30141/pi/api/test", {
+     headers: { host: "localhost@attacker.example:30141" },
+   })), false);
+-  assert.equal(isApiRequestAllowed(new Request("http://localhost:30141/api/test", {
++  assert.equal(isApiRequestAllowed(new Request("http://localhost:30141/pi/api/test", {
+     headers: { host: "pi-web.internal:30141" },
+   })), false);
+ });
+@@ -161,7 +161,7 @@
+   const { isApiRequestAllowed } = await loadSubject();
+   // Azure Dev Tunnels normalizes Host and Origin onto the backend authority
+   // but keeps the external scheme in x-forwarded-proto.
+-  const request = new Request("https://localhost:30141/api/test", {
++  const request = new Request("https://localhost:30141/pi/api/test", {
+     method: "POST",
+     headers: {
+       host: "localhost:30141",
+@@ -175,7 +175,7 @@
+ 
+ test("still rejects a foreign origin when a proxy is in front", async () => {
+   const { isApiRequestAllowed } = await loadSubject();
+-  const foreignHost = new Request("https://localhost:30141/api/test", {
++  const foreignHost = new Request("https://localhost:30141/pi/api/test", {
+     method: "POST",
+     headers: {
+       host: "localhost:30141",
+@@ -184,7 +184,7 @@
+       "sec-fetch-site": "same-site",
+     },
+   });
+-  const foreignPort = new Request("https://localhost:30141/api/test", {
++  const foreignPort = new Request("https://localhost:30141/pi/api/test", {
+     method: "POST",
+     headers: {
+       host: "localhost:30141",
+@@ -193,7 +193,7 @@
+       "sec-fetch-site": "same-site",
+     },
+   });
+-  const alternateLoopback = new Request("https://localhost:30141/api/test", {
++  const alternateLoopback = new Request("https://localhost:30141/pi/api/test", {
+     method: "POST",
+     headers: {
+       host: "localhost:30141",
+@@ -202,7 +202,7 @@
+       "sec-fetch-site": "same-site",
+     },
+   });
+-  const opaque = new Request("https://localhost:30141/api/test", {
++  const opaque = new Request("https://localhost:30141/pi/api/test", {
+     method: "POST",
+     headers: {
+       host: "localhost:30141",
+@@ -220,7 +220,7 @@
+ 
+ test("does not relax the scheme without same-origin proxy evidence", async () => {
+   const { isApiRequestAllowed } = await loadSubject();
+-  const request = new Request("https://localhost:30141/api/test", {
++  const request = new Request("https://localhost:30141/pi/api/test", {
+     method: "POST",
+     headers: {
+       host: "localhost:30141",
+--- a/components/SettingsPanel.test.mjs
++++ b/components/SettingsPanel.test.mjs
+@@ -141,8 +141,8 @@
+   assert.equal((loginSource.match(/type="password"/g) ?? []).length, 1);
+   assert.doesNotMatch(loginSource, /type="(?:text|email)"/);
+   assert.match(loginSource, /autoComplete="current-password"/);
+-  assert.match(loginSource, /destination\?\.startsWith\("\/"\)/);
+-  assert.match(panelSource, /fetch\("\/api\/web-auth", \{ method: "DELETE" \}\)/);
++  assert.match(loginSource, /destination\?\.startsWith\("\/pi\/"\)/);
++  assert.match(panelSource, /fetch\("\/pi\/api\/web-auth", \{ method: "DELETE" \}\)/);
+   assert.match(panelSource, /t\("auth\.logOut"\)/);
+   assert.match(loginSource, /className="web-login-composer"[\s\S]*?type="password"[\s\S]*?<button type="submit"/);
+   assert.match(globalCssSource, /\.web-login-composer \{[\s\S]*?display: flex;[\s\S]*?border-radius: 14px/);
+--- a/app/layout.tsx
++++ b/app/layout.tsx
+@@ -1,5 +1,5 @@
+ import type { Metadata, Viewport } from "next";
+-import { Noto_Sans_Mono } from "next/font/google";
++import localFont from "next/font/local";
+ import { PwaRegistration } from "@/components/PwaRegistration";
+ import { THEME_INIT_SCRIPT } from "@/lib/theme";
+ import "katex/dist/katex.min.css";
+@@ -7,8 +7,9 @@
+ import "./settings.css";
+ import "./plugins.css";
+ 
+-const notoSansMono = Noto_Sans_Mono({
+-  subsets: ["latin", "cyrillic"],
++const notoSansMono = localFont({
++  src: "./noto-sans-mono.ttf",
++  weight: "100 900",
+   variable: "--font-noto-mono",
+   display: "swap",
+ });
+@@ -17,18 +18,18 @@
+   title: "Pi Web",
+   description: "Pi Web interface for the pi coding agent",
+   applicationName: "Pi Web",
+-  manifest: "/manifest.webmanifest",
++  manifest: "/pi/manifest.webmanifest",
+   icons: {
+     icon: [
+       {
+-        url: "/icons/icon-192.png",
++        url: "/pi/icons/icon-192.png",
+         sizes: "192x192",
+         type: "image/png",
+       },
+     ],
+     apple: [
+       {
+-        url: "/icons/apple-touch-icon.png",
++        url: "/pi/icons/apple-touch-icon.png",
+         sizes: "180x180",
+         type: "image/png",
+       },
+--- a/next.config.ts
++++ b/next.config.ts
+@@ -20,6 +20,8 @@
+ 
+ const nextConfig: NextConfig = {
+   outputFileTracingRoot: configDir,
++  basePath: "/pi",
++  skipTrailingSlashRedirect: true,
+   experimental: {
+     // proxy.ts matches /api/:path*, and Next buffers the request body whenever
+     // a proxy is present, capped at 10 MB by default. The upload route accepts
+@@ -84,7 +86,7 @@
+         source: "/sw.js",
+         headers: [
+           { key: "Cache-Control", value: "public, max-age=0, must-revalidate" },
+-          { key: "Service-Worker-Allowed", value: "/" },
++          { key: "Service-Worker-Allowed", value: "/pi/" },
+         ],
+       },
+       {
+@@ -96,7 +98,7 @@
+     ];
+   },
+   env: {
+-    NEXT_PUBLIC_PI_WEB_BASE_PATH: "",
++    NEXT_PUBLIC_PI_WEB_BASE_PATH: "/pi",
+     NEXT_PUBLIC_APP_VERSION: version,
+     NEXT_PUBLIC_PI_VERSION: piVersion,
+   },
