@@ -5,9 +5,16 @@
   pkgs,
   ...
 }:
+let
+  hazkeyPackages = inputs.nix-hazkey.packages.${pkgs.stdenv.hostPlatform.system};
+in
 {
   imports = [ inputs.nix-hazkey.homeModules.hazkey ];
-  services.hazkey.enable = true;
+  services.hazkey = {
+    enable = true;
+    zenzai.package = hazkeyPackages.zenzai_v3_2-small;
+    server.package = hazkeyPackages.hazkey-server.override { enableVulkan = true; };
+  };
   i18n.inputMethod = {
     enable = true;
     type = "fcitx5";
