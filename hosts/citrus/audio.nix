@@ -25,6 +25,19 @@
           }
         ];
       };
+      wireplumber.extraConfig."51-wf1000xm6-le-audio" = {
+        "monitor.bluez.rules" = [
+          {
+            matches = [
+              {
+                "device.vendor.id" = "usb:054c";
+                "device.product.id" = "0x0f86";
+              }
+            ];
+            actions.update-props."bluez5.bap.preset" = "32_2_1";
+          }
+        ];
+      };
       wireplumber.extraConfig."51-inzone-le-audio" = {
         "monitor.bluez.rules" = [
           {
