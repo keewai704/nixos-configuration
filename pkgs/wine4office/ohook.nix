@@ -25,7 +25,7 @@ stdenv.mkDerivation {
     ${stdenv.cc.targetPrefix}dlltool -k -d sppcs64.def -l libsppcs64.a
     ${stdenv.cc.targetPrefix}windres --codepage=65001 sppc.rc sppc64.res.o
     $CC -Os -Wall -Werror -fno-ident -municode -nostartfiles -nostdlib \
-      -shared sppc.c sppc.def sppc64.res.o -o sppc.dll -L. \
+      -shared -I. sppc.c ${./wine-product-info.c} sppc.def sppc64.res.o -o sppc.dll -L. \
       -lsppcs64 -lkernel32 -lshlwapi -ladvapi32 \
       -Wl,-eDllMain,--exclude-all-symbols,--enable-stdcall-fixup,--dynamicbase,--nxcompat,--subsystem,windows:6.0
     runHook postBuild

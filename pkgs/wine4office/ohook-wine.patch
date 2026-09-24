@@ -42,6 +42,13 @@ diff --git a/sppc.def b/sppc.def
 +__wine_sppc_set_auth_session_key = SPPCS.__wine_sppc_set_auth_session_key
 +__wine_sppc_set_expected_hmac = SPPCS.__wine_sppc_set_expected_hmac
  ;hooked function
+@@ -49,5 +51,5 @@
+ SLGetPolicyInformation = SPPCS.SLGetPolicyInformation
+ SLGetPolicyInformationDWORD = SPPCS.SLGetPolicyInformationDWORD
+-SLGetProductSkuInformation = SPPCS.SLGetProductSkuInformation
++SLGetProductSkuInformation = WineGetProductSkuInformation
+ SLGetSLIDList = SPPCS.SLGetSLIDList
+ SLGetServiceInformation = SPPCS.SLGetServiceInformation
 diff --git a/sppcs64.def b/sppcs64.def
 --- a/sppcs64.def
 +++ b/sppcs64.def

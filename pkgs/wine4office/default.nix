@@ -66,6 +66,7 @@ let
       text = ''
         export WINEPREFIX="''${WINEPREFIX:-''${XDG_DATA_HOME:-$HOME/.local/share}/microsoft365/prefix}"
         export WINEARCH=win64
+        unset DISPLAY
         export WINEDLLOVERRIDES="''${WINEDLLOVERRIDES:-winemenubuilder.exe=d;riched20=n;mshtml=b;msxml6,msxml6r=b;sppc=n,b}"
         export WINEDEBUG="''${WINEDEBUG:--all}"
         export WINE_D3D_CONFIG="''${WINE_D3D_CONFIG:-renderer=gl}"
