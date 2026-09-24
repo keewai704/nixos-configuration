@@ -609,6 +609,20 @@ same child session, stop work, and close a verified delivery. Closing releases
 runtime resources without deleting the retained session or worktree. Preserve
 plain-text results from legacy native sessions.
 
+[Message delivery](pkgs/pi-web/subagent-message-delivery.patch) distinguishes
+explicit `progress` from `attention`; legacy messages without a purpose retain
+attention semantics. Progress is visible metadata, not model input or a reason to
+start a model turn. Unread reports and attention use bounded machine-observation
+batches, not new user requests. Busy parents defer delivery until a safe boundary,
+and durable report-bearing tool results suppress redundant report notices without
+implying verified close. Separate unread attention remains inspectable when a
+report is closed. `answer` explicitly resumes an input-required task; an ordinary
+message does not resume it. If a notification arrives after the final boundary
+snapshot, settlement does not wake the model: Pi cannot expose every late abort
+through its public API. The notice remains pending for a subsequent explicit
+prompt, eligible idle delivery, or reopen rather than risking an aborted run's
+resurrection. Existing transcripts and summaries are not rewritten.
+
 CLI and Web tools expose the same task and control semantics. Web preserves its
 original agent conversation list; CLI provides equivalent tool results and
 compact status output. Existing native

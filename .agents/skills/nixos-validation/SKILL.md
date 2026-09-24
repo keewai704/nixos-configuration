@@ -55,10 +55,20 @@ or configuration snapshots. Format and check syntax only for changed files.
   of the configured runtime.
   Verify concurrency across batches/resumes, dependency failure and explicit
   integrated-change release, messages and input/follow-up/verified-close, durable
-  delivery, parent process ownership, and teardown before resume. Use disposable
-  providers to exercise root/child/grandchild tool calls, immediate-parent results,
-  read-only capability ceilings, third-level rejection, and subtree cancellation
-  and shutdown. Retained pre-change children must keep their captured tool scope.
+  delivery, parent process ownership, and teardown before resume. Capture actual
+  parent model requests and run counts, not only notification callback mocks.
+  Check that new explicitly tagged progress stays outside model, summary, and
+  inherited context. Unread reports, failures, and input requests remain actionable;
+  surfaced reports, verified close, and superseded attempts must not cause
+  acknowledgement-only turns.
+  Cover foreground waits, mixed notice batches, cancellation, aborts, restart,
+  undurable receipts, foreign observers, and preserved user steering. Verify
+  native provenance and live/history/reconnect agreement without rewriting old
+  entries or weakening stale-session guards; retain unknown custom-message handling.
+  Use disposable providers to exercise root/child/grandchild tool calls,
+  immediate-parent results, read-only capability ceilings, third-level rejection,
+  and subtree cancellation and shutdown. Retained pre-change children must keep
+  their captured tool scope.
   Confirm compact session rows and conversation shortcuts at both browser widths;
   do not add task counters, task cards, or parent-control forms. Sessions without
   child conversations must keep the original toolbar. Use disposable
