@@ -38,9 +38,19 @@ undurable receipts, foreign observers, and preserved user steering. Verify nativ
 provenance and live/history/reconnect agreement without rewriting old entries or
 weakening stale-session guards; retain unknown custom-message handling.
 
-Confirm no automatic commits, merges, worktree deletion, or restart replay;
-preserve abandoned work. A launch receipt or accepted message is not completion
-or consumption.
+Confirm no automatic commits, merges, worktree deletion, or restart replay.
+Explicit cleanup must require the owning parent, settled execution, verified close,
+and a committed integration target. Cover dirty index/worktree data, untracked and
+ignored files, unmerged commits, wrong repository/path/branch, live descendants,
+foreign ownership, stale identities, and retry after partial failure. Cover staged
+content distinct from working files, both sides of renames, hidden index flags,
+and transient Web sessions racing native worktree creation across processes.
+Closed failed, aborted, or interrupted tasks may be removed only when entirely
+clean with HEAD included in the explicit parent commit; never rewrite the outcome.
+Preserve old state compatibility and transcripts; reject resume of cleaned tasks
+through both CLI and Web paths. Verify the normal uncommitted writer handoff can be archived
+and prepared safely rather than treating release as proof of integration.
+A launch receipt or accepted message is not completion or consumption.
 
 ## Web behavior and deployment
 

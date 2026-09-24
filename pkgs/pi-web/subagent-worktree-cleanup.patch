@@ -1,0 +1,1293 @@
+diff --git a/lib/subagent-task-types.ts b/lib/subagent-task-types.ts
+--- a/lib/subagent-task-types.ts
++++ b/lib/subagent-task-types.ts
+@@ -68,9 +68,12 @@
+   resources?: SubagentResourceSnapshot;
+   worktreePath?: string;
+   worktreeBranch?: string;
++  worktreePending?: boolean;
+   report?: DelegationReport;
+   releaseRevision?: string;
+   closedAt?: string;
++  cleanupBlocker?: string;
++  cleanup?: { status: "removing" | "cleaned"; revision?: string; path: string; branch: string; gitDir: string; head: string; startedAt: string; completedAt?: string; blocker?: string };
+   lastInput?: string;
+ }
+
+diff --git a/lib/subagent-state.ts b/lib/subagent-state.ts
+--- a/lib/subagent-state.ts
++++ b/lib/subagent-state.ts
+@@ -1,6 +1,6 @@
+ import { createHash } from "node:crypto";
+-import { chmodSync, mkdirSync, readFileSync, realpathSync } from "node:fs";
+-import { basename, dirname, isAbsolute, join, resolve } from "node:path";
++import { chmodSync, existsSync, mkdirSync, readFileSync, readdirSync, realpathSync } from "node:fs";
++import { basename, dirname, isAbsolute, join, relative, resolve, sep } from "node:path";
+ import { syncDirectorySync, writePrivateFileAtomicSync } from "./atomic-file";
+ import { lockSubagentState } from "./subagent-state-lock";
+ import { formatAssignment, validateMessage, validateReport } from "./subagent-task-types";
+@@ -85,7 +85,7 @@
+
+ export function isTaskReady(state: Pick<DelegationState, "tasks">, task: TaskRecord): boolean {
+   const byId = new Map(state.tasks.map((task) => [task.id, task]));
+-  return !task.closedAt && text(task.profile)
++  return !task.closedAt && !task.cleanup && text(task.profile)
+     && task.needs.every((edge) => {
+       const prerequisite = byId.get(edge.taskId);
+       return prerequisite?.status === "completed" && prerequisite.report?.outcome === "completed"
+@@ -118,7 +118,18 @@
+     }
+     requireState(task.releaseRevision === undefined || (typeof task.releaseRevision === "string" && OID.test(task.releaseRevision)));
+     requireState(task.closedAt === undefined || date(task.closedAt));
++    requireState(task.cleanupBlocker === undefined || text(task.cleanupBlocker));
++    if (task.cleanup !== undefined) {
++      const c = task.cleanup;
++      requireState(object(c) && ["removing", "cleaned"].includes(c.status as string)
++        && text(c.path) && text(c.branch) && text(c.gitDir) && typeof c.head === "string" && OID.test(c.head)
++        && date(c.startedAt) && (c.revision === undefined || (typeof c.revision === "string" && OID.test(c.revision)))
++        && (c.completedAt === undefined || date(c.completedAt))
++        && (c.blocker === undefined || text(c.blocker)));
++    }
+     requireState(task.historyPersisted === undefined || typeof task.historyPersisted === "boolean");
++    requireState(task.worktreePending === undefined || (task.worktreePending === true
++      && text(task.worktreePath) && text(task.worktreeBranch) && task.inputRevision !== undefined));
+     if (task.report !== undefined) validateReport(task.report);
+     if (["completed", "failed", "needs_input"].includes(task.status)) requireState(task.report?.outcome === task.status);
+     if (task.resources !== undefined) {
+@@ -182,6 +193,28 @@
+   validateState(state, parent);
+   if (parentSessionId !== undefined) assertDelegationParent(state, parentSessionId);
+   return state;
++}
++
++export function registeredNativeWorktree(agentDir: string, cwd: string): string | undefined {
++  const target = existsSync(cwd) ? realpathSync(cwd) : resolve(cwd);
++  const root = join(agentDir, "native-subagents");
++  for (const name of existsSync(root) ? readdirSync(root) : []) {
++    const file = join(root, name, "state.json");
++    if (!existsSync(file)) continue;
++    const raw: unknown = JSON.parse(readFileSync(file, "utf8"));
++    if (!object(raw) || !text(raw.parentSessionFile)
++      || delegationStatePath(agentDir, raw.parentSessionFile) !== file) {
++      throw new Error("Unknown native delegation state prevents opening this workspace");
++    }
++    const state = readDelegationState(agentDir, raw.parentSessionFile);
++    if (!state) throw new Error("Native delegation state disappeared during workspace inspection");
++    for (const task of state.tasks) {
++      if (!task.worktreePath || task.cleanup?.status === "cleaned") continue;
++      const path = existsSync(task.worktreePath) ? realpathSync(task.worktreePath) : resolve(task.worktreePath);
++      const rel = relative(path, target);
++      if (rel === "" || (!isAbsolute(rel) && rel !== ".." && !rel.startsWith(`..${sep}`))) return task.worktreePath;
++    }
++  }
+ }
+
+ export async function lockDelegationState(agentDir: string, parentSessionFile: string) {
+diff --git a/lib/worktree.ts b/lib/worktree.ts
+--- a/lib/worktree.ts
++++ b/lib/worktree.ts
+@@ -1,6 +1,8 @@
+ import { execFile } from "child_process";
+-import { existsSync, mkdirSync, realpathSync } from "fs";
+-import { basename, dirname, join, resolve } from "path";
++import { createHash } from "crypto";
++import { createReadStream, existsSync, lstatSync, mkdirSync, mkdtempSync, readlinkSync, realpathSync, rmSync } from "fs";
++import { basename, dirname, isAbsolute, join, relative, resolve, sep } from "path";
++import { tmpdir } from "os";
+ import { promisify } from "util";
+ import { allowFileRoot } from "./allowed-roots";
+ import { samePath, toNativePath } from "./paths";
+@@ -199,6 +201,14 @@
+   }
+ }
+
++export async function planWorktree(cwd: string, branch: string): Promise<{ path: string; branch: string }> {
++  const trimmed = branch.trim();
++  const dirName = sanitizeBranchForDir(trimmed);
++  if (!dirName) throw new Error(`Invalid branch name: ${branch}`);
++  const repoRoot = await getRepoRoot(cwd);
++  return { path: join(`${resolve(repoRoot)}-worktrees`, dirName), branch: trimmed };
++}
++
+ export async function addWorktree(cwd: string, branch: string, inputCommit?: string): Promise<{ path: string; branch: string }> {
+   const trimmed = branch.trim();
+   if (!trimmed) throw new Error("Branch name is required");
+@@ -273,6 +283,119 @@
+   invalidateProjectCache();
+ }
+
++export interface CleanupIdentity { path: string; branch: string; gitDir: string; head: string }
++
++export async function inspectCleanupWorktree(cwd: string, path: string, branch: string): Promise<CleanupIdentity> {
++  if (!existsSync(path) || resolve(path) !== realpathSync(path)) throw new Error("Cleanup worktree path is missing or an alias");
++  const target = (await listWorktrees(cwd)).find((item) => item.path === path);
++  const parentRelative = relative(path, realpathSync(cwd));
++  const containsParent = parentRelative === "" || (!isAbsolute(parentRelative) && parentRelative !== ".." && !parentRelative.startsWith(`..${sep}`));
++  if (!target || target.isMain || target.branch !== branch || containsParent) {
++    throw new Error("Cleanup worktree path, branch, or non-main registration changed");
++  }
++  const common = await git(path, ["rev-parse", "--path-format=absolute", "--git-common-dir"]);
++  const parentCommon = await git(cwd, ["rev-parse", "--path-format=absolute", "--git-common-dir"]);
++  const top = await git(path, ["rev-parse", "--show-toplevel"]);
++  const gitDir = await git(path, ["rev-parse", "--path-format=absolute", "--absolute-git-dir"]);
++  if (!samePath(common, parentCommon) || top !== path || samePath(common, gitDir)) {
++    throw new Error("Cleanup worktree repository identity changed");
++  }
++  return { path, branch, gitDir, head: await git(path, ["rev-parse", "HEAD"]) };
++}
++
++export async function verifyCleanupContent(cwd: string, identity: CleanupIdentity, revision?: string): Promise<boolean> {
++  const parentHead = await git(cwd, ["rev-parse", "HEAD"]);
++  if (revision) {
++    if (!/^(?:[a-f0-9]{40}|[a-f0-9]{64})$/.test(revision)
++      || await resolveCommitRevision(cwd, revision) !== revision) throw new Error("Cleanup requires a full integrated commit OID");
++    try { await git(cwd, ["merge-base", "--is-ancestor", revision, parentHead]); }
++    catch { throw new Error("Integrated commit is not on the parent's current committed lineage"); }
++    try { await git(cwd, ["merge-base", "--is-ancestor", identity.head, revision]); }
++    catch { throw new Error("Worktree commits are not included in the integrated commit"); }
++  }
++  try { await git(cwd, ["merge-base", "--is-ancestor", identity.head, parentHead]); }
++  catch { throw new Error("Worktree contains commits not on the parent's current committed lineage"); }
++  if ((await git(identity.path, ["ls-files", "-u", "-z"])) !== "") throw new Error("Cleanup refuses unmerged index entries");
++  if ((await git(identity.path, ["ls-files", "-v", "-z"])).split("\0")
++    .some((entry) => entry && (entry[0] === "S" || entry[0] !== entry[0].toUpperCase()))) {
++    throw new Error("Cleanup refuses skip-worktree or assume-unchanged index entries");
++  }
++  if ((await git(identity.path, ["ls-files", "--stage", "-z"])).split("\0").some((entry) => entry.startsWith("160000 "))) {
++    throw new Error("Cleanup refuses nested repositories or submodules with unknown data");
++  }
++  if ((await git(identity.path, ["ls-files", "--others", "--ignored", "--exclude-standard", "-z"])) !== "") {
++    throw new Error("Cleanup refuses ignored files; preserve and inspect them separately");
++  }
++  const status = await git(identity.path, ["status", "--porcelain=v1", "-z", "--untracked-files=all"]);
++  if (!status) return false;
++  if (status.includes("\uFFFD")) throw new Error("Cleanup refuses paths that cannot be decoded losslessly");
++  if (!revision) throw new Error("Dirty worktree requires an explicit integrated commit OID");
++  for (const file of (await git(identity.path, ["diff", "--cached", "--no-renames", "--name-only", "-z", "HEAD"])).split("\0")) {
++    if (!file) continue;
++    try { await git(identity.path, ["diff", "--cached", "--no-renames", "--quiet", revision, "--", `:(literal)${file}`]); }
++    catch { throw new Error(`Staged path differs from integrated commit: ${JSON.stringify(file)}; preserve and reconcile the staged index before cleanup`); }
++  }
++  const format = await git(identity.path, ["rev-parse", "--show-object-format"]);
++  if (format !== "sha1" && format !== "sha256") throw new Error("Unsupported Git object format for cleanup");
++  const temp = mkdtempSync(join(tmpdir(), "pi-cleanup-index-"));
++  try {
++    const env = { ...process.env, GIT_INDEX_FILE: join(temp, "index"), LC_ALL: "C" };
++    const run = async (args: string[]) => (await execFileAsync("git", ["-C", identity.path, ...args],
++      { env, maxBuffer: 16 * 1024 * 1024, timeout: 60_000 })).stdout;
++    await run(["read-tree", identity.head]);
++    const changed = new Set<string>();
++    for (const raw of [await git(identity.path, ["diff", "--no-renames", "--name-only", "-z", "HEAD"]),
++      await git(identity.path, ["ls-files", "--others", "--exclude-standard", "-z"])]) {
++      for (const file of raw.split("\0")) if (file) changed.add(file);
++    }
++    if (!changed.size) throw new Error("Dirty worktree has unknown changes");
++    for (const file of changed) {
++      try { await run(["add", "-A", "--", `:(literal)${file}`]); }
++      catch (error) { throw new Error(`Cannot verify changed path ${JSON.stringify(file)}: ${extractGitError(error)}`); }
++      const staged = await run(["ls-files", "--stage", "-z", "--", `:(literal)${file}`]);
++      if (staged.split("\0").some((entry) => entry.startsWith("160000 "))) {
++        throw new Error("Cleanup refuses nested repositories or submodules");
++      }
++      const absolute = join(identity.path, file);
++      let stat: ReturnType<typeof lstatSync> | undefined;
++      try { stat = lstatSync(absolute); }
++      catch (error) { if ((error as NodeJS.ErrnoException).code !== "ENOENT") throw error; }
++      if (stat) {
++        const mode = stat.isSymbolicLink() ? "120000" : stat.isFile() ? (Number(stat.mode) & 0o111 ? "100755" : "100644") : undefined;
++        if (!mode) throw new Error(`Cleanup refuses unknown file type: ${JSON.stringify(file)}`);
++        const data = stat.isSymbolicLink() ? readlinkSync(absolute, { encoding: "buffer" }) : undefined;
++        const hash = createHash(format);
++        hash.update(`blob ${data?.length ?? stat.size}\0`);
++        if (data) hash.update(data);
++        else for await (const chunk of createReadStream(absolute)) hash.update(chunk);
++        if (!staged.startsWith(`${mode} ${hash.digest("hex")} 0\t${file}\0`)) {
++          throw new Error(`Cleanup refuses content altered by a Git filter or concurrent writer: ${JSON.stringify(file)}`);
++        }
++      } else if (staged) throw new Error(`Cleanup cannot verify missing path: ${JSON.stringify(file)}`);
++      try { await run(["diff", "--cached", "--no-renames", "--quiet", revision, "--", `:(literal)${file}`]); }
++      catch { throw new Error(`Changed path is not identical to integrated commit: ${JSON.stringify(file)}; preserve staged, unstaged and untracked data outside the worktree and reconcile it into a committed revision before retrying`); }
++    }
++    return true;
++  } finally { rmSync(temp, { recursive: true, force: true }); }
++}
++
++export async function cleanupWorktreeGone(cwd: string, path: string): Promise<boolean> {
++  try { lstatSync(path); return false; }
++  catch (error) { if ((error as NodeJS.ErrnoException).code !== "ENOENT") throw error; }
++  const entries = await git(cwd, ["worktree", "list", "--porcelain"]);
++  return !entries.split("\n").some((line) => line === `worktree ${path}`);
++}
++
++export async function removeVerifiedCleanupWorktree(cwd: string, identity: CleanupIdentity, revision?: string, cleanOnly = false): Promise<void> {
++  const current = await inspectCleanupWorktree(cwd, identity.path, identity.branch);
++  if (current.gitDir !== identity.gitDir || current.head !== identity.head) throw new Error("Cleanup worktree was replaced or advanced");
++  const dirty = await verifyCleanupContent(cwd, identity, revision);
++  if (cleanOnly && dirty) throw new Error("Terminal-failure cleanup requires an entirely clean worktree and index");
++  const again = await inspectCleanupWorktree(cwd, identity.path, identity.branch);
++  if (again.gitDir !== identity.gitDir || again.head !== identity.head) throw new Error("Cleanup worktree changed during verification");
++  await removeWorktree(cwd, identity.path, dirty);
++}
++
+ function extractGitError(error: unknown): string {
+   const stderr = (error as { stderr?: string }).stderr;
+   if (typeof stderr === "string" && stderr.trim()) return stderr.trim();
+diff --git a/lib/subagent-session.ts b/lib/subagent-session.ts
+--- a/lib/subagent-session.ts
++++ b/lib/subagent-session.ts
+@@ -161,6 +161,7 @@
+   customTools: ToolDefinition[] = [],
+   retained?: { path: string; branch: string },
+   lifecycle?: ExtensionFactory,
++  reserved?: { path: string; branch: string },
+ ): Promise<CreatedSubagentSession> {
+   const { profile, runtime, model, thinking, maxTurns, writer, scope } = await validateSubagentSelection(parent, input);
+   await parent.prepareModel?.(runtime, model);
+@@ -171,7 +172,12 @@
+   let session: AgentSession | undefined;
+   try {
+     if (retained) await requireRetainedWorktree(parent.cwd, retained);
+-    else if (isolated) worktree = await addWorktree(parent.cwd, `pi-native-agent-${randomUUID()}`, revision);
++    else if (isolated) {
++      worktree = await addWorktree(parent.cwd, reserved?.branch ?? `pi-native-agent-${randomUUID()}`, revision);
++      if (reserved && (worktree.path !== reserved.path || worktree.branch !== reserved.branch)) {
++        throw new Error("Reserved native worktree identity changed");
++      }
++    }
+     const cwd = worktree?.path ?? parent.cwd;
+     const inherit = input.inheritContext ?? profile.inheritContext;
+     const prompt = buildSubagentPromptPlan({
+diff --git a/lib/subagent-controller.ts b/lib/subagent-controller.ts
+--- a/lib/subagent-controller.ts
++++ b/lib/subagent-controller.ts
+@@ -1,5 +1,6 @@
+ import { createHash, randomUUID } from "node:crypto";
+-import { existsSync } from "node:fs";
++import { existsSync, readFileSync, readdirSync, realpathSync } from "node:fs";
++import { isAbsolute, join, relative, resolve, sep } from "node:path";
+ import { isDeepStrictEqual } from "node:util";
+ import { getSupportedThinkingLevels } from "@earendil-works/pi-ai";
+ import { getAgentDir, SessionManager, type ExtensionFactory } from "@earendil-works/pi-coding-agent";
+@@ -37,10 +38,11 @@
+ import { samePath } from "./paths";
+ import { normalizeToolCalls } from "./normalize";
+ import { listSubagentProfiles, SUBAGENT_RESULT_TYPE, SUBAGENT_STATUS_TYPE } from "./subagents";
+-import { resolveCommitRevision } from "./worktree";
++import { cleanupWorktreeGone, inspectCleanupWorktree, planWorktree, removeVerifiedCleanupWorktree, resolveCommitRevision, verifyCleanupContent } from "./worktree";
+
+ export interface DelegationControllerOptions {
+   agentDir?: string;
++  hasLiveWorktreeUsers?(path: string): boolean;
+   onSession?(
+     task: TaskRecord,
+     child: CreatedSubagentSession,
+@@ -117,6 +119,13 @@
+     return { taskId: edge.taskId, input: edge.input };
+   });
+   return input as unknown as TaskInput;
++}
++
++function inWorktree(path: string, cwd: string): boolean {
++  const root = existsSync(path) ? realpathSync(path) : resolve(path);
++  const target = existsSync(cwd) ? realpathSync(cwd) : resolve(cwd);
++  const rel = relative(root, target);
++  return rel === "" || (!isAbsolute(rel) && rel !== ".." && !rel.startsWith(`..${sep}`));
+ }
+
+ function taskIn(state: DelegationState, id: string): TaskRecord {
+@@ -549,7 +558,22 @@
+   }
+
+   async function makeChild(run: ActiveTask): Promise<CreatedSubagentSession> {
+-    const task = run.task!;
++    let task = run.task!;
++    if (task.inputRevision && !task.worktreePath) {
++      const planned = await planWorktree(host.cwd, `pi-native-agent-${randomUUID()}`);
++      await update((current) => {
++        const saved = taskIn(current, task.id);
++        if (saved.attempt !== task.attempt || saved.worktreePath || !["queued", "running"].includes(saved.status)) {
++          throw new Error("Native worktree reservation changed before creation");
++        }
++        saved.worktreePath = planned.path;
++        saved.worktreeBranch = planned.branch;
++        saved.worktreePending = true;
++        saved.updatedAt = now();
++        run.task = structuredClone(saved);
++      });
++      task = run.task!;
++    }
+     const outbox = createSubagentNotificationOutbox({
+       isCurrent: () => !!run.actor && run.acceptingMessages && run.control?.phase === "running"
+         && !run.cancelRequested && !stopping,
+@@ -620,7 +644,8 @@
+     } else {
+       if (task.worktreePath && !task.worktreeBranch) throw new Error("The retained worktree branch is missing");
+       child = await createSubagentSession(host, childInput(task, prompt), tools,
+-        task.worktreePath ? { path: task.worktreePath, branch: task.worktreeBranch! } : undefined, lifecycle);
++        task.worktreePath && !task.worktreePending ? { path: task.worktreePath, branch: task.worktreeBranch! } : undefined,
++        lifecycle, task.worktreePending ? { path: task.worktreePath!, branch: task.worktreeBranch! } : undefined);
+     }
+     if (child.metadata.resourceSnapshot.delegation === "native-v1") {
+       const session = child.session;
+@@ -676,6 +701,7 @@
+         saved.resources = structuredClone(child.metadata.resourceSnapshot);
+         saved.worktreePath = child.metadata.worktreePath;
+         saved.worktreeBranch = child.metadata.worktreeBranch;
++        delete saved.worktreePending;
+         saved.historyPersisted ||= existsSync(sessionFile);
+         saved.updatedAt = now();
+         run.task = structuredClone(saved);
+@@ -724,6 +750,7 @@
+     run.done = Promise.resolve().then(async () => {
+       await update((current) => {
+         if (stopping || !readyTaskIds(current).includes(id)) return;
++        if (taskIn(current, id).cleanup) throw new Error("Cleanup-intent task cannot run");
+         const task = taskIn(current, id);
+         if (blockedReason(current, task)) return;
+         const revision = integratedRevision(current, task);
+@@ -769,6 +796,7 @@
+             if (task.attempt !== attempt) throw new Error("Stale attempt completion");
+             if (result.worktreePath) task.worktreePath = result.worktreePath;
+             if (result.worktreeBranch) task.worktreeBranch = result.worktreeBranch;
++            if (result.worktreePath && result.worktreeBranch) delete task.worktreePending;
+             if (task.sessionFile && existsSync(task.sessionFile)) task.historyPersisted = true;
+             acknowledgeChildMessages(current, task);
+             recordReport(current, task, stopping ? "interrupted" : result.status, result.report);
+@@ -786,6 +814,7 @@
+           await update((current) => {
+             const task = taskIn(current, id);
+             if (run.cancelRequested || stopping || task.status !== "queued") return;
++            if (task.cleanup) throw new Error("Cleanup-intent task cannot run");
+             if (!isTaskReady(current, task) || blockedReason(current, { ...task, status: "blocked" })) {
+               task.status = "blocked";
+               task.updatedAt = now();
+@@ -892,6 +921,7 @@
+     await claim();
+     if (!object(value)) throw new Error("An assignment is required");
+     const original = taskIn(ownedState(), id);
++    if (original.cleanup) throw new Error("A cleanup-intent or cleaned task cannot be reassigned; create a new task from committed input");
+     if (active.has(id) || original.attempt !== 0
+       || !["blocked", "interrupted"].includes(original.status)) {
+       throw new Error("Only pending, never-attempted work can be reassigned");
+@@ -963,6 +993,7 @@
+     }
+     const original = ownedState().tasks.find((task) => task.id === id || task.sessionId === id) ?? await importHistory(id);
+     id = original.id;
++    if (original.cleanup) throw new Error("A cleanup-intent or cleaned task cannot resume; create a new task from committed input");
+     if (active.has(id) || ["queued", "running", "cancelling"].includes(original.status)) {
+       throw new Error("The previous attempt is still running or tearing down");
+     }
+@@ -1179,6 +1210,132 @@
+     return taskIn(ownedState(), id);
+   }
+
++  function requireCleanupSettled(current: DelegationState, task: TaskRecord): void {
++    const delivery = current.deliveries.find((item) => item.kind === "report" && item.taskId === task.id
++      && item.attempt === task.attempt && item.handledReason === "closed" && item.acknowledgedAt);
++    if (delivery?.kind !== "report") throw new Error("Cleanup requires a verified close of the current report");
++    const successful = task.status === "completed" && task.report?.outcome === "completed";
++    const terminalFailure = ["failed", "aborted", "interrupted"].includes(task.status) && task.report?.outcome === "failed";
++    if ((!successful && !terminalFailure) || !task.closedAt
++      || !isDeepStrictEqual(delivery.report, task.report) || active.has(task.id)) {
++      throw new Error("Cleanup requires a settled completed or failed/aborted/interrupted task and verified close of its current report");
++    }
++    const root = join(agentDir, "native-subagents");
++    for (const name of existsSync(root) ? readdirSync(root) : []) {
++      const file = join(root, name, "state.json");
++      if (!existsSync(file)) continue;
++      const raw: unknown = JSON.parse(readFileSync(file, "utf8"));
++      if (!object(raw) || typeof raw.parentSessionFile !== "string") throw new Error("Unknown delegation state prevents cleanup");
++      const other = readDelegationState(agentDir, raw.parentSessionFile);
++      if (!other) throw new Error("Delegation state disappeared during cleanup inspection");
++      if (other.parentSessionFile !== parentFile && other.owner && isOwnerAlive(other.owner)
++        && (other.parentSessionFile === task.sessionFile || other.tasks.some((item) => item.worktreePath && task.worktreePath
++          && inWorktree(task.worktreePath, item.worktreePath)))) {
++        throw new Error("Another live parent owns a session using this worktree");
++      }
++      for (const item of other.tasks) {
++        if (other.parentSessionFile === parentFile && item.id === task.id) continue;
++        if (item.worktreePath && task.worktreePath && inWorktree(task.worktreePath, item.worktreePath)
++          && item.cleanup?.status !== "cleaned") {
++          throw new Error(`Another known task uses the worktree: ${item.id}`);
++        }
++        if (other.parentSessionFile === task.sessionFile && ["queued", "running", "cancelling", "interrupted"].includes(item.status)) {
++          throw new Error(`A descendant is active or unsettled: ${item.id}`);
++        }
++      }
++    }
++  }
++
++  async function cleanup(actor: DelegationActor, id: string, revision?: string): Promise<TaskRecord> {
++    requireParent(actor);
++    requireEnabled();
++    await claim();
++    const original = taskIn(ownedState(), id);
++    if (original.cleanup?.status === "cleaned") return original;
++    try {
++      requireCleanupSettled(ownedState(), original);
++      if (!original.worktreePath || !original.worktreeBranch) throw new Error("Task has no registered worktree to clean");
++      const sessions = await SessionManager.listAll();
++      const conflicting = sessions.find((session) => inWorktree(original.worktreePath!, session.cwd)
++        && (!original.sessionFile || !samePath(session.path, original.sessionFile)));
++      if (conflicting) throw new Error(`Another known session uses this worktree: ${conflicting.path}`);
++      if (options.hasLiveWorktreeUsers?.(original.worktreePath)) {
++        throw new Error("A live or starting Web session uses this worktree; close it before cleanup");
++      }
++      const writer = !!original.resources && (original.resources.loadExtensions
++        || original.resources.tools.some((tool) => ["bash", "powershell", "write", "edit"].includes(tool)));
++      const cleanOnly = original.status !== "completed";
++      if ((writer || cleanOnly) && !revision && !original.cleanup?.revision) {
++        throw new Error("Writer or terminal-failure cleanup requires an explicit integrated full commit OID");
++      }
++      if (revision !== undefined && (!OID.test(revision) || (original.cleanup && original.cleanup.revision !== revision))) {
++        throw new Error("Cleanup requires the same explicit integrated full commit OID on retries");
++      }
++      const integrated = revision ?? original.cleanup?.revision;
++      if (original.cleanup) {
++        if (await cleanupWorktreeGone(host.cwd, original.cleanup.path)) {
++          await update((current) => {
++            const task = taskIn(current, id);
++            if (!isDeepStrictEqual(task.cleanup, original.cleanup)) throw new Error("Cleanup intent changed");
++            task.cleanup!.status = "cleaned";
++            task.cleanup!.completedAt = now();
++            delete task.cleanup!.blocker;
++            delete task.cleanupBlocker;
++            task.updatedAt = now();
++          });
++          return taskIn(ownedState(), id);
++        }
++        if (!existsSync(original.cleanup.path)) throw new Error("Worktree path vanished but registration remains; inspect manually before retry");
++      }
++      const identity = await inspectCleanupWorktree(host.cwd, original.worktreePath, original.worktreeBranch);
++      if (original.cleanup && (identity.gitDir !== original.cleanup.gitDir || identity.head !== original.cleanup.head
++        || identity.path !== original.cleanup.path || identity.branch !== original.cleanup.branch)) {
++        throw new Error("Cleanup intent points to a replaced or advanced worktree");
++      }
++      const dirty = await verifyCleanupContent(host.cwd, identity, integrated);
++      if (cleanOnly && dirty) throw new Error("Failed, aborted or interrupted tasks require an entirely clean worktree and index; preserve all changes before cleanup");
++      await update((current) => {
++        requireOpen();
++        const task = taskIn(current, id);
++        requireCleanupSettled(current, task);
++        if (!isDeepStrictEqual(task, original)) {
++          throw new Error("Task changed during cleanup verification");
++        }
++        if (!task.cleanup) task.cleanup = { status: "removing", ...identity, revision: integrated, startedAt: now() };
++        delete task.cleanupBlocker;
++      });
++      const confirmed = ownedState();
++      requireCleanupSettled(confirmed, taskIn(confirmed, id));
++      const latestSessions = await SessionManager.listAll();
++      if (latestSessions.some((session) => inWorktree(identity.path, session.cwd)
++        && (!original.sessionFile || !samePath(session.path, original.sessionFile)))) {
++        throw new Error("Another known session appeared in the worktree during cleanup");
++      }
++      if (options.hasLiveWorktreeUsers?.(identity.path)) {
++        throw new Error("A live or starting Web session uses this worktree; close it before cleanup");
++      }
++      await removeVerifiedCleanupWorktree(host.cwd, identity, integrated, cleanOnly);
++      await update((current) => {
++        const task = taskIn(current, id);
++        if (task.cleanup?.status !== "removing" || task.cleanup.gitDir !== identity.gitDir) throw new Error("Cleanup intent changed");
++        task.cleanup.status = "cleaned";
++        task.cleanup.completedAt = now();
++        delete task.cleanup.blocker;
++        task.updatedAt = now();
++      });
++    } catch (error) {
++      const reason = errorText(error);
++      await update((current) => {
++        const task = taskIn(current, id);
++        task.cleanupBlocker = reason;
++        if (task.cleanup?.status === "removing") task.cleanup.blocker = reason;
++        task.updatedAt = now();
++      });
++      throw error;
++    }
++    return taskIn(ownedState(), id);
++  }
++
+   async function reconcileDeliveries(actor: DelegationActor): Promise<DeliveryResult> {
+     requireParent(actor);
+     await claim();
+@@ -1222,6 +1379,6 @@
+
+   return {
+     parentActor, startBatch, list, wait, assign, resume, history, cancel, release,
+-    message, report, close, reconcileDeliveries, shutdown, assertOwnsState, withNotificationsPaused, pendingDeliveryIds, isDeliveryPending, reportReceipt,
++    message, report, close, cleanup, reconcileDeliveries, shutdown, assertOwnsState, withNotificationsPaused, pendingDeliveryIds, isDeliveryPending, reportReceipt,
+   };
+ }
+diff --git a/lib/subagent-tools.ts b/lib/subagent-tools.ts
+--- a/lib/subagent-tools.ts
++++ b/lib/subagent-tools.ts
+@@ -174,9 +174,9 @@
+       },
+     }),
+     defineTool({
+-      name: "manage_subagents", label: "Manage subagents", description: "Inspect tasks, assign pending work, answer input requests, message, cancel, verify and close a delivery, or release integrated file changes. Never commits, merges or deletes worktrees.",
++      name: "manage_subagents", label: "Manage subagents", description: "Inspect tasks, assign pending work, answer input requests, message, cancel, verify and close a delivery, release integrated changes, or explicitly clean a verified worktree. Cleanup requires a full integrated revision for writers. Never commits or merges.",
+       parameters: Type.Object({
+-        action: Type.Union(["list", "assign", "message", "answer", "cancel", "close", "release"].map((value) => Type.Literal(value))),
++        action: Type.Union(["list", "assign", "message", "answer", "cancel", "close", "release", "cleanup"].map((value) => Type.Literal(value))),
+         task_id: Type.Optional(Type.String()), profile: Type.Optional(Type.String()), assignment: Type.Optional(assignmentSchema),
+         description: Type.Optional(Type.String()), message: Type.Optional(Type.String()),
+         delivery_id: Type.Optional(Type.String()), revision: Type.Optional(Type.String()),
+@@ -224,7 +224,8 @@
+           } else if (params.action === "release") {
+             if (!params.revision) throw new Error("An integrated commit OID is required");
+             changed = await controller.release(actor, task.id, params.revision);
+-          } else throw new Error("Unknown subagent action");
++          } else if (params.action === "cleanup") changed = await controller.cleanup(actor, task.id, params.revision);
++          else throw new Error("Unknown subagent action");
+           const current = controller.list();
+           const unread = params.action === "close" ? current.messages.filter((message) => message.from === task.id
+             && message.to === "parent" && message.purpose !== "progress" && !message.deliveredAt) : [];
+diff --git a/lib/subagent-runtime.ts b/lib/subagent-runtime.ts
+--- a/lib/subagent-runtime.ts
++++ b/lib/subagent-runtime.ts
+@@ -39,6 +39,7 @@
+   resolveSessionPath(sessionId: string): Promise<string | null>;
+   invalidateSessionList(): void;
+   isBuiltInSubagentsEnabled?(): boolean;
++  hasLiveWorktreeUsers?(path: string): boolean;
+ }
+
+ type Controller = ReturnType<typeof createDelegationController>;
+@@ -124,6 +125,7 @@
+       model: action.model, thinking: action.thinking });
+     else if (action.action === "release") await controller.release(actor, task.id, action.revision!);
+     else if (action.action === "close") await controller.close(actor, task.id, action.delivery_id!);
++    else if (action.action === "cleanup") await controller.cleanup(actor, task.id, action.revision);
+     else throw new Error("Unknown task action");
+     return tasks(id);
+   }
+@@ -192,7 +194,7 @@
+         deps.invalidateSessionList();
+       },
+       flushNotifications: () => outbox.flush(),
+-    }, { agentDir, onSession(_task, child, _actor, ownership) {
++    }, { agentDir, hasLiveWorktreeUsers: deps.hasLiveWorktreeUsers, onSession(_task, child, _actor, ownership) {
+       const registration = deps.registerSession(child.session as unknown as AgentSessionLike, {
+         exactSystemPrompt: child.metadata.resourceSnapshot?.exactSystemPrompt, chatOnly: child.chatOnly,
+         beforeShutdown: () => binding.closing ?? ownership.cancel(),
+diff --git a/lib/api-types.ts b/lib/api-types.ts
+--- a/lib/api-types.ts
++++ b/lib/api-types.ts
+@@ -28,11 +28,14 @@
+   reportDeliveryId?: string;
+   worktreePath?: string;
+   worktreeBranch?: string;
++  worktreePending?: boolean;
+   model?: string;
+   thinking?: SubagentProfile["thinking"];
+   inputRevision?: string;
+   releaseRevision?: string;
+   closedAt?: string;
++  cleanup?: { status: "removing" | "cleaned"; revision?: string; path: string; branch: string; startedAt: string; completedAt?: string; blocker?: string };
++  cleanupBlocker?: string;
+   blockedReason?: string;
+   report?: {
+     outcome: "completed" | "failed" | "needs_input";
+@@ -64,7 +67,7 @@
+
+ export interface SubagentTaskActionRequest {
+   parentSessionId: string;
+-  action: "message" | "cancel" | "resume" | "assign" | "release" | "close";
++  action: "message" | "cancel" | "resume" | "assign" | "release" | "close" | "cleanup";
+   task_id: string;
+   message?: string;
+   profile?: string;
+diff --git a/lib/subagent-task-view.ts b/lib/subagent-task-view.ts
+--- a/lib/subagent-task-view.ts
++++ b/lib/subagent-task-view.ts
+@@ -7,8 +7,13 @@
+     id: task.id, groupId: task.groupId, profile: task.profile, description: task.description,
+     status: task.status, attempt: task.attempt, needs: task.needs, sessionId: task.sessionId,
+     sessionFile: task.sessionFile, worktreePath: task.worktreePath, worktreeBranch: task.worktreeBranch,
++    worktreePending: task.worktreePending,
+     model: task.model, thinking: task.thinking, inputRevision: task.inputRevision,
+     releaseRevision: task.releaseRevision, closedAt: task.closedAt, blockedReason: task.blockedReason,
++    cleanupBlocker: task.cleanupBlocker,
++    ...(task.cleanup ? { cleanup: { status: task.cleanup.status, revision: task.cleanup.revision,
++      path: task.cleanup.path, branch: task.cleanup.branch, startedAt: task.cleanup.startedAt,
++      completedAt: task.cleanup.completedAt, blocker: task.cleanup.blocker } } : {}),
+     reportDeliveryId: deliveries.find((item) => item.kind === "report" && item.taskId === task.id && item.attempt === task.attempt)?.id,
+     ...(includeReport && task.report ? { report: { ...task.report, report: reportExcerpt(task.report.report) } } : {}),
+   };
+diff --git a/lib/rpc-manager.ts b/lib/rpc-manager.ts
+--- a/lib/rpc-manager.ts
++++ b/lib/rpc-manager.ts
+@@ -4,7 +4,8 @@
+ import { KeybindingsManager as TuiKeybindingsManager, TUI_KEYBINDINGS } from "@earendil-works/pi-tui";
+ import { randomUUID } from "crypto";
+ import { existsSync, realpathSync, writeFileSync } from "fs";
+-import { resolve } from "path";
++import { isAbsolute, relative, resolve, sep } from "path";
++import { registeredNativeWorktree } from "./subagent-state";
+ import { validateAgentImages } from "./image-attachments";
+ import { invalidateModelsCache } from "./models-cache";
+ import { resolveVisibleModels, selectInitialModelScope } from "./model-scope";
+@@ -1750,6 +1751,7 @@
+   resolveSessionPath,
+   invalidateSessionList: invalidateSessionListCache,
+   isBuiltInSubagentsEnabled,
++  hasLiveWorktreeUsers: hasLiveRpcSessionForWorktree,
+ });
+
+ export function getSubagentRun(sessionId: string) {
+@@ -1789,6 +1791,16 @@
+ function getStartingSessionCwds(): Map<string, number> {
+   if (!globalThis.__piStartingSessionCwds) globalThis.__piStartingSessionCwds = new Map();
+   return globalThis.__piStartingSessionCwds;
++}
++
++export function hasLiveRpcSessionForWorktree(path: string): boolean {
++  const root = normalizeRpcCwd(path);
++  const within = (cwd: string) => {
++    const rel = relative(root, normalizeRpcCwd(cwd));
++    return rel === "" || (!isAbsolute(rel) && rel !== ".." && !rel.startsWith(`..${sep}`));
++  };
++  return [...getStartingSessionCwds().keys()].some(within)
++    || [...getRegistry().values()].some((session) => within(session.cwd));
+ }
+
+ function trackStartingSession(cwd: string): () => void {
+@@ -2008,7 +2020,12 @@
+   const locks = getLocks();
+
+   const existing = registry.get(sessionId);
+-  if (existing?.isAlive()) return { session: existing, realSessionId: sessionId };
++  if (existing?.isAlive()) {
++    if (!existing.isManagedSubagent() && registeredNativeWorktree(getAgentDir(), existing.cwd)) {
++      throw new Error("Ordinary Web sessions cannot open a registered native task worktree; use parent task controls");
++    }
++    return { session: existing, realSessionId: sessionId };
++  }
+
+   const inflight = locks.get(sessionId);
+   if (inflight) return inflight;
+@@ -2018,11 +2035,17 @@
+     sessionManager = SessionManager.open(sessionFile, undefined);
+   } else {
+     if (!cwd) throw new Error("cwd is required for a new session");
++    if (registeredNativeWorktree(getAgentDir(), cwd)) {
++      throw new Error("Ordinary Web sessions cannot open a registered native task worktree; use parent task controls");
++    }
+     sessionManager = SessionManager.create(cwd, undefined);
+   }
+   const sessionCwd = sessionManager.getCwd();
+   if (sessionManager.getEntries().some((entry) => entry.type === "custom" && entry.customType === SUBAGENT_META_TYPE)) {
+     throw new Error("Resume native child sessions through their parent task controls");
++  }
++  if (registeredNativeWorktree(getAgentDir(), sessionCwd)) {
++    throw new Error("Ordinary Web sessions cannot open a registered native task worktree; use parent task controls");
+   }
+   const persistedToolNames = readSessionToolSelection(sessionManager.getEntries() as unknown as SessionEntry[]);
+   const selectedToolNames = persistedToolNames ?? requestedToolNames;
+diff --git a/app/api/subagents/tasks/route.ts b/app/api/subagents/tasks/route.ts
+--- a/app/api/subagents/tasks/route.ts
++++ b/app/api/subagents/tasks/route.ts
+@@ -28,7 +28,7 @@
+     for (const field of ["parentSessionId", "task_id", "action"]) {
+       if (typeof input[field] !== "string" || !input[field].trim()) throw new Error(`${field} is required`);
+     }
+-    if (!["message", "cancel", "resume", "assign", "release", "close"].includes(input.action as string)) throw new Error("Unknown task action");
++    if (!["message", "cancel", "resume", "assign", "release", "close", "cleanup"].includes(input.action as string)) throw new Error("Unknown task action");
+     for (const field of ["message", "profile", "input_revision", "revision", "delivery_id", "model", "thinking"]) {
+       if (input[field] !== undefined && (typeof input[field] !== "string" || !input[field].trim())) throw new Error(`${field} must be a non-empty string`);
+     }
+diff --git a/app/api/worktrees/route.ts b/app/api/worktrees/route.ts
+--- a/app/api/worktrees/route.ts
++++ b/app/api/worktrees/route.ts
+@@ -1,5 +1,9 @@
+ import { NextResponse } from "next/server";
+-import { existsSync } from "fs";
++import { existsSync, readFileSync, readdirSync } from "fs";
++import { join } from "path";
++import { getAgentDir } from "@earendil-works/pi-coding-agent";
++import { readDelegationState } from "@/lib/subagent-state";
++import { samePath } from "@/lib/paths";
+ import { addWorktree, findCurrentWorktreePath, listWorktrees, removeWorktree, resolveProject } from "@/lib/worktree";
+ import { allowFileRoot, getAllowedFileRoots, isExistingFilePathAllowed, isFilePathAllowed } from "@/lib/file-access";
+ import { projectIdentityKey } from "@/lib/project-identity";
+@@ -90,6 +94,19 @@
+     const denied = await checkCwdAllowed(body.cwd);
+     if (denied) return denied;
+
++    const root = join(getAgentDir(), "native-subagents");
++    for (const name of existsSync(root) ? readdirSync(root) : []) {
++      const file = join(root, name, "state.json");
++      if (!existsSync(file)) continue;
++      const value: unknown = JSON.parse(readFileSync(file, "utf8"));
++      if (!value || typeof value !== "object" || !("parentSessionFile" in value)
++        || typeof value.parentSessionFile !== "string") throw new Error("Unknown native delegation state prevents worktree removal");
++      const state = readDelegationState(getAgentDir(), value.parentSessionFile);
++      if (state?.tasks.some((task) => task.worktreePath && task.cleanup?.status !== "cleaned"
++        && samePath(task.worktreePath, body.path!))) {
++        throw new Error("Native task worktree requires parent-owned manage_subagents cleanup");
++      }
++    }
+     await removeWorktree(body.cwd, body.path, body.force === true);
+     return NextResponse.json({ success: true });
+   } catch (error) {
+diff --git a/lib/subagent-controller.test.mjs b/lib/subagent-controller.test.mjs
+--- a/lib/subagent-controller.test.mjs
++++ b/lib/subagent-controller.test.mjs
+@@ -1,5 +1,5 @@
+ import assert from "node:assert/strict";
+-import { execFile } from "node:child_process";
++import { execFile, execFileSync } from "node:child_process";
+ import { randomUUID } from "node:crypto";
+ import {
+   appendFileSync, existsSync, mkdirSync, mkdtempSync, readFileSync,
+@@ -25,7 +25,7 @@
+ const {
+   readDelegationState, updateDelegationState,
+ } = await jiti.import("./subagent-state.ts");
+-const { claimParent } = await jiti.import("./subagent-ownership.ts");
++const { claimParent, releaseParent } = await jiti.import("./subagent-ownership.ts");
+ const { saveProjectSubagentProfile, readSubagentRun } = await jiti.import("./subagents.ts");
+ const { ModelRuntime, SessionManager } = await import("@earendil-works/pi-coding-agent");
+ const { createAssistantMessageEventStream } = await import("@earendil-works/pi-ai");
+@@ -162,7 +162,7 @@
+   }
+   function controllerFor(host = parent) {
+     const controller = createDelegationController(host, {
+-      agentDir,
++      agentDir, hasLiveWorktreeUsers: options.hasLiveWorktreeUsers,
+       onSession(record, child, actor, ownership) {
+         children.set(record.id, { task: record, child, actor, ownership });
+         return options.onSession?.(record, child, actor, ownership);
+@@ -1075,3 +1075,329 @@
+     if (ending === "shutdown") assert.equal(readDelegationState(agentDir, f.sessionFile).owner, undefined);
+   });
+ }
++
++
++async function cleanupFixture(t, writer = true) {
++  const f = await fixture(t);
++  await git(f.cwd, "init", "-q");
++  await git(f.cwd, "add", "AGENTS.md");
++  const input = await commit(f.cwd, "input");
++  await f.controller.startBatch(f.controller.parentActor, [task("cleanup-case", {
++    profile: writer ? "worker" : "scout", inputRevision: input, isolation: "worktree",
++  })]);
++  await f.controller.wait(f.controller.parentActor);
++  const child = f.controller.list().tasks.find((item) => item.id === "cleanup-case");
++  const delivery = f.controller.list().deliveries.find((item) => item.taskId === child.id && item.kind === "report");
++  return { ...f, child, delivery, input };
++}
++
++test("explicit clean cleanup preserves child history and refuses future resume, including old state", async (t) => {
++  const f = await cleanupFixture(t);
++  const head = await git(f.cwd, "rev-parse", "HEAD");
++  await assert.rejects(f.controller.cleanup(f.controller.parentActor, f.child.id, head), /verified close/);
++  await f.controller.close(f.controller.parentActor, f.child.id, f.delivery.id);
++  await assert.rejects(f.controller.cleanup(f.controller.parentActor, f.child.id, "HEAD"), /OID/);
++  const result = await f.controller.cleanup(f.controller.parentActor, f.child.id, head);
++  assert.equal(result.cleanup.status, "cleaned");
++  assert.equal(existsSync(f.child.worktreePath), false);
++  assert.equal(existsSync(f.child.sessionFile), true);
++  assert.equal((await f.controller.cleanup(f.controller.parentActor, f.child.id, head)).cleanup.status, "cleaned");
++  await assert.rejects(f.controller.resume(f.controller.parentActor, f.child.id), /cannot resume/);
++  assert.equal(f.controller.list().tasks.find((item) => item.id === f.child.id).cleanup.status, "cleaned");
++});
++
++test("dirty staged and untracked writer cleanup requires exact integrated content and rejects unsafe data", async (t) => {
++  const f = await cleanupFixture(t);
++  const path = f.child.worktreePath;
++  await f.controller.close(f.controller.parentActor, f.child.id, f.delivery.id);
++  writeFileSync(join(path, "new.txt"), "writer output\n");
++  writeFileSync(join(path, "AGENTS.md"), "updated by writer\n");
++  await git(path, "add", "AGENTS.md");
++  await assert.rejects(f.controller.cleanup(f.controller.parentActor, f.child.id, f.input), /Staged path differs|identical/);
++  assert.match(f.controller.list().tasks.find((item) => item.id === f.child.id).cleanupBlocker, /Staged path differs|identical/);
++  writeFileSync(join(f.cwd, "new.txt"), "writer output\n");
++  writeFileSync(join(f.cwd, "AGENTS.md"), "updated by writer\n");
++  await git(f.cwd, "add", "AGENTS.md", "new.txt");
++  const integrated = await commit(f.cwd, "integrated writer files");
++  await assert.rejects(f.controller.cleanup(f.controller.parentActor, f.child.id, f.input), /Staged path differs|identical/);
++  writeFileSync(join(path, ".gitignore"), "private\n");
++  writeFileSync(join(path, "private"), "not integrated");
++  await assert.rejects(f.controller.cleanup(f.controller.parentActor, f.child.id, integrated), /ignored/);
++  rmSync(join(path, ".gitignore"));
++  rmSync(join(path, "private"));
++  const cleaned = await f.controller.cleanup(f.controller.parentActor, f.child.id, integrated);
++  assert.equal(cleaned.cleanup.status, "cleaned");
++  assert.equal(cleaned.cleanup.revision, integrated);
++  assert.equal(existsSync(path), false);
++});
++
++test("cleanup intent blocks replacement, retries and active or foreign known users", async (t) => {
++  const f = await cleanupFixture(t);
++  const path = f.child.worktreePath;
++  await f.controller.close(f.controller.parentActor, f.child.id, f.delivery.id);
++  const integrated = await git(f.cwd, "rev-parse", "HEAD");
++  await updateDelegationState(agentDir, f.sessionFile, (state) => {
++    const task = state.tasks.find((item) => item.id === f.child.id);
++    task.cleanup = { status: "removing", path, branch: task.worktreeBranch,
++      gitDir: readFileSync(join(path, ".git"), "utf8").trim().slice(8), head: integrated,
++      revision: integrated, startedAt: new Date().toISOString() };
++  });
++  await assert.rejects(f.controller.resume(f.controller.parentActor, f.child.id), /cannot resume/);
++  const result = await f.controller.cleanup(f.controller.parentActor, f.child.id, integrated);
++  assert.equal(result.cleanup.status, "cleaned");
++});
++
++
++test("cleanup rejects wrong registration, main checkout and unmerged index", async (t) => {
++  const f = await cleanupFixture(t);
++  await f.controller.close(f.controller.parentActor, f.child.id, f.delivery.id);
++  const path = f.child.worktreePath;
++  await updateDelegationState(agentDir, f.sessionFile, (state) => { state.tasks[0].worktreeBranch = "wrong-branch"; });
++  await assert.rejects(f.controller.cleanup(f.controller.parentActor, f.child.id, f.input), /registration changed/);
++  await updateDelegationState(agentDir, f.sessionFile, (state) => {
++    state.tasks[0].worktreeBranch = f.child.worktreeBranch;
++    state.tasks[0].worktreePath = f.cwd;
++  });
++  await assert.rejects(f.controller.cleanup(f.controller.parentActor, f.child.id, f.input), /non-main registration changed/);
++  await updateDelegationState(agentDir, f.sessionFile, (state) => { state.tasks[0].worktreePath = path; });
++  const blob = await git(path, "hash-object", "-w", "AGENTS.md");
++  execFileSync("git", ["-C", path, "update-index", "--index-info"], { input: `100644 ${blob} 2\tconflict.txt\n100644 ${blob} 3\tconflict.txt\n` });
++  await assert.rejects(f.controller.cleanup(f.controller.parentActor, f.child.id, f.input), /unmerged/);
++  assert.equal(existsSync(path), true);
++});
++
++test("cleanup refuses active task and a second known parent owning the same path", async (t) => {
++  const f = await cleanupFixture(t);
++  await f.controller.close(f.controller.parentActor, f.child.id, f.delivery.id);
++  await updateDelegationState(agentDir, f.sessionFile, (state) => { state.tasks[0].status = "cancelling"; });
++  await assert.rejects(f.controller.cleanup(f.controller.parentActor, f.child.id, f.input), /settled completed or failed/);
++  await updateDelegationState(agentDir, f.sessionFile, (state) => { state.tasks[0].status = "completed"; });
++  const other = await fixture(t);
++  await updateDelegationState(agentDir, other.sessionFile, (state) => {
++    const stamp = new Date().toISOString();
++    state.groups.push({ id: "foreign", createdAt: stamp });
++    state.tasks.push({ id: "foreign", profile: "scout", description: "Foreign", assignment: "Read",
++      needs: [], groupId: "foreign", status: "running", attempt: 1, createdAt: stamp, updatedAt: stamp,
++      worktreePath: f.child.worktreePath, worktreeBranch: f.child.worktreeBranch });
++  });
++  const foreignOwner = await claimParent(agentDir, other.sessionFile);
++  t.after(() => releaseParent(agentDir, other.sessionFile, foreignOwner));
++  await assert.rejects(f.controller.cleanup(f.controller.parentActor, f.child.id, f.input), /Another live parent/);
++  await updateDelegationState(agentDir, other.sessionFile, (state) => { state.tasks[0].worktreePath = other.cwd; });
++  const done = await f.controller.cleanup(f.controller.parentActor, f.child.id, f.input);
++  assert.equal(done.cleanup.status, "cleaned");
++});
++
++
++test("failed native removal persists intent and retry does not remove an advanced tree", async (t) => {
++  const f = await cleanupFixture(t);
++  const path = f.child.worktreePath;
++  await f.controller.close(f.controller.parentActor, f.child.id, f.delivery.id);
++  await git(f.cwd, "worktree", "lock", "--", path);
++  await assert.rejects(f.controller.cleanup(f.controller.parentActor, f.child.id, f.input), /locked/);
++  const pending = f.controller.list().tasks.find((item) => item.id === f.child.id);
++  assert.equal(pending.cleanup.status, "removing");
++  assert.match(pending.cleanupBlocker, /locked/);
++  await assert.rejects(f.controller.resume(f.controller.parentActor, f.child.id), /cannot resume/);
++  await git(f.cwd, "worktree", "unlock", "--", path);
++  const result = await f.controller.cleanup(f.controller.parentActor, f.child.id, f.input);
++  assert.equal(result.cleanup.status, "cleaned");
++});
++
++
++test("cleanup refuses a second retained session in the same workspace", async (t) => {
++  const f = await cleanupFixture(t);
++  await f.controller.close(f.controller.parentActor, f.child.id, f.delivery.id);
++  const nested = join(f.child.worktreePath, "retained-nested-session");
++  mkdirSync(nested);
++  const unrelated = SessionManager.create(nested);
++  writeFileSync(unrelated.getSessionFile(), JSON.stringify({ type: "session", version: 3,
++    id: unrelated.getSessionId(), cwd: nested, timestamp: new Date().toISOString() }) + "\n");
++  await assert.rejects(f.controller.cleanup(f.controller.parentActor, f.child.id, f.input), /Another known session/);
++  assert.equal(existsSync(f.child.worktreePath), true);
++});
++
++
++test("cleanup refuses local commits absent from the parent's committed lineage", async (t) => {
++  const f = await cleanupFixture(t);
++  await f.controller.close(f.controller.parentActor, f.child.id, f.delivery.id);
++  writeFileSync(join(f.child.worktreePath, "local.txt"), "only local commit\n");
++  await git(f.child.worktreePath, "add", "local.txt");
++  await commit(f.child.worktreePath, "local only");
++  await assert.rejects(f.controller.cleanup(f.controller.parentActor, f.child.id, f.input), /not included in the integrated commit/);
++  assert.equal(existsSync(f.child.worktreePath), true);
++});
++
++
++test("retries finalize a removal that completed before state persistence", async (t) => {
++  const f = await cleanupFixture(t);
++  await f.controller.close(f.controller.parentActor, f.child.id, f.delivery.id);
++  const identity = await jiti.import("./worktree.ts").then((module) => module.inspectCleanupWorktree(f.cwd, f.child.worktreePath, f.child.worktreeBranch));
++  await updateDelegationState(agentDir, f.sessionFile, (state) => {
++    state.tasks[0].cleanup = { status: "removing", ...identity, revision: f.input, startedAt: new Date().toISOString() };
++  });
++  await git(f.cwd, "worktree", "remove", f.child.worktreePath);
++  const result = await f.controller.cleanup(f.controller.parentActor, f.child.id, f.input);
++  assert.equal(result.cleanup.status, "cleaned");
++  assert.equal(existsSync(f.child.sessionFile), true);
++});
++
++
++test("cleanup does not discard a staged version different from the integrated working file", async (t) => {
++  const f = await cleanupFixture(t);
++  const path = f.child.worktreePath;
++  await f.controller.close(f.controller.parentActor, f.child.id, f.delivery.id);
++  writeFileSync(join(path, "AGENTS.md"), "staged A\n");
++  await git(path, "add", "AGENTS.md");
++  writeFileSync(join(path, "AGENTS.md"), "working B\n");
++  writeFileSync(join(f.cwd, "AGENTS.md"), "working B\n");
++  await git(f.cwd, "add", "AGENTS.md");
++  const revision = await commit(f.cwd, "integrate B");
++  await assert.rejects(f.controller.cleanup(f.controller.parentActor, f.child.id, revision), /Staged path differs/);
++  assert.equal(readFileSync(join(path, "AGENTS.md"), "utf8"), "working B\n");
++  await git(path, "add", "AGENTS.md");
++  assert.equal((await f.controller.cleanup(f.controller.parentActor, f.child.id, revision)).cleanup.status, "cleaned");
++});
++
++test("cleanup rejects assume-unchanged and skip-worktree index flags despite clean Git status", async (t) => {
++  const f = await cleanupFixture(t);
++  const path = f.child.worktreePath;
++  await f.controller.close(f.controller.parentActor, f.child.id, f.delivery.id);
++  await git(path, "update-index", "--assume-unchanged", "AGENTS.md");
++  writeFileSync(join(path, "AGENTS.md"), "hidden edit\n");
++  assert.equal(await git(path, "status", "--porcelain"), "");
++  await assert.rejects(f.controller.cleanup(f.controller.parentActor, f.child.id, f.input), /assume-unchanged/);
++  await git(path, "update-index", "--no-assume-unchanged", "AGENTS.md");
++  await git(path, "update-index", "--skip-worktree", "AGENTS.md");
++  await assert.rejects(f.controller.cleanup(f.controller.parentActor, f.child.id, f.input), /skip-worktree/);
++  assert.equal(existsSync(path), true);
++});
++
++
++test("live Web reservation blocks cleanup before removal and clears on close", async (t) => {
++  let live = true;
++  const f = await fixture(t, { hasLiveWorktreeUsers: () => live });
++  await git(f.cwd, "init", "-q");
++  await git(f.cwd, "add", "AGENTS.md");
++  const input = await commit(f.cwd, "input");
++  await f.controller.startBatch(f.controller.parentActor, [task("reserved", { profile: "worker", inputRevision: input })]);
++  await f.controller.wait(f.controller.parentActor);
++  const child = f.controller.list().tasks.find((item) => item.id === "reserved");
++  const receipt = f.controller.list().deliveries.find((item) => item.taskId === "reserved" && item.kind === "report");
++  await f.controller.close(f.controller.parentActor, "reserved", receipt.id);
++  await assert.rejects(f.controller.cleanup(f.controller.parentActor, "reserved", input), /live or starting Web session/);
++  assert.equal(existsSync(child.worktreePath), true);
++  live = false;
++  assert.equal((await f.controller.cleanup(f.controller.parentActor, "reserved", input)).cleanup.status, "cleaned");
++});
++
++
++for (const terminal of ["failed", "aborted", "interrupted"]) {
++  test(`closed ${terminal} task cleans only a fully clean integrated worktree without changing outcome`, async (t) => {
++    const f = await fixture(t, { reply: () => ({ outcome: "failed", report: "Cancelled by the parent." }) });
++    await git(f.cwd, "init", "-q");
++    await git(f.cwd, "add", "AGENTS.md");
++    const input = await commit(f.cwd, "input");
++    await f.controller.startBatch(f.controller.parentActor, [task("orphan", { profile: "worker", inputRevision: input })]);
++    await f.controller.wait(f.controller.parentActor);
++    const original = f.controller.list().tasks.find((item) => item.id === "orphan");
++    if (terminal !== "failed") await updateDelegationState(agentDir, f.sessionFile, (state) => {
++      state.tasks[0].status = terminal;
++    });
++    const delivery = f.controller.list().deliveries.find((item) => item.taskId === "orphan" && item.kind === "report");
++    await assert.rejects(f.controller.cleanup(f.controller.parentActor, "orphan", input), /verified close/);
++    await f.controller.close(f.controller.parentActor, "orphan", delivery.id);
++    if (terminal === "interrupted") rmSync(original.sessionFile);
++    await assert.rejects(f.controller.cleanup(f.controller.parentActor, "orphan"), /explicit integrated full commit OID/);
++    const cleaned = await f.controller.cleanup(f.controller.parentActor, "orphan", input);
++    assert.equal(cleaned.status, terminal);
++    assert.equal(cleaned.report.outcome, "failed");
++    assert.equal(cleaned.report.report, "Cancelled by the parent.");
++    assert.equal(cleaned.cleanup.status, "cleaned");
++    assert.equal(existsSync(original.worktreePath), false);
++    if (terminal === "interrupted") assert.equal(existsSync(original.sessionFile), false);
++  });
++}
++
++test("closed failed task refuses dirty files even when their contents match an integrated commit", async (t) => {
++  const f = await fixture(t, { reply: () => ({ outcome: "failed", report: "Cancelled by the parent." }) });
++  await git(f.cwd, "init", "-q");
++  await git(f.cwd, "add", "AGENTS.md");
++  const input = await commit(f.cwd, "input");
++  await f.controller.startBatch(f.controller.parentActor, [task("failed-dirty", { profile: "worker", inputRevision: input })]);
++  await f.controller.wait(f.controller.parentActor);
++  const taskState = f.controller.list().tasks.find((item) => item.id === "failed-dirty");
++  const delivery = f.controller.list().deliveries.find((item) => item.taskId === "failed-dirty" && item.kind === "report");
++  await f.controller.close(f.controller.parentActor, "failed-dirty", delivery.id);
++  writeFileSync(join(taskState.worktreePath, "evidence.txt"), "retained\n");
++  writeFileSync(join(f.cwd, "evidence.txt"), "retained\n");
++  await git(f.cwd, "add", "evidence.txt");
++  const integrated = await commit(f.cwd, "integrated evidence");
++  await assert.rejects(f.controller.cleanup(f.controller.parentActor, "failed-dirty", integrated), /entirely clean worktree/);
++  assert.equal(readFileSync(join(taskState.worktreePath, "evidence.txt"), "utf8"), "retained\n");
++});
++
++test("closed input-required task never qualifies for cleanup", async (t) => {
++  const f = await fixture(t, { reply: () => ({ outcome: "needs_input", report: "Decision needed", needs: "Which?" }) });
++  await git(f.cwd, "init", "-q");
++  await git(f.cwd, "add", "AGENTS.md");
++  const input = await commit(f.cwd, "input");
++  await f.controller.startBatch(f.controller.parentActor, [task("question-clean", { profile: "worker", inputRevision: input })]);
++  await f.controller.wait(f.controller.parentActor);
++  const delivery = f.controller.list().deliveries.find((item) => item.taskId === "question-clean" && item.kind === "report");
++  await f.controller.close(f.controller.parentActor, "question-clean", delivery.id);
++  await assert.rejects(f.controller.cleanup(f.controller.parentActor, "question-clean", input), /settled completed or failed/);
++});
++
++
++test("cleanup refuses a staged rename whose original file remains in integrated history", async (t) => {
++  const f = await fixture(t);
++  await git(f.cwd, "init", "-q");
++  writeFileSync(join(f.cwd, "old.txt"), "same bytes\n");
++  await git(f.cwd, "add", "AGENTS.md", "old.txt");
++  const input = await commit(f.cwd, "input");
++  await f.controller.startBatch(f.controller.parentActor, [task("renamer", { profile: "worker", inputRevision: input })]);
++  await f.controller.wait(f.controller.parentActor);
++  const child = f.controller.list().tasks.find((item) => item.id === "renamer");
++  const delivery = f.controller.list().deliveries.find((item) => item.taskId === "renamer" && item.kind === "report");
++  await f.controller.close(f.controller.parentActor, "renamer", delivery.id);
++  await git(child.worktreePath, "config", "diff.renames", "true");
++  await git(child.worktreePath, "mv", "old.txt", "new.txt");
++  writeFileSync(join(f.cwd, "new.txt"), "same bytes\n");
++  await git(f.cwd, "add", "new.txt");
++  const integrated = await commit(f.cwd, "add destination but retain original");
++  await assert.rejects(f.controller.cleanup(f.controller.parentActor, "renamer", integrated), /Staged path differs.*old.txt/);
++  assert.equal(existsSync(join(child.worktreePath, "old.txt")), false);
++  assert.equal(existsSync(join(child.worktreePath, "new.txt")), true);
++  assert.equal(existsSync(child.worktreePath), true);
++});
++
++
++test("native runner durably reserves exact path before invoking git worktree add, retaining failed setup", async (t) => {
++  const f = await fixture(t);
++  await git(f.cwd, "init", "-q");
++  await git(f.cwd, "add", "AGENTS.md");
++  const input = await commit(f.cwd, "input");
++  const realGit = execFileSync("which", ["git"], { encoding: "utf8" }).trim();
++  const bin = mkdtempSync(join(agentDir, "git-failure-"));
++  const marker = join(bin, "worktree-attempted");
++  writeFileSync(join(bin, "git"), `#!/bin/sh
++case " $* " in
++  *" worktree add "*) printf 'attempted' > "${marker}"; exit 37 ;;
++esac
++exec "${realGit}" "$@"
++`, { mode: 0o755 });
++  const oldPath = process.env.PATH;
++  process.env.PATH = `${bin}:${oldPath}`;
++  t.after(() => { process.env.PATH = oldPath; });
++  await f.controller.startBatch(f.controller.parentActor, [task("precreate", { profile: "worker", inputRevision: input })]);
++  await f.controller.wait(f.controller.parentActor);
++  const saved = f.controller.list().tasks.find((item) => item.id === "precreate");
++  assert.equal(saved.status, "failed");
++  assert.equal(saved.worktreePending, true);
++  assert.match(saved.worktreeBranch, /^pi-native-agent-/);
++  assert.equal(existsSync(marker), true);
++  assert.equal(existsSync(saved.worktreePath), false);
++  assert.equal(saved.worktreePath, join(`${f.cwd}-worktrees`, saved.worktreeBranch));
++  assert.match(saved.report.report, /worktree/);
++});
+diff --git a/lib/subagent-tools.test.mjs b/lib/subagent-tools.test.mjs
+--- a/lib/subagent-tools.test.mjs
++++ b/lib/subagent-tools.test.mjs
+@@ -23,6 +23,7 @@
+     async resume(scope, id, options) { calls.push({ operation: "resume", scope, id, options }); return { task: tasks.find((task) => task.id === id), history: "retained" }; },
+     async message(scope, to, text) { calls.push({ operation: "message", scope, to, text }); return { from: "parent", to, text }; },
+     async close(scope, id, deliveryId) { calls.push({ operation: "close", scope, id, deliveryId }); return tasks.find((task) => task.id === id); },
++    async cleanup(scope, id, revision) { calls.push({ operation: "cleanup", scope, id, revision }); return Object.assign(tasks.find((task) => task.id === id), { cleanup: { status: "cleaned", path: "/tmp/tree" } }); },
+   };
+   const ctx = { cwd: "/tmp", sessionManager: { getSessionFile: () => "/tmp/parent.jsonl" } };
+   const tools = createDelegationTools(async (actual) => { assert.equal(actual, ctx); return controller; }, () => []);
+@@ -112,10 +113,14 @@
+   assert.equal(f.calls[1].scope, f.actor);
+   await f.execute("manage_subagents", { action: "close", task_id: "one", delivery_id: "delivery" });
+   assert.equal(f.calls[2].deliveryId, "delivery");
++  const cleaned = await f.execute("manage_subagents", { action: "cleanup", task_id: "one", revision: "a".repeat(40) });
++  assert.equal(f.calls[3].scope, f.actor);
++  assert.equal(f.calls[3].revision, "a".repeat(40));
++  assert.equal(cleaned.details.task.cleanup.status, "cleaned");
+   f.tasks[0].sessionId = "child-session";
+   await f.execute("Agent", { resume: "child-session", prompt: "Continue", model: "provider/new", thinking: "high" });
+-  assert.equal(f.calls[3].id, "one");
+-  assert.deepEqual(f.calls[3].options, { message: "Continue", model: "provider/new", thinking: "high" });
++  assert.equal(f.calls[4].id, "one");
++  assert.deepEqual(f.calls[4].options, { message: "Continue", model: "provider/new", thinking: "high" });
+ });
+
+ test("ambiguous request shapes fail without launch and queued results are not mislabeled failures", async () => {
+diff --git a/lib/subagent-web-cleanup.test.mjs b/lib/subagent-web-cleanup.test.mjs
+--- /dev/null
++++ b/lib/subagent-web-cleanup.test.mjs
+@@ -0,0 +1,109 @@
++import assert from "node:assert/strict";
++import { execFileSync } from "node:child_process";
++import { randomUUID } from "node:crypto";
++import { existsSync, mkdirSync, mkdtempSync, rmSync, symlinkSync, writeFileSync } from "node:fs";
++import { tmpdir } from "node:os";
++import { join } from "node:path";
++import test, { after } from "node:test";
++import { createJiti } from "jiti";
++
++const previous = process.env.PI_CODING_AGENT_DIR;
++const agentDir = mkdtempSync(join(tmpdir(), "pi-web-cleanup-start-"));
++process.env.PI_CODING_AGENT_DIR = agentDir;
++const jiti = createJiti(import.meta.url, { tsconfigPaths: true });
++const { startRpcSession, hasLiveRpcSessionForWorktree } = await jiti.import("./rpc-manager.ts");
++const { registeredNativeWorktree, updateDelegationState } = await jiti.import("./subagent-state.ts");
++after(() => {
++  if (previous === undefined) delete process.env.PI_CODING_AGENT_DIR;
++  else process.env.PI_CODING_AGENT_DIR = previous;
++  rmSync(agentDir, { recursive: true, force: true });
++});
++
++test("ordinary Web creation and resume cannot open a registered native worktree or descendant", async (t) => {
++  const root = join(agentDir, "workspace");
++  const child = join(root, "native-worktree");
++  const nested = join(child, "nested");
++  mkdirSync(nested, { recursive: true });
++  const alias = join(root, "alias");
++  symlinkSync(child, alias);
++  const parentFile = join(root, "parent.jsonl");
++  const parentId = randomUUID();
++  writeFileSync(parentFile, JSON.stringify({ type: "session", version: 3, id: parentId, cwd: root,
++    timestamp: new Date().toISOString() }) + "\n");
++  await updateDelegationState(agentDir, parentFile, (state) => {
++    const stamp = new Date().toISOString();
++    state.groups.push({ id: "fixture", createdAt: stamp });
++    state.tasks.push({ id: "task", groupId: "fixture", profile: "worker", description: "Fixture",
++      assignment: "Inspect", needs: [], status: "completed", attempt: 1, createdAt: stamp,
++      updatedAt: stamp, report: { outcome: "completed", report: "Done" },
++      worktreePath: child, worktreeBranch: "native" });
++  });
++  const ordinaryId = randomUUID();
++  const ordinaryFile = join(agentDir, "ordinary.jsonl");
++  writeFileSync(ordinaryFile, JSON.stringify({ type: "session", version: 3, id: ordinaryId,
++    cwd: nested, timestamp: new Date().toISOString() }) + "\n");
++  await assert.rejects(startRpcSession("new", "", child), /Ordinary Web sessions cannot open/);
++  await assert.rejects(startRpcSession("subdir", "", nested), /Ordinary Web sessions cannot open/);
++  await assert.rejects(startRpcSession("alias", "", alias), /Ordinary Web sessions cannot open/);
++  await assert.rejects(startRpcSession(ordinaryId, ordinaryFile, undefined), /Ordinary Web sessions cannot open/);
++  assert.equal(existsSync(join(agentDir, "sessions")), false);
++  const previousRegistry = globalThis.__piSessions;
++  const previousStarting = globalThis.__piStartingSessionCwds;
++  globalThis.__piSessions = new Map();
++  globalThis.__piStartingSessionCwds = new Map();
++  t.after(() => {
++    globalThis.__piSessions = previousRegistry;
++    globalThis.__piStartingSessionCwds = previousStarting;
++  });
++  assert.equal(hasLiveRpcSessionForWorktree(child), false);
++  globalThis.__piStartingSessionCwds.set(nested, 1);
++  assert.equal(hasLiveRpcSessionForWorktree(child), true);
++  globalThis.__piStartingSessionCwds.clear();
++  globalThis.__piSessions.set(ordinaryId, { cwd: nested, isAlive: () => true,
++    isManagedSubagent: () => false });
++  assert.equal(hasLiveRpcSessionForWorktree(child), true);
++  await assert.rejects(startRpcSession(ordinaryId, ordinaryFile, undefined), /Ordinary Web sessions cannot open/);
++  globalThis.__piSessions.set(ordinaryId, { cwd: nested, isAlive: () => false });
++  assert.equal(hasLiveRpcSessionForWorktree(child), true);
++  globalThis.__piSessions.clear();
++  assert.equal(hasLiveRpcSessionForWorktree(child), false);
++  assert.equal(registeredNativeWorktree(agentDir, nested), child);
++  await updateDelegationState(agentDir, parentFile, (state) => {
++    const stamp = new Date().toISOString();
++    state.tasks[0].cleanup = { status: "cleaned", path: child, branch: "native",
++      gitDir: join(root, ".git", "worktrees", "native"), head: "a".repeat(40), startedAt: stamp, completedAt: stamp };
++  });
++  assert.equal(registeredNativeWorktree(agentDir, nested), undefined);
++});
++
++
++test("a second Web process refuses a preregistered native path before any worktree or child session exists", async () => {
++  const root = join(agentDir, "precreate-parent");
++  mkdirSync(root);
++  const future = join(`${root}-worktrees`, "pi-native-agent-reserved");
++  const parentFile = join(root, "parent.jsonl");
++  writeFileSync(parentFile, JSON.stringify({ type: "session", version: 3, id: randomUUID(), cwd: root,
++    timestamp: new Date().toISOString() }) + "\n");
++  await updateDelegationState(agentDir, parentFile, (state) => {
++    const stamp = new Date().toISOString();
++    state.groups.push({ id: "precreate", createdAt: stamp });
++    state.tasks.push({ id: "queued", groupId: "precreate", profile: "worker", description: "Reserved",
++      assignment: "Inspect", needs: [], status: "queued", attempt: 1, createdAt: stamp,
++      updatedAt: stamp, inputRevision: "a".repeat(40), worktreePath: future,
++      worktreeBranch: "pi-native-agent-reserved", worktreePending: true });
++  });
++  assert.equal(existsSync(future), false);
++  const script = `
++    import { createJiti } from "jiti";
++    const { startRpcSession } = await createJiti(import.meta.url, { tsconfigPaths: true }).import("./lib/rpc-manager.ts");
++    try { await startRpcSession("cross-process", "", process.argv[1]); process.exit(2); }
++    catch (error) {
++      if (!String(error).includes("Ordinary Web sessions cannot open")) throw error;
++      console.log("native reservation rejected");
++    }
++  `;
++  const result = execFileSync(process.execPath, ["--experimental-strip-types", "--input-type=module", "-e", script, future],
++    { cwd: process.cwd(), env: { ...process.env, PI_CODING_AGENT_DIR: agentDir }, encoding: "utf8", timeout: 15_000 });
++  assert.match(result, /native reservation rejected/);
++  assert.equal(existsSync(future), false);
++});
+diff --git a/app/api/subagents/tasks/route.test.mjs b/app/api/subagents/tasks/route.test.mjs
+--- a/app/api/subagents/tasks/route.test.mjs
++++ b/app/api/subagents/tasks/route.test.mjs
+@@ -11,6 +11,8 @@
+ process.env.PI_CODING_AGENT_DIR = dir;
+ const jiti = createJiti(import.meta.url, { alias: { "@": process.cwd() } });
+ const { GET, POST } = await jiti.import("./route.ts");
++const { DELETE } = await jiti.import("../../worktrees/route.ts");
++const { allowFileRoot } = await jiti.import("../../../../lib/file-access.ts");
+ const { cacheSessionPath, invalidateSessionPathCache } = await jiti.import("../../../../lib/session-reader.ts");
+ const { claimParent, releaseParent } = await jiti.import("../../../../lib/subagent-ownership.ts");
+ const { updateDelegationState, delegationStatePath } = await jiti.import("../../../../lib/subagent-state.ts");
+@@ -30,6 +32,7 @@
+   assert.equal((await GET(new Request(`http://localhost/pi/api/subagents/tasks?parentSessionId=${randomUUID()}`))).status, 404);
+   assert.equal((await POST(request({}))).status, 400);
+   assert.equal((await POST(request({ parentSessionId: randomUUID(), action: "close", task_id: "one" }))).status, 400);
++  assert.equal((await POST(request({ parentSessionId: randomUUID(), action: "cleanup", task_id: "one", revision: "HEAD" }))).status, 404);
+   assert.equal((await POST(request({}, "text/plain"))).status, 415);
+   assert.equal((await POST(new Request("http://localhost/pi/api/subagents/tasks", { method: "POST",
+     headers: { Host: "localhost", Origin: "https://untrusted.invalid", "Content-Type": "application/json" }, body: "{}" }))).status, 403);
+@@ -57,7 +60,7 @@
+   assert.equal(view.ownership, "elsewhere");
+   assert.equal(view.tasks[0].report.needs, "Decision");
+   assert.doesNotMatch(JSON.stringify(view), /Private prompt|startTime|bootId|token/);
+-  for (const action of ["message", "resume", "assign", "cancel", "release", "close"]) {
++  for (const action of ["message", "resume", "assign", "cancel", "release", "close", "cleanup"]) {
+     const result = await POST(request({ parentSessionId: id, action, task_id: "one", message: "Information", profile: "scout",
+       revision: "a".repeat(40), delivery_id: "receipt" }));
+     assert.equal(result.status, 409, `${action}: ${await result.text()}`);
+@@ -66,3 +69,31 @@
+   assert.equal(globalThis.__piSessions?.has(id) ?? false, false);
+   assert.equal(readFileSync(delegationStatePath(dir, path), "utf8"), bytes);
+ });
++
++test("generic worktree deletion cannot bypass a registered native task", async (t) => {
++  const id = randomUUID();
++  const parent = join(dir, `${id}.jsonl`);
++  writeFileSync(parent, JSON.stringify({ type: "session", version: 3, id, cwd: dir,
++    timestamp: new Date().toISOString() }) + "\n");
++  cacheSessionPath(id, parent);
++  t.after(() => invalidateSessionPathCache(id));
++  await updateDelegationState(dir, parent, (state) => {
++    const stamp = new Date().toISOString();
++    state.groups.push({ id: "generic-guard", createdAt: stamp });
++    state.tasks.push({ id: "guard", groupId: "generic-guard", profile: "scout", description: "Guard",
++      assignment: "Inspect", needs: [], status: "completed", attempt: 1, createdAt: stamp,
++      updatedAt: stamp, report: { outcome: "completed", report: "Done" },
++      worktreePath: join(dir, "native-tree"), worktreeBranch: "native" });
++  });
++  allowFileRoot(dir);
++  const result = await DELETE(request({ cwd: dir, path: join(dir, "native-tree"), force: true }));
++  assert.equal(result.status, 400);
++  assert.match((await result.json()).error, /parent-owned/);
++  await updateDelegationState(dir, parent, (state) => {
++    const stamp = new Date().toISOString();
++    state.tasks[0].cleanup = { status: "cleaned", path: join(dir, "native-tree"), branch: "native",
++      gitDir: join(dir, ".git", "worktrees", "native"), head: "a".repeat(40), startedAt: stamp, completedAt: stamp };
++  });
++  const recycled = await DELETE(request({ cwd: dir, path: join(dir, "native-tree"), force: true }));
++  assert.doesNotMatch((await recycled.json()).error, /parent-owned/);
++});

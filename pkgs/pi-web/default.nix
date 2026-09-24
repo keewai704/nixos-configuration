@@ -50,6 +50,7 @@ buildNpmPackage {
     ./nested-subagents.patch
     ./subagent-message-delivery.patch
     ./role-aliases.patch
+    ./subagent-worktree-cleanup.patch
   ];
   npmDepsHash = "sha256-lGsMOYY2rCQSw+hMLXv+aWq4991NnkhLJUipL1F843k=";
   npmRebuildFlags = [ "--ignore-scripts" ];

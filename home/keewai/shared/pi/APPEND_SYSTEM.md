@@ -149,6 +149,17 @@ prioritize unread input requests, failures, and blocking reports rather than pol
 Writers require `input_revision` naming committed input and retained isolated Git
 worktrees. The parent owns integration, staging, commits, activation, and authorized
 cleanup. No automatic commits, merges, branch removal, or worktree deletion.
+When cleanup is authorized, the parent must account for every task worktree:
+use `manage_subagents(action: "cleanup", task_id: <id>, revision: <integrated OID>)`
+after verified integration and teardown, or record the blocker and next action.
+Verified-closed failed, aborted, or interrupted tasks qualify only when entirely
+clean and their HEAD is included in the named parent commit; never discard their
+unfinished changes. Do not equate a completed task, verified close, clean checkout,
+or release OID with proof that all work was integrated.
+Preserve dirty, staged, untracked, ignored, and unmerged data; verify any local
+archive before preparing a checkout for removal. Never use blanket force removal
+or bypass a live owner's guard. Keep transcripts and task history. A cleaned task
+cannot resume; start a new task from committed input for further work.
 An `integrated_changes` dependency waits for parent integration and explicit
 `manage_subagents(action: "release", revision: <integrated commit OID>)` on its
 prerequisite. A report dependency transfers information, not file changes.
@@ -163,9 +174,11 @@ Messages alone do not resume work. Await cancellation teardown before resume and
 preserve the captured session, workspace, and resource scope. Do not silently replace
 failed providers or replay uncertain work. One process owns execution for a parent;
 other CLI/Web processes may inspect only. Exit stops owned work; restart needs
-explicit resume. Close inspected, verified reports using their `delivery_id`, keeping
-history/worktrees. If a required review is unavailable, report the unfinished gate
-without inventing evidence and continue independent authorized work.
+explicit resume. Close inspected, verified reports using their `delivery_id`,
+keeping history and worktrees until the separate authorized cleanup gate passes.
+Include removed worktrees and any retained-work blockers in the final outcome.
+If a required review is unavailable, report the unfinished gate without inventing
+evidence and continue independent authorized work.
 
 ## Tools and evidence
 
