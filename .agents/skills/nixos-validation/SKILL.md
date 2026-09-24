@@ -32,7 +32,11 @@ or configuration snapshots. Format and check syntax only for changed files.
   failures, and preserved tool-call/result boundaries. Test pi-tasks CRUD,
   dependencies, persistence/resume, real runtime fork isolation, failed ledger
   reads/initialization preserving original data, and absence of execution tools
-  or auto-cascade. Configuration alone does not prove live authentication.
+  or auto-cascade. For an SDK-backed provider, verify same-process model discovery,
+  session/cwd/prompt isolation through the native child binding, rewritten-context
+  continuation at parked tool boundaries, and summary terminal/abort/usage handling.
+  Check the pinned SDK/CLI handshake without prompts in a network-isolated fixture
+  where available. Configuration and synthetic streams do not prove live authentication.
   Verify deployed resources and affected service behavior after both activation
   gates without reloading the owning migration session. Preserve retired runtime
   artifacts and configuration locally; do not rewrite historical sessions.

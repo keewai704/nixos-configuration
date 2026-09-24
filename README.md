@@ -175,6 +175,7 @@ Moonlight の CLI では `moonlight stream citrus "Extend Display" --1080 --fps 
 | --- | --- |
 | [shared/pi/default.nix](home/keewai/shared/pi/default.nix) | 全ホスト共通の Pi 設定の入口 |
 | [shared/pi/agent.nix](home/keewai/shared/pi/agent.nix) | 本体・実行環境、モデル、ローカル拡張と指示の配布 |
+| [shared/pi/claude-bridge.nix](home/keewai/shared/pi/claude-bridge.nix) | Claude Code / Agent SDK 経由のモデル、認証用CLIと共通設定 |
 | [skills/superpowers/](skills/superpowers/) | Opus / Astra 共通の Superpowers 入口スキルと用途別の参照手順 |
 | [shared/pi/tasks.nix](home/keewai/shared/pi/tasks.nix) | pi-tasks の TODO 管理、保存先と表示設定 |
 | [shared/pi/mcp.nix](home/keewai/shared/pi/mcp.nix) | Pi MCP アダプターの導入、共通 MCP サーバーの登録と設定変換 |
@@ -188,7 +189,7 @@ Moonlight の CLI では `moonlight stream citrus "Extend Display" --1080 --fps 
 | [desktop/pi/cua.nix](home/keewai/desktop/pi/cua.nix) | デスクトップ操作用ドライバーと MCP |
 | [shared/skills.nix](home/keewai/shared/skills.nix)、[skills/](skills/) | Pi 以外とも共有できる個人スキルの配布と編集元 |
 | [pkgs/pi-coding-agent/](pkgs/pi-coding-agent/)、[pkgs/pi-web/](pkgs/pi-web/) | アプリ本体のビルド定義とパッチ |
-| [pkgs/pi-tasks/](pkgs/pi-tasks/)、[pi-mcp-adapter/](pkgs/pi-mcp-adapter/)、[pi-web-access/](pkgs/pi-web-access/)、[pi-lsp/](pkgs/pi-lsp/) | 拡張本体と実行時依存関係の固定・ビルド |
+| [pkgs/pi-claude-bridge/](pkgs/pi-claude-bridge/)、[pi-tasks/](pkgs/pi-tasks/)、[pi-mcp-adapter/](pkgs/pi-mcp-adapter/)、[pi-web-access/](pkgs/pi-web-access/)、[pi-lsp/](pkgs/pi-lsp/) | 拡張本体と実行時依存関係の固定・ビルド |
 | [modules/common.nix](modules/common.nix) | ログイン前にもユーザーサービスを起動するための linger |
 | [citrus/web.nix](hosts/citrus/web.nix)、[orange/services/web.nix](hosts/orange/services/web.nix) | 既存の Tailscale Serve と nginx による HTTPS 公開 |
 
@@ -210,7 +211,7 @@ Pi の `openai-codex` は ChatGPT 契約で接続するプロバイダー名で�
 `~/.pi/agent` の Nix 管理対象ファイルや `~/.agents/skills` の生成物は直接編集しません。
 Ponytail も他の個人スキルと同じ `~/.agents/skills` に配置します。
 
-### Pi で Astra を使う
+### Pi のモデルとツール
 
 `pi` をプロジェクト内で起動し、初回は `/login` から OpenAI (ChatGPT Plus/Pro) を選びます。
 認証は Pi の `~/.pi/agent/auth.json` に保存されます。
@@ -236,18 +237,47 @@ Web の別端末や、指定したシェルを使わない拡張プロセスは�
 モデル選択は制限せず、必要なら Pi 標準の操作で変更できます。
 自動コンパクションは有効です。一般設定は応答用 16,384・直近履歴 20,000 トークンとし、
 Astra はモデル別設定で従来の 131,072・32,768 トークンを維持します。
+
+[pi-claude-bridge](https://github.com/elidickinson/pi-claude-bridge) は `0.8.0` に固定し、
+Claude Agent SDK `0.3.276` と Nixpkgs の Claude Code `2.1.276` を組み合わせます。
+CLIは Home Manager の `programs.claude-code` で導入し、ブリッジには絶対 Store パスを渡します。
+SDK同梱の未調整ネイティブCLIや、起動時のダウンロードには依存しません。
+`claude auth login` でClaude Code側にログインし、`claude auth status` で状態を確認してから、
+Piの `/model` で `claude-bridge/claude-opus-5-5` などを選びます。Piの `/login` とは別の認証です。
+認証情報はNix Storeへ入れず、既存のPi認証・履歴も変更しません。
+
+設定元は [claude-bridge.nix](home/keewai/shared/pi/claude-bridge.nix) です。
+`AskClaude` は無効にし、委任はネイティブ `Agent`、TODOは `pi-tasks` に統一します。
+`plan = "pro"` を保守的な既定値とし、長文脈向けの追加課金は有効化しません。
+Opus 5.5は上流ブリッジの未測定モデル規則に従い200Kで登録し、1Mを強制しません。
+費用表示が0でも無料の保証ではなく、認証・利用枠・課金はClaude側の契約に従います。
+Claudeの独立したMCP・スキル探索・自動メモ・自動compactionは使わず、Piの指示とツールを渡します。
+この固定版にはPi 0.87向けの互換パッチを適用します。モデル登録は環境ごと、実行状態はPiセッションごとに
+分離し、子の作業ディレクトリと指示はPiの構造化コンテキストから取得します。compactionはPi標準で記録します。
+プロジェクト別のブリッジ設定と `AskClaude` は対応対象外です。設定はNix管理のグローバルファイルに集約します。
+新しい問い合わせは現在のPi履歴から再構成するため、上流とキャッシュ効率が異なる場合があります。
+Claude側HTTP要求の `onPayload`／`onResponse` 監視・書き換えには対応しません。
+認証・モデルの利用権・実推論は、パッケージの読み込みや隔離テストだけでは確認できません。
+
+全ホストと共通Home Managerのパッケージ評価では [common.nix](modules/common.nix) の
+`nixpkgs.config.allowUnfree = true` を使います。flakeの公開パッケージ・開発シェル用の
+Nixpkgsインポートも同じ許可設定です。以前のNVIDIA限定許可リストは使いません。
+
 Pi 本体は [pi-coding-agent/default.nix](pkgs/pi-coding-agent/default.nix) で 0.87.1 に固定し、
 Nixpkgs のビルド定義を使ってソース・npm 依存関係・モデルカタログのハッシュを検証します。
 標準の ChatGPT 接続にはキャッシュ用ヘッダーを本文のキーに合わせる小さなパッチを適用しています。
 `pi-mcp-adapter@2.34.0`、`pi-web-access@0.30.0`、`@narumitw/pi-lsp@0.49.7`、
-`@tintinweb/pi-tasks@0.9.0` は Nix で固定し、Home Manager の `settings.packages` から
+`@tintinweb/pi-tasks@0.9.0`、`pi-claude-bridge@0.8.0` は Nix で固定し、Home Manager の `settings.packages` から
 Nix ストアのパッケージを直接読み込みます。初回起動時の npm インストールは不要です。
 通常の依存関係を持つ拡張は各 `pkgs/pi-*/package.json` と `package-lock.json`、`npmDepsHash` で
 配布物と依存関係を固定し、lifecycle scripts と Pi SDK の重複インストールを無効にしてビルドします。
 Pi SDK だけに依存する LSP は npm 配布物のハッシュを固定します。
 更新時は担当パッケージのバージョン・ロック・ハッシュを更新して NixOS の検証と適用を行います。
 `pi update --extensions` ではこれらの固定パッケージを更新しません。
-認証・会話・実行時キャッシュは引き続き `~/.pi/agent` に保存します。
+Piの認証・会話・実行時キャッシュは引き続き `~/.pi/agent` に保存します。
+Claude Codeの認証とSDK動作中の一時的な会話ファイルは別途 `~/.claude` 側に置きます。
+互換パッチが生成した問い合わせ専用ファイルは終了後に片付け、元の履歴はPiのJSONLに保持します。
+既存のClaude会話ファイルは削除しません。
 以前の `~/.pi/agent/npm/` は読み込みに使わず、自動削除もしません。
 
 [Superpowers 6.4.1](https://github.com/obra/superpowers/tree/5bf4e78011075bcfc0dc295f0724994cd123ee71)
@@ -342,7 +372,9 @@ Ponytail のモードは会話中に `ponytail lite`、`ponytail full`、`ponyta
 [pi-web-access](https://github.com/nicobailon/pi-web-access) が `web_search`、`fetch_content`、
 `get_search_content`、`source_check` を提供します。以前の `pi-web-search` 拡張は使いません。
 既定の検索経路は OpenAI のみで、現在のモデルと ChatGPT 認証を再利用します。
-親では Astra、通常の子では Luna を使い、検索のためのモデル変更や他社への自動フォールバックは行いません。
+公式OpenAIモデルでは現在の会話モデルを検索にも使います。Claudeなどで検索するときは
+`provider: "openai"` を明示し、独立した `openai-codex/gpt-6-astra` の検索経路を使います。
+会話モデル自体の変更や、他社への自動フォールバックは行いません。
 OpenAI Responses の `web_search` を必須で呼び出し、ライブ取得を有効にした標準動作を使います。
 [OpenAI の仕様](https://developers.openai.com/api/docs/guides/tools-web-search#live-internet-access)では、
 `external_web_access` の未指定は `true` です。検索ごとの要求は ChatGPT の利用枠を消費します。

@@ -7,6 +7,8 @@ let
       useCurrentModel = true;
       fallbackOn = [ "transient" ];
     };
+    openaiSearchModel = "gpt-6-astra";
+    openaiSearchProviders = [ "openai-codex" ];
     workflow = "none";
     allowBrowserCookies = false;
     fetchRouting.allowRemoteHostedProviders = false;

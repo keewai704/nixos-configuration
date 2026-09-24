@@ -1,22 +1,5 @@
-{ lib, pkgs, ... }:
+{ pkgs, ... }:
 {
-  nixpkgs.config.allowUnfreePredicate =
-    package:
-    builtins.elem (lib.getName package) [
-      "cuda_cccl"
-      "cuda_compat"
-      "cuda_cudart"
-      "cuda_nvcc"
-      "cuda_nvml_dev"
-      "cuda_nvrtc"
-      "cudnn"
-      "libcublas"
-      "libcurand"
-      "libnvvm"
-      "nvidia-x11"
-      "nvidia-settings"
-    ];
-
   nix.settings = {
     extra-substituters = [
       "https://nix-community.cachix.org"
