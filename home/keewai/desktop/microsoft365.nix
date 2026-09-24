@@ -1,5 +1,6 @@
 { pkgs, ... }:
 let
+  officeRunner = pkgs.callPackage ../../../pkgs/wine4office-runner { };
   applications = {
     word = {
       name = "Microsoft Word";
@@ -59,6 +60,9 @@ let
 in
 {
   home.packages = [ pkgs.bottles ] ++ pkgs.lib.attrValues launchers;
+
+  xdg.dataFile."bottles/runners/wine4office-${officeRunner.version}/bin".source =
+    "${officeRunner}/bin";
 
   xdg.desktopEntries = pkgs.lib.mapAttrs' (
     name: application:
