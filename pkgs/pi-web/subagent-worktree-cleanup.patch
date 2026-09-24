@@ -759,7 +759,7 @@ diff --git a/lib/subagent-controller.test.mjs b/lib/subagent-controller.test.mjs
        onSession(record, child, actor, ownership) {
          children.set(record.id, { task: record, child, actor, ownership });
          return options.onSession?.(record, child, actor, ownership);
-@@ -1075,3 +1075,329 @@
+@@ -1075,3 +1075,331 @@
      if (ending === "shutdown") assert.equal(readDelegationState(agentDir, f.sessionFile).owner, undefined);
    });
  }
@@ -1066,14 +1066,16 @@ diff --git a/lib/subagent-controller.test.mjs b/lib/subagent-controller.test.mjs
 +  await git(f.cwd, "init", "-q");
 +  await git(f.cwd, "add", "AGENTS.md");
 +  const input = await commit(f.cwd, "input");
-+  const realGit = execFileSync("which", ["git"], { encoding: "utf8" }).trim();
++  const realGit = (process.env.PATH ?? "").split(":").map((dir) => join(dir, "git")).find(existsSync);
++  assert.ok(realGit);
 +  const bin = mkdtempSync(join(agentDir, "git-failure-"));
 +  const marker = join(bin, "worktree-attempted");
-+  writeFileSync(join(bin, "git"), `#!/bin/sh
-+case " $* " in
-+  *" worktree add "*) printf 'attempted' > "${marker}"; exit 37 ;;
-+esac
-+exec "${realGit}" "$@"
++  writeFileSync(join(bin, "git"), `#!${process.execPath}
++const { writeFileSync } = require("node:fs");
++const { spawnSync } = require("node:child_process");
++if (process.argv[4] === "worktree" && process.argv[5] === "add") { writeFileSync(${JSON.stringify(marker)}, "attempted"); process.exit(37); }
++const result = spawnSync(${JSON.stringify(realGit)}, process.argv.slice(2), { stdio: "inherit" });
++process.exit(result.status ?? 1);
 +`, { mode: 0o755 });
 +  const oldPath = process.env.PATH;
 +  process.env.PATH = `${bin}:${oldPath}`;
