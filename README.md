@@ -497,6 +497,30 @@ Crew の固定ソースから役割本文を生成して MIT ライセンスを�
 読み取り専用ロールはシェルを持たないため、レビューには読める差分ファイルと新規ファイルを渡します。
 子への拡張の継承は既定で無効です。ツール制限・worktree は OS サンドボックスではありません。
 
+作成時の `model` と `thinking` は単独ならトップレベル、バッチなら各 `tasks[]` に指定できます。
+同名モデルの曖昧さを避けるため、プロバイダー付き ID を使います。
+
+| モデル ID | 現在の SDK が対応する thinking |
+| --- | --- |
+| `openai-codex/gpt-6-astra` | `minimal` / `low` / `medium` / `high` / `xhigh` / `max` |
+| `openai-codex/gpt-6-sol` | `off` / `minimal` / `low` / `medium` / `high` / `xhigh` / `max` |
+| `openai-codex/gpt-6-luna` | `off` / `minimal` / `low` / `medium` / `high` / `xhigh` / `max` |
+
+例えば、単独の読み取り調査には次の `Agent` 引数を指定できます。
+
+```json
+{
+  "subagent_type": "scout",
+  "prompt": "Inspect the requested code without editing files.",
+  "model": "openai-codex/gpt-6-sol",
+  "thinking": "high"
+}
+```
+
+省略時は既存のロール設定・親設定を継承します。既定の Astra／`xhigh` は変更しません。
+未登録モデルや非対応の thinking はエラーとなり、別の指定へ黙って切り替えません。
+モデルの登録・ローカル検証は、アカウントの利用権限や実推論の成功を保証するものではありません。
+
 既定は fresh context・バックグラウンドです。独立作業は1バッチ、前提は `needs` に指定します。
 同じ直属の親の全バッチ・resume を共通キューで最大4子に制限します（設定範囲1〜4）。
 委任は親→子→孫まで対応し、孫からの再委任は禁止します。子の権限・ツール範囲を

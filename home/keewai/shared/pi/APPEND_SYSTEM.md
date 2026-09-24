@@ -83,6 +83,12 @@ role tools: read-only roles have no shell; ambient extensions are disabled.
 Keep extension-dependent work with the parent unless child availability is verified.
 Use new tasks for distinct deliverables, resumes for corrections within the existing
 assignment; do not broaden a packaging task into runtime implementation.
+Pass requested `model` and `thinking` explicitly when creating a subagent, inside
+each `tasks[]` item for a batch. The OpenAI choices are
+`openai-codex/gpt-6-astra`, `openai-codex/gpt-6-sol`, and
+`openai-codex/gpt-6-luna`; use provider-qualified IDs to avoid ambiguity.
+Honor the requested selection and the model's supported thinking levels; do not
+silently substitute either. Omitted fields retain the existing role/parent defaults.
 
 Batch independent tasks; use `needs` only for prerequisites. The shared limit is
 one through four active children per immediate parent across batches/resumes.
