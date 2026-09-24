@@ -258,7 +258,9 @@ Web 内では二重登録を抑止します。ロール本文は Crew `1.0.34` �
 | `code-reviewer` | 正しさ・実行時・セキュリティ等の問題 |
 | `quality-reviewer` | 複雑さ・重複・結合等の保守性の問題 |
 
-`general-purpose → worker`、`explore → scout`、`plan → planner` は互換名です。
+CLI/Web の組み込みロール一覧には、この6種類だけを表示します。
+`general-purpose → worker`、`explore → scout`、`plan → planner` は過去の呼び出し用の互換名で、
+一覧には追加しません。同名のユーザー定義ロールがある場合は、その設定（無効化を含む）を優先します。
 `manage_subagents(action: "list")` で実際のロール・ツールを確認します。
 読み取り専用ロールに shell はなく、ambient extensions の継承も既定で無効なので、レビューには読める差分を渡します。
 ツール制限と worktree は OS サンドボックスではありません。
