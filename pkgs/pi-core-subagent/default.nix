@@ -1,18 +1,19 @@
 {
   lib,
   stdenvNoCC,
-  fetchzip,
+  fetchFromGitHub,
 }:
-stdenvNoCC.mkDerivation (finalAttrs: {
+stdenvNoCC.mkDerivation {
   pname = "pi-core-subagent";
   version = "1.3.55";
 
-  src = fetchzip {
-    url = "https://registry.npmjs.org/@arhen/pi-core-subagent/-/pi-core-subagent-${finalAttrs.version}.tgz";
-    hash = "sha256-mcGjdGhI1CLgDwGTH2Y28WaO2r9ww3scEZEStBMxg8w=";
+  src = fetchFromGitHub {
+    owner = "keewai704";
+    repo = "pi-extensions";
+    rev = "275252976c01990e83666eabe63429e0cde05ad5";
+    hash = "sha256-vlU+oVjFHk+N+M/A9RjQ/xh0bNAzuIovkSRnI7C2icE=";
   };
-
-  patches = [ ./lifecycle.patch ];
+  sourceRoot = "source/packages/core/pi-core-subagent";
   dontConfigure = true;
   dontBuild = true;
 
@@ -25,8 +26,8 @@ stdenvNoCC.mkDerivation (finalAttrs: {
 
   meta = {
     description = "Pi core subagents with preserved worktrees and synchronized cancellation";
-    homepage = "https://github.com/arhen/pi-extensions/tree/main/packages/core/pi-core-subagent";
+    homepage = "https://github.com/keewai704/pi-extensions/tree/main/packages/core/pi-core-subagent";
     license = lib.licenses.mit;
     platforms = lib.platforms.unix;
   };
-})
+}

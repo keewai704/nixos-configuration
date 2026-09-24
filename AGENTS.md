@@ -16,7 +16,7 @@ reuse context that has not changed.
 | --- | --- |
 | Pi model and runtime defaults | `home/keewai/shared/pi/agent.nix` |
 | Native CLI/Web delegation registration | `home/keewai/shared/pi/subagents.nix` |
-| Native delegation implementation and role prompts | `pkgs/pi-web/` and `pkgs/pi-web/roles/` |
+| Native delegation implementation and role prompts | [`keewai704/pi-web`](https://github.com/keewai704/pi-web/tree/main), packaged by `pkgs/pi-web/default.nix` |
 | Cross-project agent behavior | `home/keewai/shared/pi/APPEND_SYSTEM.md` |
 | Distributed personal skills | `skills/` |
 | Repository-only validation guidance | `.agents/skills/nixos-validation/` |

@@ -3,7 +3,6 @@
   buildNpmPackage,
   fetchFromGitHub,
   fetchurl,
-  fetchzip,
   autoPatchelfHook,
   makeWrapper,
   nodejs,
@@ -14,10 +13,6 @@
   runtimePackages ? [ ],
 }:
 let
-  crewRoles = fetchzip {
-    url = "https://registry.npmjs.org/@melihmucuk/pi-crew/-/pi-crew-1.0.34.tgz";
-    hash = "sha256-VICdpdnYu+JdtT2t+4DEARiPkY9kGBVkKBpX17qLU9U=";
-  };
   fontRevision = "92345ac0dbb28d27dbd32f3a782e84c55eaac214";
   notoSansMono = fetchurl {
     name = "noto-sans-mono.ttf";
@@ -36,22 +31,11 @@ buildNpmPackage {
   version = "0.9.1-unstable-2026-09-19";
 
   src = fetchFromGitHub {
-    owner = "agegr";
+    owner = "keewai704";
     repo = "pi-web";
-    rev = "1eb5e66a37c468aca7f0d338edb23de4fd84433e";
-    hash = "sha256-pXXrD4DTzyk+i/xDW9F26X+qXicbr8nAUA3vzTS0Lz4=";
+    rev = "e7260730755d092dc485f22a3b916c621e697d19";
+    hash = "sha256-IEVXUsf4+18eOn8ZALWW1qge7KdQPmnw79fStkA2Q+I=";
   };
-  patches = [
-    ./local-font.patch
-    ./subpath.patch
-    ./interrupted-subagents.patch
-    ./transcript-context.patch
-    ./unified-subagents.patch
-    ./nested-subagents.patch
-    ./subagent-message-delivery.patch
-    ./role-aliases.patch
-    ./subagent-worktree-cleanup.patch
-  ];
   npmDepsHash = "sha256-lGsMOYY2rCQSw+hMLXv+aWq4991NnkhLJUipL1F843k=";
   npmRebuildFlags = [ "--ignore-scripts" ];
   npmPackFlags = [ "--ignore-scripts" ];
@@ -79,13 +63,13 @@ buildNpmPackage {
       ln -s "pi-coding-agent/node_modules/@earendil-works/$package" \
         "node_modules/@earendil-works/$package"
     done
-    ${lib.getExe nodejs} ${./build-subagent-roles.mjs} ${./roles}
+    ${lib.getExe nodejs} scripts/build-subagent-roles.mjs roles
   '';
 
   doCheck = true;
   nativeCheckInputs = [ git ];
   postBuild = ''
-    ${lib.getExe nodejs} ${./build-subagent-extension.mjs} ${piRoot}/node_modules/esbuild
+    ${lib.getExe nodejs} scripts/build-subagent-extension.mjs ${piRoot}/node_modules/esbuild
   '';
   checkPhase = ''
     runHook preCheck
@@ -113,7 +97,7 @@ buildNpmPackage {
     done
     mkdir -p "$out/share/licenses/pi-web"
     cp ${fontLicense} "$out/share/licenses/pi-web/NotoSansMono-OFL.txt"
-    cp ${crewRoles}/LICENSE "$out/share/licenses/pi-web/Crew-MIT.txt"
+    cp roles/LICENSE "$out/share/licenses/pi-web/Crew-MIT.txt"
   '';
 
   postFixup = ''
@@ -139,7 +123,7 @@ buildNpmPackage {
 
   meta = {
     description = "Web interface for the Pi coding agent";
-    homepage = "https://github.com/agegr/pi-web";
+    homepage = "https://github.com/keewai704/pi-web";
     license = [
       lib.licenses.mit
       lib.licenses.ofl

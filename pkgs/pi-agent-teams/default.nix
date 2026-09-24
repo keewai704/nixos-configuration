@@ -1,18 +1,18 @@
 {
   lib,
   stdenvNoCC,
-  fetchzip,
+  fetchFromGitHub,
 }:
-stdenvNoCC.mkDerivation (finalAttrs: {
+stdenvNoCC.mkDerivation {
   pname = "pi-agent-teams";
   version = "0.5.5";
 
-  src = fetchzip {
-    url = "https://registry.npmjs.org/@tmustier/pi-agent-teams/-/pi-agent-teams-${finalAttrs.version}.tgz";
-    hash = "sha256-K47SnrYTBPTCI69KbBfv+6Zs0gICowwWLAWtvSbH8qE=";
+  src = fetchFromGitHub {
+    owner = "keewai704";
+    repo = "pi-agent-teams";
+    rev = "0649c681a62e7743e4190ae10e5016e45f97dbef";
+    hash = "sha256-ZLYjYgk2RaBQ0yx0gRp1hgikx0FiuWbiq+0MrBLUfZU=";
   };
-
-  patches = [ ./lifecycle.patch ];
   dontConfigure = true;
   dontBuild = true;
 
@@ -25,8 +25,8 @@ stdenvNoCC.mkDerivation (finalAttrs: {
 
   meta = {
     description = "Pi agent teams with worker messaging and preserved worktrees";
-    homepage = "https://github.com/tmustier/pi-agent-teams";
+    homepage = "https://github.com/keewai704/pi-agent-teams";
     license = lib.licenses.mit;
     platforms = lib.platforms.unix;
   };
-})
+}

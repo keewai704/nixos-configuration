@@ -77,7 +77,7 @@ Home Manager は `useUserPackages = true` で、パッケージは `/etc/profile
 | 全プロジェクト共通の振る舞い | [APPEND_SYSTEM.md](home/keewai/shared/pi/APPEND_SYSTEM.md) → `~/.pi/agent/APPEND_SYSTEM.md` |
 | 特定操作の手順 | [skills/](skills/) → `~/.agents/skills/`。配布は [shared/skills.nix](home/keewai/shared/skills.nix) |
 | このリポジトリだけの検証 | [.agents/skills/nixos-validation/](.agents/skills/nixos-validation/) |
-| ネイティブ子エージェントの役割 | [pkgs/pi-web/roles/](pkgs/pi-web/roles/) → CLI/Web 共通のビルド済みロールデータ |
+| ネイティブ子エージェントの役割 | [keewai704/pi-web の roles/](https://github.com/keewai704/pi-web/tree/main/roles) → CLI/Web 共通のビルド済みロールデータ |
 | 明示的なレビュー依頼 | [prompts/review.md](home/keewai/shared/pi/prompts/review.md) → `/review [対象]` |
 
 指針は [OpenAI: Rethinking skills and prompts for GPT-6 Astra](https://developers.openai.com/blog/rethinking-skills-and-prompts-for-gpt-6-astra)
@@ -135,7 +135,7 @@ Codex CLI、Remote Control、ChatGPT Desktop は導入しません。旧アプ�
 | Web サービス・委任登録・共有派生 | [web.nix](home/keewai/shared/pi/web.nix)、[subagents.nix](home/keewai/shared/pi/subagents.nix)、[web-package.nix](home/keewai/shared/pi/web-package.nix) |
 | ローカルコンテキスト等の拡張 | [extensions/](home/keewai/shared/pi/extensions/) |
 | デスクトップ専用 CUA | [desktop/pi/cua.nix](home/keewai/desktop/pi/cua.nix) |
-| パッケージ固定・互換パッチ | [pkgs/pi-coding-agent/](pkgs/pi-coding-agent/)、[pkgs/pi-web/](pkgs/pi-web/)、各 `pkgs/pi-*/` |
+| パッケージ固定・Nix 統合 | [pkgs/pi-coding-agent/](pkgs/pi-coding-agent/)、[pkgs/pi-web/](pkgs/pi-web/)、各 `pkgs/pi-*/` |
 
 本体は Pi `0.87.1`。既定は `openai-codex/gpt-6-astra` / `xhigh`、コンテキスト上限 872,000 です。
 モデル選択は制限しません。自動 compaction は有効で、一般設定は応答予約 16,384・直近履歴 20,000、
@@ -149,7 +149,7 @@ Astra はモデル別に 131,072・32,768 トークンです。`cacheWarming = "
 
 ### Claude ブリッジ
 
-[pi-claude-bridge](https://github.com/elidickinson/pi-claude-bridge) `0.8.0`、Claude Agent SDK `0.3.276`、
+[pi-claude-bridge fork](https://github.com/keewai704/pi-claude-bridge) `0.8.0`、Claude Agent SDK `0.3.276`、
 Nixpkgs の Claude Code `2.1.276` を組み合わせ、CLI の絶対 Store パスを渡します。
 実行時ダウンロードや SDK 同梱の未調整バイナリには依存しません。
 
@@ -160,7 +160,7 @@ Nixpkgs の Claude Code `2.1.276` を組み合わせ、CLI の絶対 Store パ�
 
 `AskClaude` は無効で、委任は native Agent、TODO は pi-tasks、指示・ツール・compaction は Pi が所有します。
 Claude 独自の MCP・スキル探索・自動メモ・compaction は使いません。
-互換パッチはモデル登録を環境ごと、実行状態をセッションごとに分離し、子の cwd/指示も Pi から取得します。
+fork はモデル登録を環境ごと、実行状態をセッションごとに分離し、子の cwd/指示も Pi から取得します。
 プロジェクト別ブリッジ設定と Claude HTTP の `onPayload` / `onResponse` 監視・書き換えには対応しません。
 各問い合わせを Pi 履歴から再構成するため、上流とキャッシュ効率が異なる場合があります。
 認証と SDK の一時会話は `~/.claude`、元の履歴は Pi JSONL に残します。既存 Claude 会話は削除しません。
@@ -181,7 +181,7 @@ Claude 独自の MCP・スキル探索・自動メモ・compaction は使いま�
 自動 compaction と `/compact` は維持します。「ローカル」は保存と制御を指し、推論や要約までオフラインではありません。
 メモ・TODO は毎ターンのシステム指示へ重複注入しません。
 
-[pi-tasks](https://github.com/tintinweb/pi-tasks) の `TaskCreate / TaskList / TaskGet / TaskUpdate` は進捗台帳です。
+[pi-tasks fork](https://github.com/keewai704/pi-tasks) の `TaskCreate / TaskList / TaskGet / TaskUpdate` は進捗台帳です。
 保存先は `session-global`（`~/.pi/agent/tasks/sessions/`）、fork は独立台帳に引き継ぎます。
 完了タスクの自動削除・auto-cascade は無効。破損・読み取り不能な台帳は空として上書きせず停止します。
 `TaskExecute / TaskStop / TaskOutput` は登録せず、実行・結果確認は native Agent が担当します。
@@ -221,6 +221,13 @@ MCP `2.34.0`、Web access `0.30.0`、LSP `0.49.7`、pi-tasks `0.9.0`、Claude br
 Store 内のパッケージを直接読み込みます。拡張の順序は `settings.packages` の `lib.mkOrder`、
 バージョン・依存・ハッシュは担当 `pkgs/pi-*/` が所有します。`pi update --extensions` では更新しません。
 
+従来のプラグイン用 patch は `keewai704` の fork に統合し、各 `main` のコミットとハッシュを固定します。
+対象は [pi-web](https://github.com/keewai704/pi-web)、[pi-claude-bridge](https://github.com/keewai704/pi-claude-bridge)、
+[pi-tasks](https://github.com/keewai704/pi-tasks)、[pi-agent-teams](https://github.com/keewai704/pi-agent-teams)、
+[pi-core-subagent](https://github.com/keewai704/pi-extensions/tree/main/packages/core/pi-core-subagent) です。
+実装・テストは fork、取得・依存固定・SDK 差し替えなどの Nix 統合はこのリポジトリで管理します。
+Pi 本体の `cache-affinity-header.patch` はプラグインではないため、引き続きここで管理します。
+
 Codex conversion、Code Mode、Remote/Hybrid compaction、旧 Teams/Crew/Core の実行エンジンは読み込みません。
 旧 npm ファイル、認証、履歴、未統合 worktree、ロールバック資源は自動削除しません。
 旧 ID や暗号化セッションは native/local へ自動変換せず、再開には互換性の確認が必要です。
@@ -246,7 +253,8 @@ Orange でも初回認証が必要です。Nix 管理設定は画面から変更
 
 ### 役割と依頼
 
-[Pi Web パッケージ](pkgs/pi-web/default.nix) の共有実装を CLI/Web が使います。
+[Pi Web fork](https://github.com/keewai704/pi-web) の共有実装を CLI/Web が使い、
+[Nix パッケージ](pkgs/pi-web/default.nix) が SDK と実行環境を統合します。
 CLI は `pi-web-native-subagents/subagent-cli-extension.js` を読み込み、Web サーバーを起動しません。
 Web 内では二重登録を抑止します。ロール本文は Crew `1.0.34` 由来のローカル適応版で、MIT 通知を同梱します。
 
@@ -337,7 +345,7 @@ Sol/Luna は加えて `off` に対応します。登録・合成テストだけ�
 - Web は元のコンパクトな会話一覧・子/孫への切替を使い、別のタスクカードや管理フォームは増やしません。
   ツール/API は直近100件のメッセージを返し、以前の記録も保存します。
 
-ネイティブ委任の実装は `pkgs/pi-web/` のパッチと package-local tests が正本です。
+ネイティブ委任の実装・ロール・package-local tests は [keewai704/pi-web](https://github.com/keewai704/pi-web/tree/main) が正本です。
 この README は使い方と契約を示し、古い移行手順や完了していない実装チェックリストを実行キューとして保持しません。
 
 ## Citrus のデスクトップ

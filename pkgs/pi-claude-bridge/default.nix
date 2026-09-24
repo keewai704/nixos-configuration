@@ -2,12 +2,9 @@
   lib,
   buildNpmPackage,
 }:
-let
-  manifest = builtins.fromJSON (builtins.readFile ./package.json);
-in
 buildNpmPackage {
   pname = "pi-claude-bridge";
-  version = manifest.dependencies.pi-claude-bridge;
+  version = "0.8.0";
   src = lib.fileset.toSource {
     root = ./.;
     fileset = lib.fileset.unions [
@@ -15,7 +12,7 @@ buildNpmPackage {
       ./package-lock.json
     ];
   };
-  npmDepsHash = "sha256-DpwAmeAx0jUtTOWFBnKrc7hzyM2TSXJWacMd+iHc8tc=";
+  npmDepsHash = "sha256-uYl84xm6XgEhvFZBVGwTYIBpnKaln8taMezGyxKjYYA=";
   npmFlags = [
     "--ignore-scripts"
     "--legacy-peer-deps"
@@ -28,10 +25,6 @@ buildNpmPackage {
     mkdir -p "$out/lib"
     cp -r node_modules "$out/lib/"
     runHook postInstall
-  '';
-
-  postInstall = ''
-    patch -p1 -d "$out/lib/node_modules/pi-claude-bridge" < ${./native-runtime.patch}
   '';
 
   doInstallCheck = true;
@@ -49,7 +42,7 @@ buildNpmPackage {
 
   meta = {
     description = "Pi Claude Code bridge with pinned runtime dependencies";
-    homepage = "https://github.com/elidickinson/pi-claude-bridge";
+    homepage = "https://github.com/keewai704/pi-claude-bridge";
     license = lib.licenses.mit;
     platforms = lib.platforms.unix;
   };
