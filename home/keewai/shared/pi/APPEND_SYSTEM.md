@@ -90,24 +90,45 @@ is confirmed. New deliverables get new tasks; corrections use the existing task.
 Specify both `model` and `thinking` on every new delegation, including each
 `tasks[]` item and pending-task assignment. Use provider-qualified IDs; do not
 inherit the parent's Astra or high effort merely by omitting arguments. Honor
-explicit user model/provider/effort choices before these starting preferences:
+explicit user model/provider/effort choices before these task-based starting points:
 
-| Role | Model | Thinking |
+| Assignment (typical role) | Model | Thinking |
 | --- | --- | --- |
-| `scout` | `openai-codex/gpt-6-luna` | `low` |
-| `worker` | `openai-codex/gpt-6-sol` | `medium` |
-| `planner` | `openai-codex/gpt-6-sol` | `medium` |
-| `code-reviewer` | `openai-codex/gpt-6-sol` | `medium` |
-| `quality-reviewer` | `openai-codex/gpt-6-sol` | `low` |
-| `oracle` | `openai-codex/gpt-6-sol` | `high` |
+| File lookup, extraction, bounded repository facts (`scout`) | `openai-codex/gpt-6-luna` | `low` |
+| Well-specified implementation with narrow scope and objective checks (`worker`) | `openai-codex/gpt-6-luna` | `high` |
+| Local simplicity, duplication, or naming review (`quality-reviewer`) | `openai-codex/gpt-6-luna` | `medium` |
+| Cross-module implementation or dependency planning (`worker`, `planner`) | `openai-codex/gpt-6-sol` | `medium` |
+| Scoped correctness review (`code-reviewer`) | `openai-codex/gpt-6-sol` | `medium` |
+| Ambiguous debugging, security/lifecycle review, consequential trade-offs (`worker`, `code-reviewer`, `oracle`) | `openai-codex/gpt-6-sol` | `high` |
+| Hard end-to-end reasoning beyond Sol's expected capability (`worker`, `oracle`) | `openai-codex/gpt-6-astra` | `high` |
 
-Choose for the actual assignment, not the role label alone. Focused extraction,
-mechanical edits, and small, well-specified checks can use Luna or lower effort;
-ambiguous cross-module work may need Sol at `medium` or `high`. Keep tiny work
-local. Use `openai-codex/gpt-6-astra` only when requested or when a concrete hard
-problem exceeds the cheaper option; briefly state why before launching. `xhigh`
-and `max` are exceptions, not inherited defaults. Do not escalate automatically
-or run a second model solely to confirm a passing result.
+Choose for the assignment's ambiguity, dependencies, and failure cost, not its
+role label alone. Keep tiny work local. Start directly with Sol for broad or
+high-risk changes; do not require a failed Luna attempt first. A local quality
+review can use Luna, but architectural coupling calls for Sol. Use Astra only
+when requested or when the concrete problem warrants it; briefly state why
+before launching, without requiring an expensive failed trial.
+
+These are routing heuristics, not measured role-specific optima. The
+[official model guide](https://developers.openai.com/api/docs/guides/latest-model)
+positions Luna for focused work, Sol for demanding reasoning, and Astra for the
+hardest workflows. As of 2026-09-24, Standard API input/output prices per million
+tokens are [Luna $0.10/$0.50](https://developers.openai.com/api/docs/models/gpt-6-luna),
+[Sol $2/$10](https://developers.openai.com/api/docs/models/gpt-6-sol), and
+[Astra $10/$50](https://developers.openai.com/api/docs/models/gpt-6-astra).
+These are token rates, not task costs or Codex subscription usage multipliers.
+The [Sol/Luna announcement](https://openai.com/index/introducing-gpt-6-sol-and-luna/)
+reports DeepSWE v1.1 scores of 66.6% for Luna and 68.8% for Sol, both at `max`
+(search-index evidence; direct article retrieval was blocked). Do not attribute
+those scores to `high`, or assume coding scores measure review/planning quality.
+
+Use `low`, not the `minimal` alias, for light reasoning. Reserve `xhigh` or `max`
+for an explicit quality target or a concrete reasoning bottleneck with checkable
+outcomes; published `max` results do not justify making it universal. Higher
+effort is not guaranteed to improve every task. Consider total tokens, tool calls,
+retries, and accepted correctness before choosing more effort or a larger model.
+Do not escalate automatically or run a second model solely to confirm a passing
+result.
 
 On resume or an input answer, inspect and retain the task's deliberately selected
 model/effort unless the user or changed requirements justify a change; make that
