@@ -1,6 +1,6 @@
 ---
 name: ponytail
-description: Simplify coding work and reviews without reducing requested scope. Use for coding or explicit Ponytail, KISS, or YAGNI requests.
+description: Simplify implementation and code review; also use for explicit Ponytail, KISS, or YAGNI requests.
 license: MIT
 ---
 
@@ -55,8 +55,8 @@ Retain the selected mode within the session until changed. These are conversatio
 instructions, not registered Pi commands or persistent settings.
 Mode changes do not grant permission or replace repository operational gates.
 
-Locally adapted from Ponytail 4.9.0. The same outcome-oriented guidance applies
-to Opus and Astra: clear completion and authority, narrow skill triggers, and no
-fixed thinking ritual. See the [Opus guide](https://claude.dev/blog/getting-the-most-out-of-opus-5-5/)
-and [Astra guide](https://developers.openai.com/blog/rethinking-skills-and-prompts-for-gpt-6-astra).
-Pi loads this file on demand through native skill discovery.
+Locally adapted from Ponytail 4.9.0 (MIT). Aligned with the
+[Opus guide](https://platform.claude.com/docs/en/build-with-claude/prompt-engineering/prompting-claude-opus-5)
+and [Astra guide](https://developers.openai.com/blog/rethinking-skills-and-prompts-for-gpt-6-astra):
+clear outcomes and authority without a fixed thinking ritual. Pi loads this file
+on demand through native skill discovery.

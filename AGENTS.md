@@ -1,171 +1,153 @@
 # Repository working agreement
 
-Complete the requested change through the applicable checks, commit, and local
-deployment below. Keep going when the next step is authorized; ask only for a
-decision that changes the outcome, scope, or authority. Audits remain read-only.
-When blocked, finish independent work and report the blocker and unfinished scope.
+Deliver the requested change through the checks, commit, and local deployment
+that apply below. Routine local work needs no repeated approval. Ask when a
+missing decision changes the outcome, scope, or authority; while blocked, finish
+independent authorized work and identify what remains. Audits and advice are
+read-only unless changes are requested.
 
-Use [README.md](README.md) for architecture and editing entry points when needed,
-not as a mandatory pre-read. Ownership:
+## Find the right source
 
-- `home/keewai/shared/pi/agent.nix`: Pi model and runtime defaults.
-- `home/keewai/shared/pi/subagents.nix` and `pkgs/pi-web/`: native CLI/Web delegation.
-- `home/keewai/shared/pi/APPEND_SYSTEM.md`: cross-project behavior and skill routing.
-- `skills/`: distributed personal skills; `.agents/skills/`: repository-only skills.
+Use [README.md](README.md) to locate architecture or editing entry points when
+needed, not as a mandatory pre-read. Read the affected implementation and callers;
+reuse context that has not changed.
 
-## 1. Identify the execution host
+| Responsibility | Source |
+| --- | --- |
+| Pi model and runtime defaults | `home/keewai/shared/pi/agent.nix` |
+| Native CLI/Web delegation registration | `home/keewai/shared/pi/subagents.nix` |
+| Native delegation implementation and role prompts | `pkgs/pi-web/` and `pkgs/pi-web/roles/` |
+| Cross-project agent behavior | `home/keewai/shared/pi/APPEND_SYSTEM.md` |
+| Distributed personal skills | `skills/` |
+| Repository-only validation guidance | `.agents/skills/nixos-validation/` |
+
+Edit these sources, not generated files under `~/.pi/agent` or `~/.agents/skills`.
+Persistent agent instructions, prompts, and skills are English; respond in the
+user's language. Keep policy/navigation in AGENTS.md and README.md, and validation
+procedures in the validation skill. Do not add repository-local `docs/`, `checks/`,
+standalone check suites, or documentation files elsewhere. Skill references,
+upstream documentation, disposable validation, package-local tests, and upstream
+build tests are allowed. Do not add code comments; preserve shebangs and completion
+directives.
+
+## Authority and host identity
+
+A change request authorizes necessary local edits, disposable checks, repairs
+caused by the change, commits, and the local activation below. Unrelated work,
+remote operations, push/publication, private-data uploads, and destructive actions
+need authorization for the specific operation. SSH, mosh, and remote shells need
+explicit authorization for the host and operation.
 
 Before live-state inspection or host-dependent work, confirm that
 `hostnamectl --static` matches `/etc/hostname` (`hostname` is the fallback).
-Reuse the result until the environment or identity becomes uncertain. A mismatch
-blocks host-dependent work, not read-only source analysis. Paths, flake targets,
-and previous conversations are not evidence of the running host.
+Reuse that result until identity becomes uncertain. A mismatch blocks
+host-dependent work, not read-only source analysis. Paths and flake targets do not
+identify the running host. Require `nixosConfigurations.<runtime-host>`; never
+activate another host's output locally. Another host's sources may be edited,
+evaluated, or built locally without connecting to it.
 
-SSH, mosh, and remote shells require explicit authorization for that host and
-operation. Another host's configuration may be edited, evaluated, or built
-locally without connecting to it. Never activate another host's output locally.
+## Placement and system integration
 
-## 2. Match file names and responsibilities
+Match filenames to responsibilities. Keep tightly coupled code together; use a
+named module for a substantial feature rather than placing it in a convenient
+import. `hosts/<host>/default.nix` is for imports and small host-wide settings;
+`modules/common.nix` is only for settings used by every host. Scope moves and
+caller updates to the request, and explain non-obvious placement choices.
 
-Read the affected implementation and relevant callers/imports; reuse unchanged
-context. Put content where its name and path predict its purpose. Existing
-misplacement, convenient imports, or a smaller diff do not justify unrelated
-responsibilities. Create a specifically named file when needed, keeping tightly
-coupled code together rather than splitting by line count.
+Personal applications, CLI tools, shell settings, user services, and files belong
+in `home/<user>/common.nix`, `shared/`, or `desktop/`. Prefer suitable
+`programs.*`/`services.*` modules, then `home.packages`. Every host loads the common
+profile; `modules/desktop.nix` adds the shared desktop profile, with hardware
+differences expressed by capability. `modules/home-manager.nix` owns the NixOS
+connection. `useUserPackages = true` puts packages in
+`/etc/profiles/per-user/<user>`; deployment still uses NixOS activation.
 
-`hosts/<host>/default.nix` is for imports and small host-wide settings;
-`modules/common.nix` is only for settings used by every host. Substantial features
-belong in named modules. Scope moves and renames to the task and update callers.
-Review placement before committing and explain non-obvious choices in the report.
+For ownership changes, inspect pinned modules and upstream requirements. Keep
+required boot/login, daemon, kernel/driver, udev, PAM, polkit, D-Bus,
+capability/setuid, graphics, and system-font integration at system scope. Do not
+disable integration modules or empty package lists merely to move executables
+unless that integration is explicitly replaced. Clients and daemons may have
+different owners; build-only and service-internal dependencies stay with their
+consumer. Check affected profiles, plugins, native messaging, MIME handlers,
+autostart, sessions, and device access. Explain why each remaining system-side
+application needs that integration. Moving a package does not sandbox it or
+reduce its privileges.
 
-## 3. Prefer Home Manager for personal applications
+## Completion gates
 
-Personal applications, CLI tools, shell settings, user services, and user files
-belong in `home/<user>/common.nix`, `shared/`, or `desktop/`. Prefer suitable
-`programs.*`/`services.*` modules, then `home.packages`, not `hosts/`.
+1. Inspect Git status, staged and unstaged changes before editing; record the
+   starting commit. Preserve unrelated changes: do not format, stage, stash,
+   reset, or delete them. Use an isolated worktree when an occupied index or
+   unrelated changes could affect evaluation/activation; report a blocker if
+   isolation is unavailable.
+2. Use [nixos-validation](.agents/skills/nixos-validation/SKILL.md) to select checks
+   for the changed behavior. Format only task files. Stage new files before
+   Git-flake checks, inspect the task-only staged diff, and use
+   `--no-write-lock-file` unless updating inputs was requested. Reuse passing
+   evidence with unchanged inputs; broaden checks for failures or unresolved
+   concerns, not for a fixed number of passes. Complete any review required by
+   the active instructions or user before committing.
+3. Commit all intended changes without unrelated work and confirm no task changes
+   remain uncommitted.
+4. If the commit affects the runtime host's evaluated configuration, deployed
+   files, or services, record its expected system store path and relevant runtime
+   baseline. Run `sudo nixos-rebuild test --flake .#<runtime-host>` on that
+   committed state, using its evaluation/build rather than prebuilding the same
+   output. Pi and distributed `skills/` affect every host.
+5. After `test`, check network connectivity, failed system/user units, and every
+   affected service's behavior. New failures or regressions block `switch`.
+6. Only after those gates pass, run
+   `sudo nixos-rebuild switch --flake .#<runtime-host>`. Repeat the network,
+   failed-unit, and affected-service checks. Confirm `/run/current-system` and
+   `/nix/var/nix/profiles/system` both match the tested store path.
 
-Every host loads the common profile. `modules/desktop.nix` adds the shared
-desktop profile for GUI apps, session services, themes, and desktop-only MCP
-servers; express hardware differences there by capability.
-`modules/home-manager.nix` owns the NixOS/Home Manager connection.
+These activation and post-activation gates are distinct; earlier passing checks
+do not replace them. If a gate fails, repair and rerun the affected gates or
+report the blocker without switching or claiming completion. Distinguish
+pre-existing limitations from regressions.
 
-For ownership changes, inspect the pinned modules and upstream requirements.
-Preserve boot/login, daemon, kernel/driver, udev, PAM, polkit, D-Bus,
-capability/setuid, graphics, and system-font integration. Required OS/device
-integration stays in a host or genuinely shared system module. Do not disable
-integration modules or empty package lists merely to move executables unless all
-integration is explicitly replaced. Clients and daemons may have different owners;
-build-only and service-internal dependencies stay with their consumer.
+Repository documentation, repository-only skills, non-distributed tools, and
+changes exclusive to another host need checks and a commit, not unrelated local
+activation. For another host, locally evaluate changed attributes or build the
+affected output as appropriate. Do not routinely run pre-change evaluations,
+full before/after comparisons, `nix flake check`, or every host's build.
 
-Verify affected profiles, plugins, native messaging, MIME handlers, autostart,
-session integration, and device access after an ownership change. Explain why
-each affected system-side application needs that integration. Home Manager uses
-`useUserPackages = true` and `/etc/profiles/per-user/<user>` here; deployment still
-uses NixOS activation. Moving a package is not sandboxing or privilege reduction.
+Report commit status and, when applicable, live activation and boot-default
+persistence separately from publication. A failed or unavailable push does not
+undo completed local work.
 
-## 4. Respect sources and authorization
+## Package inputs and checkout paths
 
-Edit Nix-managed sources, not generated files under `/home/keewai/.pi/agent` or
-`/home/keewai/.agents/skills`. Write agent instructions, prompt templates, and
-skills in English; respond to the user in their language.
+For GitHub packages owned by `keewai704`, explicitly select `main` and pin the
+revision and hash. Use `?ref=main` for Git flake inputs and refresh from `main`;
+do not rely on the remote default branch.
 
-Keep policy and navigation in AGENTS.md and README.md, and validation guidance in
-`.agents/skills/nixos-validation/SKILL.md`. Do not add repository-local `checks/`
-or `docs/`, standalone check suites or documentation files. Upstream documentation,
-disposable validation, existing package-local tests, and upstream build tests are
-allowed. Do not add code comments; preserve shebangs and completion directives.
-
-A change request authorizes necessary local edits, disposable validation, repairs
-caused by the change, commits, and section 5 activation without repeated approval.
-Audit/advice requests authorize inspection and recommendations, not edits.
-Unrelated work, remote operations, push/publication, private-data uploads, and
-destructive actions need authorization covering the specific operation.
-
-## 5. Validate, commit, and apply when the local host is affected
-
-For every repository change:
-
-1. Inspect Git status, unstaged changes, and staged changes before editing. Do not
-   format, stage, stash, reset, or delete unrelated changes. Use an isolated
-   worktree if the index is in use or unrelated changes could affect evaluation or
-   activation; report the specific blocker if isolation is unavailable.
-   For host-dependent work, record the verified runtime host and require its
-   `nixosConfigurations.<runtime-host>` output. Never substitute another host.
-2. Use [nixos-validation](.agents/skills/nixos-validation/SKILL.md) for the smallest
-   appropriate checks. Format only task files. Stage new files before Git-flake
-   checks and inspect the task-only staged diff. Use `--no-write-lock-file` unless
-   input updates are requested. Reuse passing checks with unchanged relevant
-   inputs; repeat or broaden them only for changes, failures, or unresolved
-   concerns. Do not routinely run pre-change evaluations, before/after comparisons,
-   `nix flake check`, or every host's build.
-3. Commit all intended changes without unrelated user changes, and confirm no
-   task changes remain uncommitted.
-4. Determine local impact from the changed files and their imports. If the commit
-   affects the runtime host's evaluated configuration, deployed files, or services,
-   record the expected store path and relevant runtime baseline, then run
-   `sudo nixos-rebuild test --flake .#<runtime-host>` on the committed state.
-   Use its evaluation/build rather than prebuilding the same output or repeating
-   equivalent evaluations. Pi and personal skills distributed from `skills/`
-   affect every host. Never live-test another host's output.
-5. After a successful `test`, check local network connectivity, failed system/user
-   units, and the behavior of every affected service. New failures or regressions
-   block `switch`.
-6. Only after `test` and runtime checks pass, run
-   `sudo nixos-rebuild switch --flake .#<runtime-host>` locally.
-7. After `switch`, repeat the network and affected-service checks. Confirm that
-   both the running system and boot-default system match the store path of the
-   tested, committed configuration.
-
-Formatting, appropriate checks, and a complete task commit are always required.
-Activation and each post-activation runtime check are separate mandatory gates
-only when the local host is affected; a previous passing check does not replace
-these gates. Repository documentation, `.agents/skills/`, non-distributed tools,
-and changes exclusive to another host require checks and a commit, not unrelated
-local activation. For another host, locally evaluate the changed attributes or
-build the affected output, whichever the change requires.
-
-If `test` or a runtime gate fails, do not switch or claim completion. Repair the
-change and rerun affected gates, or report the blocker. Distinguish pre-existing
-limitations from regressions; they do not excuse verifying required behavior.
-Report commit status and, when applicable, both live activation and boot-default
-persistence. Keep implementation, local deployment, and publication outcomes
-separate; unavailable or failed push does not undo completed local work.
-
-## 6. Package sources and working directories
-
-For packages from GitHub repositories owned by `keewai704`, explicitly select
-`main` and pin the revision and hash. Use `?ref=main` for Git flake inputs and
-refresh from `main` when updating; do not rely on the remote default branch.
-
-Outside the repository root, use `git -C` and absolute flake references pointing
-to the actual checkout. For the usual checkout these are
-`git -C /home/keewai/nixos-configuration` and
+Outside the repository root, use `git -C` and absolute flake references to the
+actual checkout, normally `/home/keewai/nixos-configuration` and
 `/home/keewai/nixos-configuration#<runtime-host>`.
 
-## 7. Orange web exposure
+## Orange web exposure
 
-User-facing HTTP, HTTPS, and WebSocket services must follow:
+Orange's user-facing HTTP, HTTPS, and WebSocket services follow:
 
 `tailnet client -> Tailscale Serve HTTPS -> loopback nginx -> loopback application`
 
-- Expose only HTTPS 443 as the external web entry point. Do not expose HTTP,
-  HTTPS, WebSockets, TLS-terminated TCP, or application backends on other external
-  ports. Loopback ports are internal proxy connections only.
-- Bind applications to `127.0.0.1` or a Unix socket, not LAN or wildcard addresses.
-- Normally add a dedicated path to the existing `orange.tail1e65cd.ts.net` nginx
-  virtual host. Reuse Tailscale Serve's HTTPS 443 forwarding to `127.0.0.1:8000`.
-  Do not connect Serve directly to an application or open backend ports in either
-  the general firewall or `tailscale0` rules.
-- Configure the canonical tailnet HTTPS external/base URL when supported.
-  Preserve the original host, scheme, and client IP; enable nginx WebSocket
-  forwarding when needed.
-- If subpaths are unsupported, use a patch, client rebuild, or safe adapter rather
-  than another external port. If no safe 443 solution exists, leave the service
-  unexposed and report the blocker.
-- Verify the canonical URL, redirects, static assets, and required WebSockets.
-  Use `ss` to confirm loopback-only backends and `tailscale serve status` to confirm
-  a single HTTPS 443 web listener.
+- HTTPS 443 is the only external web entry point, including WebSockets and
+  TLS-terminated TCP. Other web/backend ports are loopback connections only.
+- Bind applications to `127.0.0.1` or a Unix socket, not LAN/wildcard addresses.
+  Normally add a path to `orange.tail1e65cd.ts.net` and reuse Serve's HTTPS 443
+  forwarding to `127.0.0.1:8000`. Do not point Serve directly at an application or
+  open backend ports in the general firewall or `tailscale0` rules.
+- Configure the canonical tailnet HTTPS external/base URL where supported.
+  Preserve original host, scheme, and client IP; enable nginx WebSocket forwarding
+  when required.
+- For applications without subpath support, use a patch, client rebuild, or safe
+  adapter. If no safe 443 solution exists, leave the service unexposed and report
+  the blocker.
+- Check the canonical URL, redirects, assets, and required WebSockets; use `ss`
+  for loopback-only backends and `tailscale serve status` for the single HTTPS
+  443 web listener.
 
-Apply these changes and perform their live checks only when the verified runtime
-host is `orange`. On other hosts, validate Orange's configuration locally without
-remote access or deployment.
+Apply and live-check Orange changes only when the verified runtime host is
+`orange`. On other hosts, validate its configuration locally without remote
+access or deployment.

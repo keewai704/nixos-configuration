@@ -1,6 +1,6 @@
 ---
 name: superpowers
-description: Guide coordinated design, planning, or implementation when needed or explicitly requested. Not for routine edits.
+description: Coordinate complex design, implementation, debugging, or review when needed, or use on explicit request. Not routine edits.
 license: MIT
 ---
 
@@ -11,10 +11,10 @@ the matching reference below; loading this skill does not enable every workflow.
 Routine edits with a known approach can proceed directly.
 
 Define completion from the request and repository rules. For implementation,
-continue through the authorized checks, repairs, review, and delivery. Ask only
-when missing information materially changes the result or authority; keep
-design-only and review-only requests read-only. User instructions, repository
-policy, and the active harness govern permissions and operational gates.
+continue through authorized checks, repairs, required review, and delivery. Ask
+only when missing information materially changes the result or authority; keep
+design-only and review-only requests read-only. This guidance does not add
+approval or review gates beyond the request, repository, and active harness.
 
 ## Choose guidance
 
@@ -47,7 +47,7 @@ revision `5bf4e78011075bcfc0dc295f0724994cd123ee71`, under the [MIT license](LIC
 The entry replaces `using-superpowers`; the other workflows are supporting
 references, not separately advertised skills. This version follows
 [OpenAI's Astra guidance](https://developers.openai.com/blog/rethinking-skills-and-prompts-for-gpt-6-astra)
-and [Anthropic's Opus guidance](https://claude.dev/blog/getting-the-most-out-of-opus-5-5/):
+and [Anthropic's Opus guidance](https://platform.claude.com/docs/en/build-with-claude/prompt-engineering/prompting-claude-opus-5):
 narrow triggers, progressive disclosure, clear completion and stop boundaries,
 and durable progress without a fixed thinking ritual. Upstream bootstrap hooks,
 executable helpers, and transcript export are not included.

@@ -77,7 +77,7 @@ buildNpmPackage {
       ln -s "pi-coding-agent/node_modules/@earendil-works/$package" \
         "node_modules/@earendil-works/$package"
     done
-    ${lib.getExe nodejs} ${./build-subagent-roles.mjs} ${crewRoles}
+    ${lib.getExe nodejs} ${./build-subagent-roles.mjs} ${./roles}
   '';
 
   doCheck = true;

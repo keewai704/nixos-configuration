@@ -4,9 +4,9 @@ import { basename, join, resolve } from "node:path";
 
 const { load } = createRequire(resolve("package.json"))("js-yaml");
 const source = process.argv[2];
-if (!source) throw new Error("Crew source directory is required");
-const roles = readdirSync(join(source, "agents")).filter((name) => name.endsWith(".md")).sort().map((name) => {
-  const text = readFileSync(join(source, "agents", name), "utf8");
+if (!source) throw new Error("Role source directory is required");
+const roles = readdirSync(source).filter((name) => name.endsWith(".md")).sort().map((name) => {
+  const text = readFileSync(join(source, name), "utf8");
   const match = text.match(/^---\r?\n([\s\S]*?)\r?\n---\r?\n([\s\S]*)$/);
   if (!match) throw new Error(`Invalid role frontmatter: ${name}`);
   const data = load(match[1]);

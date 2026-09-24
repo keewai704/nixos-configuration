@@ -1,6 +1,6 @@
 ---
 name: faster-whisper
-description: Transcribe local audio/video to text or SRT/VTT with Whisper large-v3, including Japanese. Not text-to-speech.
+description: Transcribe local audio/video with CUDA Whisper large-v3 to text or subtitles, including Japanese. Not text-to-speech.
 compatibility: Requires the Nix-managed CUDA-enabled whisper-ctranslate2 command and a supported NVIDIA GPU/driver. Internet access and several GB of disk space are needed for the initial model download.
 ---
 
@@ -41,7 +41,7 @@ text to the model provider. Do so only when the user explicitly requests the
 contents in chat or authorizes that disclosure. Otherwise return local paths
 and metadata only, leaving content review to the user.
 
-## Workflow
+## Transcribe a local file
 
 1. Resolve the user-provided local media file and confirm it exists and is
    readable. Do not download URLs or record a microphone unless separately
@@ -104,5 +104,5 @@ is not interchangeable with a converted CTranslate2 model.
 
 For unexpectedly missing speech, inspect the source before retrying with
 `--vad_filter False`, writing to a new directory. Do not enable speaker
-diarization, live recording, batching, a daemon, or GPU configuration changes as part of
-ordinary file transcription.
+diarization, live recording, batching, a daemon, or GPU configuration changes
+as part of ordinary file transcription.

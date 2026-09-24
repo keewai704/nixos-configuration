@@ -1,6 +1,6 @@
 ---
 name: add-nix-mcp
-description: Add or change persistent Nix-managed MCP servers for Pi. Not for calling an existing server.
+description: Configure persistent Nix-managed MCP servers for Pi, not call an existing server.
 ---
 
 # Add a Nix-managed MCP server
@@ -19,7 +19,8 @@ Pi combines only the profiles selected by that host. Do not edit generated
 `~/.pi/agent/mcp.json` or `~/.config/mcp/mcp.json` for persistent configuration.
 
 Inspect the requested server's module in the pinned `mcp-servers-nix` input.
-For the default checkout, resolve its source with:
+Resolve its source from the actual checkout. This example uses the default
+checkout; substitute the absolute task worktree path when working in isolation:
 
 ```bash
 nix eval --impure --raw --no-write-lock-file --expr '(builtins.getFlake "/home/keewai/nixos-configuration").inputs."mcp-servers-nix".outPath'

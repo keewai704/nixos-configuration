@@ -8,10 +8,11 @@ committed input revision, allowed files/actions, relevant constraints, acceptanc
 criteria, and checks. Use the configured roles and isolated writer worktrees.
 Do not assume parent edits are present in a child checkout.
 
-Inspect returned changes and evidence. Resolve questions from known requirements;
-ask the user only for a material missing decision. Review requirement coverage
-and implementation quality. One fresh reviewer can cover both; separate reviews
-are useful only when risk or policy calls for them.
+Inspect returned changes and evidence for requirement coverage and implementation
+quality. Resolve questions from known requirements; ask the user only for a
+material missing decision. Independent review, when required by policy or useful
+for a concrete risk, can cover both concerns. Do not assign a reviewer per task
+by default.
 
 Verify findings and repair actual defects. Seek follow-up on changed or
 unresolved areas, not unchanged passing work. Integrate in dependency order and
@@ -19,6 +20,6 @@ check combined behavior. For native Pi `integrated_changes` dependencies, releas
 the prerequisite only after parent integration and a committed revision; a report
 dependency does not transfer files.
 
-Complete the required final review and repository gates on the integrated result.
+Complete policy-required review and repository gates on the integrated result.
 If a child fails, preserve useful work, continue authorized tasks locally, and
-report any missing independent assessment.
+report any required assessment that remains unavailable.

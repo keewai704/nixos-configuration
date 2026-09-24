@@ -1,24 +1,26 @@
 ---
-description: Review a diff for bugs, regressions, and missing verification
+description: Review a specified change for bugs, regressions, and verification gaps
+argument-hint: "[target]"
 ---
 
-Target: $@
+Review $@ without editing files or changing Git's index.
 
-If no target is supplied, use Git status to identify staged and unstaged changes
-and relevant untracked source files. Review both diffs and those new files; a
-tracked-file diff alone is not the complete change. Exclude ignored/generated
-artifacts and secret material, and mention exclusions that limit the review.
-If a target is supplied, keep the review within that scope.
-When native delegation is available and not disabled, request a fresh
-`code-reviewer` assessment under the active delegation policy. Supply the exact
-checkout, complete readable diff/new-file paths, and requirements, not your
-conclusions. Do not reuse the implementer's context or create a repository/commit
-just to obtain review. Verify findings and close the verified report. If delegation
-is unavailable, disabled, or fails, review locally and state the limitation.
-Read the applicable AGENTS.md and relevant callers. Look for concrete bugs,
-regressions, and missing verification introduced by the changes. Check that file
-names and placement match their responsibilities.
-Report actionable findings by severity with file and line, triggering conditions,
-impact, and how to demonstrate the failure. Separate defects from preferences.
-If there are no concrete findings, say so and identify unverified scope. Do not
-edit files or change Git's index during the review.
+If no target is supplied, include staged and unstaged changes and relevant
+untracked source files. Exclude ignored/generated artifacts and secrets; state
+exclusions that limit the review. Read applicable AGENTS.md instructions and
+relevant callers, keeping the review within the supplied scope.
+
+Report supported findings at every severity, prioritized by impact. For each,
+give file/line, triggering conditions, consequence, and evidence or a way to
+demonstrate the failure. Include correctness, security, regressions, and material
+verification gaps; distinguish defects from design preferences. Check whether
+file placement matches its responsibility. Do not invent findings to fill a quota.
+
+Use native reviewers only when the active delegation policy or requested scope
+warrants independent work, not as an automatic second pass. Give them accessible
+complete diffs/new-file paths and requirements rather than your conclusions.
+Inspect and resolve their findings within this read-only review and close verified
+reports. If required independent review is unavailable, state that limitation.
+
+Lead with findings. If none are supported, say so and identify unverified scope;
+keep the summary brief rather than repeating the diff.

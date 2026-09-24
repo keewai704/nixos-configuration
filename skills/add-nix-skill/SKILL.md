@@ -1,6 +1,6 @@
 ---
 name: add-nix-skill
-description: Create or revise Nix-managed personal skills. Not for invoking skills or editing repository-only guidance.
+description: Author or update Nix-managed personal skills, not invoke them or edit repository-only guidance.
 ---
 
 # Add a Nix-managed skill
@@ -12,10 +12,12 @@ preparation; do not restart a generic workflow for each skill.
 
 ## Author and publish
 
-For a new or substantially revised skill, read Pi's bundled `docs/skills.md`
-and use available skill-authoring guidance. Keep one focused purpose, a concise
-description, and only the references or scripts the workflow needs. Repository
-operational gates belong in AGENTS.md rather than being repeated in the skill.
+For a new or substantially revised skill, read the pinned Pi's bundled
+`docs/skills.md` and available skill-authoring guidance. Give the description a
+short, precise trigger. Keep a single workflow direct; for multiple workflows,
+make the root a router to focused references and scripts. Put authority and
+safety boundaries where they are loaded before the relevant action. Repository
+operational gates belong in AGENTS.md rather than being copied into every skill.
 
 Home Manager publishes `skills/<name>` directories, including Ponytail, under
 `~/.agents/skills` through
@@ -38,11 +40,12 @@ relative paths against Pi's documented Agent Skills format. If the loader is
 unavailable, report that limit and validate the format with a temporary parser;
 do not add a permanent repository test suite.
 
-For material trigger or workflow changes, check realistic matching and
-non-matching requests against the new instructions. Verify decisions and
-boundaries, not exact wording; report whether this was a manual scenario review
-or an executed model evaluation. Keep this check within the authorized
-resources and the user's delegation policy.
+For material trigger or workflow changes, check matching, non-matching,
+ambiguous, and blocked requests against the instructions. Check decisions and
+boundaries, not exact wording. Label manual scenario review separately from
+executed model evaluation; manual review does not prove model behavior. Use
+only authorized resources and delegation. No extra reviewer or model call is
+required by this skill.
 
 In addition to AGENTS.md's checks, verify the Home Manager file set or built
 links. After applicable local `test` and `switch`, confirm Home Manager success
