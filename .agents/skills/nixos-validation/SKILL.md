@@ -35,6 +35,10 @@ or configuration snapshots. Format and check syntax only for changed files.
   or auto-cascade. For an SDK-backed provider, verify same-process model discovery,
   session/cwd/prompt isolation through the native child binding, rewritten-context
   continuation at parked tool boundaries, and summary terminal/abort/usage handling.
+  On the first implementation candidate, check balanced stream events, immutable
+  finalized responses, late-result/error delivery, preserved error classification,
+  and no duplicate usage or tool execution. Use the pinned upstream typecheck
+  configuration; distinguish newly introduced diagnostics from unchanged failures.
   Check the pinned SDK/CLI handshake without prompts in a network-isolated fixture
   where available. Configuration and synthetic streams do not prove live authentication.
   Verify deployed resources and affected service behavior after both activation
@@ -71,6 +75,13 @@ or configuration snapshots. Format and check syntax only for changed files.
   do not prove live provider authentication. Never reload the migration session.
   For resource/config-only changes, exercise the affected loading and bridge paths;
   do not rerun unchanged controller and browser-navigation suites by default.
+- Pi latency tuning: use disposable state and synthetic inputs for configuration
+  and lifecycle comparisons. Compare thinking-level propagation and compaction
+  trigger, summary calls, projected input size, tool/result boundaries, and
+  recovery across repeated compaction/resume. Include summary and reread costs;
+  synthetic responses prove neither real-provider speed nor summary quality.
+  Keep defaults unless comparative evidence supports the change. Real-provider
+  benchmarks need explicit authorization and must not send private transcripts.
 - Another host only: locally evaluate the changed attributes, or build the affected
   output when package implementation or build logic changed. Shared settings do
   not require every host's build unless host-specific branches need validation.

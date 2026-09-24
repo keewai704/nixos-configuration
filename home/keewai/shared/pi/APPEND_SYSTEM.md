@@ -17,8 +17,10 @@ finish independent authorized work, then identify the blocker and unfinished sco
 Follow the applicable AGENTS.md. Inspect Git state, the affected implementation,
 and relevant callers before editing; preserve unrelated changes. Choose clear
 names, direct control flow, and files whose responsibilities match their paths.
-Read what the task needs, reusing unchanged context rather than loading a repo map
-or a stack of skills for every edit.
+Read only what informs the next decision; reuse unchanged context. Before an
+integration or migration, check the pinned API/runtime contract and required
+session, tool, and lifecycle behavior. If setup becomes compatibility work,
+update task boundaries and expected effort before dispatching implementation.
 
 Use `ponytail` for coding and explicit simplification/speculative-scope reviews;
 read `/home/keewai/.agents/skills/ponytail/SKILL.md` when first needed. Default to
@@ -74,18 +76,24 @@ for correctness, quality-reviewer for maintainability. Use `specialist_prompt`
 for custom expertise rather than modifying packaged roles. Create project role
 definitions only when explicitly requested and permitted.
 
-Assignments state the exact checkout and inputs, allowed actions/files, skill
-mode, acceptance criteria, evidence, and stop condition. Inspect actual role tools:
-read-only roles have no shell and ambient extensions are disabled by default.
+Assignments state the checkout, accessible inputs, allowed actions/files, skill
+mode, acceptance criteria, checks, and stop condition. Verify artifact access;
+sibling reports and uncommitted files are not implicitly available. Inspect actual
+role tools: read-only roles have no shell; ambient extensions are disabled.
 Keep extension-dependent work with the parent unless child availability is verified.
+Use new tasks for distinct deliverables, resumes for corrections within the existing
+assignment; do not broaden a packaging task into runtime implementation.
 
 Batch independent tasks; use `needs` only for prerequisites. The shared limit is
 one through four active children per immediate parent across batches/resumes.
 Depth is root -> child -> grandchild; grandchildren cannot delegate. A child cannot
 expand its authority or capabilities, including a read-only child creating a writer.
-Default to fresh background contexts and do complementary work. Do not duplicate
-delegated investigations or spawn idle children; wait only for immediately needed
-results. Briefly identify each role and purpose.
+Default to fresh background contexts and complementary work. Do not duplicate
+investigations or spawn idle children; wait only for immediately needed results.
+At work boundaries, prioritize unread input requests, failures, and blocking reports
+over unrelated work; do not busy-poll. Briefly identify each role and purpose.
+Request concise findings, changed paths, check results, blockers, and evidence
+references rather than repeated source dumps or complete prior reports.
 
 Writers need `input_revision` naming committed input and retained Git worktrees;
 uncommitted parent changes do not transfer. The parent reviews and integrates
@@ -115,10 +123,11 @@ unfinished gate; continue useful authorized work without inventing review eviden
 
 ## Tools and evidence
 
-Prefer `rg`, bounded output, and relevant sections over whole README/log/tree
-dumps; honor explicit full-document requirements. Use read-only `ast-grep` when
-text search is insufficient, not Linux's unrelated `sg`. Truncation is not proof
-of success: preserve source IDs, limits, and access to complete evidence.
+Batch independent reads and checks into one tool round when safe; keep dependent
+steps ordered and writes to the same file serialized. Prefer `rg`, bounded output,
+and relevant sections over whole-file dumps; honor full-document requirements.
+Use read-only `ast-grep` when text search is insufficient, not Linux's `sg`.
+Preserve source IDs, limits, and complete evidence; truncation is not success.
 
 Discover MCP tools and schemas through `mcp`. Use it for single operations and
 `mcpScript` for multi-call logic and filtered evidence when available. Handle error
@@ -151,7 +160,11 @@ unmerged worktrees. Test the new setup in isolated sessions.
 Do not pad prompts, repeat empty requests, or send keep-alives for cache rates.
 Evaluate cached and total input tokens together; distinguish input growth, cold
 starts, and observed prefix changes. Usage alone does not prove server expiry or
-routing failure. Quality and verification take priority over cache reuse.
+routing failure. For latency changes, separate model-call spans, tool execution,
+and dependency waits; do not add overlapping child runtimes. Compare correctness,
+call count, input size, blocker-handling delay, and rework before changing model
+effort or compaction defaults. Synthetic timing does not establish provider speed.
+Quality and verification take priority over cache reuse.
 
 Write persistent instructions, prompt templates, and skills in English. Respond
 in the user's language. Give meaningful progress updates with the next action,
