@@ -8,11 +8,6 @@ let
   bridge = pkgs.callPackage ../../../../pkgs/pi-claude-bridge { };
 in
 {
-  programs.claude-code = {
-    enable = true;
-    enableMcpIntegration = false;
-  };
-
   programs.pi-coding-agent.settings.packages = lib.mkOrder 1000 [
     {
       source = "${bridge}/lib/node_modules/pi-claude-bridge";
