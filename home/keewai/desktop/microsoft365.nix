@@ -1,6 +1,5 @@
 { pkgs, ... }:
 let
-  wine4office = pkgs.callPackage ../../../pkgs/wine4office { };
   applications = {
     word = {
       name = "Microsoft Word";
@@ -40,19 +39,18 @@ let
       name = "microsoft365-${name}";
       runtimeInputs = [ pkgs.coreutils ];
       text = ''
-        export WINEPREFIX="''${WINEPREFIX:-''${XDG_DATA_HOME:-$HOME/.local/share}/microsoft365/prefix}"
-        executable="$WINEPREFIX/drive_c/Program Files/Microsoft Office/root/Office16/${application.executable}"
-        if [[ ! -f "$executable" ]]; then
-          printf '%s\n' 'Microsoft 365 is not installed in this Wine environment.' >&2
+        bottle="''${XDG_DATA_HOME:-$HOME/.local/share}/bottles/bottles/Microsoft365"
+        executable="$bottle/drive_c/Program Files/Microsoft Office/root/Office16/${application.executable}"
+        if [[ ! -f "$bottle/bottle.yml" || ! -f "$executable" ]]; then
+          printf '%s\n' 'Microsoft 365 is not installed in the Microsoft365 bottle.' >&2
           exit 1
         fi
-        ${wine4office}/bin/wine4office-setup-printer
         arguments=()
         for file in "$@"; do
           file=$(realpath -e -- "$file")
-          arguments+=("$(${wine4office}/bin/wine4office winepath -w "$file")")
+          arguments+=("Z:''${file//\//\\}")
         done
-        exec ${wine4office}/bin/wine4office "$executable" ${
+        exec ${pkgs.bottles}/bin/bottles-cli run -b Microsoft365 -e "$executable" -- ${
           pkgs.lib.optionalString (name == "word") "/q"
         } "''${arguments[@]}"
       '';
@@ -60,7 +58,7 @@ let
   ) applications;
 in
 {
-  home.packages = [ wine4office ] ++ pkgs.lib.attrValues launchers;
+  home.packages = [ pkgs.bottles ] ++ pkgs.lib.attrValues launchers;
 
   xdg.desktopEntries = pkgs.lib.mapAttrs' (
     name: application:
