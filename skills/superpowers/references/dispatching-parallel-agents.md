@@ -8,7 +8,10 @@ files. Keep dependent work sequential or express real prerequisites with
 In Pi, discover roles with `manage_subagents(action: "list")`, then use `Agent`
 for bounded tasks. Inspect each role's actual tools; read-only roles may have no
 shell, and children need not inherit extensions. Keep extension-dependent checks
-with the parent unless availability is verified.
+with the parent unless availability is verified. Explicitly set `model` and
+`thinking` for each delegation or batch item using the active model-selection
+policy and task difficulty; do not inherit a flagship model by omission. Honor
+user choices and preserve deliberate selections when resuming.
 
 Give each task its goal, exact checkout, relevant inputs, allowed actions/files,
 constraints, acceptance criteria, and expected evidence. Writers need a committed

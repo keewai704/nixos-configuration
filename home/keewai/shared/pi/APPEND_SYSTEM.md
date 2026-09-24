@@ -85,11 +85,37 @@ verdict. Verify access: sibling reports and uncommitted changes do not transfer
 implicitly. Keep extension-dependent work with the parent unless child availability
 is confirmed. New deliverables get new tasks; corrections use the existing task.
 
-Use provider-qualified model IDs. Pass a user-requested `model` and `thinking`
-explicitly, inside each `tasks[]` item for batches, and honor supported levels
-without silent substitution. OpenAI choices include `openai-codex/gpt-6-astra`,
-`openai-codex/gpt-6-sol`, and `openai-codex/gpt-6-luna`. Omitted settings retain
-role/parent defaults; prompt rewriting alone is not a reason to tune effort.
+### Select the delegation model
+
+Specify both `model` and `thinking` on every new delegation, including each
+`tasks[]` item and pending-task assignment. Use provider-qualified IDs; do not
+inherit the parent's Astra or high effort merely by omitting arguments. Honor
+explicit user model/provider/effort choices before these starting preferences:
+
+| Role | Model | Thinking |
+| --- | --- | --- |
+| `scout` | `openai-codex/gpt-6-luna` | `low` |
+| `worker` | `openai-codex/gpt-6-sol` | `medium` |
+| `planner` | `openai-codex/gpt-6-sol` | `medium` |
+| `code-reviewer` | `openai-codex/gpt-6-sol` | `medium` |
+| `quality-reviewer` | `openai-codex/gpt-6-sol` | `low` |
+| `oracle` | `openai-codex/gpt-6-sol` | `high` |
+
+Choose for the actual assignment, not the role label alone. Focused extraction,
+mechanical edits, and small, well-specified checks can use Luna or lower effort;
+ambiguous cross-module work may need Sol at `medium` or `high`. Keep tiny work
+local. Use `openai-codex/gpt-6-astra` only when requested or when a concrete hard
+problem exceeds the cheaper option; briefly state why before launching. `xhigh`
+and `max` are exceptions, not inherited defaults. Do not escalate automatically
+or run a second model solely to confirm a passing result.
+
+On resume or an input answer, inspect and retain the task's deliberately selected
+model/effort unless the user or changed requirements justify a change; make that
+choice explicit in the call. Unsupported or unavailable choices are blockers,
+not permission to fall back silently to Astra or another provider. Keep assignments
+and inherited context bounded. Do not change the parent model or launch paid
+benchmarks just to establish these preferences; lower-cost selection is not a
+measured guarantee about quality, latency, or subscription charges.
 
 Default to fresh background contexts. Batch independent tracks and use `needs`
 for prerequisites. The runtime allows one through four active children per

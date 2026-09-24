@@ -89,8 +89,9 @@ Home Manager は `useUserPackages = true` で、パッケージは `/etc/profile
 - レビューは低い重大度も含めて根拠のある問題を挙げ、影響順に整理します。重大な問題だけに限定しません。
 - 会話の説明も生成文書も目的に必要な長さにし、進捗は重要な発見・障害・方針変更時に伝えます。
 
-これはプロンプト資源の方針で、モデル・effort・上限・権限を変更するものではありません。
-速度や品質の改善率を実測したという意味でもありません。生成先を直接編集せず、上表の編集元を変更してください。
+親の既定モデル・thinking・上限・権限は変更しません。子への委任では、後述の省コスト方針に沿って
+モデルと thinking を明示します。速度や品質の改善率を実測したという意味ではありません。
+生成先を直接編集せず、上表の編集元を変更してください。
 反映後は新しいセッションで使います。作業を所有するセッションを途中で reload したり、履歴を書き換えたりしません。
 
 ### スキルの選び方
@@ -284,14 +285,38 @@ checkout、入力、許可ファイル、成果物、確認範囲、終了条件
     "context": ["Read only the specified checkout and relevant callers."],
     "instructions": ["Return paths, observed behavior, and missing evidence; do not edit."]
   },
-  "model": "openai-codex/gpt-6-sol",
-  "thinking": "high"
+  "model": "openai-codex/gpt-6-luna",
+  "thinking": "low"
 }
 ```
 
-model/thinking 省略時はロール・親の実効設定を継承します。明示時は provider 付き ID と対応レベルを使い、
-利用不能な指定を別モデルへ黙って置換しません。現在の SDK で Astra は `minimal`〜`max`、Sol/Luna は加えて `off` に対応します。
-バッチの指定は各 `tasks[]` 内です。登録・合成テストだけでは実モデルの利用権を保証しません。
+### 委任モデルと thinking
+
+エージェントには、毎回 `model` と `thinking` の両方を明示するよう指示します。
+バッチは各 `tasks[]` 内に指定し、pending task の割り当ても同様です。
+親が Astra/xhigh でも、それを無指定で引き継ぎません。ユーザーの明示指定を優先したうえで、出発点を次のようにします。
+
+| ロール | モデル（provider は `openai-codex`） | thinking |
+| --- | --- | --- |
+| `scout` | `gpt-6-luna` | `low` |
+| `worker` / `planner` / `code-reviewer` | `gpt-6-sol` | `medium` |
+| `quality-reviewer` | `gpt-6-sol` | `low` |
+| `oracle` | `gpt-6-sol` | `high` |
+
+単純な抽出・機械的編集・小さな確認は Luna や低い thinking を選べます。
+複数モジュールにまたがる曖昧な仕事は Sol/medium〜high を使い、Astra は明示依頼か、
+安価な選択では不足する具体的な難問に限定して理由を説明します。`xhigh` / `max` を一律には使いません。
+小さな作業は親が直接行い、合格結果を別モデルで再確認するためだけの追加委任は行いません。
+再開・入力回答時も既存の選択を確認し、変更理由がなければ維持して呼び出しに明示します。
+
+これは [APPEND_SYSTEM.md](home/keewai/shared/pi/APPEND_SYSTEM.md#select-the-delegation-model) の選択方針です。
+API スキーマやロールの実行時既定値は変更していないため、直接 API を呼んで指定を省略すれば従来の継承が働きます。
+非対応のモデル・thinking を黙って別の選択へ置換しません。現在の SDK で Astra は `minimal`〜`max`、
+Sol/Luna は加えて `off` に対応します。登録・合成テストだけでは実モデルの利用権を保証しません。
+
+[OpenAI のモデル選択ガイド](https://learn.chatgpt.com/docs/models#recommended-models) は、複雑なコーディングに Sol、
+焦点の絞られた反復作業に Luna を案内しています。この構成での品質・速度・実課金の改善率は未測定です。
+親モデル、同時実行数、認証、プロバイダーの権限は変更しません。
 
 ### 実行・引き継ぎの契約
 
