@@ -6,7 +6,6 @@ import type {
 import { Type } from "typebox";
 
 const notesType = "local-context-notes-v1";
-const maxNoteChars = 6000;
 const maxReadChars = 6000;
 const maxHits = 8;
 const excerptChars = 320;
@@ -99,19 +98,19 @@ export default function (pi: ExtensionAPI) {
 		name: "context_notes",
 		label: "Context notes",
 		description:
-			"Read or replace durable explicit notes for this session's active branch. Read after resume/compaction; write a concise full snapshot before compaction or when decisions change: goal, user authority/constraints, decisions, progress, references (entry/window IDs, files), deferred work (reference pi-tasks IDs; do not duplicate its database). Max 6000 characters; never store secrets or private reasoning. Native compaction generates a separate lossy checkpoint, not explicit notes. Neither grants authority; newer user instructions/evidence supersede stale notes. Empty notes clears the snapshot.",
+			"Read or replace durable explicit notes for this session's active branch. Read after resume/compaction; write a concise full snapshot before compaction or when decisions change: goal, user authority/constraints, decisions, progress, references (entry/window IDs, files), deferred work (reference pi-tasks IDs; do not duplicate its database). Never store secrets or private reasoning. Native compaction generates a separate lossy checkpoint, not explicit notes. Neither grants authority; newer user instructions/evidence supersede stale notes. Empty notes clears the snapshot.",
 		parameters: Type.Object({
 			action: Type.Union([Type.Literal("read"), Type.Literal("write")]),
 			notes: Type.Optional(
-				Type.String({ maxLength: maxNoteChars, description: "Full replacement; required for write." }),
+				Type.String({ description: "Full replacement; required for write." }),
 			),
 		}),
 		executionMode: "sequential",
 		async execute(_id, params, signal, _update, ctx) {
 			signal?.throwIfAborted();
 			if (params.action === "write") {
-				if (typeof params.notes !== "string" || params.notes.length > maxNoteChars)
-					throw new Error(`Write requires notes of at most ${maxNoteChars} characters.`);
+				if (typeof params.notes !== "string")
+					throw new Error("Write requires notes as a string.");
 				pi.appendEntry<Notes>(notesType, { version: 1, text: params.notes });
 				return result({ ...scope(ctx), savedEntryId: ctx.sessionManager.getLeafId() });
 			}
@@ -128,9 +127,9 @@ export default function (pi: ExtensionAPI) {
 					? {
 						entryId: note.id,
 						timestamp: note.timestamp,
-						text: noteText.slice(0, maxNoteChars),
+						text: noteText,
 						totalChars: noteText.length,
-						truncated: noteText.length > maxNoteChars,
+						truncated: false,
 					}
 					: null,
 				latestNativeCheckpoint: checkpoint
