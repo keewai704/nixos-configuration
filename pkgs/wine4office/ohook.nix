@@ -16,7 +16,7 @@ stdenv.mkDerivation {
 
   patches = [ ./ohook-wine.patch ];
   prePatch = ''
-    substituteInPlace sppc.c sppcs64.def --replace-fail $'\r' ""
+    substituteInPlace sppc.c sppc.def sppcs64.def --replace-fail $'\r' ""
   '';
   dontConfigure = true;
 

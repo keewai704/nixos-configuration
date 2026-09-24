@@ -33,6 +33,15 @@ diff --git a/sppc.c b/sppc.c
          if(IsGracePeriodProduct(hSLC, &((*ppLicensingStatus+i)->SkuId))) continue;
  
          (*ppLicensingStatus+i)->eStatus = 1;
+diff --git a/sppc.def b/sppc.def
+--- a/sppc.def
++++ b/sppc.def
+@@ -1,3 +1,5 @@
+ LIBRARY sppc.dll
+ EXPORTS
++__wine_sppc_set_auth_session_key = SPPCS.__wine_sppc_set_auth_session_key
++__wine_sppc_set_expected_hmac = SPPCS.__wine_sppc_set_expected_hmac
+ ;hooked function
 diff --git a/sppcs64.def b/sppcs64.def
 --- a/sppcs64.def
 +++ b/sppcs64.def
