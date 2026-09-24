@@ -66,7 +66,7 @@ let
       text = ''
         export WINEPREFIX="''${WINEPREFIX:-''${XDG_DATA_HOME:-$HOME/.local/share}/microsoft365/prefix}"
         export WINEARCH=win64
-        export WINEDLLOVERRIDES="''${WINEDLLOVERRIDES:-winemenubuilder.exe=d;riched20=n;mshtml=b;msxml6,msxml6r,sppc=n,b}"
+        export WINEDLLOVERRIDES="''${WINEDLLOVERRIDES:-winemenubuilder.exe=d;riched20=n;mshtml=b;msxml6,msxml6r=b;sppc=n,b}"
         export WINEDEBUG="''${WINEDEBUG:--all}"
         export WINE_D3D_CONFIG="''${WINE_D3D_CONFIG:-renderer=gl}"
         export PATH="${runner}/bin:$PATH"
@@ -75,10 +75,12 @@ let
     };
 
   wine = command "wine4office" "wine";
+  ohook = pkgsCross.mingwW64.callPackage ./ohook.nix { };
 in
 symlinkJoin {
   name = "wine4office-${version}";
   paths = [
+    ohook
     wine
     (command "wine4office-server" "wineserver")
     (writeShellApplication {
@@ -90,12 +92,15 @@ symlinkJoin {
     })
   ];
 
-  passthru = { inherit runner runtime; };
+  passthru = { inherit runner runtime ohook; };
 
   meta = {
     description = "Office-focused Wine runtime in a shared FHS environment";
     homepage = "https://github.com/ttv20/wine4office";
-    license = lib.licenses.lgpl21Plus;
+    license = [
+      lib.licenses.lgpl21Plus
+      lib.licenses.mit
+    ];
     platforms = [ "x86_64-linux" ];
     mainProgram = "wine4office";
   };

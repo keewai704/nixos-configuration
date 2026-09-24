@@ -1,0 +1,43 @@
+diff --git a/sppc.c b/sppc.c
+--- a/sppc.c
++++ b/sppc.c
+@@ -3,6 +3,21 @@
+ #include <shlwapi.h>
+ #include "sl.h"
+ 
++HRESULT WINAPI SLGetInstalledProductKeyIds(HSLC, const SLID *, UINT *, SLID **);
++
++BOOL IsWineProductWithKey(HSLC handle, const SLID *sku) {
++    SLID *keys = NULL;
++    UINT count = 0;
++    HRESULT result;
++
++    if (!GetProcAddress(GetModuleHandleW(L"ntdll.dll"), "wine_get_version"))
++        return FALSE;
++
++    result = SLGetInstalledProductKeyIds(handle, sku, &count, &keys);
++    LocalFree(keys);
++    return result == S_OK && count > 0;
++}
++
+ BOOL bIsHeartbeatRegistryModified = FALSE;
+ 
+ BOOL IsGracePeriodProduct(HSLC hSLC, SLID *pProductSkuId) {
+@@ -69,7 +84,8 @@
+         return hResult;
+ 
+     for(int i = 0; i < *pnStatusCount; i++) {
+-        if((*ppLicensingStatus+i)->eStatus == 0) continue;
++        if((*ppLicensingStatus+i)->eStatus == 0 &&
++                !IsWineProductWithKey(hSLC, &((*ppLicensingStatus+i)->SkuId))) continue;
+         if(IsGracePeriodProduct(hSLC, &((*ppLicensingStatus+i)->SkuId))) continue;
+ 
+         (*ppLicensingStatus+i)->eStatus = 1;
+diff --git a/sppcs64.def b/sppcs64.def
+--- a/sppcs64.def
++++ b/sppcs64.def
+@@ -2,3 +2,4 @@ LIBRARY sppcs.dll
+ EXPORTS
+ SLGetLicensingStatusInformation
+ SLGetProductSkuInformation
++SLGetInstalledProductKeyIds
