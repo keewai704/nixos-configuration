@@ -31,7 +31,7 @@ in
     run mkdir -p "$HOME/.claude"
     [ -s "$settings" ] || run sh -c 'echo "{}" > "$1"' sh "$settings"
     tmp=$(mktemp)
-    ${lib.getExe pkgs.jq} '.skipDangerousModePermissionPrompt = true' "$settings" > "$tmp"
+    ${lib.getExe pkgs.jq} '.skipDangerousModePermissionPrompt = true | .remoteControlAtStartup = true' "$settings" > "$tmp"
     run sh -c 'cat "$1" > "$2"' sh "$tmp" "$settings"
     rm -f "$tmp"
   '';
