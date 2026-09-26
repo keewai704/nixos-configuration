@@ -14,7 +14,8 @@ in
       postBuild = ''
         wrapProgram $out/bin/claude \
           --set-default CLAUDE_CODE_ENABLE_PROMPT_SUGGESTION false \
-          --set-default CLAUDE_CODE_SIMPLE_SYSTEM_PROMPT 1
+          --set-default CLAUDE_CODE_SIMPLE_SYSTEM_PROMPT 1 \
+          --set-default ENABLE_CLAUDEAI_MCP_SERVERS false
       '';
     };
     enableMcpIntegration = false;

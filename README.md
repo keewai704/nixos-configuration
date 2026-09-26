@@ -95,6 +95,7 @@ nix build .#<パッケージ名>                    # pkgs/ のパッケージ�
   シェルで別の値を `export` すればそちらが優先されます。
   - `CLAUDE_CODE_ENABLE_PROMPT_SUGGESTION=false`（入力候補の自動生成を無効）
   - `CLAUDE_CODE_SIMPLE_SYSTEM_PROMPT=1`（簡潔なシステムプロンプト）
+  - `ENABLE_CLAUDEAI_MCP_SERVERS=false`（claude.ai のコネクタを読み込まない）
 - `~/.claude/settings.json` と `~/.codex/config.toml` は Nix で管理していないので、
   アプリ側から自由に変更できます。
 - [skills/](skills/) の各スキルは `~/.claude/skills/` と `~/.agents/skills/` の両方にリンクされます。
