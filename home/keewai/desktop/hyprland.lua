@@ -26,6 +26,8 @@ if sunshine_instance then
     if sunshine_file then
         sunshine_file:close()
         dofile(sunshine_layout)
+    else
+        hl.monitor({ output = "SUNSHINE", disabled = true })
     end
 end
 

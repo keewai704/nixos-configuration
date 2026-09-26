@@ -107,6 +107,11 @@ def ensure_output(runtime):
         )
 
 
+def disable_output():
+    ipc("eval", rule(output=OUTPUT, disabled=True))
+    wait_for(lambda monitors: all(m["name"] != OUTPUT for m in monitors))
+
+
 def focus(name):
     ipc("eval", f"hl.dispatch(hl.dsp.focus({{monitor={lua(name)}}}))")
 
@@ -302,6 +307,7 @@ def main():
         if action == "init":
             restore(state)
             ensure_output(runtime)
+            disable_output()
         elif action in ("extend", "client-only"):
             prepare(action, state)
         elif action == "restore":
