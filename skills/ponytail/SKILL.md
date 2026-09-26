@@ -55,8 +55,4 @@ Retain the selected mode within the session until changed. These are conversatio
 instructions, not registered commands or persistent settings.
 Mode changes do not grant permission or replace repository operational gates.
 
-Locally adapted from Ponytail 4.9.0 (MIT). Aligned with the
-[Opus guide](https://platform.claude.com/docs/en/build-with-claude/prompt-engineering/prompting-claude-opus-5)
-and [Astra guide](https://developers.openai.com/blog/rethinking-skills-and-prompts-for-gpt-6-astra):
-clear outcomes and authority without a fixed thinking ritual. Agents load this file
-on demand through native skill discovery.
+Locally adapted from Ponytail 4.9.0 (MIT).

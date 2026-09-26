@@ -6,9 +6,9 @@ independent contexts. A long plan alone is not a reason to delegate every step.
 The parent owns the plan and final integration. Give each implementer a task,
 committed input revision, allowed files/actions, relevant constraints, acceptance
 criteria, and checks. Use the configured roles and isolated writer worktrees.
-Do not assume parent edits are present in a child checkout. Explicitly select
-`model` and `thinking` under the active cost/task policy for each implementer;
-user choices take priority, and the parent's model is not an automatic default.
+Do not assume parent edits are present in a child checkout. Choose a model
+suited to each implementer's task when the harness allows it rather than
+defaulting to the most expensive one. Honor user choices.
 
 Inspect returned changes and evidence for requirement coverage and implementation
 quality. Resolve questions from known requirements; ask the user only for a

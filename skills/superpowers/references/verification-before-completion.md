@@ -15,4 +15,4 @@ separate from build verification.
 Inspect the task diff, new files, and required review. Distinguish static checks,
 executed tests, manual scenario review, and model evaluations. If evidence is
 missing, state the limitation and unfinished gate. Keep implementation, commit,
-running deployment, boot-default persistence, and publication outcomes separate.
+deployment, and publication outcomes separate.

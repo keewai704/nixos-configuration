@@ -16,5 +16,5 @@ merge/PR/keep/discard menu. Remote publication and destructive cleanup need thei
 own authority. Retain unmerged worktrees and report their paths rather than
 removing them as routine tidying.
 
-Report changes, evidence, commit status, and applicable live and boot-default
-deployment results. A blocked push does not undo a completed local delivery.
+Report changes, evidence, commit status, and any deployment results the
+repository requires. A blocked push does not undo a completed local delivery.

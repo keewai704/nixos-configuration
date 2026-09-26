@@ -404,11 +404,11 @@
         ]
       },
       "locked": {
-        "lastModified": 1790435571,
-        "narHash": "sha256-+9BHvgemOEDbHcvnzKXr0Kok1ooBM0DVSwjvwVdMqv4=",
+        "lastModified": 1790443266,
+        "narHash": "sha256-+/DU4pRbU2UtAe/x6zd/e9ax9CrZ+6twYfuy0KpCiYo=",
         "ref": "main",
-        "rev": "539f1b34a96222230f05f8fade2e1673b893fde4",
-        "revCount": 39,
+        "rev": "dc7a217de989758543a7c640374ef04b520ce677",
+        "revCount": 40,
         "type": "git",
         "url": "https://github.com/keewai704/hypr-island.git"
       },
@@ -1038,11 +1038,11 @@
         "nixpkgs": "nixpkgs_6"
       },
       "locked": {
-        "lastModified": 1790441196,
-        "narHash": "sha256-Uj+msONe9dE2xmwM91NKspi3c/0bqIelRHi8rwL9xQc=",
+        "lastModified": 1790443295,
+        "narHash": "sha256-9HDk9Qhh9+S9TmojqKPy+RqgGFxpI1gi/PGN8KylPTA=",
         "ref": "main",
-        "rev": "e1cae73a418909633b9b796da1e742efc626c7c7",
-        "revCount": 87,
+        "rev": "01123ab552a68f94535e87b8bba63f1a05c56866",
+        "revCount": 89,
         "type": "git",
         "url": "https://github.com/keewai704/siora.git"
       },
