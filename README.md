@@ -98,6 +98,13 @@ nix build .#<パッケージ名>                    # pkgs/ のパッケージ�
   - `ENABLE_CLAUDEAI_MCP_SERVERS=false`（claude.ai のコネクタを読み込まない）
 - `~/.claude/settings.json` と `~/.codex/config.toml` は Nix で管理していないので、
   アプリ側から自由に変更できます。
+- 両エージェントに MCP サーバーを接続しています。Claude Code には Home Manager の
+  プラグイン（`mcp__plugin_hm_<サーバー>__*`）として、Codex には有効化時に
+  `~/.codex/config.toml` の `[mcp_servers.*]` へ上書きマージして登録します。
+  - `context7`：ライブラリの最新ドキュメント検索（API キーなし）
+  - `serena`：LSP ベースのシンボル検索・編集（起動ディレクトリをプロジェクトとして認識）
+  - `cua-driver`（デスクトップのみ）：[Cua Driver](https://github.com/trycua/cua) による
+    画面操作。Wayland バックエンドは実験的に有効化し、テレメトリは無効にしています。
 - [skills/](skills/) の各スキルは `~/.claude/skills/` と `~/.agents/skills/` の両方にリンクされます。
 
 | スキル | 用途 |

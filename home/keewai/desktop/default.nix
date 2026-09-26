@@ -4,6 +4,7 @@
     ./apple-music.nix
     ./bitwarden.nix
     ./browser.nix
+    ./computer-use.nix
     ./file-manager.nix
     ./firefox.nix
     ./hypr-island.nix

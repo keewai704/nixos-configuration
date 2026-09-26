@@ -1,4 +1,5 @@
 {
+  config,
   inputs,
   lib,
   pkgs,
@@ -7,6 +8,55 @@
 let
   system = pkgs.stdenv.hostPlatform.system;
   claudeCode = inputs.claude-code.packages.${system}.default;
+  serena = lib.getExe inputs.serena.packages.${system}.default;
+  serenaArgs = context: [
+    "start-mcp-server"
+    "--context=${context}"
+    "--project-from-cwd"
+    "--open-web-dashboard=False"
+  ];
+  codexMcpServers =
+    lib.mapAttrs (
+      name: server:
+      lib.hm.mcp.transformMcpServer {
+        inherit server;
+        exclude = [
+          "headers"
+          "type"
+        ];
+        extraTransforms = [ (lib.hm.mcp.wrapEnvFilesCommand { inherit pkgs name; }) ];
+      }
+    ) config.programs.mcp.servers
+    // {
+      serena = {
+        command = serena;
+        args = serenaArgs "codex";
+        startup_timeout_sec = 30;
+      };
+    };
+  mergeCodexMcpServers =
+    pkgs.writers.writePython3 "merge-codex-mcp-servers"
+      { libraries = [ pkgs.python3Packages.tomlkit ]; }
+      ''
+        import json
+        import sys
+
+        import tomlkit
+
+        config_path, servers_path = sys.argv[1:]
+        try:
+            with open(config_path) as f:
+                doc = tomlkit.load(f)
+        except FileNotFoundError:
+            doc = tomlkit.document()
+        with open(servers_path) as f:
+            servers = json.load(f)
+        tables = doc.setdefault("mcp_servers", tomlkit.table(is_super_table=True))
+        for name, server in servers.items():
+            tables[name] = server
+        with open(config_path, "w") as f:
+            tomlkit.dump(doc, f)
+      '';
 in
 {
   programs.claude-code = {
@@ -23,7 +73,12 @@ in
           --set-default ENABLE_CLAUDEAI_MCP_SERVERS false
       '';
     };
-    enableMcpIntegration = false;
+    enableMcpIntegration = true;
+    mcpServers.serena = {
+      type = "stdio";
+      command = serena;
+      args = serenaArgs "claude-code";
+    };
     context = ''
       # Delegating to Codex
 
@@ -91,6 +146,18 @@ in
     ${lib.getExe pkgs.jq} '.skipDangerousModePermissionPrompt = true | .remoteControlAtStartup = true' "$settings" > "$tmp"
     run sh -c 'cat "$1" > "$2"' sh "$tmp" "$settings"
     rm -f "$tmp"
+  '';
+
+  programs.mcp = {
+    enable = true;
+    servers.context7.command = lib.getExe pkgs.context7-mcp;
+  };
+
+  home.activation.codexMcpServers = lib.hm.dag.entryAfter [ "writeBoundary" ] ''
+    run mkdir -p "$HOME/.codex"
+    run ${mergeCodexMcpServers} "$HOME/.codex/config.toml" ${
+      (pkgs.formats.json { }).generate "codex-mcp-servers.json" codexMcpServers
+    }
   '';
 
   programs.codex = {

@@ -52,6 +52,11 @@
     my-firefox-nix.url = "git+https://github.com/keewai704/my-firefox-nix.git?ref=main";
 
     siora.url = "git+https://github.com/keewai704/siora.git?ref=main";
+
+    serena = {
+      url = "github:oraios/serena";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
   };
 
   outputs =
