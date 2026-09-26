@@ -1,4 +1,9 @@
-{ inputs, pkgs, ... }:
+{
+  inputs,
+  lib,
+  pkgs,
+  ...
+}:
 let
   system = pkgs.stdenv.hostPlatform.system;
   claudeCode = inputs.claude-code.packages.${system}.default;
@@ -20,6 +25,16 @@ in
     };
     enableMcpIntegration = false;
   };
+
+  home.activation.claudeCodeSettings = lib.hm.dag.entryAfter [ "writeBoundary" ] ''
+    settings="$HOME/.claude/settings.json"
+    run mkdir -p "$HOME/.claude"
+    [ -s "$settings" ] || run sh -c 'echo "{}" > "$1"' sh "$settings"
+    tmp=$(mktemp)
+    ${lib.getExe pkgs.jq} '.skipDangerousModePermissionPrompt = true' "$settings" > "$tmp"
+    run sh -c 'cat "$1" > "$2"' sh "$tmp" "$settings"
+    rm -f "$tmp"
+  '';
 
   programs.codex = {
     enable = true;
