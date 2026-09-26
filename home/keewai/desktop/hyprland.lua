@@ -148,6 +148,31 @@ hl.window_rule({
     no_anim = true,
 })
 
+hl.window_rule({ match = { class = "^\\.?blueman-.*$" }, tag = "+system-dialog" })
+hl.window_rule({ match = { class = "^gcr-prompter$" }, tag = "+auth-prompt" })
+hl.window_rule({ match = { class = "^pinentry.*$" }, tag = "+auth-prompt" })
+hl.window_rule({ match = { title = "^Hyprland Polkit Agent$" }, tag = "+auth-prompt" })
+hl.window_rule({
+    match = { tag = "system-dialog" },
+    float = true,
+    center = true,
+    opacity = "1.0 override 1.0 override",
+})
+hl.window_rule({
+    match = { class = "^\\.?blueman-manager.*$" },
+    size = { 960, 640 },
+})
+hl.window_rule({
+    match = { tag = "auth-prompt" },
+    float = true,
+    center = true,
+    pin = true,
+    stay_focused = true,
+    dim_around = true,
+    no_dim = true,
+    opacity = "1.0 override 1.0 override",
+})
+
 hl.curve("quick", {
     type = "bezier",
     points = { { 0.2, 0.9 }, { 0.3, 1.0 } },
