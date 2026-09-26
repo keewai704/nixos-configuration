@@ -1,18 +1,15 @@
 {
   imports = [
+    ../../modules/desktop
+    ./apple-device-usb.nix
     ./audio.nix
     ./boot.nix
-    ./webhid.nix
-    ./desktop.nix
     ./fingerprint.nix
     ./hardware-configuration.nix
-    ./hyprland.nix
-    ./input-method-shortcut.nix
-    ./apple-device-usb.nix
+    ./input-method.nix
     ./nvidia.nix
-    ./noctalia.nix
     ./sunshine.nix
-    ./stylix.nix
+    ./webhid.nix
   ];
 
   networking.hostName = "citrus";

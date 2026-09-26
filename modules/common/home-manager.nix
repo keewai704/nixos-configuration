@@ -6,7 +6,7 @@
     useUserPackages = true;
     extraSpecialArgs = { inherit inputs; };
     users.keewai = {
-      imports = [ ../home/keewai/common.nix ];
+      imports = [ ../../home/keewai/common ];
       home.stateVersion = "26.05";
     };
   };

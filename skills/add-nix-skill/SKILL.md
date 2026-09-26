@@ -21,7 +21,7 @@ operational gates belong in AGENTS.md rather than being copied into every skill.
 
 Home Manager links every `skills/<name>` directory into both `~/.claude/skills`
 (Claude Code) and `~/.agents/skills` (Codex) through
-[skills.nix](/home/keewai/nixos-configuration/home/keewai/shared/skills.nix).
+[skills.nix](/home/keewai/nixos-configuration/home/keewai/common/skills.nix).
 Keep skills harness-neutral: refer to "the harness's subagent tool" or "TODO
 ledger" rather than one client's tool names.
 

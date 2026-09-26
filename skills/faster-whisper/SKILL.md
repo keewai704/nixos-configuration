@@ -13,7 +13,7 @@ Do not substitute `turbo`, `distil-large-v3`, or a smaller model without a reque
 ## Environment
 
 Home Manager installs the command through
-`home/keewai/shared/faster-whisper.nix` in the nixos-configuration repository.
+`home/keewai/common/faster-whisper.nix` in the nixos-configuration repository.
 Check `command -v whisper-ctranslate2` and `whisper-ctranslate2 --version`.
 If missing, report that the Nix-managed environment needs activation; do not
 install packages with pip or modify generated skill files.

@@ -14,7 +14,7 @@ reuse context that has not changed.
 
 | Responsibility | Source |
 | --- | --- |
-| Claude Code and Codex packages and defaults | `home/keewai/shared/coding-agents.nix` |
+| Claude Code and Codex packages and defaults | `home/keewai/common/coding-agents.nix` |
 | Distributed personal skills | `skills/` |
 | Repository-only validation guidance | `.agents/skills/nixos-validation/` |
 
@@ -47,16 +47,18 @@ evaluated, or built locally without connecting to it.
 
 Match filenames to responsibilities. Keep tightly coupled code together; use a
 named module for a substantial feature rather than placing it in a convenient
-import. `hosts/<host>/default.nix` is for imports and small host-wide settings;
-`modules/common.nix` is only for settings used by every host. Scope moves and
-caller updates to the request, and explain non-obvious placement choices.
+import. `hosts/<host>/` holds that machine's hardware, boot, and services, with
+`default.nix` limited to imports and small host-wide settings. `modules/common/`
+is only for settings used by every host; `modules/desktop/` is the system side of
+the desktop profile. Scope moves and caller updates to the request, and explain
+non-obvious placement choices.
 
 Personal applications, CLI tools, shell settings, user services, and files belong
-in `home/<user>/common.nix`, `shared/`, or `desktop/`. Prefer suitable
+in `home/<user>/common/` or `home/<user>/desktop/`. Prefer suitable
 `programs.*`/`services.*` modules, then `home.packages`. Every host loads the common
-profile; `modules/desktop.nix` adds the shared desktop profile, with hardware
-differences expressed by capability. `modules/home-manager.nix` owns the NixOS
-connection. `useUserPackages = true` puts packages in
+profile; importing `modules/desktop` adds the desktop profile, with hardware
+differences expressed by capability. `modules/common/home-manager.nix` owns the
+NixOS connection. `useUserPackages = true` puts packages in
 `/etc/profiles/per-user/<user>`; deployment still uses NixOS activation.
 
 For ownership changes, inspect pinned modules and upstream requirements. Keep

@@ -1,10 +1,13 @@
 {
-  description = "NixOS configurations for orange and citrus";
+  description = "NixOS configurations for citrus (desktop) and orange (server)";
 
   inputs = {
     nixpkgs.url = "github:NixOS/nixpkgs/nixos-unstable";
 
-    siora.url = "git+https://github.com/keewai704/siora.git?ref=main";
+    home-manager = {
+      url = "github:nix-community/home-manager/master";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
 
     agenix = {
       url = "github:ryantm/agenix";
@@ -24,11 +27,6 @@
       inputs.nixpkgs.follows = "nixpkgs";
     };
 
-    home-manager = {
-      url = "github:nix-community/home-manager/master";
-      inputs.nixpkgs.follows = "nixpkgs";
-    };
-
     hyprland.url = "github:hyprwm/Hyprland/main";
 
     stylix = {
@@ -38,8 +36,6 @@
 
     millennium.url = "github:SteamClientHomebrew/Millennium?dir=packages/nix";
 
-    my-firefox-nix.url = "git+https://github.com/keewai704/my-firefox-nix.git?ref=main";
-
     nix-hazkey = {
       url = "github:aster-void/nix-hazkey";
       inputs.home-manager.follows = "home-manager";
@@ -47,13 +43,14 @@
     };
 
     nixcord.url = "github:4evy/nixcord";
+
+    my-firefox-nix.url = "git+https://github.com/keewai704/my-firefox-nix.git?ref=main";
+
+    siora.url = "git+https://github.com/keewai704/siora.git?ref=main";
   };
 
   outputs =
-    inputs@{
-      nixpkgs,
-      ...
-    }:
+    inputs@{ nixpkgs, ... }:
     let
       system = "x86_64-linux";
 
@@ -62,30 +59,18 @@
         config.allowUnfree = true;
       };
 
-      mkNixosHost =
-        hostModules:
+      mkHost =
+        name:
         nixpkgs.lib.nixosSystem {
           specialArgs = { inherit inputs; };
           modules = [
-            ./modules/common.nix
-            ./modules/home-manager.nix
-          ]
-          ++ hostModules;
+            ./modules/common
+            ./hosts/${name}
+          ];
         };
     in
     {
-      nixosConfigurations = {
-        orange = mkNixosHost [
-          inputs.agenix.nixosModules.default
-          ./hosts/orange
-        ];
-
-        citrus = mkNixosHost [
-          inputs.chaotic.nixosModules.default
-          inputs.stylix.nixosModules.stylix
-          ./hosts/citrus
-        ];
-      };
+      nixosConfigurations = nixpkgs.lib.genAttrs [ "citrus" "orange" ] mkHost;
 
       packages.${system} = import ./pkgs { inherit pkgs; };
 

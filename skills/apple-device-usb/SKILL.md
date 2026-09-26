@@ -18,7 +18,7 @@ the session. Editing this skill does not authorize a device connection.
 - For failures, dependency changes, compatibility history, or an explicitly
   requested VNC viewer, read [Troubleshooting](references/troubleshooting.md).
 
-Use the installed [launcher](/home/keewai/nixos-configuration/home/keewai/shared/apple-device-usb.nix),
+Use the installed [launcher](/home/keewai/nixos-configuration/home/keewai/common/apple-device-usb.nix),
 [scripts/connection.py](scripts/connection.py), and
 [scripts/control.py](scripts/control.py), not another upstream version's commands.
 USB requires iOS/iPadOS 17.4+ and compatible display/input services; that OS version

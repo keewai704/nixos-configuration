@@ -1,5 +1,7 @@
-{ pkgs, ... }:
+{ inputs, pkgs, ... }:
 {
+  imports = [ inputs.chaotic.nixosModules.default ];
+
   boot = {
     loader = {
       efi.canTouchEfiVariables = true;

@@ -1,8 +1,15 @@
 { pkgs, ... }:
 {
-  imports = [ ./input-method-shortcut.nix ];
+  imports = [
+    ./bitwarden.nix
+    ./hyprland.nix
+    ./input-method.nix
+    ./noctalia.nix
+    ./steam.nix
+    ./stylix.nix
+  ];
 
-  home-manager.users.keewai.imports = [ ../home/keewai/desktop ];
+  home-manager.users.keewai.imports = [ ../../home/keewai/desktop ];
 
   programs.dconf.enable = true;
 
