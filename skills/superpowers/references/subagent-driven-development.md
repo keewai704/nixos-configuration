@@ -18,9 +18,8 @@ by default.
 
 Verify findings and repair actual defects. Seek follow-up on changed or
 unresolved areas, not unchanged passing work. Integrate in dependency order and
-check combined behavior. For native Pi `integrated_changes` dependencies, release
-the prerequisite only after parent integration and a committed revision; a report
-dependency does not transfer files.
+check combined behavior. Start dependent writers only after the parent has
+integrated and committed their prerequisites; a report does not transfer files.
 
 Complete policy-required review and repository gates on the integrated result.
 If a child fails, preserve useful work, continue authorized tasks locally, and

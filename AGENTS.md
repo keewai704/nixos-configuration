@@ -14,14 +14,11 @@ reuse context that has not changed.
 
 | Responsibility | Source |
 | --- | --- |
-| Pi model and runtime defaults | `home/keewai/shared/pi/agent.nix` |
-| Native CLI/Web delegation registration | `home/keewai/shared/pi/subagents.nix` |
-| Native delegation implementation and role prompts | [`pi-web-delegation`](https://github.com/keewai704/pi-web/tree/main/plugins/pi-web-delegation), packaged by `pkgs/pi-web/default.nix` |
-| Cross-project agent behavior | `home/keewai/shared/pi/APPEND_SYSTEM.md` |
+| Claude Code and Codex packages and defaults | `home/keewai/shared/coding-agents.nix` |
 | Distributed personal skills | `skills/` |
 | Repository-only validation guidance | `.agents/skills/nixos-validation/` |
 
-Edit these sources, not generated files under `~/.pi/agent` or `~/.agents/skills`.
+Edit these sources, not generated links under `~/.claude/skills` or `~/.agents/skills`.
 Persistent agent instructions, prompts, and skills are English; respond in the
 user's language. Keep policy/navigation in AGENTS.md and README.md, and validation
 procedures in the validation skill. Do not add repository-local `docs/`, `checks/`,
@@ -93,7 +90,7 @@ reduce its privileges.
    files, or services, record its expected system store path and relevant runtime
    baseline. Run `sudo nixos-rebuild test --flake .#<runtime-host>` on that
    committed state, using its evaluation/build rather than prebuilding the same
-   output. Pi and distributed `skills/` affect every host.
+   output. Coding-agent settings and distributed `skills/` affect every host.
 5. After `test`, check network connectivity, failed system/user units, and every
    affected service's behavior. New failures or regressions block `switch`.
 6. Only after those gates pass, run

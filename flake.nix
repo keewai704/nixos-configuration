@@ -19,6 +19,11 @@
       inputs.nixpkgs.follows = "nixpkgs";
     };
 
+    codex-cli = {
+      url = "github:sadjow/codex-cli-nix/main";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
+
     home-manager = {
       url = "github:nix-community/home-manager/master";
       inputs.nixpkgs.follows = "nixpkgs";
@@ -28,11 +33,6 @@
 
     stylix = {
       url = "github:nix-community/stylix";
-      inputs.nixpkgs.follows = "nixpkgs";
-    };
-
-    mcp-servers-nix = {
-      url = "github:natsukium/mcp-servers-nix";
       inputs.nixpkgs.follows = "nixpkgs";
     };
 

@@ -12,46 +12,32 @@ preparation; do not restart a generic workflow for each skill.
 
 ## Author and publish
 
-For a new or substantially revised skill, read the pinned Pi's bundled
-`docs/skills.md` and available skill-authoring guidance. Give the description a
+Follow the Agent Skills format: a `SKILL.md` with `name` and `description`
+frontmatter, plus optional `references/` and `scripts/`. Give the description a
 short, precise trigger. Keep a single workflow direct; for multiple workflows,
 make the root a router to focused references and scripts. Put authority and
 safety boundaries where they are loaded before the relevant action. Repository
 operational gates belong in AGENTS.md rather than being copied into every skill.
 
-Home Manager publishes `skills/<name>` directories, including Ponytail, under
-`~/.agents/skills` through
-[shared/skills.nix](/home/keewai/nixos-configuration/home/keewai/shared/skills.nix).
-Pi discovers these directories natively. Check publication filters when adding,
-renaming, or removing a skill.
+Home Manager links every `skills/<name>` directory into both `~/.claude/skills`
+(Claude Code) and `~/.agents/skills` (Codex) through
+[skills.nix](/home/keewai/nixos-configuration/home/keewai/shared/skills.nix).
+Keep skills harness-neutral: refer to "the harness's subagent tool" or "TODO
+ledger" rather than one client's tool names.
 
 Use the available editing tools on the source. Do not reinitialize an existing
-skill or write into generated skill directories. Cross-project routing
-preferences belong in
-[shared/pi/APPEND_SYSTEM.md](/home/keewai/nixos-configuration/home/keewai/shared/pi/APPEND_SYSTEM.md).
-Preserve unrelated metadata and package-managed resources.
+skill or write into generated skill directories. Preserve unrelated metadata.
 
 ## Verify skill behavior
 
-Validate changed skills with the pinned Pi skill loader using temporary state,
-without making a model request. Confirm each intended skill is discovered and
-no validation diagnostics are returned. Check frontmatter, linked files, and
-relative paths against Pi's documented Agent Skills format. If the loader is
-unavailable, report that limit and validate the format with a temporary parser;
-do not add a permanent repository test suite.
+Check frontmatter, linked files, and relative paths. Do not add a permanent
+repository test suite or make a model request merely to validate loading.
 
 For material trigger or workflow changes, check matching, non-matching,
-ambiguous, and blocked requests against the instructions. Check decisions and
-boundaries, not exact wording. Label manual scenario review separately from
-executed model evaluation; manual review does not prove model behavior. Use
-only authorized resources and delegation. No extra reviewer or model call is
-required by this skill.
+ambiguous, and blocked requests against the instructions. Label manual scenario
+review separately from executed model evaluation.
 
-In addition to AGENTS.md's checks, verify the Home Manager file set or built
-links. After applicable local `test` and `switch`, confirm Home Manager success
-and compare each deployed skill with its repository source. Keep tests of any
-mode controls isolated from the active session.
-
-Use AGENTS.md's evaluated-host impact rule for deployment. If the client has
-not reloaded a changed skill, tell the user to open a new task or restart the
-app after completion; do not terminate the application owning the task.
+After the local `test` and `switch` required by AGENTS.md, confirm Home Manager
+succeeded and that each deployed skill link resolves to the new source. A
+running client may need a new session to see changed skills; do not terminate
+the application owning the task.

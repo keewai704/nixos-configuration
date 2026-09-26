@@ -18,10 +18,9 @@ the changed behavior and its imports:
 | Change | Checks |
 | --- | --- |
 | Repository documentation or repository-only skills | Whitespace, links, instruction consistency, and skill frontmatter; no Nix evaluation/build. |
-| Local host configuration or deployed files | Use the evaluation/build in required `nixos-rebuild test`, not a duplicate prebuild or equivalent evaluation. Distributed personal skills and Pi instructions count as deployed files. |
-| Personal Pi extension TypeScript | Use `home/keewai/shared/pi/tsconfig.json` with the pinned compiler or LSP. It resolves Pi/Node types from the deployed user profile; a missing profile is an environment limitation, not a reason to install mutable npm dependencies. |
-| Pi providers, context management, TODO configuration, or latency tuning | Read [Pi runtime checks](references/pi-runtime.md), selecting the affected sections. |
-| Native Pi delegation integration or its resources | Read [Native delegation checks](references/pi-delegation.md). Resource/config-only changes need affected loading and bridge checks, not unchanged controller/browser suites. |
+| Local host configuration or deployed files | Use the evaluation/build in required `nixos-rebuild test`, not a duplicate prebuild or equivalent evaluation. Distributed personal skills count as deployed files. |
+| Claude Code or Codex packaging and defaults | Build the affected `programs.<name>.finalPackage` or `package`, run `--version`, and inspect wrapper environment defaults. Do not make a model request. |
+| File moves or renames without intended behavior change | Compare each affected host's `system.build.toplevel.drvPath` with the pre-move value; explain any difference. |
 | Another host only | Locally evaluate changed attributes, or build the affected output when package implementation or build logic changed. Shared settings need every host only when host-specific branches warrant validation. |
 | A failing check | Read [Failure diagnosis](references/failure-diagnosis.md); compare configuration values only when they could explain the failure. |
 

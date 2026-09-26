@@ -6,8 +6,7 @@ Identify the recurring task or observed failure. Give the skill one focused
 purpose and a short description with precise matching conditions. Avoid triggers
 that sweep in an entire subject when the skill handles only one operation.
 
-Use the target loader's documented format. For Pi, read its skills documentation;
-for Nix-managed personal skills, use `add-nix-skill` and edit repository sources.
+Use the target loader's documented Agent Skills format. For Nix-managed personal skills, use `add-nix-skill` and edit repository sources.
 Make a multi-workflow root a small router to supporting references or scripts.
 Read only the branch needed for the task, and keep references directly reachable
 rather than creating a chain of mandatory skill reads. Keep authority and safety

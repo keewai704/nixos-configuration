@@ -52,11 +52,11 @@ The user can say `ponytail lite`, `ponytail full`, or `ponytail ultra` to change
 level; `stop ponytail` or `normal mode` disables the mode. Do not ask them to
 choose a mode before ordinary work.
 Retain the selected mode within the session until changed. These are conversational
-instructions, not registered Pi commands or persistent settings.
+instructions, not registered commands or persistent settings.
 Mode changes do not grant permission or replace repository operational gates.
 
 Locally adapted from Ponytail 4.9.0 (MIT). Aligned with the
 [Opus guide](https://platform.claude.com/docs/en/build-with-claude/prompt-engineering/prompting-claude-opus-5)
 and [Astra guide](https://developers.openai.com/blog/rethinking-skills-and-prompts-for-gpt-6-astra):
-clear outcomes and authority without a fixed thinking ritual. Pi loads this file
+clear outcomes and authority without a fixed thinking ritual. Agents load this file
 on demand through native skill discovery.

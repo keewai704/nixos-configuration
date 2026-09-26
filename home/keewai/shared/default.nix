@@ -1,9 +1,8 @@
 {
   imports = [
     ./apple-device-usb.nix
-    ./claude-code.nix
+    ./coding-agents.nix
     ./faster-whisper.nix
-    ./pi
     ./shell.nix
     ./skills.nix
   ];

@@ -7,9 +7,8 @@ Check the plan against the current checkout and request. Resolve genuine gaps
 before the affected step; continue independent authorized work while blocked.
 Update stale paths and assumptions from evidence.
 
-Execute cohesive tasks in dependency order. Read and update the configured TODO
-ledger (Pi: TaskList/TaskGet/TaskUpdate); keep decisions and evidence references
-in durable context notes. A child report is not task completion: verify its
+Execute cohesive tasks in dependency order. Read and update the harness's TODO
+ledger; keep decisions and evidence references where they survive compaction. A child report is not task completion: verify its
 evidence and finish the task's required review and deployment gates first.
 Reuse unchanged passing checks rather than repeating finished work on resume.
 Investigate failures rather than stacking speculative repairs.

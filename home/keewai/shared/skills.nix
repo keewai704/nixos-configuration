@@ -1,16 +1,18 @@
 { lib, ... }:
 let
   skillRoot = ../../../skills;
+  skillNames = builtins.attrNames (builtins.readDir skillRoot);
 
-  skillEntries = lib.mapAttrs' (
-    name: _type:
-    lib.nameValuePair ".agents/skills/${name}" {
-      source = skillRoot + "/${name}";
-      force = true;
-    }
-  ) (builtins.readDir skillRoot);
-
+  linkSkills =
+    directory:
+    lib.genAttrs' skillNames (
+      name:
+      lib.nameValuePair "${directory}/${name}" {
+        source = skillRoot + "/${name}";
+        force = true;
+      }
+    );
 in
 {
-  home.file = skillEntries;
+  home.file = linkSkills ".agents/skills" // linkSkills ".claude/skills";
 }

@@ -4,7 +4,7 @@ description: Coordinate complex design, implementation, debugging, or review whe
 license: MIT
 ---
 
-# Superpowers for Pi
+# Superpowers
 
 Choose the guidance needed for the current task, not a fixed itinerary. Read only
 the matching reference below; loading this skill does not enable every workflow.
@@ -35,7 +35,7 @@ approval or review gates beyond the request, repository, and active harness.
 | Creating or revising a reusable skill | [Writing skills](references/writing-skills.md) |
 | Unexpected Superpowers behavior in a session | [Diagnosing Superpowers](references/diagnosing-superpowers.md) |
 
-Use Pi's exposed tools and configured roles, not another harness's commands.
+Use the active harness's exposed tools and configured agents.
 Follow the active delegation policy and preserve Ponytail's selected mode.
 Honor a request to disable Superpowers without dropping repository-required gates.
 
