@@ -58,7 +58,7 @@ flake.nix
 | 設定不要な GUI アプリを追加 | [home/keewai/desktop/applications.nix](home/keewai/desktop/applications.nix) |
 | ウィンドウ・モニター・キー割り当て | [hyprland.lua](home/keewai/desktop/hyprland.lua) |
 | Hyprland 本体・ログイン画面 | [modules/desktop/hyprland.nix](modules/desktop/hyprland.nix) |
-| パネル・ランチャー・通知・壁紙 | [noctalia.nix](home/keewai/desktop/noctalia.nix) |
+| パネル・ランチャー・通知・壁紙・アイドル | [hypr-island.nix](home/keewai/desktop/hypr-island.nix)（[keewai704/hypr-island](https://github.com/keewai704/hypr-island)） |
 | 日本語入力 | [input-method.nix](home/keewai/desktop/input-method.nix)、[modules/desktop/input-method.nix](modules/desktop/input-method.nix) |
 | 端末・ブラウザー・ファイル管理 | [kitty.nix](home/keewai/desktop/kitty.nix)、[browser.nix](home/keewai/desktop/browser.nix)、[firefox.nix](home/keewai/desktop/firefox.nix)、[file-manager.nix](home/keewai/desktop/file-manager.nix) |
 | Discord | [legcord.nix](home/keewai/desktop/legcord.nix) |
@@ -112,12 +112,12 @@ nix build .#<パッケージ名>                    # pkgs/ のパッケージ�
 
 ## citrus（デスクトップ）
 
-- **画面構成**：Hyprland + [Noctalia](https://docs.noctalia.dev/noctalia/)（パネル、ランチャー、通知、壁紙、アイドル）。`Super+,` で Noctalia 設定。
-- **配色**：GTK・Qt・Kitty・Hyprland は Noctalia のテンプレート、フォント・カーソル・その他は Stylix。
+- **画面構成**：Hyprland + [hypr-island](https://github.com/keewai704/hypr-island)（ノッチ型の Dynamic Island。メディア、ランチャー、通知、クリップボード、壁紙、コントロール）。`Super+D` で開閉、`Super+F1` でショートカット一覧。
+- **配色**：Stylix が GTK・Qt・Kitty・hypr-island を、[テーマ](themes/tokyo-night-black/default.nix) が Hyprland の枠線などを担当。
 - **Hyprland**：IME の修飾キー対応パッチを当てた独自ビルド（[pkgs/hyprland](pkgs/hyprland/)）。
 - **日本語入力**：Hazkey。keyd で `` Alt+` `` を変換キーに割り当て、Logitech 製キーボードは除外。
 - **ブラウザー**：既定は Firefox（[keewai704/my-firefox-nix](https://github.com/keewai704/my-firefox-nix)）。Brave Origin も利用可。
-- **Bitwarden**：デスクトップアプリと SSH エージェント。CLI は `rbw`（初回は `rbw config set email …` → `rbw login`）。
+- **Bitwarden**：デスクトップアプリと SSH エージェント。CLI は `rbw`（hypr-island が Vaultwarden 向けに初期化。初回は `rbw login`）。
 - **Apple Music**：[keewai704/siora](https://github.com/keewai704/siora)。起動は `siora`。
 
 ### Sunshine 配信
@@ -138,7 +138,7 @@ moonlight stream citrus "Extend Display" --1080 --fps 120 --bitrate 40000 --vide
 ```
 
 切断だけではアプリは動き続けます。元の画面構成に戻すには Moonlight で「アプリを終了」します。
-配信のため画面ロックは無効です（アイドル 660 秒で画面消灯のみ）。
+配信のため画面ロックは無効です（hypr-island のロック連携と `Super+Alt+L` を外し、アイドル 660 秒で画面消灯のみ）。
 
 ## orange（サーバー）
 
@@ -164,6 +164,6 @@ moonlight stream citrus "Extend Display" --1080 --fps 120 --bitrate 40000 --vide
 
 - [pkgs/default.nix](pkgs/default.nix) に並べたものは `nix build .#<名前>` で単体ビルドできます。
 - パッチは対象パッケージのディレクトリに置きます。
-- `keewai704` 所有の GitHub 入力は `?ref=main` を明示し、`flake.lock` でリビジョンを固定します。
+- `keewai704` 所有の入力（hypr-island、siora、my-firefox-nix）は `?ref=main` を明示し、適用前に毎回 `nix flake update` で最新の main に更新します。
 - 非自由パッケージは全体で許可しています（`allowUnfree = true`）。
 - `system.stateVersion` / `home.stateVersion` は互換性の基準なので、アップデートに合わせて変えません。

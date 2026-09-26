@@ -14,8 +14,14 @@ in
     overlays.enable = false;
     targets = {
       font-packages.enable = true;
-      gtk.enable = false;
-      qt.enable = false;
+      gtk = {
+        enable = true;
+        flatpakSupport.enable = false;
+      };
+      qt = {
+        enable = true;
+        standardDialogs = "xdgdesktopportal";
+      };
     };
   };
 

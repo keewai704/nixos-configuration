@@ -397,6 +397,27 @@
         "type": "github"
       }
     },
+    "hypr-island": {
+      "inputs": {
+        "nixpkgs": [
+          "nixpkgs"
+        ]
+      },
+      "locked": {
+        "lastModified": 1790435571,
+        "narHash": "sha256-+9BHvgemOEDbHcvnzKXr0Kok1ooBM0DVSwjvwVdMqv4=",
+        "ref": "main",
+        "rev": "539f1b34a96222230f05f8fade2e1673b893fde4",
+        "revCount": 39,
+        "type": "git",
+        "url": "https://github.com/keewai704/hypr-island.git"
+      },
+      "original": {
+        "ref": "main",
+        "type": "git",
+        "url": "https://github.com/keewai704/hypr-island.git"
+      }
+    },
     "hyprcursor": {
       "inputs": {
         "hyprlang": [
@@ -1001,6 +1022,7 @@
         "claude-code": "claude-code",
         "codex-cli": "codex-cli",
         "home-manager": "home-manager_2",
+        "hypr-island": "hypr-island",
         "hyprland": "hyprland",
         "millennium": "millennium",
         "my-firefox-nix": "my-firefox-nix",
@@ -1016,11 +1038,11 @@
         "nixpkgs": "nixpkgs_6"
       },
       "locked": {
-        "lastModified": 1790243985,
-        "narHash": "sha256-aBKcvQfgY0Jq9/Eh2yf8unDQZkZSu9pYbujErEx5g1Y=",
+        "lastModified": 1790252296,
+        "narHash": "sha256-3TuFM7x3Xg7c8vxyd6yPTR7ay5eOuzMa8lSl++alV6E=",
         "ref": "main",
-        "rev": "d05906046400df55e9fb622db9134b482a857624",
-        "revCount": 70,
+        "rev": "8d7844d60c168c0755b239f956a045b3e2fa107f",
+        "revCount": 79,
         "type": "git",
         "url": "https://github.com/keewai704/siora.git"
       },

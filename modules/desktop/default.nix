@@ -2,9 +2,9 @@
 {
   imports = [
     ./bitwarden.nix
+    ./hypr-island.nix
     ./hyprland.nix
     ./input-method.nix
-    ./noctalia.nix
     ./steam.nix
     ./stylix.nix
   ];

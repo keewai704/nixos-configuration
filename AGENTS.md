@@ -82,7 +82,7 @@ reduce its privileges.
 2. Use [nixos-validation](.agents/skills/nixos-validation/SKILL.md) to select checks
    for the changed behavior. Format only task files. Stage new files before
    Git-flake checks, inspect the task-only staged diff, and use
-   `--no-write-lock-file` unless updating inputs was requested. Reuse passing
+   `--no-write-lock-file` unless updating inputs was requested or required below. Reuse passing
    evidence with unchanged inputs; broaden checks for failures or unresolved
    concerns, not for a fixed number of passes. Complete any review required by
    the active instructions or user before committing.
@@ -119,7 +119,10 @@ undo completed local work.
 
 For GitHub packages owned by `keewai704`, explicitly select `main` and pin the
 revision and hash. Use `?ref=main` for Git flake inputs and refresh from `main`;
-do not rely on the remote default branch.
+do not rely on the remote default branch. Always track the latest `main`: before
+each local activation, run `nix flake update` for every `keewai704` input and
+include the resulting lock change in the commit. This is standing authorization
+to update those inputs only.
 
 Outside the repository root, use `git -C` and absolute flake references to the
 actual checkout, normally `/home/keewai/nixos-configuration` and

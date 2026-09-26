@@ -6,11 +6,11 @@
     ./browser.nix
     ./file-manager.nix
     ./firefox.nix
+    ./hypr-island.nix
     ./hyprland.nix
     ./input-method.nix
     ./kitty.nix
     ./legcord.nix
-    ./noctalia.nix
     ./steam-theme.nix
     ./stylix.nix
   ];

@@ -2,7 +2,6 @@
 {
   programs.kitty = {
     enable = true;
-    extraConfig = "include themes/noctalia.conf";
     font = {
       package = lib.mkForce pkgs.hackgen-nf-font;
       name = lib.mkForce "HackGen Console NF";
@@ -10,5 +9,5 @@
     };
   };
 
-  stylix.targets.kitty.enable = false;
+  stylix.targets.kitty.enable = true;
 }

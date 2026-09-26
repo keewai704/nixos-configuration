@@ -7,4 +7,5 @@
 
   security.pam.services.sshd.fprintAuth = false;
   security.pam.services.login.fprintAuth = false;
+  security.pam.services.hyprlock.fprintAuth = false;
 }

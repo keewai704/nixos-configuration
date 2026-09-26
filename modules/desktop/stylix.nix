@@ -12,7 +12,7 @@ in
       console.enable = true;
       font-packages.enable = false;
       fontconfig.enable = true;
-      gtk.enable = false;
+      gtk.enable = true;
       qt.enable = false;
     };
   };
