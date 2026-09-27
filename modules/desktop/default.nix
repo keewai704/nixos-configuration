@@ -2,6 +2,7 @@
 {
   imports = [
     ./bitwarden.nix
+    ./hypr-brightness.nix
     ./hypr-island.nix
     ./hyprland.nix
     ./input-method.nix

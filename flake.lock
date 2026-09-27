@@ -414,6 +414,27 @@
         "type": "github"
       }
     },
+    "hypr-brightness": {
+      "inputs": {
+        "nixpkgs": [
+          "nixpkgs"
+        ]
+      },
+      "locked": {
+        "lastModified": 1790468494,
+        "narHash": "sha256-aGYWJFcMibZ1jgd+4fvKkrjAWOiHOCkxkxzyW7ERkgg=",
+        "ref": "main",
+        "rev": "963f5ea253269374d0c911d07b8c9e7c2f522302",
+        "revCount": 1,
+        "type": "git",
+        "url": "https://github.com/keewai704/hypr-brightness.git"
+      },
+      "original": {
+        "ref": "main",
+        "type": "git",
+        "url": "https://github.com/keewai704/hypr-brightness.git"
+      }
+    },
     "hypr-island": {
       "inputs": {
         "nixpkgs": [
@@ -421,11 +442,11 @@
         ]
       },
       "locked": {
-        "lastModified": 1790465859,
-        "narHash": "sha256-TjaVLcIeZMM5w4jSa2ucJgwMoK8pMf/RSm3Ml60XTDw=",
+        "lastModified": 1790468519,
+        "narHash": "sha256-BU5wicHAep9irytqXwnbIZ1aqs/1HWmu+vMxfd1BHDQ=",
         "ref": "main",
-        "rev": "636f3292c584e9e6a0643ab1aa60153b41fd53ab",
-        "revCount": 42,
+        "rev": "f54be294f4c20392a8a172a4b9fcbfe5a57822df",
+        "revCount": 43,
         "type": "git",
         "url": "https://github.com/keewai704/hypr-island.git"
       },
@@ -1106,6 +1127,7 @@
         "claude-code": "claude-code",
         "codex-cli": "codex-cli",
         "home-manager": "home-manager_2",
+        "hypr-brightness": "hypr-brightness",
         "hypr-island": "hypr-island",
         "hyprland": "hyprland",
         "millennium": "millennium",

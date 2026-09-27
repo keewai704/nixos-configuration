@@ -7,6 +7,7 @@
     ./computer-use.nix
     ./file-manager.nix
     ./firefox.nix
+    ./hypr-brightness.nix
     ./hypr-island.nix
     ./hyprland.nix
     ./input-method.nix
