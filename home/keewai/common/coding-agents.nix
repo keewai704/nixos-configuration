@@ -57,6 +57,17 @@ let
         with open(config_path, "w") as f:
             tomlkit.dump(doc, f)
       '';
+  gitCompletion = ''
+    # Finishing changes
+
+    In every Git repository and directory, finish each change request by committing the work,
+    merging it into `main`, and pushing `main` to its remote. Work done on another branch or
+    worktree is not finished until it is merged into `main` and `main` is pushed; do not stop at
+    an unmerged branch, a local-only commit, or a pull request. This is standing authorization for
+    those commits, merges, and pushes to `main`. Force pushes, history rewrites, and other remote
+    operations still need explicit approval. If a conflict, failing check, or rejected push blocks
+    this, report the blocker.
+  '';
 in
 {
   programs.claude-code = {
@@ -79,7 +90,8 @@ in
       command = serena;
       args = serenaArgs "claude-code";
     };
-    context = ''
+    context = gitCompletion + ''
+
       # Delegating to Codex
 
       Use the `codex` subagent to offload non-UI work to OpenAI Codex (ChatGPT Pro, high limits):
@@ -163,5 +175,8 @@ in
   programs.codex = {
     enable = true;
     package = inputs.codex-cli.packages.${system}.default;
+    context = gitCompletion;
   };
+
+  home.file.".codex/AGENTS.md".force = true;
 }

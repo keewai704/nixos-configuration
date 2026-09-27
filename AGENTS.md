@@ -30,10 +30,12 @@ directives.
 ## Authority and host identity
 
 A change request authorizes necessary local edits, disposable checks, repairs
-caused by the change, commits, and the local activation below. Unrelated work,
-remote operations, push/publication, private-data uploads, and destructive actions
-need authorization for the specific operation. SSH, mosh, and remote shells need
-explicit authorization for the host and operation.
+caused by the change, commits, merging into `main`, pushing `main`, and the local
+activation below. Every change request finishes with the work committed, merged
+into `main`, and `main` pushed. Unrelated work, other remote operations, force
+pushes, private-data uploads, and destructive actions need authorization for the
+specific operation. SSH, mosh, and remote shells need explicit authorization for
+the host and operation.
 
 Before live-state inspection or host-dependent work, confirm that
 `hostnamectl --static` matches `/etc/hostname` (`hostname` is the fallback).
