@@ -22,6 +22,8 @@ in
 
   networking.hostName = hostName;
 
+  programs.nix-ld.enable = true;
+
   nix.settings = {
     min-free = 5 * 1024 * 1024 * 1024;
     max-free = 10 * 1024 * 1024 * 1024;
