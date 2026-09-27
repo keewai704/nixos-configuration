@@ -172,9 +172,21 @@ in
     }
   '';
 
+  home.activation.codexDaemonSettings = lib.hm.dag.entryAfter [ "writeBoundary" ] ''
+    settings="$HOME/.codex/app-server-daemon/settings.json"
+    run mkdir -p "$HOME/.codex/app-server-daemon"
+    [ -s "$settings" ] || run sh -c 'echo "{}" > "$1"' sh "$settings"
+    tmp=$(mktemp)
+    ${lib.getExe pkgs.jq} '.updater.autoUpdateEnabled = false' "$settings" > "$tmp"
+    run sh -c 'cat "$1" > "$2"' sh "$tmp" "$settings"
+    rm -f "$tmp"
+  '';
+
   programs.codex = {
     enable = true;
-    package = inputs.codex-cli.packages.${system}.default;
+    package = pkgs.callPackage ../../../pkgs/codex {
+      codex = inputs.codex-cli.packages.${system}.default;
+    };
     context = gitCompletion;
   };
 
