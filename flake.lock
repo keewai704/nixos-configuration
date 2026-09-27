@@ -1169,11 +1169,11 @@
         "nixpkgs": "nixpkgs_6"
       },
       "locked": {
-        "lastModified": 1790443295,
-        "narHash": "sha256-9HDk9Qhh9+S9TmojqKPy+RqgGFxpI1gi/PGN8KylPTA=",
+        "lastModified": 1790469211,
+        "narHash": "sha256-DUB34GxxXsopKRFdyMECbb/zh7FPjxzeeI5FoTtRCdA=",
         "ref": "main",
-        "rev": "01123ab552a68f94535e87b8bba63f1a05c56866",
-        "revCount": 89,
+        "rev": "6fb9ae305c269c86450761f65aafc1201cf774c2",
+        "revCount": 93,
         "type": "git",
         "url": "https://github.com/keewai704/siora.git"
       },
