@@ -1,10 +1,16 @@
-{ inputs, lib, ... }:
+{
+  config,
+  inputs,
+  lib,
+  ...
+}:
 {
   imports = [ inputs.nixos-wsl.nixosModules.default ];
 
   wsl = {
     enable = true;
     defaultUser = "keewai";
+    interop.register = true;
     useWindowsDriver = true;
     startMenuLaunchers = false;
     wslConf = {
@@ -25,7 +31,10 @@
   services.tailscale.enable = lib.mkForce false;
   users.users.keewai.extraGroups = lib.mkForce [ "wheel" ];
 
-  programs.nix-ld.enable = true;
+  programs.nix-ld = {
+    enable = true;
+    libraries = [ config.wsl.wslLib ];
+  };
 
   nix.settings = {
     max-jobs = 2;
