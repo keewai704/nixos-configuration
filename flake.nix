@@ -1,5 +1,5 @@
 {
-  description = "NixOS configurations for citrus (desktop) and orange (server)";
+  description = "NixOS configurations for citrus (WSL2) and orange (server)";
 
   inputs = {
     nixpkgs.url = "github:NixOS/nixpkgs/nixos-unstable";
@@ -15,7 +15,10 @@
       inputs.nixpkgs.follows = "nixpkgs";
     };
 
-    chaotic.url = "github:chaotic-cx/nyx/nyxpkgs-unstable";
+    nixos-wsl = {
+      url = "github:nix-community/NixOS-WSL/main";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
 
     claude-code = {
       url = "github:sadjow/claude-code-nix/main";
@@ -26,37 +29,6 @@
       url = "github:sadjow/codex-cli-nix/main";
       inputs.nixpkgs.follows = "nixpkgs";
     };
-
-    hyprland.url = "github:hyprwm/Hyprland/main";
-
-    stylix = {
-      url = "github:nix-community/stylix";
-      inputs.nixpkgs.follows = "nixpkgs";
-    };
-
-    millennium.url = "github:SteamClientHomebrew/Millennium?dir=packages/nix";
-
-    nix-hazkey = {
-      url = "github:aster-void/nix-hazkey";
-      inputs.home-manager.follows = "home-manager";
-      inputs.nixpkgs.follows = "nixpkgs";
-    };
-
-    nixcord.url = "github:4evy/nixcord";
-
-    hypr-island = {
-      url = "git+https://github.com/keewai704/hypr-island.git?ref=main";
-      inputs.nixpkgs.follows = "nixpkgs";
-    };
-
-    hypr-brightness = {
-      url = "git+https://github.com/keewai704/hypr-brightness.git?ref=main";
-      inputs.nixpkgs.follows = "nixpkgs";
-    };
-
-    my-firefox-nix.url = "git+https://github.com/keewai704/my-firefox-nix.git?ref=main";
-
-    siora.url = "git+https://github.com/keewai704/siora.git?ref=main";
 
     serena = {
       url = "github:oraios/serena";

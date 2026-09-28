@@ -51,15 +51,15 @@ Match filenames to responsibilities. Keep tightly coupled code together; use a
 named module for a substantial feature rather than placing it in a convenient
 import. `hosts/<host>/` holds that machine's hardware, boot, and services, with
 `default.nix` limited to imports and small host-wide settings. `modules/common/`
-is only for settings used by every host; `modules/desktop/` is the system side of
-the desktop profile. Scope moves and caller updates to the request, and explain
+holds shared defaults; `hosts/citrus/wsl.nix` owns WSL integration and overrides
+for Windows-managed networking. Scope moves and caller updates to the request, and explain
 non-obvious placement choices.
 
 Personal applications, CLI tools, shell settings, user services, and files belong
-in `home/<user>/common/` or `home/<user>/desktop/`. Prefer suitable
+in `home/<user>/common/` or `home/<user>/wsl/`. Prefer suitable
 `programs.*`/`services.*` modules, then `home.packages`. Every host loads the common
-profile; importing `modules/desktop` adds the desktop profile, with hardware
-differences expressed by capability. `modules/common/home-manager.nix` owns the
+profile; citrus also loads the WSL user profile.
+`modules/common/home-manager.nix` owns the
 NixOS connection. `useUserPackages = true` puts packages in
 `/etc/profiles/per-user/<user>`; deployment still uses NixOS activation.
 
