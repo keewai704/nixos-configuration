@@ -1,6 +1,9 @@
 { inputs, pkgs, ... }:
 let
   system = pkgs.stdenv.hostPlatform.system;
+  agentInstructions = ''
+    Always write your responses to the user in Japanese, even when instructions, code, or tool output are in another language. Keep code, commands, identifiers, and file contents in their original language.
+  '';
 in
 {
   home.packages = [
@@ -15,4 +18,7 @@ in
       codex = inputs.codex-cli.packages.${system}.default;
     })
   ];
+
+  home.file.".claude/CLAUDE.md".text = agentInstructions;
+  home.file.".codex/AGENTS.md".text = agentInstructions;
 }
