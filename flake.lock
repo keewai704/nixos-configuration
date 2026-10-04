@@ -1053,6 +1053,23 @@
         "type": "github"
       }
     },
+    "proton-wineland-release": {
+      "flake": false,
+      "locked": {
+        "lastModified": 1790903640,
+        "narHash": "sha256-QQgb2CDh2Z7yt8MVf4z0nKZM7mJDw96jUdNln21GKE0=",
+        "ref": "master",
+        "rev": "af04bed3a1eaccfd3d6e6d3918e831b0f8c63e3f",
+        "revCount": 2,
+        "type": "git",
+        "url": "https://aur.archlinux.org/proton-wineland-bin.git"
+      },
+      "original": {
+        "ref": "master",
+        "type": "git",
+        "url": "https://aur.archlinux.org/proton-wineland-bin.git"
+      }
+    },
     "root": {
       "inputs": {
         "agenix": "agenix",
@@ -1067,6 +1084,7 @@
         "nix-hazkey": "nix-hazkey",
         "nixcord": "nixcord",
         "nixpkgs": "nixpkgs_5",
+        "proton-wineland-release": "proton-wineland-release",
         "siora": "siora",
         "stylix": "stylix",
         "t3code-release": "t3code-release"

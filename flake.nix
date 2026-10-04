@@ -38,6 +38,11 @@
       inputs.nixpkgs.follows = "nixpkgs";
     };
 
+    proton-wineland-release = {
+      url = "git+https://aur.archlinux.org/proton-wineland-bin.git?ref=master";
+      flake = false;
+    };
+
     millennium.url = "github:SteamClientHomebrew/Millennium?dir=packages/nix";
 
     nix-hazkey = {

@@ -1,20 +1,27 @@
 {
   lib,
   stdenvNoCC,
-  fetchzip,
+  fetchurl,
+  release,
 }:
-stdenvNoCC.mkDerivation (finalAttrs: {
+let
+  pkgbuild = builtins.readFile "${release}/PKGBUILD";
+  field = regex: builtins.head (builtins.match ".*\n${regex}\n.*" ("\n" + pkgbuild));
+  version = field "_srctag=([^\n]+)";
+  toolName = "proton-wineland-${version}-x86_64";
+in
+stdenvNoCC.mkDerivation {
   pname = "proton-wineland";
-  version = "11.0-20260930";
+  inherit version;
 
-  src = fetchzip {
-    url = "https://github.com/nanomatters/proton-cachyos/releases/download/wineland-${finalAttrs.version}/proton-wineland-${finalAttrs.version}-x86_64.tar.xz";
-    hash = "sha256-JgJKkOfAmMZHG3h54ZMAcPJXf/Y2c5wOkFjjgpWdkF0=";
+  src = fetchurl {
+    url = "https://github.com/nanomatters/proton-cachyos/releases/download/wineland-${version}/${toolName}.tar.xz";
+    sha256 = field "sha256sums=\\('([0-9a-f]{64})'[^\n]*";
   };
 
-  dontUnpack = true;
   dontConfigure = true;
   dontBuild = true;
+  dontFixup = true;
 
   outputs = [
     "out"
@@ -24,20 +31,14 @@ stdenvNoCC.mkDerivation (finalAttrs: {
   installPhase = ''
     runHook preInstall
 
-    echo "${finalAttrs.pname} should be used through programs.steam.extraCompatPackages." > $out
+    echo "proton-wineland should be used through programs.steam.extraCompatPackages." > $out
 
-    mkdir $steamcompattool
-    ln -s $src/* $steamcompattool
-    rm $steamcompattool/compatibilitytool.vdf
-    cp $src/compatibilitytool.vdf $steamcompattool
+    cp -a . $steamcompattool
+    substituteInPlace "$steamcompattool/compatibilitytool.vdf" \
+      --replace-fail '"display_name" "${toolName}"' '"display_name" "Proton Wineland"' \
+      --replace-fail "${toolName}" "proton-wineland"
 
     runHook postInstall
-  '';
-
-  preFixup = ''
-    substituteInPlace "$steamcompattool/compatibilitytool.vdf" \
-      --replace-fail '"display_name" "proton-wineland-${finalAttrs.version}-x86_64"' '"display_name" "Proton Wineland"' \
-      --replace-fail "proton-wineland-${finalAttrs.version}-x86_64" "proton-wineland"
   '';
 
   meta = {
@@ -47,4 +48,4 @@ stdenvNoCC.mkDerivation (finalAttrs: {
     platforms = [ "x86_64-linux" ];
     sourceProvenance = [ lib.sourceTypes.binaryNativeCode ];
   };
-})
+}
