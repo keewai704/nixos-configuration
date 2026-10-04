@@ -67,7 +67,7 @@
       ];
     };
 
-    "/data" = {
+    "/mnt/data" = {
       device = "/dev/disk/by-label/Data";
       fsType = "xfs";
       options = [ "noatime" ];
