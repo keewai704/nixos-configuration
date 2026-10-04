@@ -1,12 +1,4 @@
-{ lib, pkgs, ... }:
-let
-  cuaDriver = pkgs.callPackage ../../../pkgs/cua-driver { };
-in
+{ pkgs, ... }:
 {
-  home.packages = [ cuaDriver ];
-
-  programs.mcp.servers.cua-driver = {
-    command = lib.getExe cuaDriver;
-    args = [ "mcp" ];
-  };
+  home.packages = [ (pkgs.callPackage ../../../pkgs/cua-driver { }) ];
 }

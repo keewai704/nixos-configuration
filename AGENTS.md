@@ -14,7 +14,7 @@ reuse context that has not changed.
 
 | Responsibility | Source |
 | --- | --- |
-| Claude Code packages and defaults | `home/keewai/common/coding-agents.nix` |
+| T3 Code and its coding agents | `pkgs/t3code/`, `home/keewai/desktop/applications.nix` |
 | Distributed personal skills | `skills/` |
 | Repository-only validation guidance | `.agents/skills/nixos-validation/` |
 
@@ -94,7 +94,7 @@ reduce its privileges.
    files, or services, record its expected system store path and relevant runtime
    baseline. Run `sudo nixos-rebuild test --flake .#<runtime-host>` on that
    committed state, using its evaluation/build rather than prebuilding the same
-   output. Coding-agent settings and distributed `skills/` affect every host.
+   output. Distributed `skills/` affect every host.
 5. After `test`, check network connectivity, failed system/user units, and every
    affected service's behavior. New failures or regressions block `switch`.
 6. Only after those gates pass, run
@@ -123,8 +123,10 @@ For GitHub packages owned by `keewai704`, explicitly select `main` and pin the
 revision and hash. Use `?ref=main` for Git flake inputs and refresh from `main`;
 do not rely on the remote default branch. Always track the latest `main`: before
 each local activation, run `nix flake update` for every `keewai704` input and
-include the resulting lock change in the commit. This is standing authorization
-to update those inputs only.
+include the resulting lock change in the commit. Likewise, run
+`nix flake update t3code-release claude-code codex-cli` before each local
+activation so T3 Code and its agents track their latest releases. This is
+standing authorization to update those inputs only.
 
 Outside the repository root, use `git -C` and absolute flake references to the
 actual checkout, normally `/home/keewai/nixos-configuration` and

@@ -22,7 +22,7 @@ OS・ハードウェア・システムサービスは **NixOS**、個人のア�
 │   ├── common/          全ホスト共通（Nix、ネットワーク、ユーザー、Home Manager 接続）
 │   └── desktop/         デスクトップ用 OS 設定（Hyprland、Steam、Stylix など）
 ├── home/keewai/         個人設定（Home Manager）
-│   ├── common/          全ホスト共通（シェル、Git、Claude Code、スキル）
+│   ├── common/          全ホスト共通（シェル、Git、スキル）
 │   └── desktop/         デスクトップ用アプリ（ブラウザー、端末、入力、Discord など）
 ├── pkgs/                自作・改造パッケージとパッチ
 ├── skills/              Claude Code に配布する個人スキル
@@ -53,7 +53,7 @@ flake.nix
 | CLI ツールを追加 | [home/keewai/common/packages.nix](home/keewai/common/packages.nix) |
 | シェル・エイリアス・プロンプト | [shell.nix](home/keewai/common/shell.nix)、[starship.toml](home/keewai/common/starship.toml) |
 | Git / GitHub CLI | [git.nix](home/keewai/common/git.nix) |
-| Claude Code | [coding-agents.nix](home/keewai/common/coding-agents.nix) |
+| T3 Code / Claude Code / Codex | [pkgs/t3code](pkgs/t3code/default.nix)、[applications.nix](home/keewai/desktop/applications.nix) |
 | 個人スキル | [skills/](skills/)（配布は [skills.nix](home/keewai/common/skills.nix)） |
 | 設定不要な GUI アプリを追加 | [home/keewai/desktop/applications.nix](home/keewai/desktop/applications.nix) |
 | ウィンドウ・モニター・キー割り当て | [hyprland.lua](home/keewai/desktop/hyprland.lua) |
@@ -88,20 +88,17 @@ nix build .#<パッケージ名>                    # pkgs/ のパッケージ�
 
 ## コーディングエージェント
 
-[sadjow/claude-code-nix](https://github.com/sadjow/claude-code-nix) の Claude Code を全ホストに入れています。
-デスクトップには Claude Code の GUI として [T3 Code](https://github.com/pingdotgg/t3code)（`t3code-desktop`）も入れています。
+デスクトップに [T3 Code](https://github.com/pingdotgg/t3code)（`t3code`）を入れています。
 
-- Claude Code はトークン節約のため、次の環境変数を既定値にしています。
-  シェルで別の値を `export` すればそちらが優先されます。
-  - `CLAUDE_CODE_ENABLE_PROMPT_SUGGESTION=false`（入力候補の自動生成を無効）
-  - `CLAUDE_CODE_SIMPLE_SYSTEM_PROMPT=1`（簡潔なシステムプロンプト）
-  - `ENABLE_CLAUDEAI_MCP_SERVERS=false`（claude.ai のコネクタを読み込まない）
-- `~/.claude/settings.json` は Nix で管理していないので、アプリ側から自由に変更できます。
-- MCP サーバーは Home Manager のプラグイン（`mcp__plugin_hm_<サーバー>__*`）として接続しています。
-  - `context7`：ライブラリの最新ドキュメント検索（API キーなし）
-  - `serena`：LSP ベースのシンボル検索・編集（起動ディレクトリをプロジェクトとして認識）
-  - `cua-driver`（デスクトップのみ）：[Cua Driver](https://github.com/trycua/cua) による
-    画面操作。Wayland バックエンドは実験的に有効化し、テレメトリは無効にしています。
+- T3 Code は公式の最新リリース（AppImage）を [pkgs/t3code](pkgs/t3code/default.nix) でパッケージ化しています。
+  版とハッシュは flake 入力 `t3code-release`（`latest-linux.yml`）から読むので、
+  `nix flake update t3code-release` で最新リリースに追従します。
+- T3 Code が使う Claude Code と Codex は
+  [sadjow/claude-code-nix](https://github.com/sadjow/claude-code-nix) と
+  [sadjow/codex-cli-nix](https://github.com/sadjow/codex-cli-nix) のもので、T3 Code の `PATH` にだけ入れています。
+  ターミナルからは `claude` / `codex` を使えません。
+- Claude Code と Codex の設定（`~/.claude`、`~/.codex`）は Nix で管理していません。
+- [Cua Driver](https://github.com/trycua/cua)（`cua-driver`、デスクトップのみ）を入れていますが、MCP には登録していません。
 - [skills/](skills/) の各スキルは `~/.claude/skills/` にリンクされます。
 
 | スキル | 用途 |
@@ -169,5 +166,6 @@ moonlight stream citrus "Extend Display" --1080 --fps 120 --bitrate 40000 --vide
 - [pkgs/default.nix](pkgs/default.nix) に並べたものは `nix build .#<名前>` で単体ビルドできます。
 - パッチは対象パッケージのディレクトリに置きます。
 - `keewai704` 所有の入力（hypr-island、hypr-brightness、siora）は `?ref=main` を明示し、適用前に毎回 `nix flake update` で最新の main に更新します。
+- `t3code-release`・`claude-code`・`codex-cli` も適用前に毎回 `nix flake update` で最新リリースに更新します。
 - 非自由パッケージは全体で許可しています（`allowUnfree = true`）。
 - `system.stateVersion` / `home.stateVersion` は互換性の基準なので、アップデートに合わせて変えません。

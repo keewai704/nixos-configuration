@@ -21,6 +21,16 @@
       inputs.nixpkgs.follows = "nixpkgs";
     };
 
+    codex-cli = {
+      url = "github:sadjow/codex-cli-nix/main";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
+
+    t3code-release = {
+      url = "file+https://github.com/pingdotgg/t3code/releases/latest/download/latest-linux.yml";
+      flake = false;
+    };
+
     hyprland.url = "github:hyprwm/Hyprland/main";
 
     stylix = {
@@ -49,11 +59,6 @@
     };
 
     siora.url = "git+https://github.com/keewai704/siora.git?ref=main";
-
-    serena = {
-      url = "github:oraios/serena";
-      inputs.nixpkgs.follows = "nixpkgs";
-    };
   };
 
   outputs =
