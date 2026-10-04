@@ -22,11 +22,6 @@
       inputs.nixpkgs.follows = "nixpkgs";
     };
 
-    codex-cli = {
-      url = "github:sadjow/codex-cli-nix/main";
-      inputs.nixpkgs.follows = "nixpkgs";
-    };
-
     hyprland.url = "github:hyprwm/Hyprland/main";
 
     stylix = {
@@ -53,8 +48,6 @@
       url = "git+https://github.com/keewai704/hypr-brightness.git?ref=main";
       inputs.nixpkgs.follows = "nixpkgs";
     };
-
-    my-firefox-nix.url = "git+https://github.com/keewai704/my-firefox-nix.git?ref=main";
 
     siora.url = "git+https://github.com/keewai704/siora.git?ref=main";
 

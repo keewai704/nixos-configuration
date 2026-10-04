@@ -6,7 +6,6 @@
     ./browser.nix
     ./computer-use.nix
     ./file-manager.nix
-    ./firefox.nix
     ./hypr-brightness.nix
     ./hypr-island.nix
     ./hyprland.nix

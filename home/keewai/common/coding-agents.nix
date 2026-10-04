@@ -1,5 +1,4 @@
 {
-  config,
   inputs,
   lib,
   pkgs,
@@ -15,48 +14,6 @@ let
     "--project-from-cwd"
     "--open-web-dashboard=False"
   ];
-  codexMcpServers =
-    lib.mapAttrs (
-      name: server:
-      lib.hm.mcp.transformMcpServer {
-        inherit server;
-        exclude = [
-          "headers"
-          "type"
-        ];
-        extraTransforms = [ (lib.hm.mcp.wrapEnvFilesCommand { inherit pkgs name; }) ];
-      }
-    ) config.programs.mcp.servers
-    // {
-      serena = {
-        command = serena;
-        args = serenaArgs "codex";
-        startup_timeout_sec = 30;
-      };
-    };
-  mergeCodexMcpServers =
-    pkgs.writers.writePython3 "merge-codex-mcp-servers"
-      { libraries = [ pkgs.python3Packages.tomlkit ]; }
-      ''
-        import json
-        import sys
-
-        import tomlkit
-
-        config_path, servers_path = sys.argv[1:]
-        try:
-            with open(config_path) as f:
-                doc = tomlkit.load(f)
-        except FileNotFoundError:
-            doc = tomlkit.document()
-        with open(servers_path) as f:
-            servers = json.load(f)
-        tables = doc.setdefault("mcp_servers", tomlkit.table(is_super_table=True))
-        for name, server in servers.items():
-            tables[name] = server
-        with open(config_path, "w") as f:
-            tomlkit.dump(doc, f)
-      '';
   gitCompletion = ''
     # Finishing changes
 
@@ -90,64 +47,7 @@ in
       command = serena;
       args = serenaArgs "claude-code";
     };
-    context = gitCompletion + ''
-
-      # Delegating to Codex
-
-      Use the `codex` subagent to offload non-UI work to OpenAI Codex (ChatGPT Pro, high limits):
-      implementation, refactors, tests, debugging, research, and second-opinion reviews. Launch
-      independent tasks in parallel. Name the Codex model and effort in the prompt when the default
-      routing does not fit.
-
-      Implement UI yourself: visual layout, styling, components, interaction, animation, theming,
-      and user-facing copy. Codex may do the backend or data parts of a UI feature when you write
-      the UI.
-
-      Codex output is unverified. Review its diff and run the relevant checks before reporting or
-      committing.
-    '';
-    agents.codex = ''
-      ---
-      name: codex
-      description: Delegate a self-contained non-UI task (implementation, refactor, tests, debugging, research, review) to OpenAI Codex CLI and return its result. Not for UI, styling, or frontend visual work.
-      tools: Bash, Read
-      model: haiku
-      ---
-
-      You are a thin relay to Codex CLI. Do not solve the task yourself and do not rewrite it.
-
-      1. Pick the model and effort. Use what the caller names; otherwise route:
-
-         | Task | Model | Effort |
-         | --- | --- | --- |
-         | Architecture, hard debugging, concurrency, security, large or risky refactors, final reviews | `gpt-6-astra` | `xhigh` (`ultra` if the caller says it is very hard) |
-         | Normal implementation, bug fixes, tests, medium refactors | `gpt-6-sol` | `high` |
-         | Mechanical edits, bulk renames, codebase search, summaries, quick questions | `gpt-6-luna` | `medium` |
-
-      2. Write the caller's full prompt verbatim to a file under `$XDG_RUNTIME_DIR/codex-subagent/`,
-         appending: "Do not implement UI, styling, or frontend visual changes; report them as TODO
-         for the caller. Finish with a concise summary of changed files, commands run, and results."
-
-      3. Start Codex in the background with the caller's working directory:
-
-         ```sh
-         dir="$XDG_RUNTIME_DIR/codex-subagent"; mkdir -p "$dir"; id=$(date +%s%N)
-         codex exec -m MODEL -c model_reasoning_effort=EFFORT -C WORKDIR \
-           -o "$dir/$id.out" - < PROMPT_FILE > "$dir/$id.log" 2>&1 &
-         echo "$id $!"
-         ```
-
-         Add `-s read-only` when the task only reads (research, questions, review). For reviewing
-         changes, run `cd WORKDIR && codex exec review --uncommitted` (or `--base BRANCH`,
-         `--commit SHA`) with the same `-m`, `-c`, and `-o` flags; it does not accept `-C` or `-s`.
-         Add `--worktree` when the caller asks for isolation or other writers share the tree.
-
-      4. Wait with `timeout 590 tail --pid=PID -f /dev/null` (Bash timeout 600000), repeating until
-         the process exits. Do not use `sleep`.
-
-      5. Return the contents of the `.out` file, the model and effort used, and the exit status. On
-         failure, return the last 50 lines of the `.log` file. Never summarize away details.
-    '';
+    context = gitCompletion;
   };
 
   home.activation.claudeCodeSettings = lib.hm.dag.entryAfter [ "writeBoundary" ] ''
@@ -164,31 +64,4 @@ in
     enable = true;
     servers.context7.command = lib.getExe pkgs.context7-mcp;
   };
-
-  home.activation.codexMcpServers = lib.hm.dag.entryAfter [ "writeBoundary" ] ''
-    run mkdir -p "$HOME/.codex"
-    run ${mergeCodexMcpServers} "$HOME/.codex/config.toml" ${
-      (pkgs.formats.json { }).generate "codex-mcp-servers.json" codexMcpServers
-    }
-  '';
-
-  home.activation.codexDaemonSettings = lib.hm.dag.entryAfter [ "writeBoundary" ] ''
-    settings="$HOME/.codex/app-server-daemon/settings.json"
-    run mkdir -p "$HOME/.codex/app-server-daemon"
-    [ -s "$settings" ] || run sh -c 'echo "{}" > "$1"' sh "$settings"
-    tmp=$(mktemp)
-    ${lib.getExe pkgs.jq} '.updater.autoUpdateEnabled = false' "$settings" > "$tmp"
-    run sh -c 'cat "$1" > "$2"' sh "$tmp" "$settings"
-    rm -f "$tmp"
-  '';
-
-  programs.codex = {
-    enable = true;
-    package = pkgs.callPackage ../../../pkgs/codex {
-      codex = inputs.codex-cli.packages.${system}.default;
-    };
-    context = gitCompletion;
-  };
-
-  home.file.".codex/AGENTS.md".force = true;
 }

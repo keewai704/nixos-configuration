@@ -19,7 +19,7 @@ the changed behavior and its imports:
 | --- | --- |
 | Repository documentation or repository-only skills | Whitespace, links, instruction consistency, and skill frontmatter; no Nix evaluation/build. |
 | Local host configuration or deployed files | Use the evaluation/build in required `nixos-rebuild test`, not a duplicate prebuild or equivalent evaluation. Distributed personal skills count as deployed files. |
-| Claude Code or Codex packaging and defaults | Build the affected `programs.<name>.finalPackage` or `package`, run `--version`, and inspect wrapper environment defaults. Do not make a model request. |
+| Claude Code packaging and defaults | Build `programs.claude-code.finalPackage` or `package`, run `--version`, and inspect wrapper environment defaults. Do not make a model request. |
 | File moves or renames without intended behavior change | Compare each affected host's `system.build.toplevel.drvPath` with the pre-move value; explain any difference. |
 | Another host only | Locally evaluate changed attributes, or build the affected output when package implementation or build logic changed. Shared settings need every host only when host-specific branches warrant validation. |
 | A failing check | Read [Failure diagnosis](references/failure-diagnosis.md); compare configuration values only when they could explain the failure. |

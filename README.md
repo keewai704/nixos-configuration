@@ -22,10 +22,10 @@ OS・ハードウェア・システムサービスは **NixOS**、個人のア�
 │   ├── common/          全ホスト共通（Nix、ネットワーク、ユーザー、Home Manager 接続）
 │   └── desktop/         デスクトップ用 OS 設定（Hyprland、Steam、Stylix など）
 ├── home/keewai/         個人設定（Home Manager）
-│   ├── common/          全ホスト共通（シェル、Git、Claude Code / Codex、スキル）
+│   ├── common/          全ホスト共通（シェル、Git、Claude Code、スキル）
 │   └── desktop/         デスクトップ用アプリ（ブラウザー、端末、入力、Discord など）
 ├── pkgs/                自作・改造パッケージとパッチ
-├── skills/              Claude Code / Codex に配布する個人スキル
+├── skills/              Claude Code に配布する個人スキル
 ├── themes/              共通テーマ（色・フォント・壁紙）
 ├── secrets/             agenix で暗号化したシークレット
 └── devshell/            開発用ツール（nixd、nixfmt、shellcheck など）
@@ -53,14 +53,14 @@ flake.nix
 | CLI ツールを追加 | [home/keewai/common/packages.nix](home/keewai/common/packages.nix) |
 | シェル・エイリアス・プロンプト | [shell.nix](home/keewai/common/shell.nix)、[starship.toml](home/keewai/common/starship.toml) |
 | Git / GitHub CLI | [git.nix](home/keewai/common/git.nix) |
-| Claude Code / Codex | [coding-agents.nix](home/keewai/common/coding-agents.nix) |
+| Claude Code | [coding-agents.nix](home/keewai/common/coding-agents.nix) |
 | 個人スキル | [skills/](skills/)（配布は [skills.nix](home/keewai/common/skills.nix)） |
 | 設定不要な GUI アプリを追加 | [home/keewai/desktop/applications.nix](home/keewai/desktop/applications.nix) |
 | ウィンドウ・モニター・キー割り当て | [hyprland.lua](home/keewai/desktop/hyprland.lua) |
 | Hyprland 本体・ログイン画面 | [modules/desktop/hyprland.nix](modules/desktop/hyprland.nix) |
 | パネル・ランチャー・通知・壁紙・アイドル | [hypr-island.nix](home/keewai/desktop/hypr-island.nix)（[keewai704/hypr-island](https://github.com/keewai704/hypr-island)） |
 | 日本語入力 | [input-method.nix](home/keewai/desktop/input-method.nix)、[modules/desktop/input-method.nix](modules/desktop/input-method.nix) |
-| 端末・ブラウザー・ファイル管理 | [kitty.nix](home/keewai/desktop/kitty.nix)、[browser.nix](home/keewai/desktop/browser.nix)、[firefox.nix](home/keewai/desktop/firefox.nix)、[file-manager.nix](home/keewai/desktop/file-manager.nix) |
+| 端末・ブラウザー・ファイル管理 | [kitty.nix](home/keewai/desktop/kitty.nix)、[browser.nix](home/keewai/desktop/browser.nix)、[file-manager.nix](home/keewai/desktop/file-manager.nix) |
 | Discord | [legcord.nix](home/keewai/desktop/legcord.nix) |
 | Steam | [modules/desktop/steam.nix](modules/desktop/steam.nix)、[steam-theme.nix](home/keewai/desktop/steam-theme.nix) |
 | 配色・フォント | [themes/tokyo-night-black](themes/tokyo-night-black/default.nix) |
@@ -88,24 +88,21 @@ nix build .#<パッケージ名>                    # pkgs/ のパッケージ�
 
 ## コーディングエージェント
 
-[sadjow/claude-code-nix](https://github.com/sadjow/claude-code-nix) の Claude Code と、
-[sadjow/codex-cli-nix](https://github.com/sadjow/codex-cli-nix) の Codex を全ホストに入れています。
+[sadjow/claude-code-nix](https://github.com/sadjow/claude-code-nix) の Claude Code を全ホストに入れています。
+デスクトップには Claude Code の GUI として [T3 Code](https://github.com/pingdotgg/t3code)（`t3code-desktop`）も入れています。
 
 - Claude Code はトークン節約のため、次の環境変数を既定値にしています。
   シェルで別の値を `export` すればそちらが優先されます。
   - `CLAUDE_CODE_ENABLE_PROMPT_SUGGESTION=false`（入力候補の自動生成を無効）
   - `CLAUDE_CODE_SIMPLE_SYSTEM_PROMPT=1`（簡潔なシステムプロンプト）
   - `ENABLE_CLAUDEAI_MCP_SERVERS=false`（claude.ai のコネクタを読み込まない）
-- `~/.claude/settings.json` と `~/.codex/config.toml` は Nix で管理していないので、
-  アプリ側から自由に変更できます。
-- 両エージェントに MCP サーバーを接続しています。Claude Code には Home Manager の
-  プラグイン（`mcp__plugin_hm_<サーバー>__*`）として、Codex には有効化時に
-  `~/.codex/config.toml` の `[mcp_servers.*]` へ上書きマージして登録します。
+- `~/.claude/settings.json` は Nix で管理していないので、アプリ側から自由に変更できます。
+- MCP サーバーは Home Manager のプラグイン（`mcp__plugin_hm_<サーバー>__*`）として接続しています。
   - `context7`：ライブラリの最新ドキュメント検索（API キーなし）
   - `serena`：LSP ベースのシンボル検索・編集（起動ディレクトリをプロジェクトとして認識）
   - `cua-driver`（デスクトップのみ）：[Cua Driver](https://github.com/trycua/cua) による
     画面操作。Wayland バックエンドは実験的に有効化し、テレメトリは無効にしています。
-- [skills/](skills/) の各スキルは `~/.claude/skills/` と `~/.agents/skills/` の両方にリンクされます。
+- [skills/](skills/) の各スキルは `~/.claude/skills/` にリンクされます。
 
 | スキル | 用途 |
 | --- | --- |
@@ -123,7 +120,7 @@ nix build .#<パッケージ名>                    # pkgs/ のパッケージ�
 - **配色**：Stylix が GTK・Qt・Kitty・hypr-island を、[テーマ](themes/tokyo-night-black/default.nix) が Hyprland の枠線などを担当。
 - **Hyprland**：IME の修飾キー対応パッチを当てた独自ビルド（[pkgs/hyprland](pkgs/hyprland/)）。
 - **日本語入力**：Hazkey。keyd で `` Alt+` `` を変換キーに割り当て、Logitech 製キーボードは除外。
-- **ブラウザー**：既定は Firefox（[keewai704/my-firefox-nix](https://github.com/keewai704/my-firefox-nix)）。Brave Origin も利用可。
+- **ブラウザー**：既定は [Helium](https://github.com/imputnet/helium-linux)（公式リリースを [pkgs/helium](pkgs/helium/) でパッケージ化。nixpkgs の Widevine CDM を読み込ませて DRM 動画も再生可）。Brave Origin も利用可。
 - **Bitwarden**：デスクトップアプリと SSH エージェント。CLI は `rbw`（hypr-island が Vaultwarden 向けに初期化。初回は `rbw login`）。
 - **Apple Music**：[keewai704/siora](https://github.com/keewai704/siora)。起動は `siora`。
 
@@ -171,6 +168,6 @@ moonlight stream citrus "Extend Display" --1080 --fps 120 --bitrate 40000 --vide
 
 - [pkgs/default.nix](pkgs/default.nix) に並べたものは `nix build .#<名前>` で単体ビルドできます。
 - パッチは対象パッケージのディレクトリに置きます。
-- `keewai704` 所有の入力（hypr-island、siora、my-firefox-nix）は `?ref=main` を明示し、適用前に毎回 `nix flake update` で最新の main に更新します。
+- `keewai704` 所有の入力（hypr-island、hypr-brightness、siora）は `?ref=main` を明示し、適用前に毎回 `nix flake update` で最新の main に更新します。
 - 非自由パッケージは全体で許可しています（`allowUnfree = true`）。
 - `system.stateVersion` / `home.stateVersion` は互換性の基準なので、アップデートに合わせて変えません。

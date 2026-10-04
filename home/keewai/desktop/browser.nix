@@ -6,13 +6,20 @@
 
 let
   braveOrigin = pkgs.callPackage ../../../pkgs/brave-origin { };
+  helium = pkgs.callPackage ../../../pkgs/helium { };
 
 in
 {
-  home.packages = [ braveOrigin ];
+  home.packages = [
+    braveOrigin
+    helium
+  ];
 
   xdg = {
     configFile."mimeapps.list".force = true;
+    configFile."net.imput.helium/WidevineCdm/latest-component-updated-widevine-cdm".text =
+      builtins.toJSON
+        { Path = "${pkgs.widevine-cdm}/share/google/chrome/WidevineCdm"; };
 
     desktopEntries = {
       everglide-web-driver = {
@@ -37,12 +44,12 @@ in
     mimeApps = {
       enable = true;
       defaultApplications = {
-        "application/xhtml+xml" = [ "firefox.desktop" ];
-        "text/html" = [ "firefox.desktop" ];
-        "x-scheme-handler/about" = [ "firefox.desktop" ];
-        "x-scheme-handler/http" = [ "firefox.desktop" ];
-        "x-scheme-handler/https" = [ "firefox.desktop" ];
-        "x-scheme-handler/unknown" = [ "firefox.desktop" ];
+        "application/xhtml+xml" = [ "helium.desktop" ];
+        "text/html" = [ "helium.desktop" ];
+        "x-scheme-handler/about" = [ "helium.desktop" ];
+        "x-scheme-handler/http" = [ "helium.desktop" ];
+        "x-scheme-handler/https" = [ "helium.desktop" ];
+        "x-scheme-handler/unknown" = [ "helium.desktop" ];
       };
     };
   };

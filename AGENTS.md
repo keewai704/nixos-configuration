@@ -14,11 +14,11 @@ reuse context that has not changed.
 
 | Responsibility | Source |
 | --- | --- |
-| Claude Code and Codex packages and defaults | `home/keewai/common/coding-agents.nix` |
+| Claude Code packages and defaults | `home/keewai/common/coding-agents.nix` |
 | Distributed personal skills | `skills/` |
 | Repository-only validation guidance | `.agents/skills/nixos-validation/` |
 
-Edit these sources, not generated links under `~/.claude/skills` or `~/.agents/skills`.
+Edit these sources, not generated links under `~/.claude/skills`.
 Persistent agent instructions, prompts, and skills are English; respond in the
 user's language. Keep policy/navigation in AGENTS.md and README.md, and validation
 procedures in the validation skill. Do not add repository-local `docs/`, `checks/`,

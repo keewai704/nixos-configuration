@@ -6,5 +6,6 @@
     pkgs.grimblast
     pkgs.moonlight-qt
     pkgs.pavucontrol
+    pkgs.t3code
   ];
 }
