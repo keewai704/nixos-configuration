@@ -18,7 +18,7 @@
       package = pkgs.millennium-steam;
       fontPackages = config.stylix.fonts.packages ++ [ pkgs.noto-fonts ] ++ config.fonts.packages;
       extraPackages = [ pkgs.gamescope ];
-      extraCompatPackages = [ pkgs.proton-ge-bin ];
+      extraCompatPackages = [ (pkgs.callPackage ../../pkgs/proton-wineland { }) ];
     };
   };
 }
