@@ -12,6 +12,8 @@ in
     pkgs.brightnessctl
     pkgs.ddcutil
     pkgs.grimblast
+    pkgs.idescriptor
+    pkgs.iloader
     pkgs.moonlight-qt
     pkgs.pavucontrol
     (pkgs.callPackage ../../../pkgs/t3code {
