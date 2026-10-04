@@ -1,9 +1,32 @@
 {
-  imports = [ ./wsl.nix ];
+  imports = [
+    ../../modules/desktop
+    ./apple-device-usb.nix
+    ./audio.nix
+    ./boot.nix
+    ./fingerprint.nix
+    ./hardware-configuration.nix
+    ./input-method.nix
+    ./nvidia.nix
+    ./sunshine.nix
+    ./webhid.nix
+  ];
 
   networking.hostName = "citrus";
-  nixpkgs.hostPlatform = "x86_64-linux";
   system.stateVersion = "26.05";
 
-  home-manager.users.keewai.imports = [ ../../home/keewai/wsl ];
+  nix = {
+    settings = {
+      max-jobs = 2;
+      cores = 6;
+    };
+    daemonIOSchedClass = "idle";
+  };
+  systemd.services.nix-daemon.serviceConfig.Nice = 10;
+
+  users.users.keewai.extraGroups = [
+    "audio"
+    "i2c"
+    "video"
+  ];
 }
