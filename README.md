@@ -120,7 +120,7 @@ nix build .#<パッケージ名>                    # pkgs/ のパッケージ�
 - **配色**：Stylix が GTK・Qt・Kitty・hypr-island を、[テーマ](themes/tokyo-night-black/default.nix) が Hyprland の枠線などを担当。
 - **Hyprland**：IME の修飾キー対応パッチを当てた独自ビルド（[pkgs/hyprland](pkgs/hyprland/)）。
 - **日本語入力**：Hazkey。keyd で `` Alt+` `` を変換キーに割り当て、Logitech 製キーボードは除外。
-- **ブラウザー**：既定は [Helium](https://github.com/imputnet/helium-linux)（公式リリースを [pkgs/helium](pkgs/helium/) でパッケージ化。nixpkgs の Widevine CDM を読み込ませて DRM 動画も再生可）。Brave Origin も利用可。
+- **ブラウザー**：既定は [Helium](https://github.com/imputnet/helium-linux)（公式リリースを [pkgs/helium](pkgs/helium/) でパッケージ化。nixpkgs の Widevine CDM を読み込ませて DRM 動画も再生可）。TwinStar・OpenMouse の WebHID 設定アプリも Helium のアプリモードで開きます。
 - **Bitwarden**：デスクトップアプリと SSH エージェント。CLI は `rbw`（hypr-island が Vaultwarden 向けに初期化。初回は `rbw login`）。
 - **Apple Music**：[keewai704/siora](https://github.com/keewai704/siora)。起動は `siora`。
 

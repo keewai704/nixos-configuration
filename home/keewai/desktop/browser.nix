@@ -5,15 +5,11 @@
 }:
 
 let
-  braveOrigin = pkgs.callPackage ../../../pkgs/brave-origin { };
   helium = pkgs.callPackage ../../../pkgs/helium { };
 
 in
 {
-  home.packages = [
-    braveOrigin
-    helium
-  ];
+  home.packages = [ helium ];
 
   xdg = {
     configFile."mimeapps.list".force = true;
@@ -25,7 +21,7 @@ in
       everglide-web-driver = {
         name = "TwinStar Webドライバー";
         comment = "EverglideキーボードをTwinStar WebHIDで設定";
-        exec = "${lib.getExe braveOrigin} --app=https://v2-dev.xsyd.top/";
+        exec = "${lib.getExe helium} --app=https://v2-dev.xsyd.top/";
         icon = "input-keyboard";
         categories = [ "Settings" ];
         terminal = false;
@@ -34,7 +30,7 @@ in
       openmouse = {
         name = "OpenMouse コントロールパネル";
         comment = "G PRO X SUPERLIGHT 2cなどの対応マウスをWebHIDで設定";
-        exec = "${lib.getExe braveOrigin} --app=https://control.openmouse.app/";
+        exec = "${lib.getExe helium} --app=https://control.openmouse.app/";
         icon = "input-mouse";
         categories = [ "Settings" ];
         terminal = false;

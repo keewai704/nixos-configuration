@@ -1,6 +1,5 @@
 { pkgs }:
 {
-  brave-origin = pkgs.callPackage ./brave-origin { };
   helium = pkgs.callPackage ./helium { };
   fprintd-cs9711 = pkgs.callPackage ./fprintd-cs9711 { };
   sunshine-display = pkgs.callPackage ./sunshine-display { };
