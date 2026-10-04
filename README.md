@@ -53,7 +53,7 @@ flake.nix
 | CLI ツールを追加 | [home/keewai/common/packages.nix](home/keewai/common/packages.nix) |
 | シェル・エイリアス・プロンプト | [shell.nix](home/keewai/common/shell.nix)、[starship.toml](home/keewai/common/starship.toml) |
 | Git / GitHub CLI | [git.nix](home/keewai/common/git.nix) |
-| T3 Code / Claude Code / Codex | [pkgs/t3code](pkgs/t3code/default.nix)、[applications.nix](home/keewai/desktop/applications.nix) |
+| T3 Code / Claude Code / Codex | [pkgs/t3code](pkgs/t3code/default.nix)、[applications.nix](home/keewai/desktop/applications.nix)、[modules/desktop/t3code.nix](modules/desktop/t3code.nix) |
 | 個人スキル | [skills/](skills/)（配布は [skills.nix](home/keewai/common/skills.nix)） |
 | 設定不要な GUI アプリを追加 | [home/keewai/desktop/applications.nix](home/keewai/desktop/applications.nix) |
 | ウィンドウ・モニター・キー割り当て | [hyprland.lua](home/keewai/desktop/hyprland.lua) |
@@ -98,6 +98,8 @@ nix build .#<パッケージ名>                    # pkgs/ のパッケージ�
   [sadjow/claude-code-nix](https://github.com/sadjow/claude-code-nix) と
   [sadjow/codex-cli-nix](https://github.com/sadjow/codex-cli-nix) のもので、T3 Code の `PATH` にだけ入れています。
   ターミナルからは `claude` / `codex` を使えません。
+- T3 Code の Settings → Connections で「Enable Tailscale HTTPS」を有効にすると、tailnet から HTTPS で接続できます。
+  T3 Code が `tailscale serve` を実行できるよう、[modules/desktop/t3code.nix](modules/desktop/t3code.nix) で `keewai` を Tailscale の operator にしています。
 - Claude Code と Codex の設定（`~/.claude`、`~/.codex`）は Nix で管理していません。
 - [Cua Driver](https://github.com/trycua/cua)（`cua-driver`、デスクトップのみ）を入れていますが、MCP には登録していません。
 - [skills/](skills/) の各スキルは `~/.claude/skills/` にリンクされます。
