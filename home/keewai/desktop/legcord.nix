@@ -7,8 +7,8 @@
     discord.enable = false;
     legcord = {
       enable = true;
-      equicord.enable = true;
       settings = {
+        mods = [ "equicord" ];
         quickCss = true;
         windowStyle = "default";
       };
