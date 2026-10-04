@@ -8,7 +8,6 @@ in
   stylix = theme.stylix // {
     homeManagerIntegration.autoImport = false;
     targets = {
-      chromium.enable = true;
       console.enable = true;
       font-packages.enable = false;
       fontconfig.enable = true;
