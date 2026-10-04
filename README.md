@@ -90,9 +90,10 @@ nix build .#<パッケージ名>                    # pkgs/ のパッケージ�
 
 デスクトップに [T3 Code](https://github.com/pingdotgg/t3code)（`t3code`）を入れています。
 
-- T3 Code は公式の最新リリース（AppImage）を [pkgs/t3code](pkgs/t3code/default.nix) でパッケージ化しています。
-  版とハッシュは flake 入力 `t3code-release`（`latest-linux.yml`）から読むので、
-  `nix flake update t3code-release` で最新リリースに追従します。
+- T3 Code は公式の最新 nightly（AppImage）を [pkgs/t3code](pkgs/t3code/default.nix) でパッケージ化しています。
+  版とハッシュは flake 入力 `t3code-release`（upstream が公開する AUR
+  [t3code-nightly-bin](https://aur.archlinux.org/packages/t3code-nightly-bin) の `PKGBUILD`）から読むので、
+  `nix flake update t3code-release` で最新 nightly に追従します。
 - T3 Code が使う Claude Code と Codex は
   [sadjow/claude-code-nix](https://github.com/sadjow/claude-code-nix) と
   [sadjow/codex-cli-nix](https://github.com/sadjow/codex-cli-nix) のもので、T3 Code の `PATH` にだけ入れています。

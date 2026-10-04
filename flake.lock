@@ -1188,13 +1188,18 @@
     "t3code-release": {
       "flake": false,
       "locked": {
-        "narHash": "sha256-qrOaaINqwa8ZyphvVWWv7peIDwN8LZLFFycM8At2ZDY=",
-        "type": "file",
-        "url": "https://github.com/pingdotgg/t3code/releases/latest/download/latest-linux.yml"
+        "lastModified": 1791085362,
+        "narHash": "sha256-Q4eUtHF9djr+yvvBejg85hveI7sdI7UggYIrzsiGjq8=",
+        "ref": "master",
+        "rev": "85a1565cdc056a67c7989bf3740de2acf65c3cec",
+        "revCount": 369,
+        "type": "git",
+        "url": "https://aur.archlinux.org/t3code-nightly-bin.git"
       },
       "original": {
-        "type": "file",
-        "url": "https://github.com/pingdotgg/t3code/releases/latest/download/latest-linux.yml"
+        "ref": "master",
+        "type": "git",
+        "url": "https://aur.archlinux.org/t3code-nightly-bin.git"
       }
     },
     "tinted-kitty": {

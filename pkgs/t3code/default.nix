@@ -10,13 +10,13 @@
   git,
 }:
 let
-  manifest = builtins.readFile release;
-  field = name: builtins.head (builtins.match ".*\n${name}: ([^\n]+)\n.*" ("\n" + manifest));
+  pkgbuild = builtins.readFile "${release}/PKGBUILD";
+  field = regex: builtins.head (builtins.match ".*\n${regex}\n.*" ("\n" + pkgbuild));
   pname = "t3code";
-  version = field "version";
+  version = builtins.replaceStrings [ "_nightly." ] [ "-nightly." ] (field "pkgver=([^\n]+)");
   src = fetchurl {
-    url = "https://github.com/pingdotgg/t3code/releases/download/v${version}/${field "path"}";
-    hash = "sha512-${field "sha512"}";
+    url = "https://github.com/pingdotgg/t3code/releases/download/v${version}/T3-Code-${version}-x86_64.AppImage";
+    sha256 = field "sha256sums=\\(\n  '([0-9a-f]{64})'[^\n]*";
   };
   contents = appimageTools.extractType2 { inherit pname version src; };
 in

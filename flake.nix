@@ -27,7 +27,7 @@
     };
 
     t3code-release = {
-      url = "file+https://github.com/pingdotgg/t3code/releases/latest/download/latest-linux.yml";
+      url = "git+https://aur.archlinux.org/t3code-nightly-bin.git?ref=master";
       flake = false;
     };
 
