@@ -101,7 +101,7 @@ nix build .#<パッケージ名>                    # pkgs/ のパッケージ�
 - T3 Code の Settings → Connections で「Enable Tailscale HTTPS」を有効にすると、tailnet から HTTPS で接続できます。
   T3 Code が `tailscale serve` を実行できるよう、[modules/desktop/t3code.nix](modules/desktop/t3code.nix) で `keewai` を Tailscale の operator にしています。
 - Claude Code と Codex の設定（`~/.claude`、`~/.codex`）は Nix で管理していません。
-- [Cua Driver](https://github.com/trycua/cua)（`cua-driver`、デスクトップのみ）を入れていますが、MCP には登録していません。
+- [hypruse](https://github.com/IlyasKhallouki/hypruse)（`hypruse`、デスクトップのみ）を入れていますが、MCP には登録していません。
 - [skills/](skills/) の各スキルは `~/.claude/skills/` にリンクされます。
 
 | スキル | 用途 |
