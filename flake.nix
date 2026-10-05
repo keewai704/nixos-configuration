@@ -63,7 +63,10 @@
       inputs.nixpkgs.follows = "nixpkgs";
     };
 
-    siora.url = "git+https://github.com/keewai704/siora.git?ref=main";
+    siora = {
+      url = "git+https://github.com/keewai704/siora.git?ref=main";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
   };
 
   outputs =
