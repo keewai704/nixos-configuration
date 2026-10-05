@@ -54,7 +54,7 @@ flake.nix
 | シェル・エイリアス・プロンプト | [shell.nix](home/keewai/common/shell.nix)、[starship.toml](home/keewai/common/starship.toml) |
 | Git / GitHub CLI | [git.nix](home/keewai/common/git.nix) |
 | T3 Code / Claude Code / Codex | [pkgs/t3code](pkgs/t3code/default.nix)、[applications.nix](home/keewai/desktop/applications.nix)、[modules/desktop/t3code.nix](modules/desktop/t3code.nix) |
-| 個人スキル | [skills/](skills/)（配布は [skills.nix](home/keewai/common/skills.nix)） |
+| 個人スキル・MCP サーバー（Claude Code / Codex 共通） | [skills/](skills/)、[coding-agents](home/keewai/common/coding-agents/default.nix) |
 | 設定不要な GUI アプリを追加 | [home/keewai/desktop/applications.nix](home/keewai/desktop/applications.nix) |
 | ウィンドウ・モニター・キー割り当て | [hyprland.lua](home/keewai/desktop/hyprland.lua) |
 | Hyprland 本体・ログイン画面 | [modules/desktop/hyprland.nix](modules/desktop/hyprland.nix) |
@@ -100,9 +100,12 @@ nix build .#<パッケージ名>                    # pkgs/ のパッケージ�
   ターミナルからは `claude` / `codex` を使えません。
 - T3 Code の Settings → Connections で「Enable Tailscale HTTPS」を有効にすると、tailnet から HTTPS で接続できます。
   T3 Code が `tailscale serve` を実行できるよう、[modules/desktop/t3code.nix](modules/desktop/t3code.nix) で `keewai` を Tailscale の operator にしています。
-- Claude Code と Codex の設定（`~/.claude`、`~/.codex`）は Nix で管理していません。
-- [hypruse](https://github.com/IlyasKhallouki/hypruse)（`hypruse`、デスクトップのみ）を入れていますが、MCP には登録していません。
-- [skills/](skills/) の各スキルは `~/.claude/skills/` にリンクされます。
+- Claude Code と Codex の設定（`~/.claude`、`~/.codex`）は基本的に Nix で管理していません。
+  例外として [coding-agents](home/keewai/common/coding-agents/default.nix) が両方へ共通にスキルと MCP サーバーを配ります。
+  - スキル: `codingAgents.skills`（[skills/](skills/) の全ディレクトリを自動登録）を `~/.claude/skills/` と `~/.agents/skills/`（Codex）にリンクします。
+  - MCP: `codingAgents.mcpServers.<name> = { command; args; env; }` を、Home Manager の有効化時に `~/.claude.json` の `mcpServers` と `~/.codex/config.toml` の `[mcp_servers]` へ書き込みます。
+    Nix から外したサーバーだけを削除し、手動で追加したサーバーや他の設定はそのまま残します。
+- [hypruse](https://github.com/IlyasKhallouki/hypruse)（デスクトップのみ）は [computer-use.nix](home/keewai/desktop/computer-use.nix) で MCP サーバー `hypruse` として登録しています。
 
 | スキル | 用途 |
 | --- | --- |
