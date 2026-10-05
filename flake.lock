@@ -172,11 +172,11 @@
         ]
       },
       "locked": {
-        "lastModified": 1790889289,
-        "narHash": "sha256-c2enAEAaGleMaBUU3zBdyCM3asCkHluKXn6TpDWmi6M=",
+        "lastModified": 1791227718,
+        "narHash": "sha256-3Jzu4qVWw5jcdzzxkLz1paFLk+m5jc3ISZgSvhgedFo=",
         "owner": "sadjow",
         "repo": "codex-cli-nix",
-        "rev": "361dfa0c8028b58be69eebc8b3850211b5f6d5cf",
+        "rev": "52421aa18bebfee9ee29aadba39e774027a77926",
         "type": "github"
       },
       "original": {
@@ -1270,11 +1270,11 @@
     "t3code-release": {
       "flake": false,
       "locked": {
-        "lastModified": 1791175629,
-        "narHash": "sha256-LpXEPmYeI+nmORyWQ9ibbrwU4GXlBcFbVQCKq23zSSg=",
+        "lastModified": 1791221867,
+        "narHash": "sha256-D6AQgCeA5wfIa6LlYmmQ5cDgcVIfocRmXspj6+TRo4o=",
         "ref": "master",
-        "rev": "01ea0f0c861cd184d9fd94d073616fb555fb4835",
-        "revCount": 373,
+        "rev": "bc76acba7bfad7602c23aac6eb8c2b9b8adc55d6",
+        "revCount": 375,
         "type": "git",
         "url": "https://aur.archlinux.org/t3code-nightly-bin.git"
       },

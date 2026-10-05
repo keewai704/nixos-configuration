@@ -11,7 +11,7 @@ hl.monitor({
 
 hl.monitor({
     output = "desc:Dell Inc. AW3926QW",
-    mode = "5120x2160@165",
+    mode = "5120x2160@120",
     position = "auto",
     scale = 1,
     bitdepth = 10,
