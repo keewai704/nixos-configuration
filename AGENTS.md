@@ -90,14 +90,19 @@ reduce its privileges.
    the active instructions or user before committing.
 3. Commit all intended changes without unrelated work and confirm no task changes
    remain uncommitted.
-4. If the commit affects the runtime host's evaluated configuration, deployed
+4. Before ending the turn, merge the commit into `main` (from a worktree branch,
+   merge in the checkout that has `main` checked out) and push `main` to
+   `origin`. Confirm `origin/main` contains the commit. Do not finish or report
+   completion with work left only on a task branch or unpushed; if the merge or
+   push fails, report the blocker.
+5. If the commit affects the runtime host's evaluated configuration, deployed
    files, or services, record its expected system store path and relevant runtime
    baseline. Run `sudo nixos-rebuild test --flake .#<runtime-host>` on that
    committed state, using its evaluation/build rather than prebuilding the same
    output. Distributed `skills/` affect every host.
-5. After `test`, check network connectivity, failed system/user units, and every
+6. After `test`, check network connectivity, failed system/user units, and every
    affected service's behavior. New failures or regressions block `switch`.
-6. Only after those gates pass, run
+7. Only after those gates pass, run
    `sudo nixos-rebuild switch --flake .#<runtime-host>`. Repeat the network,
    failed-unit, and affected-service checks. Confirm `/run/current-system` and
    `/nix/var/nix/profiles/system` both match the tested store path.
