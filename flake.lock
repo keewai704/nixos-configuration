@@ -432,11 +432,11 @@
         ]
       },
       "locked": {
-        "lastModified": 1790471569,
-        "narHash": "sha256-RV12dssK6gwe/tuYuPqtE6XPYoAFkLcpqYhhrUB2Nfw=",
+        "lastModified": 1791185774,
+        "narHash": "sha256-bNNF/429UV2Qs0o4WB7ez792eg4n1I+iZ969xpuZZf8=",
         "ref": "main",
-        "rev": "89c6a93d6f883e6acbd5867d2c83a28be70dc07d",
-        "revCount": 45,
+        "rev": "9aee56f90920906cf312ea21ffb7ac663985c9a5",
+        "revCount": 47,
         "type": "git",
         "url": "https://github.com/keewai704/hypr-island.git"
       },
@@ -965,22 +965,6 @@
         "url": "https://channels.nixos.org/nixpkgs-unstable/nixexprs.tar.zst"
       }
     },
-    "nixpkgs-go": {
-      "locked": {
-        "lastModified": 1790822859,
-        "narHash": "sha256-69xHQhAeMAD2wDXO7T2pcOZIF9Sga2W+JkmY2a11Ops=",
-        "owner": "NixOS",
-        "repo": "nixpkgs",
-        "rev": "c59305bab2065cfecc4944690d9eedbb56f3a9fa",
-        "type": "github"
-      },
-      "original": {
-        "owner": "NixOS",
-        "repo": "nixpkgs",
-        "rev": "c59305bab2065cfecc4944690d9eedbb56f3a9fa",
-        "type": "github"
-      }
-    },
     "nixpkgs-nixcord": {
       "locked": {
         "lastModified": 1791011291,
@@ -1157,15 +1141,14 @@
         "nix-appimage": "nix-appimage",
         "nixpkgs": [
           "nixpkgs"
-        ],
-        "nixpkgs-go": "nixpkgs-go"
+        ]
       },
       "locked": {
-        "lastModified": 1791172962,
-        "narHash": "sha256-tvGIDxe27FvQDMZEdZUrHKUNBFMQKZPBtKOVTYknIpU=",
+        "lastModified": 1791191028,
+        "narHash": "sha256-i35sCA1ERyOs5TDnTFNJaHioNfKpv5QWsZoRf2AuBO8=",
         "ref": "main",
-        "rev": "47b1b931323e852c58e8839c0b1699a8c8775b9f",
-        "revCount": 105,
+        "rev": "7e68caf96585ca22ae82665ce0299b84ffb002f0",
+        "revCount": 113,
         "type": "git",
         "url": "https://github.com/keewai704/siora.git"
       },

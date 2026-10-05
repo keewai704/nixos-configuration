@@ -33,5 +33,6 @@
     AQ_DRM_DEVICES = "/dev/dri/nvidia";
     LIBVA_DRIVER_NAME = "nvidia";
     __GLX_VENDOR_LIBRARY_NAME = "nvidia";
+    VKD3D_DISABLE_EXTENSIONS = "VK_NV_raw_access_chains";
   };
 }
