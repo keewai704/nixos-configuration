@@ -1144,11 +1144,11 @@
         ]
       },
       "locked": {
-        "lastModified": 1791191028,
-        "narHash": "sha256-i35sCA1ERyOs5TDnTFNJaHioNfKpv5QWsZoRf2AuBO8=",
+        "lastModified": 1791274714,
+        "narHash": "sha256-TxOQ8usR1zpCXaXqJ9U0Wgrnq0W4pUI0j7N2l5ZA/e4=",
         "ref": "main",
-        "rev": "7e68caf96585ca22ae82665ce0299b84ffb002f0",
-        "revCount": 113,
+        "rev": "1634e1367228070ca00391936c40fa3618fca6f2",
+        "revCount": 117,
         "type": "git",
         "url": "https://github.com/keewai704/siora.git"
       },

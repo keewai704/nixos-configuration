@@ -155,12 +155,14 @@ moonlight stream citrus "Extend Display" --1080 --fps 120 --bitrate 40000 --vide
 | サービス | URL・用途 | 設定 |
 | --- | --- | --- |
 | Immich | `https://orange.tail1e65cd.ts.net/` | [immich.nix](hosts/orange/services/immich.nix) |
+| OpenPencil | `https://orange.tail1e65cd.ts.net/openpencil/` · MCP: `/openpencil/mcp` | [openpencil.nix](hosts/orange/services/openpencil.nix) |
 | Vaultwarden | `https://orange.tail1e65cd.ts.net/vault/` | [vaultwarden.nix](hosts/orange/services/vaultwarden.nix) |
 | Samba | HDD 共有 | [samba.nix](hosts/orange/services/samba.nix) |
 | Minecraft | Fabric サーバー | [minecraft.nix](hosts/orange/services/minecraft.nix) |
 | Tailscale Exit Node | 出口ノード | [tailscale-exit-node.nix](hosts/orange/services/tailscale-exit-node.nix) |
 | 公開経路 | nginx と Tailscale Serve | [web.nix](hosts/orange/services/web.nix) |
 
+- OpenPencil uses the ZSeven-W release, with a service worker scoped to `/openpencil/` routing its root-relative requests through nginx. The HTTP MCP endpoint is available to tailnet clients. The shared document is saved to `/var/lib/openpencil/session.op`; save edits before restarting the service.
 - ポート・パス・URL は [settings.nix](hosts/orange/settings.nix) にまとめています。
 - 起動順は「HDD マウント → 共有ディレクトリ準備 → 既存データ取り込み → アプリ」です（[storage.nix](hosts/orange/services/storage.nix)）。
 - [local-backup](hosts/orange/services/local-backup.nix) がバックアップ、[health-monitor](hosts/orange/services/health-monitor.nix) が 15 分ごとに異常を Discord へ通知、
