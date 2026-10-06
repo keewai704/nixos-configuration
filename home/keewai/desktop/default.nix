@@ -12,6 +12,7 @@
     ./input-method.nix
     ./kitty.nix
     ./legcord.nix
+    ./penpot-mcp.nix
     ./steam-theme.nix
     ./stylix.nix
   ];

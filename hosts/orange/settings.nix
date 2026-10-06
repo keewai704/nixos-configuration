@@ -28,8 +28,6 @@ in
   vaultwardenPort = 8222;
   vaultwardenBackupRoot = "${storageRoot}/server/backups/vaultwarden-nixos";
 
-  penpotPort = 9001;
-
   minecraftPort = 25565;
   minecraftDataDir = "/var/lib/minecraft";
 }

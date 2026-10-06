@@ -4,7 +4,6 @@ let
   inherit (import ../settings.nix)
     immichPort
     nginxPort
-    penpotPort
     tailnetHostname
     tailnetOrigin
     vaultwardenPort
@@ -60,14 +59,6 @@ in
         "= /vault".return = "308 ${tailnetOrigin}/vault/";
 
         "^~ /vault/" = mkProxyLocation vaultwardenPort "";
-
-        "= /penpot".return = "308 ${tailnetOrigin}/penpot/";
-
-        "^~ /penpot/" = mkProxyLocation penpotPort "" // {
-          proxyPass = "http://127.0.0.1:${toString penpotPort}/";
-        };
-
-        "^~ /assets/by-id/" = mkProxyLocation penpotPort "";
 
         "/" = mkProxyLocation immichPort ''
           proxy_request_buffering off;
