@@ -125,7 +125,7 @@ nix build .#<パッケージ名>                    # pkgs/ のパッケージ�
 - **日本語入力**：Hazkey。keyd で `` Alt+` `` を変換キーに割り当て、Logitech 製キーボードは除外。
 - **ブラウザー**：既定は [Helium](https://github.com/imputnet/helium-linux)（公式リリースを [pkgs/helium](pkgs/helium/) でパッケージ化。nixpkgs の Widevine CDM を読み込ませて DRM 動画も再生可）。TwinStar・OpenMouse の WebHID 設定アプリも Helium のアプリモードで開きます。
 - **Bitwarden**：デスクトップアプリと SSH エージェント。CLI は `rbw`（hypr-island が Vaultwarden 向けに初期化。初回は `rbw login`）。
-- **Apple Music**：[keewai704/siora](https://github.com/keewai704/siora)。起動は `siora`。
+- **Apple Music**：[keewai704/siora](https://github.com/keewai704/siora) の最新リリースの AppImage。Home Manager の適用時に `gh` の認証で `~/.local/share/siora/` へ取得・更新します（手動は `siora-update`）。起動は `siora`。
 
 ### Sunshine 配信
 
@@ -173,7 +173,7 @@ moonlight stream citrus "Extend Display" --1080 --fps 120 --bitrate 40000 --vide
 
 - [pkgs/default.nix](pkgs/default.nix) に並べたものは `nix build .#<名前>` で単体ビルドできます。
 - パッチは対象パッケージのディレクトリに置きます。
-- `keewai704` 所有の入力（hypr-island、hypr-brightness、siora）は `?ref=main` を明示し、適用前に毎回 `nix flake update` で最新の main に更新します。
+- `keewai704` 所有の入力（hypr-island、hypr-brightness）は `?ref=main` を明示し、適用前に毎回 `nix flake update` で最新の main に更新します。
 - `t3code-release`・`claude-code`・`codex-cli` も適用前に毎回 `nix flake update` で最新リリースに更新します。
 - 非自由パッケージは全体で許可しています（`allowUnfree = true`）。
 - `system.stateVersion` / `home.stateVersion` は互換性の基準なので、アップデートに合わせて変えません。
