@@ -13,6 +13,7 @@
     ./kitty.nix
     ./legcord.nix
     ./penpot-mcp.nix
+    ./scskiller.nix
     ./steam-theme.nix
     ./stylix.nix
   ];
