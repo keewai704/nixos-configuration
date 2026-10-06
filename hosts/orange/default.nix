@@ -12,7 +12,6 @@ in
     ./services/local-backup.nix
     ./services/maintenance.nix
     ./services/minecraft.nix
-    ./services/openpencil.nix
     ./services/samba.nix
     ./services/smart-tests.nix
     ./services/storage.nix

@@ -12,7 +12,6 @@ let
     localBackupRoot
     minecraftPort
     nginxPort
-    openpencilPort
     smartDevices
     storageRoot
     tailnetHostname
@@ -31,7 +30,6 @@ let
     "redis-immich"
     "vaultwarden"
     "nginx"
-    "openpencil"
     "minecraft"
     "tailscale-serve-nginx"
   ];
@@ -40,7 +38,6 @@ let
   loopbackBackendPorts = [
     immichPort
     nginxPort
-    openpencilPort
     vaultwardenPort
   ];
   loopbackBackendPortPattern = lib.concatStringsSep "|" (map toString loopbackBackendPorts);

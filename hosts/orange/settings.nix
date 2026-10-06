@@ -15,7 +15,6 @@ in
   hostName = "orange";
   lanInterface = "enp2s0";
   nginxPort = 8000;
-  openpencilPort = 3100;
   smartDevices = [
     "/dev/sda"
     "/dev/sdb"

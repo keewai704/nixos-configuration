@@ -106,6 +106,7 @@ nix build .#<パッケージ名>                    # pkgs/ のパッケージ�
   - MCP: `codingAgents.mcpServers.<name> = { command; args; env; }` を、Home Manager の有効化時に `~/.claude.json` の `mcpServers` と `~/.codex/config.toml` の `[mcp_servers]` へ書き込みます。
     Nix から外したサーバーだけを削除し、手動で追加したサーバーや他の設定はそのまま残します。
 - [hypruse](https://github.com/IlyasKhallouki/hypruse)（デスクトップのみ）は [computer-use.nix](home/keewai/desktop/computer-use.nix) で MCP サーバー `hypruse` として登録しています。
+- UI デザインは [Penpot](https://design.penpot.app/) を使います。[penpot-mcp.nix](home/keewai/desktop/penpot-mcp.nix) がデスクトップ用 MCP とプラグインを提供します。接続手順と Apple 系アプリ向けアセットは [penpot-apple-design](skills/penpot-apple-design/SKILL.md) にまとめています。
 
 | スキル | 用途 |
 | --- | --- |
@@ -113,6 +114,7 @@ nix build .#<パッケージ名>                    # pkgs/ のパッケージ�
 | `superpowers` | 設計・計画・デバッグ・レビューなど大きめの作業の進め方 |
 | `add-nix-skill` | このリポジトリでスキルを追加・修正するとき |
 | `apple-device-usb` | USB / Wi-Fi 経由で iPhone・iPad を操作 |
+| `penpot-apple-design` | Penpot の操作と、iOS・iPadOS・macOS・Apple 風 UI 向けアセットの選定・実装への受け渡し |
 | `faster-whisper` | 音声・動画の文字起こし |
 
 リポジトリ専用の検証手順は [.agents/skills/nixos-validation](.agents/skills/nixos-validation/SKILL.md) にあります。
@@ -155,14 +157,12 @@ moonlight stream citrus "Extend Display" --1080 --fps 120 --bitrate 40000 --vide
 | サービス | URL・用途 | 設定 |
 | --- | --- | --- |
 | Immich | `https://orange.tail1e65cd.ts.net/` | [immich.nix](hosts/orange/services/immich.nix) |
-| OpenPencil | `https://orange.tail1e65cd.ts.net/openpencil/` · MCP: `/openpencil/mcp` | [openpencil.nix](hosts/orange/services/openpencil.nix) |
 | Vaultwarden | `https://orange.tail1e65cd.ts.net/vault/` | [vaultwarden.nix](hosts/orange/services/vaultwarden.nix) |
 | Samba | HDD 共有 | [samba.nix](hosts/orange/services/samba.nix) |
 | Minecraft | Fabric サーバー | [minecraft.nix](hosts/orange/services/minecraft.nix) |
 | Tailscale Exit Node | 出口ノード | [tailscale-exit-node.nix](hosts/orange/services/tailscale-exit-node.nix) |
 | 公開経路 | nginx と Tailscale Serve | [web.nix](hosts/orange/services/web.nix) |
 
-- OpenPencil uses the ZSeven-W release, with a service worker scoped to `/openpencil/` routing its root-relative requests through nginx. The HTTP MCP endpoint is available to tailnet clients. The shared document is saved to `/var/lib/openpencil/session.op`; save edits before restarting the service.
 - ポート・パス・URL は [settings.nix](hosts/orange/settings.nix) にまとめています。
 - 起動順は「HDD マウント → 共有ディレクトリ準備 → 既存データ取り込み → アプリ」です（[storage.nix](hosts/orange/services/storage.nix)）。
 - [local-backup](hosts/orange/services/local-backup.nix) がバックアップ、[health-monitor](hosts/orange/services/health-monitor.nix) が 15 分ごとに異常を Discord へ通知、
