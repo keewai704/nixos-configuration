@@ -31,7 +31,7 @@ in
       name = "scskiller-proton";
       runtimeInputs = [
         pkgs.coreutils
-        pkgs.steam-run
+        (pkgs.steam.override { extraLibraries = p: [ p.freetype ]; }).run-free
         pkgs.util-linux
         protontricks
       ];
