@@ -15,6 +15,7 @@ let
     "disable-email-verification"
     "disable-smtp"
     "enable-prepl-server"
+    "enable-mcp"
   ];
 
   commonEnvironment = {
@@ -114,15 +115,28 @@ in
           };
         };
 
+        penpot-mcp = mkContainer {
+          image = "docker.io/penpotapp/mcp:${penpotVersion}";
+          environmentFiles = [ ];
+          environment.PENPOT_MCP_REMOTE_MODE = "true";
+        };
+
         penpot-frontend = mkContainer {
           image = "docker.io/penpotapp/frontend:${penpotVersion}";
           dependsOn = [
             "penpot-backend"
             "penpot-exporter"
+            "penpot-mcp"
           ];
           ports = [ "127.0.0.1:${toString penpotPort}:8080" ];
           volumes = [ "${assetsRoot}:/opt/data/assets" ];
-          environment = commonEnvironment // bodySizeEnvironment;
+          environment =
+            commonEnvironment
+            // bodySizeEnvironment
+            // {
+              PENPOT_MCP_URI = "http://penpot-mcp:4401";
+              PENPOT_MCP_URI_WS = "http://penpot-mcp:4402";
+            };
         };
       };
     };
@@ -163,6 +177,7 @@ in
           "penpot-valkey"
           "penpot-backend"
           "penpot-exporter"
+          "penpot-mcp"
           "penpot-frontend"
         ])
         (_: {
