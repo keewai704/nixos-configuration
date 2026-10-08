@@ -7,11 +7,13 @@ in
     inputs.agenix.nixosModules.default
     ./boot.nix
     ./hardware-configuration.nix
+    ./services/cliproxyapi.nix
     ./services/health-monitor.nix
     ./services/immich.nix
     ./services/local-backup.nix
     ./services/maintenance.nix
     ./services/minecraft.nix
+    ./services/obsidian-livesync.nix
     ./services/samba.nix
     ./services/smart-tests.nix
     ./services/storage.nix
