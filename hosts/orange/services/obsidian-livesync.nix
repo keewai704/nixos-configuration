@@ -102,6 +102,7 @@ in
           umask 077
           printf '[admins]\n${adminUser} = %s\n' "$(cat "$CREDENTIALS_DIRECTORY/password")" > /var/lib/couchdb/admins.ini
         '';
+        environment.ERL_EPMD_ADDRESS = "127.0.0.1";
         serviceConfig.LoadCredential = "password:${passwordFile}";
       };
 
