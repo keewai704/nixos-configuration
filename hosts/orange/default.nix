@@ -7,7 +7,6 @@ in
     inputs.agenix.nixosModules.default
     ./boot.nix
     ./hardware-configuration.nix
-    ./services/cliproxyapi.nix
     ./services/health-monitor.nix
     ./services/immich.nix
     ./services/local-backup.nix

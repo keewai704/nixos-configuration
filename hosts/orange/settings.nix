@@ -17,7 +17,6 @@ in
   nginxPort = 8000;
   t3codePort = 3773;
   couchdbPort = 5984;
-  cliproxyapiPort = 8317;
   obsidianVault = "/home/keewai/Obsidian";
   smartDevices = [
     "/dev/sda"
