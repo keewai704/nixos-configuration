@@ -21,7 +21,11 @@ buildLinux (
       llvmPackages_22.clang.override { bintools = llvmPackages_22.bintools; }
     );
 
-    extraMakeFlags = [ "KCFLAGS=-O3" ] ++ (args.extraMakeFlags or [ ]);
+    extraMakeFlags = [
+      "KCFLAGS=-O3"
+      "CFLAGS_gud_connector.o=-fno-unroll-loops"
+    ]
+    ++ (args.extraMakeFlags or [ ]);
 
     structuredExtraConfig = with lib.kernel; {
       CC_OPTIMIZE_FOR_PERFORMANCE = yes;
@@ -38,7 +42,7 @@ buildLinux (
       PREEMPT_LAZY = lib.mkForce no;
       PREEMPT_DYNAMIC = yes;
       DEBUG_INFO_DWARF5 = yes;
-      DEBUG_INFO_DWARF_TOOLCHAIN_DEFAULT = no;
+      DEBUG_INFO_DWARF_TOOLCHAIN_DEFAULT = lib.mkForce no;
       MEM_ALLOC_PROFILING = lib.mkForce no;
       MEM_ALLOC_PROFILING_ENABLED_BY_DEFAULT = lib.mkForce (option no);
       RCU_EXPERT = yes;

@@ -92,6 +92,8 @@ Commit `pkgs/kernel-drivers/sources.json` with the configuration. The kernel kee
 Clang 22, ThinLTO, `-O3`, 1000 Hz, and dynamic preemption without CachyOS patches.
 Rust drivers are disabled because upstream does not support Rust with both LTO
 and BTF enabled.
+The GUD connector file disables loop unrolling to avoid a Clang ThinLTO/FORTIFY
+build failure while keeping the driver and its memory checks enabled.
 The BEITONG xpad fix is rebuilt with the kernel through `boot.extraModulePackages`.
 
 ## コーディングエージェント
