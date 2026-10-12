@@ -764,11 +764,11 @@
         ]
       },
       "locked": {
-        "lastModified": 1791788674,
-        "narHash": "sha256-vyqd5KzOIzxq2Jitq9hNYS/tmML27YzhdsDZWAVG2I4=",
+        "lastModified": 1791795420,
+        "narHash": "sha256-vM8XYZWE+pCT1Zpg9vZYQI0rKwVCR1hsyL+o1a545kA=",
         "ref": "main",
-        "rev": "24ddd484d55a32ae5c26883a825e4023092334b3",
-        "revCount": 3,
+        "rev": "47f2d21907b864ca0ce372d1104bc14f046554f6",
+        "revCount": 10,
         "type": "git",
         "url": "https://github.com/keewai704/Island.git"
       },
@@ -781,7 +781,7 @@
     "meltype-release": {
       "flake": false,
       "locked": {
-        "narHash": "sha256-/pQUKOtEg9AnAwx3kymssEHuuRNfkobufOjhzM0hcbU=",
+        "narHash": "sha256-AACgDWIXfZRCVeqLQLmZlOpnv9/aqKOyJ8QVdUBwpOc=",
         "type": "file",
         "url": "https://api.github.com/repos/yksr-melt/Meltype/releases/latest"
       },
@@ -873,11 +873,11 @@
         "treefmt-nix": "treefmt-nix"
       },
       "locked": {
-        "lastModified": 1791730200,
-        "narHash": "sha256-M/DxR1WYRVfwFI/skgURb5bGLc0J265T5wA+os0VpZI=",
+        "lastModified": 1791789228,
+        "narHash": "sha256-H4oPz8lX2fHV4FOhxp9txUT/GVC/QB5mypkAkUhW31o=",
         "owner": "4evy",
         "repo": "nixcord",
-        "rev": "36818fa6196623f1da8c2898499188f440587330",
+        "rev": "58298812834393c79a6c1b78d5b68e3a301a0ec1",
         "type": "github"
       },
       "original": {
@@ -1180,11 +1180,11 @@
     "t3code-release": {
       "flake": false,
       "locked": {
-        "lastModified": 1791754624,
-        "narHash": "sha256-EAsFEdKfJRr6TRdRVFMwwA4dz9vNeYm+1qh4/xKL+ac=",
+        "lastModified": 1791792411,
+        "narHash": "sha256-6HVLYiTaN0JGL2T1cPVceY7lfZKwhHjyGgBNEtz7mKs=",
         "ref": "master",
-        "rev": "8b68a3ae26240b4a964d853e69e4f419cc86eec0",
-        "revCount": 397,
+        "rev": "ea46f1e94d3733e4318cd909f1325d1134643b01",
+        "revCount": 398,
         "type": "git",
         "url": "https://aur.archlinux.org/t3code-nightly-bin.git"
       },
