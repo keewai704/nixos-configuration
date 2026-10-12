@@ -16,7 +16,7 @@ OS・ハードウェア・システムサービスは **NixOS**、個人のア�
 .
 ├── flake.nix            入力（依存リポジトリ）とホスト一覧
 ├── hosts/               マシンごとの設定
-│   ├── citrus/          ハードウェア、起動、音声、指紋、Sunshine など
+│   ├── citrus/          ハードウェア、起動、音声、Sunshine など
 │   └── orange/          ハードウェア、ストレージ、services/ にサーバー機能
 ├── modules/             複数ホストで使う NixOS 設定
 │   ├── common/          全ホスト共通（Nix、ネットワーク、ユーザー、Home Manager 接続）

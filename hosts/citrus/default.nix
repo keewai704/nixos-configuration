@@ -4,7 +4,6 @@
     ./apple-device-usb.nix
     ./audio.nix
     ./boot.nix
-    ./fingerprint.nix
     ./hardware-configuration.nix
     ./input-method.nix
     ./nvidia.nix
