@@ -708,11 +708,11 @@
     "impasto": {
       "flake": false,
       "locked": {
-        "lastModified": 1791805220,
-        "narHash": "sha256-6eIXtTE89sm8fNZSxc/B9Vg9Z9AyKun5KKJzqNItQ9g=",
+        "lastModified": 1791819169,
+        "narHash": "sha256-TnP3F3zxUXHw2CcDdTa3CP5hnYeOihZRz/qMwYPG8q4=",
         "owner": "keewai704",
         "repo": "impasto",
-        "rev": "5d51ae3347c9771ad631a57f53296b4ca556e34d",
+        "rev": "6a968f741ca9256a921f75fb7ea53b964c98c2d9",
         "type": "github"
       },
       "original": {
