@@ -22,7 +22,7 @@ stdenv.mkDerivation {
 
   src = fetchurl {
     url = "https://github.com/pingdotgg/t3code/releases/download/v${version}/t3-${version}-linux-x64.tar.gz";
-    sha256 = "ab30b4c5a19849d4bd25da97993e6476e56d287d9fd3226f93e91dce0d64119e";
+    sha256 = "e78bf72f95164cfb05a0c8b5001c148fe586475aeaea8d685c2d36b1e2dcc876";
   };
 
   nativeBuildInputs = [

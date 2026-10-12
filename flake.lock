@@ -781,7 +781,7 @@
     "meltype-release": {
       "flake": false,
       "locked": {
-        "narHash": "sha256-S1ZN92x/3xZGRKQT0wuvfYtB+VjwHsStJQvt2PBtu4w=",
+        "narHash": "sha256-HKCQU5hbp891uGsKpN8KQxSG+KF1cCmYCxrDCWzBeXg=",
         "type": "file",
         "url": "https://api.github.com/repos/yksr-melt/Meltype/releases/latest"
       },
@@ -1180,11 +1180,11 @@
     "t3code-release": {
       "flake": false,
       "locked": {
-        "lastModified": 1791754624,
-        "narHash": "sha256-EAsFEdKfJRr6TRdRVFMwwA4dz9vNeYm+1qh4/xKL+ac=",
+        "lastModified": 1791792411,
+        "narHash": "sha256-6HVLYiTaN0JGL2T1cPVceY7lfZKwhHjyGgBNEtz7mKs=",
         "ref": "master",
-        "rev": "8b68a3ae26240b4a964d853e69e4f419cc86eec0",
-        "revCount": 397,
+        "rev": "ea46f1e94d3733e4318cd909f1325d1134643b01",
+        "revCount": 398,
         "type": "git",
         "url": "https://aur.archlinux.org/t3code-nightly-bin.git"
       },
