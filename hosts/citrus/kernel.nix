@@ -1,5 +1,19 @@
 { pkgs, ... }:
 {
+  boot.initrd = {
+    includeDefaultModules = false;
+    availableKernelModules = [
+      "atkbd"
+      "autofs"
+      "efivarfs"
+      "hid_apple"
+      "hid_generic"
+      "hid_logitech_dj"
+      "hid_logitech_hidpp"
+      "i8042"
+    ];
+  };
+
   boot.kernelPackages = pkgs.linuxPackagesFor (
     pkgs.callPackage ../../pkgs/kernel-drivers/linux.nix {
       localModules = [
