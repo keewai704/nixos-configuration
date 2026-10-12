@@ -123,11 +123,9 @@ revision and hash. Use `?ref=main` for Git flake inputs and refresh from `main`;
 do not rely on the remote default branch. Always track the latest `main`: before
 each local activation, run `nix flake update` for every `keewai704` input and
 include the resulting lock change in the commit. Likewise, run
-`nix flake update t3code-release claude-code codex-cli` before each local
-activation so T3 Code tracks its latest nightly and its agents track their latest
-releases. Also run `pkgs/meltype/update.sh` before each local activation so
-Meltype tracks its latest GitHub release, and include any `source.json` change.
-This is standing authorization to update those inputs only.
+`nix flake update t3code-release claude-code codex-cli meltype-release meltype-tags`
+before each local activation so T3 Code tracks its latest nightly, its agents
+track their latest releases, and Meltype tracks its latest release. This is standing authorization to update those inputs only.
 
 Outside the repository root, use `git -C` and absolute flake references to the
 actual checkout, normally `/home/keewai/nixos-configuration` and

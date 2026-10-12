@@ -26,6 +26,16 @@
       inputs.nixpkgs.follows = "nixpkgs";
     };
 
+    meltype-release = {
+      url = "file+https://api.github.com/repos/yksr-melt/Meltype/releases/latest";
+      flake = false;
+    };
+
+    meltype-tags = {
+      url = "file+https://api.github.com/repos/yksr-melt/Meltype/git/matching-refs/tags/";
+      flake = false;
+    };
+
     t3code-release = {
       url = "git+https://aur.archlinux.org/t3code-nightly-bin.git?ref=master";
       flake = false;

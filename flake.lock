@@ -761,6 +761,30 @@
         "type": "github"
       }
     },
+    "meltype-release": {
+      "flake": false,
+      "locked": {
+        "narHash": "sha256-yQk1RNoIkWWxu/dRlu0ealbFhpdlHvPO411017Xz0q8=",
+        "type": "file",
+        "url": "https://api.github.com/repos/yksr-melt/Meltype/releases/latest"
+      },
+      "original": {
+        "type": "file",
+        "url": "https://api.github.com/repos/yksr-melt/Meltype/releases/latest"
+      }
+    },
+    "meltype-tags": {
+      "flake": false,
+      "locked": {
+        "narHash": "sha256-xOrOIO32QdN+ligO4k7VrFee1GhXAYRJPOmuPW9itQw=",
+        "type": "file",
+        "url": "https://api.github.com/repos/yksr-melt/Meltype/git/matching-refs/tags/"
+      },
+      "original": {
+        "type": "file",
+        "url": "https://api.github.com/repos/yksr-melt/Meltype/git/matching-refs/tags/"
+      }
+    },
     "millennium": {
       "inputs": {
         "millennium-src": "millennium-src",
@@ -1032,6 +1056,8 @@
         "hypr-brightness": "hypr-brightness",
         "hypr-island": "hypr-island",
         "hyprland": "hyprland",
+        "meltype-release": "meltype-release",
+        "meltype-tags": "meltype-tags",
         "millennium": "millennium",
         "nixcord": "nixcord",
         "nixpkgs": "nixpkgs_5",

@@ -2,7 +2,6 @@
   lib,
   stdenv,
   fetchurl,
-  fetchFromGitHub,
   unzip,
   cmake,
   pkg-config,
@@ -11,24 +10,34 @@
   icu,
   openssl,
   zlib,
+  release,
+  tags,
 }:
 let
-  source = lib.importJSON ./source.json;
-  inherit (source) version;
-  release = fetchurl {
-    url = "https://github.com/yksr-melt/Meltype/releases/download/v${version}/Meltype-${version}-linux.zip";
-    hash = source.releaseHash;
+  latest = lib.importJSON release;
+  tag = latest.tag_name;
+  version = lib.removePrefix "v" tag;
+  asset = lib.findFirst (
+    asset: asset.name == "Meltype-${version}-linux.zip"
+  ) (throw "Meltype ${tag} has no Linux release") latest.assets;
+  tagRef = lib.findFirst (ref: ref.ref == "refs/tags/${tag}") (throw "Meltype tag ${tag} not found") (
+    lib.importJSON tags
+  );
+  releaseZip = fetchurl {
+    url = asset.browser_download_url;
+    sha256 = lib.removePrefix "sha256:" asset.digest;
   };
 in
+assert tagRef.object.type == "commit";
 stdenv.mkDerivation {
   pname = "fcitx5-meltype";
   inherit version;
 
-  src = fetchFromGitHub {
+  src = builtins.fetchTree {
+    type = "github";
     owner = "yksr-melt";
     repo = "Meltype";
-    tag = "v${version}";
-    hash = source.srcHash;
+    rev = tagRef.object.sha;
   };
 
   sourceRoot = "source/linux/fcitx5";
@@ -49,7 +58,7 @@ stdenv.mkDerivation {
 
   installPhase = ''
     runHook preInstall
-    unzip -q ${release} -d release
+    unzip -q ${releaseZip} -d release
     dir=$out/lib/meltype
     install -Dm755 meltype.so $out/lib/fcitx5/meltype.so
     install -Dm644 ../meltype-addon.conf $out/share/fcitx5/addon/meltype.conf

@@ -1,5 +1,6 @@
 {
   config,
+  inputs,
   lib,
   pkgs,
   ...
@@ -10,7 +11,12 @@
     type = "fcitx5";
 
     fcitx5 = {
-      addons = [ (pkgs.callPackage ../../../pkgs/meltype { }) ];
+      addons = [
+        (pkgs.callPackage ../../../pkgs/meltype {
+          release = inputs.meltype-release;
+          tags = inputs.meltype-tags;
+        })
+      ];
       waylandFrontend = true;
       systemd.enable = false;
       settings.globalOptions."Hotkey/TriggerKeys" = {
