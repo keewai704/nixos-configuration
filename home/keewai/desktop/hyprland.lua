@@ -340,6 +340,19 @@ bind(main_mod .. " + mouse:272", hl.dsp.window.drag(), "Drag window", { mouse = 
 bind(main_mod .. " + mouse:273", hl.dsp.window.resize(), "Resize window", { mouse = true })
 
 bind(
+    "ALT + bracketleft",
+    hl.dsp.global("quickshell:brightnessDown"),
+    "Media · Brightness down (Alt)",
+    { locked = true, repeating = true }
+)
+bind(
+    "ALT + bracketright",
+    hl.dsp.global("quickshell:brightnessUp"),
+    "Media · Brightness up (Alt)",
+    { locked = true, repeating = true }
+)
+
+bind(
     main_mod .. " + SHIFT + E",
     hl.dsp.exec_cmd("uwsm stop"),
     "Log out (hold)",
