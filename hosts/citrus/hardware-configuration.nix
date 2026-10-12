@@ -29,7 +29,7 @@
 
   fileSystems = {
     "/" = {
-      device = "/dev/disk/by-label/citrus-root";
+      device = "/dev/disk/by-label/root";
       fsType = "btrfs";
       options = [
         "subvol=@root"
@@ -39,7 +39,7 @@
     };
 
     "/home" = {
-      device = "/dev/disk/by-label/citrus-root";
+      device = "/dev/disk/by-label/root";
       fsType = "btrfs";
       options = [
         "subvol=@home"
@@ -49,7 +49,7 @@
     };
 
     "/nix" = {
-      device = "/dev/disk/by-label/citrus-root";
+      device = "/dev/disk/by-label/root";
       fsType = "btrfs";
       options = [
         "subvol=@nix"
@@ -74,7 +74,7 @@
     };
 
     "/swap" = {
-      device = "/dev/disk/by-label/citrus-root";
+      device = "/dev/disk/by-label/root";
       fsType = "btrfs";
       options = [
         "subvol=@swap"
