@@ -9,6 +9,8 @@
     optimise.automatic = true;
 
     settings = {
+      always-allow-substitutes = true;
+      narinfo-cache-negative-ttl = 0;
       experimental-features = [
         "nix-command"
         "flakes"
