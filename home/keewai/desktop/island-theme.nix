@@ -21,6 +21,8 @@ let
   };
 in
 {
+  imports = [ ./island-app-themes.nix ];
+
   config = lib.mkIf config.programs.island.enable {
     stylix.targets.gtk.extraCss = lib.mkAfter ''
       @import url("file://${state}/gtk-colors.css");

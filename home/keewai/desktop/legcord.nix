@@ -1,4 +1,9 @@
-{ config, inputs, ... }:
+{
+  config,
+  inputs,
+  lib,
+  ...
+}:
 {
   imports = [ inputs.nixcord.homeModules.nixcord ];
 
@@ -18,9 +23,11 @@
   stylix.targets.nixcord.enable = false;
 
   xdg.configFile = {
-    "legcord/quickCss.css".text = import ./legcord-system24.nix {
-      colors = config.lib.stylix.colors;
-      fonts = config.stylix.fonts;
-    };
+    "legcord/quickCss.css".text = lib.mkIf (!config.programs.island.enable) (
+      import ./legcord-system24.nix {
+        colors = config.lib.stylix.colors;
+        fonts = config.stylix.fonts;
+      }
+    );
   };
 }
