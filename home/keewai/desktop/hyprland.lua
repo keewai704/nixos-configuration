@@ -38,7 +38,7 @@ hl.env("MOZ_ENABLE_WAYLAND", "1")
 
 hl.config({
     debug = {
-        damage_tracking = 1,
+        damage_tracking = "monitor",
     },
 
     render = {
@@ -83,6 +83,12 @@ hl.config({
         },
         blur = {
             enabled = true,
+            variant = hl.get_config("decoration:blur:variant") and "acrylic" or nil,
+            acrylic = {
+                clarity = 0.1,
+                refraction = 32,
+                bulb = 64,
+            },
             size = 10,
             passes = 3,
             new_optimizations = true,
