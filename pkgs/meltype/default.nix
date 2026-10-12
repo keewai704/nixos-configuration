@@ -13,10 +13,11 @@
   zlib,
 }:
 let
-  version = "1.2.1";
+  source = lib.importJSON ./source.json;
+  inherit (source) version;
   release = fetchurl {
     url = "https://github.com/yksr-melt/Meltype/releases/download/v${version}/Meltype-${version}-linux.zip";
-    hash = "sha256-43fr1Kms702XkCQcctmW4lxWTUm4naXAOZUAK030s1g=";
+    hash = source.releaseHash;
   };
 in
 stdenv.mkDerivation {
@@ -27,7 +28,7 @@ stdenv.mkDerivation {
     owner = "yksr-melt";
     repo = "Meltype";
     tag = "v${version}";
-    hash = "sha256-yI3wd5SEmtpCw97StXTzHGPk4poUpfBjWyB9qV5jr4s=";
+    hash = source.srcHash;
   };
 
   sourceRoot = "source/linux/fcitx5";
