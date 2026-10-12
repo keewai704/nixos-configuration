@@ -90,7 +90,8 @@ nix build .#<パッケージ名>                    # pkgs/ のパッケージ�
 
 デスクトップに [T3 Code](https://github.com/pingdotgg/t3code)（`t3code`）を入れています。
 
-- T3 Code は公式の最新 nightly（AppImage）を [pkgs/t3code](pkgs/t3code/default.nix) でパッケージ化しています。
+- T3 Code は公式の最新 nightly（AppImage）を展開し、[pkgs/t3code](pkgs/t3code/default.nix) で NixOS 向けにパッケージ化しています。
+  bubblewrap を使わずに起動するため、エージェントの端末でも `sudo` が使えます。
   版とハッシュは flake 入力 `t3code-release`（upstream が公開する AUR
   [t3code-nightly-bin](https://aur.archlinux.org/packages/t3code-nightly-bin) の `PKGBUILD`）から読むので、
   `nix flake update t3code-release` で最新 nightly に追従します。
@@ -98,7 +99,8 @@ nix build .#<パッケージ名>                    # pkgs/ のパッケージ�
   [sadjow/claude-code-nix](https://github.com/sadjow/claude-code-nix) と
   [sadjow/codex-cli-nix](https://github.com/sadjow/codex-cli-nix) のもので、T3 Code の `PATH` にだけ入れています。
   ターミナルからは `claude` / `codex` を使えません。
-- T3 Code の Settings → Connections で「Enable Tailscale HTTPS」を有効にすると、tailnet から HTTPS で接続できます。
+- T3 Code の「Enable Tailscale HTTPS」は Home Manager の適用時に有効化しています。
+  バックエンドは localhost で待ち受け、tailnet からは Tailscale Serve の HTTPS 443 経由で接続できます。
   T3 Code が `tailscale serve` を実行できるよう、[modules/desktop/t3code.nix](modules/desktop/t3code.nix) で `keewai` を Tailscale の operator にしています。
 - Claude Code と Codex の設定（`~/.claude`、`~/.codex`）は基本的に Nix で管理していません。
   例外として [coding-agents](home/keewai/common/coding-agents/default.nix) が両方へ共通にスキルと MCP サーバーを配ります。
