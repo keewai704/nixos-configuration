@@ -62,7 +62,7 @@
       barSides = "capsule";
       barFullWidth = false;
       barShadow = false;
-      islandAttached = false;
+      islandAttached = true;
       surfaceStyle = "classic";
       desktopWidgets = [ ];
     };
