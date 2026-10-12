@@ -28,10 +28,10 @@ buildLinux (
       LTO_NONE = no;
       LTO_CLANG_FULL = no;
       LTO_CLANG_THIN = yes;
-      RUST = lib.mkForce no;
-      NOVA_CORE = lib.mkForce no;
-      DRM_NOVA = lib.mkForce no;
-      DRM_PANIC_SCREEN_QR_CODE = lib.mkForce no;
+      RUST = lib.mkForce (option no);
+      NOVA_CORE = lib.mkForce (option no);
+      DRM_NOVA = lib.mkForce (option no);
+      DRM_PANIC_SCREEN_QR_CODE = lib.mkForce (option no);
       HZ_1000 = yes;
       HZ = freeform "1000";
       PREEMPT = lib.mkForce yes;
