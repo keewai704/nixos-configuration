@@ -5,5 +5,9 @@
   programs.island = {
     enable = true;
     wallpaper = config.stylix.image;
+    bar.chips = {
+      shape = "ring";
+      figure = "hover";
+    };
   };
 }
