@@ -1,4 +1,10 @@
-{ inputs, pkgs, ... }:
+{
+  config,
+  inputs,
+  lib,
+  pkgs,
+  ...
+}:
 let
   system = pkgs.stdenv.hostPlatform.system;
   agentInstructions = ''
@@ -41,7 +47,7 @@ let
       fi
 
       class=com.t3tools.T3Code
-      pattern='/t3code-[^/ ]*-extracted/t3code'
+      pattern='/t3code-[^/ ]*(-extracted/t3code|/libexec/t3code/t3code)'
 
       notify() {
         notify-send -a "T3 Code" "$@" || true
@@ -134,4 +140,20 @@ in
 
   home.file.".claude/CLAUDE.md".text = agentInstructions;
   home.file.".codex/AGENTS.md".text = agentInstructions;
+
+  home.activation.t3codeHttps = lib.hm.dag.entryAfter [ "writeBoundary" ] ''
+    ${pkgs.python3}/bin/python3 - <<'PY'
+    import json
+    import os
+    from pathlib import Path
+
+    path = Path(${builtins.toJSON config.home.homeDirectory}) / ".t3/userdata/desktop-settings.json"
+    settings = json.loads(path.read_text()) if path.exists() else {}
+    settings.update(serverExposureMode="local-only", tailscaleServeEnabled=True, tailscaleServePort=443)
+    path.parent.mkdir(parents=True, exist_ok=True)
+    temporary = path.with_name(path.name + ".nix-tmp")
+    temporary.write_text(json.dumps(settings, indent=2) + "\n")
+    os.replace(temporary, path)
+    PY
+  '';
 }
