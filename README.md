@@ -90,6 +90,8 @@ Before activating citrus, run `python3 pkgs/kernel-drivers/update.py` to refresh
 the latest stable upstream Linux and NVIDIA releases and their source hashes.
 Commit `pkgs/kernel-drivers/sources.json` with the configuration. The kernel keeps
 Clang 22, ThinLTO, `-O3`, 1000 Hz, and dynamic preemption without CachyOS patches.
+Rust drivers are disabled because upstream does not support Rust with both LTO
+and BTF enabled.
 The BEITONG xpad fix is rebuilt with the kernel through `boot.extraModulePackages`.
 
 ## コーディングエージェント
