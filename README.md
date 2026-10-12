@@ -58,7 +58,7 @@ flake.nix
 | 設定不要な GUI アプリを追加 | [home/keewai/desktop/applications.nix](home/keewai/desktop/applications.nix) |
 | ウィンドウ・モニター・キー割り当て | [hyprland.lua](home/keewai/desktop/hyprland.lua) |
 | Hyprland 本体・ログイン画面 | [modules/desktop/hyprland.nix](modules/desktop/hyprland.nix) |
-| パネル・ランチャー・通知・壁紙・アイドル | [hypr-island.nix](home/keewai/desktop/hypr-island.nix)（[keewai704/hypr-island](https://github.com/keewai704/hypr-island)） |
+| パネル・ランチャー・通知・壁紙・ウィジェット | [island.nix](home/keewai/desktop/island.nix)（[keewai704/Island](https://github.com/keewai704/Island)） |
 | 日本語入力 | [input-method.nix](home/keewai/desktop/input-method.nix)、[modules/desktop/input-method.nix](modules/desktop/input-method.nix) |
 | 端末・ブラウザー・ファイル管理 | [kitty.nix](home/keewai/desktop/kitty.nix)、[browser.nix](home/keewai/desktop/browser.nix)、[file-manager.nix](home/keewai/desktop/file-manager.nix) |
 | Discord | [legcord.nix](home/keewai/desktop/legcord.nix) |
@@ -121,12 +121,12 @@ nix build .#<パッケージ名>                    # pkgs/ のパッケージ�
 
 ## citrus（デスクトップ）
 
-- **画面構成**：Hyprland + [hypr-island](https://github.com/keewai704/hypr-island)（ノッチ型の Dynamic Island。メディア、ランチャー、通知、クリップボード、壁紙、コントロール）。`Super+D` で開閉、`Super+F1` でショートカット一覧。
-- **配色**：Stylix が GTK・Qt・Kitty・hypr-island を、[テーマ](themes/tokyo-night-black/default.nix) が Hyprland の枠線などを担当。
+- **画面構成**：Hyprland + [Island](https://github.com/keewai704/Island)（[impasto](https://github.com/andreumassanet/impasto) のダイナミックアイランドとデスクトップウィジェットに、[HyprFlux](https://github.com/ahmad9059/HyprFlux) の壁紙エフェクトを加えたもの）。`Super+Space` でランチャー、`Super+I` でコントロールセンター、`Super+Shift+Space` で壁紙、`Super+F1` でショートカット一覧。
+- **配色**：Stylix が GTK・Qt・Kitty を、[テーマ](themes/tokyo-night-black/default.nix) が Hyprland の枠線などを担当。Island は壁紙から配色を取り、初期の壁紙は Stylix の画像。
 - **Hyprland**：公式 flake の main を hyprland.cachix.org のビルド済みバイナリで導入。
 - **日本語入力**：Hazkey。keyd で `` Alt+` `` を変換キーに割り当て、Logitech 製キーボードは除外。
 - **ブラウザー**：既定は [Helium](https://github.com/imputnet/helium-linux)（公式リリースを [pkgs/helium](pkgs/helium/) でパッケージ化。nixpkgs の Widevine CDM を読み込ませて DRM 動画も再生可）。TwinStar・OpenMouse の WebHID 設定アプリも Helium のアプリモードで開きます。
-- **Bitwarden**：デスクトップアプリと SSH エージェント。CLI は `rbw`（hypr-island が Vaultwarden 向けに初期化。初回は `rbw login`）。
+- **Bitwarden**：デスクトップアプリと SSH エージェント。
 - **Apple Music**：[keewai704/siora](https://github.com/keewai704/siora) の最新リリースの AppImage。Home Manager の適用時に `gh` の認証で `~/.local/share/siora/` へ取得・更新します（手動は `siora-update`）。起動は `siora`。
 
 ### Sunshine 配信
@@ -147,7 +147,7 @@ moonlight stream citrus "Extend Display" --1080 --fps 120 --bitrate 40000 --vide
 ```
 
 切断だけではアプリは動き続けます。元の画面構成に戻すには Moonlight で「アプリを終了」します。
-配信のため画面ロックは無効です（hypr-island のロック連携と `Super+Alt+L` を外し、アイドル 660 秒で画面消灯のみ）。
+配信のため画面ロックは無効です（Island のアイドル時ロック・消灯は既定で無効、ロックのキー割り当てもなし）。
 
 ## orange（サーバー）
 
@@ -173,7 +173,7 @@ moonlight stream citrus "Extend Display" --1080 --fps 120 --bitrate 40000 --vide
 
 - [pkgs/default.nix](pkgs/default.nix) に並べたものは `nix build .#<名前>` で単体ビルドできます。
 - パッチは対象パッケージのディレクトリに置きます。
-- `keewai704` 所有の入力（hypr-island、hypr-brightness）は `?ref=main` を明示し、適用前に毎回 `nix flake update` で最新の main に更新します。
+- `keewai704` 所有の入力（Island、hypr-brightness）は `?ref=main` を明示し、適用前に毎回 `nix flake update` で最新の main に更新します。
 - `t3code-release`・`claude-code`・`codex-cli` も適用前に毎回 `nix flake update` で最新リリースに更新します。
 - 非自由パッケージは全体で許可しています（`allowUnfree = true`）。
 - `system.stateVersion` / `home.stateVersion` は互換性の基準なので、アップデートに合わせて変えません。

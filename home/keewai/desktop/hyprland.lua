@@ -183,8 +183,6 @@ local function bind(keys, dispatcher, description, flags)
     hl.bind(keys, dispatcher, flags)
 end
 
-hl.unbind(main_mod .. " + ALT + L")
-
 bind(main_mod .. " + Return", hl.dsp.exec_cmd(terminal), "Open terminal")
 bind(main_mod .. " + E", hl.dsp.exec_cmd(file_manager), "Open file manager")
 bind(main_mod .. " + Q", hl.dsp.window.close(), "Close window")
@@ -271,29 +269,6 @@ bind(main_mod .. " + mouse_down", hl.dsp.focus({ workspace = "e+1" }), "Next wor
 bind(main_mod .. " + mouse_up", hl.dsp.focus({ workspace = "e-1" }), "Previous workspace")
 bind(main_mod .. " + mouse:272", hl.dsp.window.drag(), "Drag window", { mouse = true })
 bind(main_mod .. " + mouse:273", hl.dsp.window.resize(), "Resize window", { mouse = true })
-
-bind(main_mod .. " + F1", function()
-    hl.notification.create({
-        text = table.concat({
-            "Hyprland shortcuts",
-            "Super+Enter: terminal    Super+E: files    Super+Q: close",
-            "Super+H/J/K/L: focus    +Shift: move    +Ctrl: resize",
-            "Super+1..0: workspace    +Shift: move window",
-            "Super+Space: launcher    +Shift: wallpapers    Super+I: controls",
-            "Super+N: notifications    Super+V: clipboard",
-            "Print: region    Shift+Print: all screens    Ctrl+Print: active window",
-            "Super+D: Dynamic Island",
-            "Super+Alt+C: session",
-            "Alt+[: brightness down    Alt+]: brightness up",
-            "Super+F: fullscreen",
-            "Alt+Tab: cycle windows",
-            "Hold Super+Shift+E: log out",
-        }, "\n"),
-        timeout = 8000,
-        color = colors.notification,
-        font_size = 15,
-    })
-end, "Show shortcut help")
 
 bind(
     main_mod .. " + SHIFT + E",

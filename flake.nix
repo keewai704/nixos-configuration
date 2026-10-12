@@ -57,8 +57,8 @@
 
     nixcord.url = "github:4evy/nixcord";
 
-    hypr-island = {
-      url = "git+https://github.com/keewai704/hypr-island.git?ref=main";
+    island = {
+      url = "git+https://github.com/keewai704/Island.git?ref=main";
       inputs.nixpkgs.follows = "nixpkgs";
     };
 

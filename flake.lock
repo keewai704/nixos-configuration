@@ -391,27 +391,6 @@
         "url": "https://github.com/keewai704/hypr-brightness.git"
       }
     },
-    "hypr-island": {
-      "inputs": {
-        "nixpkgs": [
-          "nixpkgs"
-        ]
-      },
-      "locked": {
-        "lastModified": 1791185774,
-        "narHash": "sha256-bNNF/429UV2Qs0o4WB7ez792eg4n1I+iZ969xpuZZf8=",
-        "ref": "main",
-        "rev": "9aee56f90920906cf312ea21ffb7ac663985c9a5",
-        "revCount": 47,
-        "type": "git",
-        "url": "https://github.com/keewai704/hypr-island.git"
-      },
-      "original": {
-        "ref": "main",
-        "type": "git",
-        "url": "https://github.com/keewai704/hypr-island.git"
-      }
-    },
     "hyprcursor": {
       "inputs": {
         "hyprlang": [
@@ -761,6 +740,44 @@
         "type": "github"
       }
     },
+    "impasto": {
+      "flake": false,
+      "locked": {
+        "lastModified": 1791301394,
+        "narHash": "sha256-QF/IFVyRfYQ45wtAFDGm7inc3mRU2n0ed/EzvEap040=",
+        "owner": "andreumassanet",
+        "repo": "impasto",
+        "rev": "6d759aa3fe16e3b40641beeb9b24e3c4afcfeefe",
+        "type": "github"
+      },
+      "original": {
+        "owner": "andreumassanet",
+        "repo": "impasto",
+        "type": "github"
+      }
+    },
+    "island": {
+      "inputs": {
+        "impasto": "impasto",
+        "nixpkgs": [
+          "nixpkgs"
+        ]
+      },
+      "locked": {
+        "lastModified": 1791787244,
+        "narHash": "sha256-R4Llt5n1uMUz3aqqMHkXazpaqBLV6QH/TNElb7LOB58=",
+        "ref": "main",
+        "rev": "4c90692d1c5c880b8a42522bd92e19466c601e89",
+        "revCount": 2,
+        "type": "git",
+        "url": "https://github.com/keewai704/Island.git"
+      },
+      "original": {
+        "ref": "main",
+        "type": "git",
+        "url": "https://github.com/keewai704/Island.git"
+      }
+    },
     "meltype-release": {
       "flake": false,
       "locked": {
@@ -1054,8 +1071,8 @@
         "codex-cli": "codex-cli",
         "home-manager": "home-manager_2",
         "hypr-brightness": "hypr-brightness",
-        "hypr-island": "hypr-island",
         "hyprland": "hyprland",
+        "island": "island",
         "meltype-release": "meltype-release",
         "meltype-tags": "meltype-tags",
         "millennium": "millennium",

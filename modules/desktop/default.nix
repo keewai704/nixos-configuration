@@ -3,7 +3,7 @@
   imports = [
     ./bitwarden.nix
     ./hypr-brightness.nix
-    ./hypr-island.nix
+    ./island.nix
     ./hyprland.nix
     ./input-method.nix
     ./steam.nix

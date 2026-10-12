@@ -81,7 +81,6 @@ in
     background = "rgb(${base00})";
     shadow = "rgba(00000066)";
     shadowInactive = "rgba(00000044)";
-    notification = "rgb(${base0D})";
   };
 
   tuigreetTheme = builtins.concatStringsSep ";" [
