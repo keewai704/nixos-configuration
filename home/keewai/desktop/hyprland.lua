@@ -50,6 +50,7 @@ hl.config({
     },
 
     general = {
+        layout = "master",
         gaps_in = 6,
         gaps_out = 12,
         border_size = 2,
@@ -117,6 +118,13 @@ hl.config({
     dwindle = {
         preserve_split = true,
         precise_mouse_move = true,
+    },
+
+    master = {
+        orientation = "center",
+        mfact = 1 / 3,
+        new_status = "slave",
+        slave_count_for_center_master = 2,
     },
 
     binds = {
