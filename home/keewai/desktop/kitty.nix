@@ -2,6 +2,7 @@
 {
   programs.kitty = {
     enable = true;
+    settings.remember_window_size = false;
     font = {
       package = lib.mkForce pkgs.hackgen-nf-font;
       name = lib.mkForce "HackGen Console NF";
