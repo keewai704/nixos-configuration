@@ -50,6 +50,7 @@ hl.config({
     },
 
     general = {
+        layout = "master",
         gaps_in = 6,
         gaps_out = 12,
         border_size = 2,
@@ -117,6 +118,13 @@ hl.config({
     dwindle = {
         preserve_split = true,
         precise_mouse_move = true,
+    },
+
+    master = {
+        orientation = "center",
+        mfact = 1 / 3,
+        new_status = "slave",
+        slave_count_for_center_master = 2,
     },
 
     binds = {
@@ -330,6 +338,19 @@ bind(main_mod .. " + mouse_down", hl.dsp.focus({ workspace = "e+1" }), "Next wor
 bind(main_mod .. " + mouse_up", hl.dsp.focus({ workspace = "e-1" }), "Previous workspace")
 bind(main_mod .. " + mouse:272", hl.dsp.window.drag(), "Drag window", { mouse = true })
 bind(main_mod .. " + mouse:273", hl.dsp.window.resize(), "Resize window", { mouse = true })
+
+bind(
+    "ALT + bracketleft",
+    hl.dsp.global("quickshell:brightnessDown"),
+    "Media · Brightness down (Alt)",
+    { locked = true, repeating = true }
+)
+bind(
+    "ALT + bracketright",
+    hl.dsp.global("quickshell:brightnessUp"),
+    "Media · Brightness up (Alt)",
+    { locked = true, repeating = true }
+)
 
 bind(
     main_mod .. " + SHIFT + E",
