@@ -127,6 +127,11 @@ include the resulting lock change in the commit. Likewise, run
 before each local activation so T3 Code tracks its latest nightly, its agents
 track their latest releases, and Meltype tracks its latest release. This is standing authorization to update those inputs only.
 
+Before each local activation on citrus, also run
+`python3 pkgs/kernel-drivers/update.py` and commit any resulting `sources.json`
+change. Keep Linux and NVIDIA on their latest upstream non-beta releases;
+the source manifest records reproducible hashes, not a permanent version choice.
+
 Outside the repository root, use `git -C` and absolute flake references to the
 actual checkout, normally `/home/keewai/nixos-configuration` and
 `/home/keewai/nixos-configuration#<runtime-host>`.

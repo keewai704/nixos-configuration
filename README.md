@@ -86,6 +86,12 @@ nix build .#<パッケージ名>                    # pkgs/ のパッケージ�
 
 `nixos-rebuild` は必ず実行中のマシン自身の名前（`hostname` の結果）を指定します。
 
+Before activating citrus, run `python3 pkgs/kernel-drivers/update.py` to refresh
+the latest stable upstream Linux and NVIDIA releases and their source hashes.
+Commit `pkgs/kernel-drivers/sources.json` with the configuration. The kernel keeps
+Clang 22, ThinLTO, `-O3`, 1000 Hz, and dynamic preemption without CachyOS patches.
+The BEITONG xpad fix is rebuilt with the kernel through `boot.extraModulePackages`.
+
 ## コーディングエージェント
 
 デスクトップに [T3 Code](https://github.com/pingdotgg/t3code)（`t3code`）を入れています。

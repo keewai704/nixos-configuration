@@ -1,4 +1,4 @@
-{ pkgs, ... }:
+{ config, ... }:
 {
   nix.settings = {
     extra-substituters = [
@@ -19,7 +19,7 @@
   ];
 
   hardware.nvidia = {
-    package = pkgs.nvidia_cachyos;
+    package = config.boot.kernelPackages.callPackage ../../pkgs/kernel-drivers/nvidia.nix { };
     open = true;
     modesetting.enable = true;
     powerManagement.enable = true;

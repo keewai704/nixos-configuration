@@ -1,7 +1,5 @@
-{ inputs, pkgs, ... }:
+{ pkgs, ... }:
 {
-  imports = [ inputs.chaotic.nixosModules.default ];
-
   boot = {
     loader = {
       efi.canTouchEfiVariables = true;
@@ -20,6 +18,5 @@
         };
       };
     };
-    kernelPackages = pkgs.linuxPackages_cachyos;
   };
 }
