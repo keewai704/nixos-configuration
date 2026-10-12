@@ -1,35 +1,16 @@
 {
   config,
-  inputs,
   lib,
   pkgs,
   ...
 }:
-let
-  hazkeyPackages = inputs.nix-hazkey.packages.${pkgs.stdenv.hostPlatform.system};
-in
 {
-  imports = [ inputs.nix-hazkey.homeModules.hazkey ];
-  services.hazkey = {
-    enable = true;
-    zenzai.package = hazkeyPackages.zenzai_v3_2-small;
-    server.package = hazkeyPackages.hazkey-server.override { enableVulkan = true; };
-  };
   i18n.inputMethod = {
     enable = true;
     type = "fcitx5";
 
     fcitx5 = {
-      addons = [
-        (pkgs.writeShellScriptBin "hazkey-server" ''
-          case "$*" in
-            "") action=start ;;
-            -r|--replace) action=restart ;;
-            *) exit 64 ;;
-          esac
-          exec ${lib.getExe' pkgs.systemd "systemctl"} --user "$action" hazkey-server.service
-        '')
-      ];
+      addons = [ (pkgs.callPackage ../../../pkgs/meltype { }) ];
       waylandFrontend = true;
       systemd.enable = false;
       settings.globalOptions."Hotkey/TriggerKeys" = {
@@ -41,14 +22,14 @@ in
         "Groups/0" = {
           Name = "Default";
           "Default Layout" = "us";
-          DefaultIM = "hazkey";
+          DefaultIM = "meltype";
         };
         "Groups/0/Items/0" = {
           Name = "keyboard-us";
           Layout = "";
         };
         "Groups/0/Items/1" = {
-          Name = "hazkey";
+          Name = "meltype";
           Layout = "";
         };
         GroupOrder."0" = "Default";
