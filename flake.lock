@@ -743,11 +743,11 @@
     "impasto": {
       "flake": false,
       "locked": {
-        "lastModified": 1791802742,
-        "narHash": "sha256-79ZCSmCB7Iz7TYqr9YXfzPIj++aY+qyqSrqjioY53Zg=",
+        "lastModified": 1791804061,
+        "narHash": "sha256-revP7+lh5tgibhkdThU2eaqC+c7koAKxv1Z0BL/8l2Y=",
         "owner": "keewai704",
         "repo": "impasto",
-        "rev": "4db211e76db680e966fb3b2b06082d1c3b4c602e",
+        "rev": "635c0a78e8ca22b9531b1835b2ffba7684c01389",
         "type": "github"
       },
       "original": {
@@ -764,11 +764,11 @@
         ]
       },
       "locked": {
-        "lastModified": 1791802810,
-        "narHash": "sha256-kRT3g9Oh/SoA6LMmHh9YvUd13grnN2K1l4EF+7IXi1U=",
+        "lastModified": 1791804236,
+        "narHash": "sha256-TKHdKe1mVN6ItXrD01fIlzeHwH5Ie4znarmFVAzYVBE=",
         "ref": "main",
-        "rev": "be3fd4f74d3e47cf4bc7e1a3f0ac48a07a4e43b6",
-        "revCount": 13,
+        "rev": "255394ca767cfe88df65436e5374312aba012a3f",
+        "revCount": 15,
         "type": "git",
         "url": "https://github.com/keewai704/Island.git"
       },
@@ -781,7 +781,7 @@
     "meltype-release": {
       "flake": false,
       "locked": {
-        "narHash": "sha256-oz9Q8FtWSmHoFGV2hxV26XW9FWCEdT13rpfE2OENYJo=",
+        "narHash": "sha256-S5fF9gy9w+R0cUgZD3+Yi9gpokDgg/MIvzpRx72N+HQ=",
         "type": "file",
         "url": "https://api.github.com/repos/yksr-melt/Meltype/releases/latest"
       },

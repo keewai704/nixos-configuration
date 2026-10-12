@@ -36,6 +36,11 @@
           shape = "ring";
           figure = "off";
         }
+        {
+          id = "codex";
+          shape = "ring";
+          figure = "off";
+        }
       ];
       chips = {
         shape = "icon";
