@@ -186,6 +186,27 @@
         "type": "github"
       }
     },
+    "cpak": {
+      "inputs": {
+        "nixpkgs": [
+          "nixpkgs"
+        ]
+      },
+      "locked": {
+        "lastModified": 1791668534,
+        "narHash": "sha256-RZVOElOkM/kbYe/0i/aqaT+eCioX1qghYKQMyyshIac=",
+        "owner": "Containerpak",
+        "repo": "cpak",
+        "rev": "fa091b34153fb329b3e41124851ebbff764b07ca",
+        "type": "github"
+      },
+      "original": {
+        "owner": "Containerpak",
+        "ref": "v2.14.6",
+        "repo": "cpak",
+        "type": "github"
+      }
+    },
     "firefox-gnome-theme": {
       "flake": false,
       "locked": {
@@ -743,11 +764,11 @@
     "impasto": {
       "flake": false,
       "locked": {
-        "lastModified": 1791804549,
-        "narHash": "sha256-GvDq7ESwPyZ2eziM67DN8F/mIN9t9CSX7H8METexO7c=",
+        "lastModified": 1791805220,
+        "narHash": "sha256-6eIXtTE89sm8fNZSxc/B9Vg9Z9AyKun5KKJzqNItQ9g=",
         "owner": "keewai704",
         "repo": "impasto",
-        "rev": "70ce37d20df3c17643c91fe89bfaa265eed96247",
+        "rev": "5d51ae3347c9771ad631a57f53296b4ca556e34d",
         "type": "github"
       },
       "original": {
@@ -765,11 +786,11 @@
         ]
       },
       "locked": {
-        "lastModified": 1791804612,
-        "narHash": "sha256-eu5YvraDx6lUHow6bijXYRv1WuOJpQuP5TnGHu1c2Zw=",
+        "lastModified": 1791805278,
+        "narHash": "sha256-ADQTKeiXfjYP+n+TyEx1u8ZRlorwdqJZQb+XRka8Rgo=",
         "ref": "main",
-        "rev": "b2cc442fbc22f3446a874f9d8ac6795b20ca2a56",
-        "revCount": 18,
+        "rev": "5577449ef38e2b35a88fedb93964ac3e035740d2",
+        "revCount": 19,
         "type": "git",
         "url": "https://github.com/keewai704/Island.git"
       },
@@ -782,7 +803,7 @@
     "meltype-release": {
       "flake": false,
       "locked": {
-        "narHash": "sha256-4WemOtoWiyeB2Q5VwQMQCszU2E4Uc+NqMkMnm2SqoxQ=",
+        "narHash": "sha256-TU4pzVytI5ahk5fVR41G4zDaZs7an8SK6CRWAaJQNRU=",
         "type": "file",
         "url": "https://api.github.com/repos/yksr-melt/Meltype/releases/latest"
       },
@@ -1070,6 +1091,7 @@
         "chaotic": "chaotic",
         "claude-code": "claude-code",
         "codex-cli": "codex-cli",
+        "cpak": "cpak",
         "home-manager": "home-manager_2",
         "hypr-brightness": "hypr-brightness",
         "hyprland": "hyprland",

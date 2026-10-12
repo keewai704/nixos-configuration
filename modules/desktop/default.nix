@@ -2,6 +2,7 @@
 {
   imports = [
     ./bitwarden.nix
+    ./cpak.nix
     ./hypr-brightness.nix
     ./island.nix
     ./hyprland.nix
