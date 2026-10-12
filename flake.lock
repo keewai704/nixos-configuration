@@ -764,11 +764,11 @@
         ]
       },
       "locked": {
-        "lastModified": 1791793100,
-        "narHash": "sha256-UX+BDJG4mfrmI0wNknYwlzSQ8EUCQXHArnSKuGmJSPo=",
+        "lastModified": 1791795420,
+        "narHash": "sha256-vM8XYZWE+pCT1Zpg9vZYQI0rKwVCR1hsyL+o1a545kA=",
         "ref": "main",
-        "rev": "dd9b9ecf3276044fbdb95d32251e7f4a39219e28",
-        "revCount": 9,
+        "rev": "47f2d21907b864ca0ce372d1104bc14f046554f6",
+        "revCount": 10,
         "type": "git",
         "url": "https://github.com/keewai704/Island.git"
       },
@@ -781,7 +781,7 @@
     "meltype-release": {
       "flake": false,
       "locked": {
-        "narHash": "sha256-LZ1aKic5YiVlMLdyZNrRwx6BMfL1NhW2mXEA4ZIbFgo=",
+        "narHash": "sha256-CNMyI+hAemb8hWn/RChzNlwrcxOTa7hpALI+mVz2XsQ=",
         "type": "file",
         "url": "https://api.github.com/repos/yksr-melt/Meltype/releases/latest"
       },
