@@ -37,8 +37,20 @@ buildLinux (
       PREEMPT = lib.mkForce yes;
       PREEMPT_LAZY = lib.mkForce no;
       PREEMPT_DYNAMIC = yes;
+      DEBUG_INFO_DWARF5 = yes;
+      DEBUG_INFO_DWARF_TOOLCHAIN_DEFAULT = no;
+      MEM_ALLOC_PROFILING = lib.mkForce no;
+      MEM_ALLOC_PROFILING_ENABLED_BY_DEFAULT = lib.mkForce (option no);
+      RCU_EXPERT = yes;
+      RCU_CPU_STALL_TIMEOUT = freeform "60";
+      RCU_LAZY_DEFAULT_OFF = yes;
+      RCU_TRACE = no;
       TRANSPARENT_HUGEPAGE_ALWAYS = lib.mkForce yes;
       TRANSPARENT_HUGEPAGE_MADVISE = lib.mkForce no;
+      TRANSPARENT_HUGEPAGE_SHMEM_HUGE_ADVISE = yes;
+      TRANSPARENT_HUGEPAGE_SHMEM_HUGE_NEVER = no;
+      TRANSPARENT_HUGEPAGE_TMPFS_HUGE_ADVISE = yes;
+      TRANSPARENT_HUGEPAGE_TMPFS_HUGE_NEVER = no;
     };
   }
   // (args.argsOverride or { })
