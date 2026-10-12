@@ -764,11 +764,11 @@
     "impasto": {
       "flake": false,
       "locked": {
-        "lastModified": 1791805220,
-        "narHash": "sha256-6eIXtTE89sm8fNZSxc/B9Vg9Z9AyKun5KKJzqNItQ9g=",
+        "lastModified": 1791819169,
+        "narHash": "sha256-TnP3F3zxUXHw2CcDdTa3CP5hnYeOihZRz/qMwYPG8q4=",
         "owner": "keewai704",
         "repo": "impasto",
-        "rev": "5d51ae3347c9771ad631a57f53296b4ca556e34d",
+        "rev": "6a968f741ca9256a921f75fb7ea53b964c98c2d9",
         "type": "github"
       },
       "original": {
@@ -1203,11 +1203,11 @@
     "t3code-release": {
       "flake": false,
       "locked": {
-        "lastModified": 1791792411,
-        "narHash": "sha256-6HVLYiTaN0JGL2T1cPVceY7lfZKwhHjyGgBNEtz7mKs=",
+        "lastModified": 1791818327,
+        "narHash": "sha256-FmZyvvEDjdAnIg9VwzTd9HWWpqQSQNOrQ9FtqwypGk8=",
         "ref": "master",
-        "rev": "ea46f1e94d3733e4318cd909f1325d1134643b01",
-        "revCount": 398,
+        "rev": "137ce06c2a3a0f8ae1d84320a37d51fbe0adf98e",
+        "revCount": 399,
         "type": "git",
         "url": "https://aur.archlinux.org/t3code-nightly-bin.git"
       },

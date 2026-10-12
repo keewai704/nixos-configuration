@@ -1,6 +1,9 @@
 { config, inputs, ... }:
 {
-  imports = [ inputs.island.homeManagerModules.default ];
+  imports = [
+    inputs.island.homeManagerModules.default
+    ./island-theme.nix
+  ];
 
   programs.island = {
     enable = true;
