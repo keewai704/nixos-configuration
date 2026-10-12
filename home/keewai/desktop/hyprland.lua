@@ -21,7 +21,10 @@ hl.monitor({
 
 local sunshine_instance = os.getenv("HYPRLAND_INSTANCE_SIGNATURE")
 if sunshine_instance then
-    local sunshine_layout = os.getenv("XDG_RUNTIME_DIR") .. "/sunshine-display/" .. sunshine_instance .. "/layout.lua"
+    local sunshine_layout = os.getenv("XDG_RUNTIME_DIR")
+        .. "/sunshine-display/"
+        .. sunshine_instance
+        .. "/layout.lua"
     local sunshine_file = io.open(sunshine_layout, "r")
     if sunshine_file then
         sunshine_file:close()
@@ -178,6 +181,9 @@ hl.gesture({
 })
 
 local function bind(keys, dispatcher, description, flags)
+    if island_bind then
+        return island_bind(keys, dispatcher, description, flags)
+    end
     flags = flags or {}
     flags.description = description
     hl.bind(keys, dispatcher, flags)
@@ -210,7 +216,7 @@ for _, item in ipairs(directions) do
     bind(
         main_mod .. " + " .. item.key,
         hl.dsp.focus({ direction = item.direction }),
-        "Focus " .. item.label
+        "Focus " .. item.label .. " (" .. item.key .. ")"
     )
     bind(
         main_mod .. " + " .. item.arrow,
@@ -220,7 +226,7 @@ for _, item in ipairs(directions) do
     bind(
         main_mod .. " + SHIFT + " .. item.key,
         hl.dsp.window.move({ direction = item.direction }),
-        "Move window " .. item.label
+        "Move window " .. item.label .. " (" .. item.key .. ")"
     )
     bind(
         main_mod .. " + SHIFT + " .. item.arrow,
@@ -234,34 +240,89 @@ for _, item in ipairs(directions) do
     bind(
         main_mod .. " + CTRL + " .. item.key,
         hl.dsp.window.resize({ x = item.x, y = item.y, relative = true }),
-        "Resize window",
+        "Resize window " .. item.label .. " (" .. item.key .. ")",
         flags
     )
     bind(
         main_mod .. " + CTRL + " .. item.arrow,
         hl.dsp.window.resize({ x = item.x, y = item.y, relative = true }),
-        "Resize window",
+        "Resize window " .. item.label,
         { repeating = true }
     )
 end
 
-bind(
-    main_mod .. " + Tab",
-    hl.dsp.focus({ workspace = "previous_per_monitor" }),
-    "Previous workspace"
-)
+local previous_workspaces = {}
+local active_workspaces = {}
+
+for _, monitor in ipairs(hl.get_monitors() or {}) do
+    if monitor.active_workspace then
+        active_workspaces[monitor.name] = monitor.active_workspace.id
+    end
+end
+
+hl.on("workspace.active", function(workspace)
+    local monitor = workspace and workspace.monitor
+    if not monitor then
+        return
+    end
+    local name = monitor.name
+    if active_workspaces[name] and active_workspaces[name] ~= workspace.id then
+        previous_workspaces[name] = active_workspaces[name]
+    end
+    active_workspaces[name] = workspace.id
+end)
+
+local function to_workspace(workspace)
+    return function()
+        local monitor = hl.get_active_monitor()
+        local active = hl.get_active_workspace()
+        local previous = monitor and previous_workspaces[monitor.name]
+        local target = workspace
+        if active and active.id == workspace and previous and previous ~= workspace then
+            target = previous
+        end
+        hl.dispatch(hl.dsp.focus({ workspace = target, on_current_monitor = true }))
+    end
+end
 
 for workspace = 1, 10 do
     local key = workspace % 10
-    bind(
-        main_mod .. " + " .. key,
-        hl.dsp.focus({ workspace = workspace }),
-        "Open workspace " .. workspace
-    )
+    bind(main_mod .. " + " .. key, to_workspace(workspace), "Open workspace " .. workspace)
     bind(
         main_mod .. " + SHIFT + " .. key,
         hl.dsp.window.move({ workspace = workspace, follow = true }),
         "Move window to workspace " .. workspace
+    )
+end
+
+local function take_workspace(direction)
+    return function()
+        local here = hl.get_active_monitor()
+        if not here then
+            return
+        end
+        hl.dispatch(hl.dsp.focus({ monitor = direction }))
+        local there = hl.get_active_monitor()
+        if not there or there.name == here.name then
+            return
+        end
+        hl.dispatch(hl.dsp.workspace.swap_monitors({ monitor1 = here.name, monitor2 = there.name }))
+    end
+end
+
+for _, item in ipairs({
+    { key = "left", direction = "l", label = "left" },
+    { key = "right", direction = "r", label = "right" },
+}) do
+    bind(
+        main_mod .. " + ALT + " .. item.key,
+        hl.dsp.focus({ monitor = item.direction }),
+        "Screens · Focus the screen " .. item.label
+    )
+    bind(
+        main_mod .. " + ALT + SHIFT + " .. item.key,
+        take_workspace(item.direction),
+        "Screens · Take the workspace to the screen " .. item.label
     )
 end
 
