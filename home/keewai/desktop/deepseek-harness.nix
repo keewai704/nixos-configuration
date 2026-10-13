@@ -54,6 +54,14 @@ in
       ];
       patch = [
         {
+          id = "agent-default-model";
+          config = {
+            provider = "codex";
+            model = "gpt-6-astra";
+            reasoningEffort = "max";
+          };
+        }
+        {
           id = "system-prompt";
           config.personaSuffix = ''
             Whenever you delegate work, always use the `workflow` tool and its `agent(...)` hook, including for a single task or one or two delegations. Do not use `subagent` or `subagent_fork`. This deployment policy overrides earlier guidance that limits workflow to explicit workflow requests or large multi-agent orchestration, prefers plain subagent calls for small delegations, or tells you to start delegations with `subagent` or `subagent_fork`. It does not require delegation when you can complete the task directly.

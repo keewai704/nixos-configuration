@@ -183,7 +183,6 @@ hl.window_rule({
 hl.window_rule({
     match = { class = "^(excel|winword|powerpnt)[.]exe$" },
     opacity = "1.0 override 1.0 override 1.0 override",
-    rounding = 0,
 })
 hl.window_rule({
     match = {

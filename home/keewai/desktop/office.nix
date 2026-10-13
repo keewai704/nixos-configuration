@@ -46,6 +46,8 @@ let
   };
 in
 {
+  systemd.user.sessionVariables.FCITX_NO_PREEDIT_APPS = "wps.*,wpp.*,et.*,(winword|excel|powerpnt)[.]exe";
+
   home.file.".local/bin/bottles-development" = {
     source = ./bottles-development.py;
     executable = true;
