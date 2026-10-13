@@ -8,6 +8,7 @@
 let
   package = pkgs.callPackage ../../../pkgs/impasto { inherit (inputs) impasto; };
   state = "${config.xdg.stateHome}/quickshell";
+  wallpaper = "${config.xdg.dataHome}/wallpapers/surface-laptop-ultra-dark.png";
   settings = pkgs.writeText "impasto-settings.json" (
     builtins.toJSON {
       barStyle = "grouped";
@@ -64,9 +65,12 @@ let
     for _ in $(seq 60); do
       if wallpapers=$(${package}/bin/impastoctl wallpaper list 2>/dev/null) &&
           ${lib.getExe pkgs.jq} -e 'type == "object" and has("current")' <<<"$wallpapers" >/dev/null; then
-        if [ "$(${lib.getExe pkgs.jq} -r '.current // ""' <<<"$wallpapers")" = "" ]; then
-          ${package}/bin/impastoctl wallpaper set ${lib.escapeShellArg "${config.stylix.image}"}
-        fi
+        current=$(${lib.getExe pkgs.jq} -r '.current // ""' <<<"$wallpapers")
+        case "$current" in
+          ""|${lib.escapeShellArg "${config.xdg.dataHome}/wallpapers/surface-laptop-ultra-dark.jpeg"})
+            ${package}/bin/impastoctl wallpaper set ${lib.escapeShellArg wallpaper}
+            ;;
+        esac
         ${pkgs.hyprland}/bin/hyprctl reload
         exit 0
       fi
@@ -92,9 +96,12 @@ in
     pkgs.papirus-icon-theme
   ];
   fonts.fontconfig.enable = true;
-  xdg.dataFile."wallpapers" = {
-    source = "${package}/share/impasto/wallpapers";
-    recursive = true;
+  xdg.dataFile = {
+    "wallpapers" = {
+      source = "${package}/share/impasto/wallpapers";
+      recursive = true;
+    };
+    "wallpapers/surface-laptop-ultra-dark.png".source = config.stylix.image;
   };
 
   systemd.user.services.quickshell = {

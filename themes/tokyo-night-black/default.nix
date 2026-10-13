@@ -6,7 +6,7 @@ let
     name = "Colloid-dark-cursors";
     size = 24;
   };
-  wallpaper = ./astronaut-and-angel.png;
+  wallpaper = ./surface-laptop-ultra-dark.png;
   base16Scheme = {
     scheme = "Tokyo Night Black";
     slug = "tokyo-night-black";
