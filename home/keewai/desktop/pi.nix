@@ -55,6 +55,7 @@ in
   ];
 
   home.file = {
+    ".pi/agent/node_modules".source = modules;
     ".pi/agent/extensions/pi-openai-codex-device-login".source =
       "${modules}/pi-openai-codex-device-login";
     ".pi/agent/extensions/pi-claude-bridge".source = "${modules}/pi-claude-bridge";
