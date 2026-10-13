@@ -1,4 +1,9 @@
-{ config, inputs, ... }:
+{
+  config,
+  inputs,
+  pkgs,
+  ...
+}:
 {
   imports = [
     inputs.island.homeManagerModules.default
@@ -7,6 +12,7 @@
 
   programs.island = {
     enable = true;
+    package = pkgs.callPackage ../../../pkgs/island { inherit inputs; };
     wallpaper = config.stylix.image;
     bar = {
       style = "grouped";
