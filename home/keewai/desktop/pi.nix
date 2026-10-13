@@ -123,6 +123,7 @@ in
         ];
         Restart = "on-failure";
         RestartSec = 5;
+        SuccessExitStatus = [ 143 ];
         TimeoutStopSec = 30;
       };
       Install.WantedBy = [ "default.target" ];
