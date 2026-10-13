@@ -117,6 +117,7 @@ The BEITONG xpad fix is rebuilt with the kernel through `boot.extraModulePackage
 - Claude Code と Codex の設定（`~/.claude`、`~/.codex`）は基本的に Nix で管理していません。
   例外として [coding-agents](home/keewai/common/coding-agents/default.nix) が両方へ共通にスキルと MCP サーバーを配ります。
   - スキル: `codingAgents.skills`（[skills/](skills/) の全ディレクトリを自動登録）を `~/.claude/skills/` と `~/.agents/skills/`（Codex）にリンクします。
+    [shadcn/ui の公式スキル](https://ui.shadcn.com/docs/skills)は [shadcn.nix](home/keewai/common/coding-agents/shadcn.nix) で取得元のコミットとハッシュを固定し、参照資料とスクリプトを含めて配布します。実行に必要な Node.js・npm・npx も同じ設定で導入します。
   - MCP: `codingAgents.mcpServers.<name> = { command; args; env; }` を、Home Manager の有効化時に `~/.claude.json` の `mcpServers` と `~/.codex/config.toml` の `[mcp_servers]` へ書き込みます。
     Nix から外したサーバーだけを削除し、手動で追加したサーバーや他の設定はそのまま残します。
 - [hypruse](https://github.com/IlyasKhallouki/hypruse)（デスクトップのみ）は [computer-use.nix](home/keewai/desktop/computer-use.nix) で MCP サーバー `hypruse` として登録しています。
@@ -130,6 +131,7 @@ The BEITONG xpad fix is rebuilt with the kernel through `boot.extraModulePackage
 | `apple-device-usb` | USB / Wi-Fi 経由で iPhone・iPad を操作 |
 | `penpot-apple-design` | Penpot の操作と、iOS・iPadOS・macOS・Apple 風 UI 向けアセットの選定・実装への受け渡し |
 | `faster-whisper` | 音声・動画の文字起こし |
+| `shadcn` | shadcn/ui の部品の導入・調整、`DESIGN.md` に基づく配色・書体・部品の設計 |
 
 リポジトリ専用の検証手順は [.agents/skills/nixos-validation](.agents/skills/nixos-validation/SKILL.md) にあります。
 

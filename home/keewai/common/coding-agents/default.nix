@@ -27,6 +27,8 @@ let
   } (builtins.readFile ./sync-mcp.py);
 in
 {
+  imports = [ ./shadcn.nix ];
+
   options.codingAgents = {
     skills = lib.mkOption {
       type = lib.types.attrsOf lib.types.path;
