@@ -13,6 +13,11 @@ buildDshBundle {
   inherit (manifest) version;
   inherit src;
 
+  postUnpack = ''
+    mv "$sourceRoot" dsh-claude-plugin
+    sourceRoot=dsh-claude-plugin
+  '';
+
   npmDeps = importNpmLock { npmRoot = src; };
   npmConfigHook = importNpmLock.npmConfigHook;
   npmFlags = [ "--ignore-scripts" ];
