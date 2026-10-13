@@ -5,6 +5,7 @@
     ./bitwarden.nix
     ./browser.nix
     ./computer-use.nix
+    ./deepseek-harness.nix
     ./file-manager.nix
     ./hypr-brightness.nix
     ./hyprland.nix
