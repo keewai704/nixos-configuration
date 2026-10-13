@@ -7,7 +7,10 @@
 }:
 let
   system = pkgs.stdenv.hostPlatform.system;
-  dshPkgs = pkgs.extend inputs.deepseek-harness.overlays.default;
+  dshPkgs = import inputs.deepseek-harness.inputs.nixpkgs {
+    inherit system;
+    overlays = [ inputs.deepseek-harness.overlays.default ];
+  };
   claude = dshPkgs.dsh.callPackage ../../../pkgs/deepseek-harness/claude.nix {
     src = inputs.dsh-claude;
   };

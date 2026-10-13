@@ -31,7 +31,6 @@
 
     deepseek-harness = {
       url = "github:moraxyc/deepseek-harness.nix/main";
-      inputs.nixpkgs.follows = "nixpkgs";
     };
 
     dsh-claude = {
