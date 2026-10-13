@@ -87,7 +87,7 @@ in
     Unit = {
       Description = "Publish DeepSeek Harness over Tailscale HTTPS";
       After = [ "dsh-web.service" ];
-      Requires = [ "dsh-web.service" ];
+      Wants = [ "dsh-web.service" ];
     };
     Service = {
       Type = "oneshot";
