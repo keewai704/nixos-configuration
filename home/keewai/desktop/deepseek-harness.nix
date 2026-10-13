@@ -149,7 +149,8 @@ in
     ];
     environment = {
       PATH =
-        lib.makeBinPath [
+        "/run/wrappers/bin:"
+        + lib.makeBinPath [
           claudeCode
           pkgs.nodejs
           pkgs.git
@@ -163,7 +164,10 @@ in
     };
   };
 
-  systemd.user.services.dsh-web.Service.ExecStartPre = "${configureCodexContext}";
+  systemd.user.services.dsh-web.Service = {
+    ExecStartPre = "${configureCodexContext}";
+    PrivateTmp = lib.mkForce false;
+  };
 
   systemd.user.services.dsh-tailscale = {
     Unit = {
