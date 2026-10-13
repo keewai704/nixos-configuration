@@ -17,7 +17,9 @@ window.__ModuleLoader__.load({
       trust: 'Plugins execute as the host user, outside tool sandboxes. Official, installed, enabled and active are separate states. Version-range acceptance alone does not prove compatibility. Nix-managed bundles are reproducible; use the existing Plugins page for package installation and its script approvals.',
       failed: 'Failed / pending plugins', recover: 'Disable failed entry…', bundles: 'Bundle availability',
       active: 'Active', installed: 'Installed', available: 'Available', selected: 'Selected',
-      none: 'None', readOnly: 'Controlled by deployment or inactive', partial: 'Japanese language pack: common controls and this page are translated; other text falls back to English.',
+      none: 'None', readOnly: 'Controlled by deployment or inactive', partial: 'Japanese covers the first-party Web dictionaries. External content, package metadata and third-party widgets can retain their source language.',
+      durablePrivacy: 'Sharing choices are stored separately from the Nix-managed profile and survive restarts and profile regeneration. They apply to all packaged processes using this DSH home.',
+      durableApplied: 'Saved durably and applied. The choice survives profile regeneration.', 'saved-reconcile-required': 'Saved durably, but the running channel could not be reconciled. Review its effective state and restart before relying on it.',
       managed: 'This profile is Nix-managed. GUI changes apply now but reset on the next launch or regeneration of this profile, possibly from another DSH process. Change the Nix deployment configuration for persistence.',
       temporary: 'Applied to the current runtime only; not retained after profile regeneration.',
       persistenceUnknown: 'Persistence policy is unknown. Only current runtime application is reported; verify deployment settings before relying on restart persistence.',
@@ -41,7 +43,9 @@ window.__ModuleLoader__.load({
       trust: 'プラグインはツールのサンドボックス外でホストユーザー権限により実行されます。公式・導入済み・有効・稼働中は別の状態です。バージョン範囲の一致だけでは互換性の証明になりません。Nix管理の構成は再現可能です。追加インストールとスクリプト実行許可は既存の「プラグイン」画面で管理してください。',
       failed: '失敗・待機中のプラグイン', recover: '問題のエントリーを無効化…', bundles: 'バンドルの導入状況',
       active: '稼働中', installed: '導入済み', available: '配置元', selected: '選択済み',
-      none: 'なし', readOnly: 'デプロイ設定で管理、または非稼働', partial: '日本語パックは共通操作とこの画面を翻訳します。未翻訳部分は英語にフォールバックします。',
+      none: 'なし', readOnly: 'デプロイ設定で管理、または非稼働', partial: '標準Web画面の日本語辞書を提供します。外部コンテンツ、パッケージのメタデータ、他社製部品には元の言語が残る場合があります。',
+      durablePrivacy: '送信設定はNix管理プロファイルと別に永続保存し、再起動・プロファイル再生成後も保持します。同じDSHホームを使うパッケージ版プロセスで共有します。',
+      durableApplied: '永続保存して適用しました。プロファイル再生成後も保持します。', 'saved-reconcile-required': '永続保存しましたが、稼働中の経路への適用に失敗しました。実効状態を確認し、再起動後に確認してください。',
       managed: 'このプロファイルはNix管理です。GUIでの変更は今すぐ適用しますが、同じプロファイルの次回起動・再生成で既定値へ戻ります。別のDSHプロセスによる再生成も含みます。永続化にはNixのデプロイ設定を変更してください。',
       temporary: '現在の実行環境にのみ適用しました。プロファイル再生成後は保持されません。',
       persistenceUnknown: '保持性の設定は未確認です。現在の実行環境への適用のみを示します。次回起動後の保持についてはデプロイ設定を確認してください。',
@@ -126,14 +130,14 @@ window.__ModuleLoader__.load({
           !status && h('p', { role: 'status' }, t('loading')),
           status && h(React.Fragment, null,
             h('h3', null, t('privacy')), h('p', null, t('warning')),
-            status.persistence !== 'profile' && h('p', { style: cardStyle }, t(status.persistence === 'launch-reset' ? 'managed' : 'persistenceUnknown')),
+            h('p', { style: cardStyle }, t(status.privacyPersistence === 'durable-store' ? 'durablePrivacy' : status.persistence === 'launch-reset' ? 'managed' : 'persistenceUnknown')),
             status.privacy.map(row => h('article', { key: row.id, style: cardStyle },
               h('strong', null, t(row.id)), ' — ', h('span', null, t(row.effective)),
               h('p', null, locale.active === 'ja' ? scopes[row.id] : row.scope),
               row.editable ? button(t(row.effective === 'enabled' ? 'disable' : 'enable'), () => choose({ ...row, enabled: row.effective !== 'enabled', action: 'privacy' })) : h('small', null, t('readOnly')),
             )),
             pending && h('div', { style: cardStyle, role: 'group', 'aria-label': t('confirm') },
-              status.persistence !== 'profile' && h('p', null, t(status.persistence === 'launch-reset' ? 'managed' : 'persistenceUnknown')),
+              h('p', null, t(pending.action === 'privacy' && status.privacyPersistence === 'durable-store' ? 'durablePrivacy' : status.persistence === 'launch-reset' ? 'managed' : 'persistenceUnknown')),
               h('p', null, t('confirmHint')), h('code', { style: { overflowWrap: 'anywhere' } }, required),
               h('label', { style: { display: 'block' } }, t('confirm'), h('input', { value: phrase, onChange: event => setPhrase(event.target.value), autoComplete: 'off', spellCheck: false, style: { ...buttonStyle, width: '100%', marginBlock: 10 } })),
               button(t('confirm'), () => run(async signal => {
@@ -141,7 +145,7 @@ window.__ModuleLoader__.load({
                 if (saved.application === 'failed' || saved.error) {
                   throw new Error(`${t('changeFailed')} (${saved.error?.code ?? 'operation-error'})`);
                 }
-                const applied = saved.persistence === 'launch-reset' ? 'temporary' : saved.persistence === 'profile' ? 'applied' : 'appliedUnknown';
+                const applied = saved.persistence === 'durable-store' ? 'durableApplied' : saved.persistence === 'launch-reset' ? 'temporary' : saved.persistence === 'profile' ? 'applied' : 'appliedUnknown';
                 setResult(!saved.application || saved.application === 'applied' ? applied : saved.application);
                 setPending(null); await refresh(signal);
               }), phrase !== required), ' ', button(t('cancel'), () => setPending(null)),
@@ -154,6 +158,7 @@ window.__ModuleLoader__.load({
               h('p', null, `${t('candidates')}: ${preview.candidates.length} / ${preview.totalSessions} · ${t('bytes')}: ${preview.candidateBytes}`),
               h('ul', { style: { maxHeight: 180, overflowY: 'auto', overflowWrap: 'anywhere' } }, preview.candidates.slice(0, 100).map(row => h('li', { key: row.id }, `${row.id} · ${new Date(row.createdAt).toLocaleDateString()}`))),
             ),
+            h(AdvancedOperations, { locale: locale.active }),
             h('h3', null, t('plugins')), h('p', null, t('trust')),
             h('p', null, `${t('journal')}: ${t(status.reliability.workflowJournal ? 'present' : 'absent')}`),
             h('p', null, t('recoveryHint')),

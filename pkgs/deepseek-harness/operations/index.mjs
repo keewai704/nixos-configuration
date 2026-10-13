@@ -1,12 +1,16 @@
 import { changePrivacy, jsonRoute, OperationError, persistencePolicy, privacySnapshot, retentionPreview } from './core.mjs';
 
 import z from '@deepseek-ai/schemastery';
+import { registerBudgetRoutes } from './budget-web.mjs';
+import { registerScheduleRecoveryRoutes } from './schedule-recovery-web.mjs';
 
 export const Config = z.object({ persistence: z.union(['launch-reset', 'profile', 'unknown']).default('unknown') });
 export const name = 'operations';
-export const inject = ['connection', 'loader', 'configEditor', 'sessionPersistence'];
+export const inject = ['connection', 'loader', 'configEditor', 'sessionPersistence', 'privacyPolicy'];
 
 export function apply(ctx) {
+  ctx.inject(['agents', 'budgetPolicy'], scoped => registerBudgetRoutes(scoped));
+  ctx.inject(['scheduleRecovery'], scoped => registerScheduleRecoveryRoutes(scoped));
   async function inventory() {
     const entries = [...ctx.loader.entries()].filter(entry => !entry.options.group).map(entry => ({
       id: entry.id, patchId: entry.options.id, module: entry.options.name,
@@ -23,7 +27,7 @@ export function apply(ctx) {
 
   const routes = [
     ['/api/operations/status', 'GET', async () => ({
-      version: 1, privacy: privacySnapshot(ctx), persistence: persistencePolicy(ctx), inventory: await inventory(),
+      version: 2, privacy: privacySnapshot(ctx), privacyPersistence: 'durable-store', persistence: persistencePolicy(ctx), inventory: await inventory(),
       reliability: { workflowJournal: Boolean(ctx.get('workflowJournal')), maintenance: 'offline-exclusive-lock', deletionInBrowser: false },
     })],
     ['/api/operations/workflows', 'GET', async () => ({ runs: await ctx.get('workflowJournal')?.list() ?? [], replayAvailable: false, interruptedMeaning: 'Journal ownership was lost; execution and side effects may still be active. Verify before a new run.' })],

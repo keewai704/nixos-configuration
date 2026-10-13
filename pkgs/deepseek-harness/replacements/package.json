@@ -1,0 +1,83 @@
+{
+  "name": "@keewai/dsh-reliability",
+  "version": "0.1.0",
+  "type": "module",
+  "license": "MIT",
+  "exports": {
+    "./workflow": {
+      "types": "./lib/types/workflow/index.d.ts",
+      "default": "./lib/workflow.js"
+    },
+    "./schedule": {
+      "types": "./lib/types/schedule/index.d.ts",
+      "default": "./lib/schedule.js"
+    },
+    "./journal": {
+      "types": "./lib/types/workflow/journal.d.ts",
+      "default": "./lib/types/workflow/journal.js"
+    },
+    "./package.json": "./package.json",
+    "./subagents": {
+      "types": "./lib/types/subagents/index.d.ts",
+      "default": "./lib/subagents.js"
+    },
+    "./acp": {
+      "types": "./lib/types/acp/index.d.ts",
+      "default": "./lib/acp.js"
+    },
+    "./approval": {
+      "types": "./lib/types/acp/approval.d.ts",
+      "default": "./lib/approval.js"
+    },
+    "./approval-journal": {
+      "types": "./lib/types/acp/approval-journal-plugin.d.ts",
+      "default": "./lib/approval-journal.js"
+    }
+  },
+  "bundledDependencyProvenance": {
+    "@agentclientprotocol/sdk": {
+      "version": "1.4.0",
+      "license": "Apache-2.0",
+      "licenseFile": "./lib/licenses/agentclientprotocol-sdk-LICENSE"
+    }
+  },
+  "peerDependencies": {
+    "@deepseek-ai/cordis": "*",
+    "@deepseek-ai/dsh-agent": "*",
+    "@deepseek-ai/dsh-agent-preset-registry": "*",
+    "@deepseek-ai/dsh-api-session-controller": "*",
+    "@deepseek-ai/dsh-attachment": "*",
+    "@deepseek-ai/dsh-brand": "*",
+    "@deepseek-ai/dsh-chunked-list": "*",
+    "@deepseek-ai/dsh-client-connection": "*",
+    "@deepseek-ai/dsh-home-paths": "*",
+    "@deepseek-ai/dsh-llm": "*",
+    "@deepseek-ai/dsh-permission-presets": "*",
+    "@deepseek-ai/dsh-ptc-runtime": "*",
+    "@deepseek-ai/dsh-sandbox": "*",
+    "@deepseek-ai/dsh-sandbox-policy": "*",
+    "@deepseek-ai/dsh-schedule": "*",
+    "@deepseek-ai/dsh-scope": "*",
+    "@deepseek-ai/dsh-session": "*",
+    "@deepseek-ai/dsh-session-persistence": "*",
+    "@deepseek-ai/dsh-session-projection": "*",
+    "@deepseek-ai/dsh-session-query": "*",
+    "@deepseek-ai/dsh-storage-domain": "*",
+    "@deepseek-ai/dsh-subagent": "*",
+    "@deepseek-ai/dsh-subprocess": "*",
+    "@deepseek-ai/dsh-system-prompt": "*",
+    "@deepseek-ai/dsh-timeout": "*",
+    "@deepseek-ai/dsh-tools": "*",
+    "@deepseek-ai/dsh-typert-protocol": "*",
+    "@deepseek-ai/dsh-user-approval": "*",
+    "@deepseek-ai/dsh-util-time": "*",
+    "@deepseek-ai/dsh-util-values": "*",
+    "@deepseek-ai/dsh-workflow": "*",
+    "@deepseek-ai/dsh-working-directory": "*",
+    "@deepseek-ai/dsh-workspace": "*",
+    "@deepseek-ai/node-addon-system": "*",
+    "@deepseek-ai/schemastery": "*",
+    "@js-temporal/polyfill": "0.5.1",
+    "zod": "^4.4.3"
+  }
+}

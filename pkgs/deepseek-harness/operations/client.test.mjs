@@ -1,10 +1,10 @@
 import assert from 'node:assert/strict';
-import { readFile } from 'node:fs/promises';
 import { createRequire } from 'node:module';
 import test from 'node:test';
 import vm from 'node:vm';
+import { buildClient } from './build-client.mjs';
 
-const source = await readFile(new URL('./client.js', import.meta.url), 'utf8');
+const source = buildClient();
 
 function capture(react = {}) {
   let plugin;
@@ -36,6 +36,8 @@ test('client registers an additive page and Japanese fallback without React dupl
   assert.equal(pages[0].options.label(), 'Privacy & operations');
   assert.deepEqual(Object.keys(dictionaries.get('operations').en).sort(), Object.keys(dictionaries.get('operations').ja).sort());
   assert.equal(dictionaries.get('common').ja.save, '保存');
+  assert.equal(dictionaries.size, 57);
+  assert.match(dictionaries.get('plan').ja['chip.on.title'], /読み取り専用には制限しません/);
   for (const cleanup of cleanups.reverse()) cleanup();
   assert.equal(dictionaries.size, 0);
 });

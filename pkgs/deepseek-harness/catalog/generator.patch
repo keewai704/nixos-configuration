@@ -1,0 +1,111 @@
+--- a/scripts/gen-config-catalog.ts
++++ b/scripts/gen-config-catalog.ts
+@@ -652,17 +652,33 @@
+ 
+ /** Resolve the entry file's default export to its class/function declaration
+  * (mirroring the Loader's `unwrapExports`), or null when there is none. */
+-function defaultExport(ctx: FileCtx): ts.ClassDeclaration | ts.FunctionDeclaration | null {
++function defaultExport(
++  ctx: FileCtx,
++  world: World,
++  seen = new Set<string>(),
++): { ctx: FileCtx; decl: ts.ClassDeclaration | ts.FunctionDeclaration } | null {
++  if (seen.has(ctx.abs)) throw new Error(`gen-config-catalog: cyclic default re-export in ${ctx.rel}`)
++  seen.add(ctx.abs)
+   for (const stmt of ctx.sf.statements) {
+     if (ts.isExportAssignment(stmt) && !stmt.isExportEquals && ts.isIdentifier(stmt.expression)) {
+       const name = stmt.expression.text
+       for (const s of ctx.sf.statements) {
+-        if ((ts.isClassDeclaration(s) || ts.isFunctionDeclaration(s)) && s.name?.text === name) return s
++        if ((ts.isClassDeclaration(s) || ts.isFunctionDeclaration(s)) && s.name?.text === name) return { ctx, decl: s }
+       }
+       return null
+     }
+     if ((ts.isClassDeclaration(stmt) || ts.isFunctionDeclaration(stmt))
+-      && stmt.modifiers?.some(m => m.kind === ts.SyntaxKind.DefaultKeyword)) return stmt
++      && stmt.modifiers?.some(m => m.kind === ts.SyntaxKind.DefaultKeyword)) return { ctx, decl: stmt }
++    if (ts.isExportDeclaration(stmt) && !stmt.isTypeOnly
++      && stmt.moduleSpecifier && ts.isStringLiteral(stmt.moduleSpecifier)
++      && stmt.exportClause && ts.isNamedExports(stmt.exportClause)
++      && stmt.exportClause.elements.some(el => !el.isTypeOnly && el.name.text === 'default'
++        && (el.propertyName ?? el.name).text === 'default')) {
++      const specifier = stmt.moduleSpecifier.text
++      if (specifier.startsWith('.') && specifier.endsWith('.ts')) {
++        return defaultExport(loadRelative(world, ctx, specifier), world, seen)
++      }
++    }
+   }
+   return null
+ }
+@@ -725,7 +741,9 @@
+     // Classify, mirroring the Loader's unwrapExports: the default export IS
+     // the plugin when present; else an exported `apply` makes the module
+     // namespace the plugin; else the package is a plain library.
+-    const dflt = defaultExport(ctx)
++    const resolvedDefault = defaultExport(ctx, world)
++    if (resolvedDefault !== null) ctx = resolvedDefault.ctx
++    const dflt = resolvedDefault?.decl ?? null
+     const apply = applyExport(ctx)
+     let pluginClass: ts.ClassDeclaration | null = null
+     let configParam: ts.ParameterDeclaration | undefined
+@@ -764,7 +782,7 @@
+ 
+     // Resolve the config type and paste its package-local transitive closure.
+     if (!configParam.type || !ts.isTypeReferenceNode(configParam.type) || !ts.isIdentifier(configParam.type.typeName)) {
+-      violations.push(`${pkg}: config parameter type (${pointer(entryRel, ctx.sf, configParam)}) is not a plain type-name reference; declare a named config type.`)
++      violations.push(`${pkg}: config parameter type (${pointer(ctx.rel, ctx.sf, configParam)}) is not a plain type-name reference; declare a named config type.`)
+       continue
+     }
+     const typeName = configParam.type.typeName.text
+--- a/scripts/gen-config-catalog.spec.ts
++++ b/scripts/gen-config-catalog.spec.ts
+@@ -62,6 +62,49 @@
+ })
+ 
+ describe('shared config schema catalog', () => {
++  it('classifies a re-exported service without config as a plugin', () => {
++    const { root, write } = fixture()
++    write('packages/test/provider/src/index.ts', "export { default, TypertRegistry } from './service.ts'\n")
++    write('packages/test/provider/src/service.ts', `
++export class TypertRegistry {
++  constructor(ctx: unknown) {}
++}
++export default TypertRegistry
++`)
++    expect(collectConfigCatalog(root).find(entry => entry.pkg === '@test/provider')).toMatchObject({
++      entry: 'packages/test/provider/src/index.ts', kind: 'no-config', className: 'TypertRegistry', inject: [],
++    })
++  })
++
++  it('resolves a re-exported plugin config in its declaring file', () => {
++    const { root, write } = fixture()
++    write('packages/test/provider/src/index.ts', "export { default } from './service.ts'\n")
++    write('packages/test/provider/src/service.ts', `${sharedSchema}
++export default class ConfiguredService {
++  static inject = ['tools']
++  static Config = Shared
++  constructor(ctx: unknown, config: BrowserConfig) {}
++}
++`)
++    const entry = collectConfigCatalog(root).find(value => value.pkg === '@test/provider')
++    expect(entry).toMatchObject({ kind: 'config', className: 'ConfiguredService', configTypeName: 'BrowserConfig', inject: ['tools'] })
++    expect(new Set(entry?.schemaKeys)).toEqual(new Set(['mode', 'headless', 'endpoint']))
++    expect(entry?.pastes?.[0]?.source).toMatch(/^packages\/test\/provider\/src\/service\.ts:/)
++  })
++
++  it('rejects a cyclic default re-export', () => {
++    const { root, write } = fixture()
++    write('packages/test/provider/src/index.ts', "export { default } from './service.ts'\n")
++    write('packages/test/provider/src/service.ts', "export { default } from './index.ts'\n")
++    expect(() => collectConfigCatalog(root)).toThrow('cyclic default re-export')
++  })
++
++  it('does not classify a type-only default re-export as a plugin', () => {
++    const { root, write } = fixture()
++    write('packages/test/provider/src/index.ts', "export type { default } from './service.ts'\n")
++    expect(collectConfigCatalog(root).find(entry => entry.pkg === '@test/provider')?.kind).toBe('library')
++  })
++
+   it('collects every branch through a renamed named import from a public source subpath', () => {
+     const { root } = fixture()
+     const provider = collectConfigCatalog(root).find(entry => entry.pkg === '@test/provider')

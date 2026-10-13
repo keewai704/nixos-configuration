@@ -1,0 +1,389 @@
+--- /dev/null
++++ b/workflow/admission.ts
+@@ -0,0 +1,24 @@
++export class WorkflowAdmission {
++  private started = 0
++  private active = 0
++
++  constructor(
++    readonly deadlineAt: number,
++    readonly maxTotalAgents: number,
++    readonly maxConcurrentAgents: number,
++  ) {}
++
++  reserve(): () => void {
++    if (Date.now() >= this.deadlineAt) throw new Error('workflow deadline exceeded')
++    if (this.started >= this.maxTotalAgents) throw new Error('workflow shared total-agent limit exceeded')
++    if (this.active >= this.maxConcurrentAgents) throw new Error('workflow shared concurrency limit exceeded')
++    this.started += 1
++    this.active += 1
++    let released = false
++    return () => {
++      if (released) return
++      released = true
++      this.active -= 1
++    }
++  }
++}
+--- a/workflow/host.ts
++++ b/workflow/host.ts
+@@ -1,4 +1,5 @@
+ /** Workflow child ownership and progress over the shared sandboxed PTC executor. */
++import { randomUUID } from 'node:crypto'
+ import type { Context } from '@deepseek-ai/cordis'
+ import type { Agent } from '@deepseek-ai/dsh-agent'
+ import type {} from '@deepseek-ai/dsh-working-directory'
+@@ -16,10 +17,21 @@
+ import { renderThrown } from './realm.ts'
+ import type { ExecutionObserver } from './runtime.ts'
+ import type { ChildStartRequest, WorkerInit } from './types.ts'
++import type { WorkflowAdmission } from './admission.ts'
++import type { WorkflowJournal } from './journal.ts'
++
++interface Reliability {
++  deadlineAt: number
++  journal: WorkflowJournal | undefined
++  admissions: WorkflowAdmission[]
++  childStarted: (childId: string) => void
++  childDisposed: (childId: string) => void
++}
+ 
+ interface ChildRecord {
+   readonly callId: number
+   readonly run: SubagentActivation
++  readonly release: () => void
+   disposal?: Promise<void>
+ }
+ 
+@@ -121,7 +133,13 @@
+   private cancelReason: string | undefined
+   private disposed: Promise<void> | undefined
+   private readonly externalAbort: () => void
+-  private readonly cwd: Promise<string>
++  private cwd!: Promise<string>
++  private readonly deadlineTimer: ReturnType<typeof setTimeout>
++  private readonly startedAt = Date.now()
++  private active = 0
++  private journalStarted = false
++  private cleanupFailure: string | undefined
++  private journalChain: Promise<void> = Promise.resolve()
+ 
+   constructor(
+     private readonly ctx: Context,
+@@ -135,12 +153,14 @@
+     private readonly policy: SandboxExecutionPolicy,
+     private readonly observer: ExecutionObserver,
+     private readonly signal?: AbortSignal,
++    private readonly reliability?: Reliability,
+   ) {
+     this.externalAbort = () => { this.cancel('workflow signal aborted') }
+     if (signal?.aborted) this.externalAbort()
+     else signal?.addEventListener('abort', this.externalAbort, { once: true })
+-    this.cwd = ctx.workingDirectory.ensure(parent, this.controller.signal)
+-    // Consumers attach durable run recording after start() returns.
++    this.deadlineTimer = setTimeout(() => { this.cancel('workflow deadline exceeded') },
++      Math.max(0, (reliability?.deadlineAt ?? this.startedAt + 600_000) - Date.now()))
++    this.deadlineTimer.unref()
+     this.result = Promise.resolve().then(() => this.drive())
+   }
+ 
+@@ -166,7 +186,16 @@
+   }
+ 
+   private requireActive(): void {
++    if (this.cleanupFailure !== undefined) throw new Error(this.cleanupFailure)
++    if (Date.now() >= (this.reliability?.deadlineAt ?? this.startedAt + 600_000)) this.cancel('workflow deadline exceeded')
+     this.controller.signal.throwIfAborted()
++  }
++
++  private updateJournal(): Promise<void> {
++    const record = { id: this.id, agentsStarted: this.started, activeAgents: this.active }
++    const update = this.journalChain.then(() => this.reliability?.journal?.update(record))
++    this.journalChain = update.catch(() => {})
++    return update
+   }
+ 
+   private track<T>(task: Promise<T>): Promise<T> {
+@@ -199,33 +228,75 @@
+ 
+   private async startChild(request: ChildStartRequest): Promise<PtcJsonValue> {
+     this.requireActive()
++    if (this.started >= this.init.limits.maxTotalAgents || this.active >= this.init.limits.maxConcurrentAgents) {
++      throw new Error('workflow host admission limit exceeded')
++    }
++    const releases: (() => void)[] = []
++    let released = false
++    const release = (): void => {
++      if (released) return
++      released = true
++      for (const release of releases.reverse()) release()
++    }
++    try {
++      for (const admission of this.reliability?.admissions ?? []) releases.push(admission.reserve())
++    } catch (error) {
++      release()
++      throw error
++    }
+     const callId = ++this.started
+-    const run = await this.subagents.startActivation({
+-      provider: this.provider,
+-      label: `${this.meta.name} child ${callId}`,
+-      delivery: 'caller',
+-      signal: this.controller.signal,
+-      request: {
+-        cwd: await this.cwd,
+-        prompt: [{ type: 'text', text: request.prompt }],
+-        parent: this.parent,
+-        ...request.schema === undefined ? {} : { outputSchema: request.schema },
+-        ...request.provider === undefined && request.model === undefined ? {} : {
+-          agentOptions: {
+-            ...request.provider === undefined ? {} : { provider: request.provider },
+-            ...request.model === undefined ? {} : { model: request.model },
++    this.active += 1
++    let invoked = false
++    const childId = this.subagents.getProvider(this.provider)?.prepareContinuable === undefined
++      ? undefined : SessionId(randomUUID())
++    try {
++      await this.updateJournal().catch((error: unknown) => {
++        this.cancel('workflow journal update failed')
++        throw error
++      })
++      this.requireActive()
++      if (childId !== undefined) this.reliability?.childStarted(childId)
++      const cwd = await this.cwd
++      this.requireActive()
++      invoked = true
++      const run = await this.subagents.startActivation({
++        ...childId === undefined ? {} : { childId },
++        provider: this.provider,
++        label: `${this.meta.name} child ${callId}`,
++        delivery: 'caller',
++        signal: this.controller.signal,
++        request: {
++          cwd,
++          prompt: [{ type: 'text', text: request.prompt }],
++          parent: this.parent,
++          ...request.schema === undefined ? {} : { outputSchema: request.schema },
++          ...request.provider === undefined && request.model === undefined ? {} : {
++            agentOptions: {
++              ...request.provider === undefined ? {} : { provider: request.provider },
++              ...request.model === undefined ? {} : { model: request.model },
++            },
+           },
+         },
+-      },
+-    })
+-    const record: ChildRecord = { callId, run }
+-    this.children.set(callId, record)
+-    // A provider can publish after the signal fired while startup was pending.
+-    if (this.controller.signal.aborted) {
+-      await this.disposeChild(record)
+-      throw new Error('workflow child started after cancellation')
+-    }
+-    return { callId, childId: run.childId }
++      })
++      const record: ChildRecord = { callId, run, release }
++      this.children.set(callId, record)
++      this.reliability?.childStarted(run.childId)
++      if (this.controller.signal.aborted) {
++        await this.disposeChild(record)
++        throw new Error('workflow child started after cancellation')
++      }
++      return { callId, childId: run.childId }
++    } catch (error) {
++      if (invoked && !released && !this.children.has(callId)) {
++        this.cleanupFailure ??= `workflow startup quiescence is uncertain: ${renderThrown(error)}`
++        this.cancel(this.cleanupFailure)
++      } else if (!invoked) {
++        if (childId !== undefined) this.reliability?.childDisposed(childId)
++        release()
++        this.active -= 1
++      }
++      throw error
++    }
+   }
+ 
+   private async childResult(record: ChildRecord): Promise<PtcJsonValue> {
+@@ -247,10 +318,17 @@
+   }
+ 
+   private disposeChild(record: ChildRecord): Promise<void> {
+-    record.disposal ??= Promise.resolve().then(() => record.run.dispose()).catch((error: unknown) => {
+-      this.ctx.logger.warn(`workflow-ptc: child dispose failed: ${renderThrown(error)}`)
+-    }).finally(() => {
++    record.disposal ??= Promise.resolve().then(async () => {
++      await record.run.dispose()
+       this.children.delete(record.callId)
++      record.release()
++      this.active -= 1
++      this.reliability?.childDisposed(record.run.childId)
++      await this.updateJournal()
++    }).catch((error: unknown) => {
++      this.cleanupFailure ??= `workflow child cleanup or progress persistence failed: ${renderThrown(error)}`
++      this.cancel(this.cleanupFailure)
++      this.ctx.logger.warn(this.cleanupFailure)
+     })
+     return record.disposal
+   }
+@@ -282,6 +360,19 @@
+   private async drive(): Promise<WorkflowResult> {
+     let result: WorkflowResult
+     try {
++      this.requireActive()
++      await this.reliability?.journal?.start({
++        id: this.id,
++        parentSessionId: this.parent.id,
++        name: this.meta.name,
++        startedAt: this.startedAt,
++        deadlineAt: this.reliability?.deadlineAt ?? this.startedAt + 600_000,
++        maxTotalAgents: this.init.limits.maxTotalAgents,
++        maxConcurrentAgents: this.init.limits.maxConcurrentAgents,
++      })
++      this.journalStarted = true
++      this.requireActive()
++      this.cwd = this.ctx.workingDirectory.ensure(this.parent, this.controller.signal)
+       const cwd = await this.cwd
+       this.requireActive()
+       const outcome = await this.runtime.run(this.runtime.resolve({
+@@ -289,7 +380,7 @@
+         bindings: [{ global: 'workflowHost', functions: this.bindings() }],
+         cwd,
+         sandboxPolicy: this.policy,
+-        timeoutMs: null,
++        timeoutMs: Math.max(1, (this.reliability?.deadlineAt ?? this.startedAt + 600_000) - Date.now()),
+         signal: this.controller.signal,
+       }))
+       this.terminal = true
+@@ -303,15 +394,29 @@
+         : this.cancelled()
+     } finally {
+       this.terminal = true
++      clearTimeout(this.deadlineTimer)
+       this.signal?.removeEventListener('abort', this.externalAbort)
+       this.controller.abort('workflow settled')
+       // Disposing published children releases binding waits; pending starts may publish more.
+       for (const record of this.children.values()) void this.disposeChild(record)
+       while (this.pending.size > 0) await Promise.allSettled([...this.pending])
+       await Promise.all([...this.children.values()].map(record => this.disposeChild(record)))
+-      this.children.clear()
+       for (const info of this.liveAgents.values()) this.endAgent({ ...info, outcome: 'cancelled' })
+     }
++    if (this.cleanupFailure !== undefined) {
++      result = { value: null, stopReason: 'error', error: this.cleanupFailure, agentsStarted: this.started }
++      if (this.active > 0) return result
++    }
++    if (this.journalStarted) {
++      try {
++        await this.journalChain
++        await this.reliability?.journal?.finish({
++          id: this.id, stopReason: result.stopReason, agentsStarted: this.started, finishedAt: Math.max(this.startedAt, Date.now()),
++        })
++      } catch (error) {
++        return { value: null, stopReason: 'error', error: `workflow journal settlement failed: ${renderThrown(error)}`, agentsStarted: this.started }
++      }
++    }
+     return result
+   }
+ }
+--- a/workflow/index.ts
++++ b/workflow/index.ts
+@@ -15,6 +15,8 @@
+ import WorkflowEngine, { WorkflowError, WorkflowRunId } from '@deepseek-ai/dsh-workflow'
+ import type { WorkflowRun, WorkflowRunInfo, WorkflowStartRequest } from '@deepseek-ai/dsh-workflow'
+ import { PtcWorkflowRun } from './host.ts'
++import { WorkflowAdmission } from './admission.ts'
++import { budgetDeadline } from './budget-deadline.ts'
+ import { validateMeta } from './meta.ts'
+ import type { WorkerInit, WorkerLimits } from './types.ts'
+ 
+@@ -41,9 +42,12 @@
+   maxItemsPerCall?: number
+   /** VM timeout for the script's initial synchronous slice (default 5000 ms). */
+   syncTimeoutMs?: number
++  timeoutMs?: number
++  requireJournal?: boolean
+ }
+ 
+ type ResolvedConfig = Required<Config>
++const rootAdmissions = new WeakMap<Context, Map<string, WorkflowAdmission>>()
+ 
+ /** A body that still carries the Claude Code-style meta header (meta rides the seam as data here). */
+ const META_STATEMENT = /^\s*export\s+const\s+meta\b/
+@@ -101,7 +105,7 @@
+  * the seam contract.
+  */
+ class PtcWorkflowEngine extends WorkflowEngine {
+-  static inject = ['subagents', 'ptcRuntime', 'sandboxPolicy', 'workingDirectory']
++  static inject = ['subagents', 'ptcRuntime', 'sandboxPolicy', 'workingDirectory', 'agents']
+ 
+   static Config: z<Config> = z.object({
+     provider: z.string().default('spawn'),
+@@ -109,9 +113,12 @@
+     maxTotalAgents: z.natural().min(1).default(1000),
+     maxItemsPerCall: z.natural().min(1).default(4096),
+     syncTimeoutMs: z.natural().min(1).default(5000),
++    timeoutMs: z.natural().min(1).max(2_147_483_647).default(600_000),
++    requireJournal: z.boolean().default(false),
+   })
+ 
+   private readonly config: ResolvedConfig
++  private readonly admissions: Map<string, WorkflowAdmission>
+ 
+   constructor(ctx: Context, config: Config) {
+     super(ctx)
+@@ -119,6 +126,8 @@
+     // schemastery (static Config) has already filled the defaulted fields;
+     // the assertion records that resolution, not a hidden fallback.
+     this.config = config as ResolvedConfig
++    this.admissions = rootAdmissions.get(ctx.root) ?? new Map()
++    rootAdmissions.set(ctx.root, this.admissions)
+   }
+ 
+   /**
+@@ -139,13 +148,30 @@
+     const id = WorkflowRunId(randomUUID())
+     const info: WorkflowRunInfo = { id, meta }
+     const limits: WorkerLimits = {
+-      maxConcurrentAgents: this.config.maxConcurrentAgents === 0
++      maxConcurrentAgents: Math.min(maxTotalAgents, this.config.maxConcurrentAgents === 0
+         ? Math.min(16, Math.max(1, availableParallelism() - 2))
+-        : this.config.maxConcurrentAgents,
++        : this.config.maxConcurrentAgents),
+       maxTotalAgents,
+       maxItemsPerCall: this.config.maxItemsPerCall,
+       syncTimeoutMs: this.config.syncTimeoutMs,
+     }
++    const journal = this.ctx.get('workflowJournal')
++    if (this.config.requireJournal && journal === undefined) {
++      throw new WorkflowError('workflow journal is required but unavailable', 'INVALID_ARGUMENT')
++    }
++    const ancestors: WorkflowAdmission[] = []
++    const visited = new Set<string>()
++    let parent: typeof request.parent | undefined = request.parent
++    while (parent !== undefined && !visited.has(parent.id)) {
++      visited.add(parent.id)
++      const admission = this.admissions.get(parent.id)
++      if (admission !== undefined && !ancestors.includes(admission)) ancestors.push(admission)
++      const parentId: typeof request.parent.id | undefined = parent.session.header.parentSession
++      parent = parentId === undefined ? undefined : this.ctx.agents.get(parentId)
++    }
++    const deadlineAt = Math.min(Date.now() + this.config.timeoutMs, budgetDeadline(this.ctx, request.parent.id),
++      ...ancestors.map(admission => admission.deadlineAt))
++    const admission = new WorkflowAdmission(deadlineAt, maxTotalAgents, limits.maxConcurrentAgents)
+     const init: WorkerInit = {
+       meta,
+       body: request.script,
+@@ -172,6 +198,13 @@
+         agentEnd: (agent) => { this.emitWorkflowEvent('workflow/agent-end', info, agent) },
+       },
+       request.signal,
++      {
++        deadlineAt,
++        journal,
++        admissions: [...ancestors, admission],
++        childStarted: childId => { this.admissions.set(childId, admission) },
++        childDisposed: childId => { this.admissions.delete(childId) },
++      },
+     )
+ 
+     this.emitWorkflowEvent('workflow/start', info)

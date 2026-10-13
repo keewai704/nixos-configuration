@@ -65,6 +65,36 @@ class LaunchLockTests(unittest.TestCase):
         self.assertFalse((parent / "new-home").exists())
         parent.chmod(0o700)
 
+    def test_incomplete_migration_blocks_launch_even_with_terminal_status(self):
+        directory = self.home / "operations/migrations"
+        directory.mkdir(parents=True)
+        (directory / "active.json").write_text('{"status":"committed"}')
+        result = self.run_locked("raise RuntimeError('must not execute')")
+        self.assertEqual(result.returncode, 1)
+        self.assertIn("explicit recovery", result.stderr)
+
+    def test_dangling_active_marker_is_not_ignored(self):
+        directory = self.home / "operations/migrations"
+        directory.mkdir(parents=True)
+        (directory / "active.json").symlink_to(directory / "absent")
+        result = self.run_locked("print('unsafe')")
+        self.assertEqual(result.returncode, 1)
+        self.assertIn("explicit recovery", result.stderr)
+
+    def test_incomplete_retention_blocks_workspace_writers(self):
+        directory = self.home / "storages"
+        directory.mkdir()
+        (directory / ".retention-workspace.tmp").write_text("partial")
+        result = self.run_locked("print('unsafe')")
+        self.assertEqual(result.returncode, 1)
+        self.assertIn("explicit recovery", result.stderr)
+
+    def test_symlinked_maintenance_parent_is_refused(self):
+        (self.home / "operations").symlink_to(self.home / "absent")
+        result = self.run_locked("print('unsafe')")
+        self.assertEqual(result.returncode, 1)
+        self.assertIn("Unsafe maintenance", result.stderr)
+
 
 if __name__ == "__main__":
     unittest.main()

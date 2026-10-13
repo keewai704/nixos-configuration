@@ -41,6 +41,17 @@ def main():
         current = lock.lstat()
         if (info.st_dev, info.st_ino) != (current.st_dev, current.st_ino):
             raise ValueError("Operations lock changed during acquisition")
+        for relative in ("operations", "operations/migrations", "storages"):
+            path = home / relative
+            try:
+                state = path.lstat()
+            except FileNotFoundError:
+                continue
+            if not stat.S_ISDIR(state.st_mode) or state.st_uid != os.getuid() or state.st_mode & 0o022:
+                raise ValueError("Unsafe maintenance state directory")
+        for relative in ("operations/migrations/active.json", "storages/.retention-workspace.json", "storages/.retention-workspace.tmp"):
+            if os.path.lexists(home / relative):
+                raise ValueError("Incomplete offline maintenance requires explicit recovery before DSH can start")
         os.set_inheritable(fd, True)
         os.environ["DSH_HOME"] = str(home)
         os.execv(sys.argv[1], sys.argv[1:])

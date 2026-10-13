@@ -24,6 +24,15 @@ let
       src = inputs.dsh-claude;
     }
   );
+  reliability = dshPkgs.dsh.callPackage ../../../pkgs/deepseek-harness/replacements.nix {
+    dsh-kernel = dshPkgs.dsh.dsh-kernel;
+    dsh-workspace = dshPkgs.dsh.dsh-workspace;
+  };
+  planUi = dshPkgs.dsh.callPackage ../../../pkgs/deepseek-harness/plan-ui.nix {
+    dsh-kernel = dshPkgs.dsh.dsh-kernel;
+    dsh-workspace = dshPkgs.dsh.dsh-workspace;
+    webBundle = dshPkgs.dsh.bundles.web-app;
+  };
   claudeCode = inputs.claude-code.packages.${system}.default;
   tailnetHost = "citrus.tail1e65cd.ts.net";
   publicUrl = "https://${tailnetHost}/";
@@ -76,7 +85,10 @@ in
   home.packages = [
     (dshPkgs.dsh.callPackage ../../../pkgs/deepseek-harness/maintenance.nix {
       dsh-kernel = dshPkgs.dsh.dsh-kernel;
+      nodeModules = config.services.dsh.package.passthru.nodeModules;
     })
+    (dshPkgs.callPackage ../../../pkgs/deepseek-harness/storage-migrate.nix { })
+    (dshPkgs.dsh.callPackage ../../../pkgs/deepseek-harness/catalog.nix { })
     (lib.hiPrio (
       pkgs.callPackage ../../../pkgs/deepseek-harness/launcher.nix {
         inherit publicUrl;
@@ -103,9 +115,15 @@ in
         dshPkgs.dsh.bundles.web-app
         (compatibleBundle dshPkgs.dsh.bundles.subscriptions)
         claude
+        reliability
+        planUi
         (dshPkgs.dsh.callPackage ../../../pkgs/deepseek-harness/operations.nix {
           dsh-kernel = dshPkgs.dsh.dsh-kernel;
           dsh-workspace = dshPkgs.dsh.dsh-workspace;
+          webBundle = dshPkgs.dsh.bundles.web-app;
+          baseBundle = dshPkgs.dsh.bundles.base;
+          claudeBundle = claude;
+          subscriptionsBundle = compatibleBundle dshPkgs.dsh.bundles.subscriptions;
         })
       ];
       patch = [

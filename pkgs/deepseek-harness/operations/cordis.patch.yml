@@ -1,11 +1,70 @@
 - insert:
+    - id: privacy-policy
+      name: '@keewai/dsh-operations/privacy'
     - id: workflow-journal
       name: '@keewai/dsh-operations/journal'
+    - id: budget-dispatch-guard
+      name: '@keewai/dsh-operations/budget-guard'
+    - id: budget-policy
+      name: '@keewai/dsh-operations/budget'
+      inject:
+        budgetDispatchGuard: {}
+    - id: checkpoints
+      name: '@keewai/dsh-operations/checkpoints'
+    - id: approval-journal
+      name: '@keewai/dsh-reliability/approval-journal'
     - id: operations
       name: '@keewai/dsh-operations'
 - id: ui-settings-session-log
   disabled: true
+- id: ui-settings-plugin-inventory
+  disabled: true
+- id: subagent
+  name: '@keewai/dsh-reliability/subagents'
+  config:
+    requireAdmission: true
+- id: schedule
+  name: '@keewai/dsh-reliability/schedule'
+- id: approval
+  name: '@keewai/dsh-reliability/approval'
+- id: ui-plan
+  name: '@keewai/dsh-ui-plan'
+- id: typert-loader
+  config:
+    packages:
+      - '@deepseek-ai/dsh-schedule'
+      - '@deepseek-ai/dsh-subagent'
+      - '@deepseek-ai/dsh-client-product-analytics'
+- id: workflow-ptc
+  name: '@keewai/dsh-reliability/workflow'
+  inject:
+    budgetPolicy: {}
+  config:
+    provider: spawn
+    requireJournal: true
+    timeoutMs: 3600000
+    maxTotalAgents: 128
+    maxConcurrentAgents: 8
+- id: agent-loop
+  inject:
+    budgetPolicy: {}
+- id: llm-pi-ai
+  inject:
+    budgetPolicy: {}
+- id: llm-deepseek
+  inject:
+    budgetPolicy: {}
+- id: llm-deepseek-account
+  inject:
+    budgetPolicy: {}
+- id: llm-subscriptions
+  inject:
+    budgetPolicy: {}
+- id: llm-claude-code
+  inject:
+    budgetPolicy: {}
 - id: session-telemetry-otel
+  name: '@keewai/dsh-operations/privacy-telemetry'
   config:
     mode: DISABLED
     shutdownTimeoutMillis: 3000
@@ -20,12 +79,15 @@
       maxExportBatchSize: 2048
       exportTimeoutMillis: 1500
 - id: session-log-deepseek
+  name: '@keewai/dsh-operations/privacy-session-log'
   config:
     enabled: false
 - id: plugin-package-inventory-deepseek
+  name: '@keewai/dsh-operations/privacy-inventory'
   config:
     enabled: false
 - id: product-analytics
+  name: '@keewai/dsh-operations/privacy-analytics'
   config:
     enabled: false
     appVersion: !!js process.env.DSH_CLIENT_VERSION

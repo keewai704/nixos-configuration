@@ -1,0 +1,370 @@
+--- a/subagents/activation.ts
++++ b/subagents/activation.ts
+@@ -10,7 +10,7 @@
+ import type { ActivationObserver } from './lifecycle.ts'
+ import { SubagentError } from './error.ts'
+ import type { StructuredAttachment } from './structured.ts'
+-import type { SubagentResult, SubagentRun } from './types.ts'
++import type { SubagentAdmissionLease, SubagentResult, SubagentRun } from './types.ts'
+ 
+ /** Process-local slots shared through uninterrupted continuable parent links. */
+ export class ActivationPool {
+@@ -40,6 +40,8 @@
+  * The manager owns admission, execution handles, and resource release.
+  */
+ interface ActivationBase {
++  readonly admission?: SubagentAdmissionLease | undefined
++  admissionCleanup?: () => void
+   /** Shared capacity for this Activation and all its managed descendants. */
+   readonly pool: ActivationPool
+   /** Return this epoch's slot after its handle has finished disposal. */
+--- a/subagents/child-agent.ts
++++ b/subagents/child-agent.ts
+@@ -27,13 +27,8 @@
+ import type {} from '@deepseek-ai/dsh-agent-preset-registry'
+ import { delegationDepthOf } from './depth.ts'
+ 
+-/** Thrown when starting a child would exceed the requested depth cap. */
+-export class SubagentDepthError extends Error {
+-  constructor(public readonly attemptedDepth: number, public readonly maxDepth: number) {
+-    super(`subagent depth ${attemptedDepth} exceeds maxDepth ${maxDepth}`)
+-    this.name = 'SubagentDepthError'
+-  }
+-}
++import { SubagentDepthError } from '@deepseek-ai/dsh-subagent'
++export { SubagentDepthError }
+ 
+ /**
+  * Resolve the child's delegation depth from its parent and enforce an optional
+--- a/subagents/error.ts
++++ b/subagents/error.ts
+@@ -1,15 +1 @@
+-/**
+- * Typed failures shared by subagent service and provider operations.
+- *
+- * @module @deepseek-ai/dsh-subagent
+- */
+-
+-import { HarnessError } from '@deepseek-ai/dsh-llm'
+-
+-/** Typed failure for the subagent seam. */
+-export class SubagentError extends HarnessError {
+-  constructor(message: string, code: string, options?: ErrorOptions) {
+-    super(message, code, options)
+-    this.name = 'SubagentError'
+-  }
+-}
++export { SubagentError } from '@deepseek-ai/dsh-subagent'
+--- a/subagents/index.ts
++++ b/subagents/index.ts
+@@ -34,7 +34,6 @@
+ import type {} from '@deepseek-ai/dsh-working-directory'
+ import type {} from '@deepseek-ai/dsh-attachment'
+ import { scopeTarget } from '@deepseek-ai/dsh-scope'
+-import type { Scoped } from '@deepseek-ai/dsh-scope'
+ import { assertObjectJsonSchema } from '@deepseek-ai/dsh-tools'
+ import type { ContentBlock, MessageId, MessageSource } from '@deepseek-ai/dsh-llm'
+ import type { Agent } from '@deepseek-ai/dsh-agent'
+@@ -54,6 +53,9 @@
+ import type {
+   ContinuableCreateRequest,
+   ContinuableCreateSpec,
++  SubagentAdmission,
++  SubagentAdmissionRequest,
++  SubagentAdmissionLease,
+   SubagentCapabilities,
+   SubagentActivation,
+   SubagentActivationSpec,
+@@ -59,8 +61,6 @@
+   SubagentActivationSpec,
+   SubagentInterruptAuthority,
+   SubagentProvider,
+-  SubagentRunEndInfo,
+-  SubagentRunInfo,
+   SubagentSendMessageOptions,
+   SubagentStartRequest,
+ } from './types.ts'
+@@ -82,6 +82,9 @@
+ export { AssistantOutputFold, finalAssistantOutput } from './assistant-output.ts'
+ export { SubagentRunId } from './types.ts'
+ export type {
++  SubagentAdmission,
++  SubagentAdmissionRequest,
++  SubagentAdmissionLease,
+   ContinuableCreateRequest,
+   ContinuableCreateSpec,
+   SubagentCapabilities,
+@@ -128,45 +133,6 @@
+ export type { SubagentRunEndInfo, SubagentRunInfo } from './types.ts'
+ export type { SubagentCatalogEntry, SubagentIdentityProjection, SubagentTimingProjection } from './projection-types.ts'
+ 
+-declare module '@deepseek-ai/cordis' {
+-  interface Context {
+-    subagents: SubagentRuntime
+-  }
+-
+-  interface Events {
+-    /**
+-     * A provider became resolvable in the registry.
+-     * @param provider - the registered provider.
+-     * @mode emit
+-     */
+-    'subagent/provider-added'(provider: SubagentProvider): void
+-    /**
+-     * A provider left the registry. Accepted runs remain holder-owned.
+-     * @param name - the provider name that no longer resolves.
+-     * @mode emit
+-     */
+-    'subagent/provider-removed'(name: string): void
+-    /**
+-     * A provider established a published child. For in-process providers,
+-     * `ctx.agents.get(info.id)` resolves during this notification.
+-     * Scope-filtered dispatch keys the carrier by the delegating parent, so a
+-     * parent-scoped listener observes only its own delegations. Paired with
+-     * `subagent/end`.
+-     * @param info - the provider and published child identity.
+-     * @mode emit
+-     */
+-    'subagent/start'(this: Scoped<SubagentRuntime>, info: SubagentRunInfo): void
+-    /**
+-     * A published child settled. Scope-filtered dispatch uses the same delegating
+-     * parent carrier as `subagent/start`, so the lifecycle pair reaches the
+-     * same scoped audience.
+-     * @param info - the run identity and terminal outcome.
+-     * @mode emit
+-     */
+-    'subagent/end'(this: Scoped<SubagentRuntime>, info: SubagentRunEndInfo): void
+-  }
+-}
+-
+ /**
+  * Durable attribution of one browser-authored follow-up. The Session
+  * Controller declares this `user-rpc` message source and depends on this
+@@ -182,6 +148,7 @@
+ 
+ /** Host configuration for continuable subagent capacity. */
+ export interface Config {
++  requireAdmission?: boolean
+   /** Maximum live children sharing uninterrupted continuable parent links; defaults to 8. */
+   maxActiveSubagents: Volatile<number>
+   /** Default delegation depth for tools without an explicit limit; defaults to 1. */
+@@ -191,11 +158,13 @@
+ /** Named provider registry with managed activations, durable discovery, and local child messaging. */
+ export class SubagentRuntime extends TypertRemoteService {
+   static Config = z.object({
++    requireAdmission: z.boolean().default(false),
+     maxDepth: z.number().step(1).min(0).max(Number.MAX_SAFE_INTEGER).default(1).volatile(),
+     maxActiveSubagents: z.number().step(1).min(1).max(Number.MAX_SAFE_INTEGER).default(8).volatile(),
+   })
+   static inject = ['workingDirectory']
+   private providers = new Map<string, SubagentProvider>()
++  private admission: SubagentAdmission | undefined
+   private manager: SubagentManager | undefined
+   /**
+    * The contained lifecycle-edge publisher. Built here because scoped dispatch
+@@ -209,6 +178,7 @@
+     this.emitLifecycle = createLifecycleEmitter(this.ctx, parent => scopeTarget(this, parent))
+     ctx.inject(['agents'], (childCtx: Context) => {
+       const manager = new SubagentManager(childCtx, {
++        admit: request => this.admit(request),
+         startExternal: (name, request) => {
+           const provider = this.expectProvider(name) as SubagentProvider & Required<Pick<SubagentProvider, 'start'>>
+           return provider.start(request)
+@@ -591,6 +561,23 @@
+     return provider.prepareContinuable(request)
+   }
+ 
++  registerAdmission(admission: SubagentAdmission): () => void {
++    const dispose = this.ctx.effect(() => {
++      if (this.admission !== undefined) throw new Error('subagent admission is already registered')
++      this.admission = admission
++      return () => { this.admission = undefined }
++    }, 'subagents.registerAdmission()')
++    return () => { void dispose() }
++  }
++
++  private async admit(request: SubagentAdmissionRequest): Promise<SubagentAdmissionLease | undefined> {
++    const admission = this.admission
++    if (admission === undefined && this.config.requireAdmission === true) {
++      throw new Error('subagent admission policy is required but unavailable')
++    }
++    return admission?.(request)
++  }
++
+   /** Look up a provider for dispatch or fail loud. */
+   private expectProvider(name: string): SubagentProvider {
+     const provider = this.providers.get(name)
+--- a/subagents/manager.ts
++++ b/subagents/manager.ts
+@@ -34,6 +34,7 @@
+ import type { ActivationObserver } from './lifecycle.ts'
+ import type {
+   ContinuableCreateRequest, ContinuableCreateSpec, SubagentInterruptAuthority,
++  SubagentAdmissionRequest, SubagentAdmissionLease,
+   SubagentActivationSpec, SubagentActivation, SubagentStartRequest, SubagentRun,
+   SubagentSendMessageOptions, SubagentResult, ResolvedSubagentStartRequest,
+ } from './types.ts'
+@@ -58,6 +59,7 @@
+ 
+ /** Package-private hooks supplied by the owning service. */
+ interface SubagentHost {
++  admit(request: SubagentAdmissionRequest): Promise<SubagentAdmissionLease | undefined>
+   startExternal(name: string, request: ResolvedSubagentStartRequest): Promise<SubagentRun>
+   /** Resolve one provider's detached continuable-creation contribution. */
+   prepareContinuable(name: string, request: ContinuableCreateRequest): Promise<ContinuableCreateSpec>
+@@ -859,20 +861,37 @@
+     const { provider, parent } = inputs
+     let childId = inputs.childId
+     inputs.signal.throwIfAborted()
+-    let resource: ActivationResource
++    const admission = await this.host.admit({
++      id: randomUUID(), childId, parent, kind: inputs.kind, provider,
++      resumed: inputs.kind === 'local' && inputs.create === undefined,
++      ...inputs.kind === 'local' ? { agentOptions: inputs.agentOptions } : {},
++      signal: inputs.signal,
++    })
++    inputs = { ...inputs, signal: AbortSignal.any([inputs.signal, ...admission?.signal === undefined ? [] : [admission.signal]]) }
++    let resource: ActivationResource | undefined
++    let unpublishedDisposal: Promise<void> | undefined
++    const disposeUnpublished = (): Promise<void> => {
++      const captured = resource
++      if (captured === undefined) return Promise.resolve()
++      if (captured.kind === 'external') captured.controller.abort(inputs.signal.reason)
++      unpublishedDisposal ??= Promise.resolve().then(() => captured.kind === 'local' ? captured.handle.dispose() : captured.run.dispose())
++      return unpublishedDisposal
++    }
++    let started = false
++    try {
++    inputs.signal.throwIfAborted()
++    this.assertAdmitting(parent)
+     if (inputs.kind === 'external') {
+       const controller = new AbortController()
+       const cancelStartup = (): void => { controller.abort(inputs.signal.reason) }
+       inputs.signal.addEventListener('abort', cancelStartup, { once: true })
+       try {
++        started = true
+         const run = await inputs.start(controller.signal)
+         resource = { kind: 'external', run, controller }
+         void run.result.catch(() => undefined)
+         childId = run.id
+-        try { this.assertChildIdAvailable(childId) } catch (error: unknown) {
+-          await run.dispose()
+-          throw error
+-        }
++        this.assertChildIdAvailable(childId)
+       } finally {
+         inputs.signal.removeEventListener('abort', cancelStartup)
+       }
+@@ -898,6 +917,7 @@
+           )
+         }
+       }
++      started = true
+       const handle = create === undefined
+         ? await this.ownerCtx.agents.resume({
+           resumeSessionId: childId,
+@@ -919,9 +939,31 @@
+ 
+       resource = { kind: 'local', handle, outputStart: handle.agent.session.seq, structured, failureAt: undefined, poke: Promise.withResolvers<void>() }
+     }
++    const onPublicationAbort = (): void => { void disposeUnpublished().catch(() => undefined) }
++    inputs.signal.addEventListener('abort', onPublicationAbort, { once: true })
++    try {
++      if (inputs.signal.aborted) onPublicationAbort()
++      inputs.signal.throwIfAborted()
++      await admission?.publish(childId)
++      inputs.signal.throwIfAborted()
++    } finally { inputs.signal.removeEventListener('abort', onPublicationAbort) }
++    } catch (error: unknown) {
++      let quiescent = !started
++      try {
++        if (resource !== undefined) {
++          await disposeUnpublished()
++          quiescent = true
++        }
++      } catch (cleanupError: unknown) {
++        this.ctx.logger.warn(`subagent admission cleanup failed: ${failureMessage(cleanupError)}`)
++      }
++      await admission?.settle({ quiescent })
++      throw error
++    }
+     const observer = this.host.observeActivation(provider, childId, parent)
+ 
+     const activation: Activation = {
++      admission,
+       pool,
+       releaseSlot,
+       childId,
+@@ -949,6 +991,12 @@
+         activation.handle.agent.ctx.on('agent/inbox/claimed', wakeSettlement)
+         activation.handle.agent.ctx.on('agent/inbox/discarded', wakeSettlement)
+       }
++      if (admission?.signal !== undefined) {
++        const onAbort = (): void => { void this.dispose(activation).catch(error => this.reportTeardownFailure(activation, error)) }
++        admission.signal.addEventListener('abort', onAbort, { once: true })
++        activation.admissionCleanup = () => { admission.signal?.removeEventListener('abort', onAbort) }
++        admission.signal.throwIfAborted()
++      }
+       observer.start(activationAgent(activation))
+     } catch (error: unknown) {
+       /* v8 ignore next -- rollback failure must not mask the admission failure
+@@ -977,13 +1025,19 @@
+   /** Release an Activation whose start edge was not published. */
+   private rollbackUnpublished(activation: Activation, error: unknown): Promise<void> {
+     return this.close(activation, async () => {
++      let quiescent = false
+       try {
+         await (activation.kind === 'local' ? activation.handle.dispose() : activation.run.dispose())
++        quiescent = true
+       } finally {
++        activation.admissionCleanup?.()
++        try { await activation.admission?.settle({ quiescent }) }
++        finally {
+         this.resident.delete(activation.childId)
+         activation.releaseSlot()
+         this.releaseOwnership(activation.childId)
+         activation.result.reject(error)
++        }
+       }
+     })
+   }
+@@ -1157,6 +1211,11 @@
+       ))
+     }
+ 
++    activation.admissionCleanup?.()
++    try { await activation.admission?.settle({ quiescent: failures.length === 0 }) }
++    catch (error: unknown) {
++      failures.push(new SubagentError('subagent admission settlement failed', 'ACTIVATION_TEARDOWN_FAILED', { cause: error }))
++    }
+     let failure: SubagentError | undefined
+     if (failures.length === 1) {
+       failure = failures[0]
+--- a/subagents/types.ts
++++ b/subagents/types.ts
+@@ -28,6 +28,25 @@
+ }
+ 
+ /** One managed child execution and its result delivery policy. */
++export interface SubagentAdmissionRequest {
++  readonly id: string
++  readonly childId: SessionId
++  readonly parent: Agent
++  readonly kind: 'local' | 'external'
++  readonly provider: string
++  readonly resumed: boolean
++  readonly agentOptions?: AgentOptions
++  readonly signal: AbortSignal
++}
++
++export interface SubagentAdmissionLease {
++  readonly signal?: AbortSignal
++  publish(childId: SessionId): void | Promise<void>
++  settle(outcome: { readonly quiescent: boolean }): void | Promise<void>
++}
++
++export type SubagentAdmission = (request: SubagentAdmissionRequest) => Promise<SubagentAdmissionLease>
++
+ export interface SubagentActivationSpec {
+   /** Registered backend to use. */
+   readonly provider: string

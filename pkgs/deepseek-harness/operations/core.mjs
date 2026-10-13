@@ -33,6 +33,11 @@ export function persistencePolicy(ctx) {
 }
 
 export function privacySnapshot(ctx) {
+  const policy = ctx.get?.('privacyPolicy');
+  if (policy) return privacyChannels.map(channel => {
+    const state = policy.status(channel.id);
+    return { id: channel.id, scope: channel.scope, effective: state.effective, configured: state.enabled, editable: state.editable, revision: state.revision, disabledByEnvironment: state.forced, persistence: 'durable-store' };
+  });
   const editable = ctx.configEditor?.entries() ?? [];
   return privacyChannels.map(channel => {
     const entry = entryFor(ctx, channel.id);
@@ -59,6 +64,13 @@ export async function changePrivacy(ctx, input) {
   if (typeof input.enabled !== 'boolean') throw new OperationError('enabled must be boolean');
   const confirmation = `${input.enabled ? 'ENABLE' : 'DISABLE'} ${input.id}`;
   if (input.confirmation !== confirmation) throw new OperationError('Explicit confirmation is required');
+  const policy = ctx.get?.('privacyPolicy');
+  if (policy) {
+    let saved;
+    try { saved = await policy.change(input.id, input.enabled, input.revision, input.confirmation); }
+    catch (error) { throw new OperationError(error.message, 409); }
+    return { channels: privacySnapshot(ctx), application: saved.application, persistence: 'durable-store', remoteDeletion: false, note: 'Consent survives profile regeneration and process restart. Applies to future collection; previously transmitted data is not erased and in-flight requests may finish.' };
+  }
   await ctx.configEditor.edit(entry, current => {
     if (input.revision !== revision(entry, channel.key)) throw new OperationError('Privacy configuration changed; refresh before retrying', 409);
     return { ...current, [channel.key]: input.enabled ? channel.on : channel.off };
