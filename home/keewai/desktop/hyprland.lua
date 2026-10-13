@@ -145,6 +145,27 @@ hl.config({
     },
 })
 
+hl.layer_rule({
+    name = "impasto-desktop-blur",
+    match = { namespace = "^(impasto-desktop)$" },
+    blur = true,
+    ignore_alpha = 0.12,
+})
+hl.window_rule({
+    name = "impasto-settings",
+    match = { class = "^(org\\.quickshell)$", title = "^(Settings)$" },
+    float = true,
+    center = true,
+    size = { 980, 680 },
+})
+hl.window_rule({
+    name = "impasto-satty",
+    match = { class = "^(com\\.gabm\\.satty)$" },
+    float = true,
+    center = true,
+    size = { 1200, 800 },
+})
+
 hl.window_rule({ match = { class = "^steam_app_[0-9]+$" }, tag = "+proton-game" })
 hl.window_rule({ match = { xdg_tag = "^proton-game$" }, tag = "+proton-game" })
 hl.window_rule({
@@ -202,14 +223,63 @@ hl.gesture({
     action = "workspace",
 })
 
-local function bind(keys, dispatcher, description, flags)
-    if island_bind then
-        return island_bind(keys, dispatcher, description, flags)
+local profile_keys = {}
+local state = os.getenv("XDG_STATE_HOME")
+if not state or state == "" then
+    state = os.getenv("HOME") .. "/.local/state"
+end
+local file = io.open(state .. "/quickshell/keys.tsv", "r")
+if file then
+    for line in file:lines() do
+        local description, combination = line:match("^([^#\t][^\t]*)\t(.*)$")
+        if description then
+            profile_keys[description] = combination
+        end
     end
+    file:close()
+end
+
+local function bind(keys, dispatcher, description, flags)
     flags = flags or {}
     flags.description = description
-    hl.bind(keys, dispatcher, flags)
+    local chosen = profile_keys[description]
+    if chosen == nil then
+        chosen = keys
+    end
+    if chosen ~= "" then
+        hl.bind(chosen, dispatcher, flags)
+    end
 end
+
+local function shell(name)
+    return hl.dsp.global("quickshell:" .. name)
+end
+
+bind(main_mod .. " + Space", shell("launcher"), "Shell · Open the launcher")
+bind(main_mod .. " + SHIFT + Space", shell("appearance"), "Shell · Open appearance")
+bind(main_mod .. " + SHIFT + W", shell("effects"), "Shell · Open the wallpaper effects")
+bind(main_mod .. " + I", shell("controls"), "Shell · Open the control centre")
+bind(main_mod .. " + Tab", shell("overview"), "Shell · Open the workspace overview")
+bind(main_mod .. " + V", shell("clipboard"), "Shell · Open the clipboard history")
+bind(main_mod .. " + X", shell("session"), "Session · Session menu")
+bind(main_mod .. " + F1", shell("keys"), "Shell · Show every key")
+bind(main_mod .. " + comma", shell("settings"), "Shell · Open settings")
+bind(main_mod .. " + period", shell("emoji"), "Shell · Pick an emoji")
+bind(main_mod .. " + SHIFT + T", shell("palette"), "Shell · Open the palette")
+bind(main_mod .. " + U", shell("stats"), "Shell · Open system statistics")
+bind(main_mod .. " + SHIFT + C", shell("picker"), "Shell · Pick a colour off the screen")
+bind(main_mod .. " + CTRL + B", shell("zen"), "Shell · Hide or show the bar")
+bind(main_mod .. " + CTRL + W", shell("widgets"), "Shell · Hide or show the desktop widgets")
+bind("Print", shell("capture"), "Shell · Open the capture surface")
+bind("SHIFT + Print", shell("captureScreen"), "Shell · Capture the whole screen")
+bind("CTRL + Print", shell("captureWindow"), "Shell · Capture a window")
+bind(main_mod .. " + SHIFT + R", shell("record"), "Shell · Start or stop recording the screen")
+bind("", shell("captureRegion"), "Shell · Capture a region")
+bind("", shell("captureEdit"), "Shell · Capture a region and annotate it")
+bind("", shell("captureText"), "Shell · Read a region as text")
+bind("", shell("game"), "Shell · Turn game mode on or off")
+bind("", shell("layout"), "Windows · Cycle the layout")
+bind("", shell("machines"), "Shell · Open the virtual machines")
 
 bind(main_mod .. " + Return", hl.dsp.exec_cmd(terminal), "Open terminal")
 bind(main_mod .. " + E", hl.dsp.exec_cmd(file_manager), "Open file manager")
@@ -352,6 +422,67 @@ bind(main_mod .. " + mouse_down", hl.dsp.focus({ workspace = "e+1" }), "Next wor
 bind(main_mod .. " + mouse_up", hl.dsp.focus({ workspace = "e-1" }), "Previous workspace")
 bind(main_mod .. " + mouse:272", hl.dsp.window.drag(), "Drag window", { mouse = true })
 bind(main_mod .. " + mouse:273", hl.dsp.window.resize(), "Resize window", { mouse = true })
+
+bind(
+    "XF86AudioRaiseVolume",
+    hl.dsp.exec_cmd(media.wpctl .. " set-volume -l 1 @DEFAULT_AUDIO_SINK@ 5%+"),
+    "Media · Volume up",
+    { locked = true, repeating = true }
+)
+bind(
+    "XF86AudioLowerVolume",
+    hl.dsp.exec_cmd(media.wpctl .. " set-volume @DEFAULT_AUDIO_SINK@ 5%-"),
+    "Media · Volume down",
+    { locked = true, repeating = true }
+)
+bind(
+    "XF86AudioMute",
+    hl.dsp.exec_cmd(media.wpctl .. " set-mute @DEFAULT_AUDIO_SINK@ toggle"),
+    "Media · Mute output",
+    { locked = true }
+)
+bind(
+    "XF86AudioMicMute",
+    hl.dsp.exec_cmd(media.wpctl .. " set-mute @DEFAULT_AUDIO_SOURCE@ toggle"),
+    "Media · Mute microphone",
+    { locked = true }
+)
+bind(
+    "XF86MonBrightnessUp",
+    shell("brightnessUp"),
+    "Media · Brightness up",
+    { locked = true, repeating = true }
+)
+bind(
+    "XF86MonBrightnessDown",
+    shell("brightnessDown"),
+    "Media · Brightness down",
+    { locked = true, repeating = true }
+)
+bind(
+    "XF86AudioPlay",
+    hl.dsp.exec_cmd(media.playerctl .. " play-pause"),
+    "Media · Play or pause",
+    { locked = true }
+)
+bind(
+    "XF86AudioPause",
+    hl.dsp.exec_cmd(media.playerctl .. " play-pause"),
+    "Media · Play or pause, from the pause key",
+    { locked = true }
+)
+bind(
+    "XF86AudioNext",
+    hl.dsp.exec_cmd(media.playerctl .. " next"),
+    "Media · Next track",
+    { locked = true }
+)
+bind(
+    "XF86AudioPrev",
+    hl.dsp.exec_cmd(media.playerctl .. " previous"),
+    "Media · Previous track",
+    { locked = true }
+)
 
 bind(
     "ALT + bracketleft",

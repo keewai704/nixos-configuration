@@ -4,7 +4,7 @@
     ./bitwarden.nix
     ./cpak.nix
     ./hypr-brightness.nix
-    ./island.nix
+    ./impasto.nix
     ./hyprland.nix
     ./input-method.nix
     ./steam.nix

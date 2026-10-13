@@ -21,9 +21,9 @@ let
   };
 in
 {
-  imports = [ ./island-app-themes.nix ];
+  imports = [ ./impasto-app-themes.nix ];
 
-  config = lib.mkIf config.programs.island.enable {
+  config = lib.mkIf config.programs.quickshell.enable {
     stylix.targets.gtk.extraCss = lib.mkAfter ''
       @import url("file://${state}/gtk-colors.css");
     '';

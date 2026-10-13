@@ -83,7 +83,7 @@ let
   );
 in
 {
-  config = lib.mkIf config.programs.island.enable {
+  config = lib.mkIf config.programs.quickshell.enable {
     xdg.configFile = {
       "quickshell/theme-templates/legcord.css".text = import ./legcord-system24.nix {
         inherit colors fonts;
@@ -112,8 +112,8 @@ in
           source = themeFile "fcitx5/${builtins.baseNameOf path}";
         });
 
-    home.activation.islandAppThemes = lib.hm.dag.entryAfter [ "linkGeneration" ] ''
-      run ${config.programs.island.package}/share/quickshell/island/scripts/theme_manager.py \
+    home.activation.impastoAppThemes = lib.hm.dag.entryAfter [ "linkGeneration" ] ''
+      run ${config.programs.quickshell.package}/share/quickshell/impasto/scripts/theme_manager.py \
         render-themes ${fallback}
     '';
   };

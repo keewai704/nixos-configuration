@@ -10,7 +10,7 @@
     ./hypr-brightness.nix
     ./hyprland.nix
     ./input-method.nix
-    ./island.nix
+    ./impasto.nix
     ./kitty.nix
     ./legcord.nix
     ./office.nix

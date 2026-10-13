@@ -58,7 +58,7 @@ flake.nix
 | 設定不要な GUI アプリを追加 | [home/keewai/desktop/applications.nix](home/keewai/desktop/applications.nix) |
 | ウィンドウ・モニター・キー割り当て | [hyprland.lua](home/keewai/desktop/hyprland.lua) |
 | Hyprland 本体・ログイン画面 | [modules/desktop/hyprland.nix](modules/desktop/hyprland.nix) |
-| パネル・ランチャー・通知・壁紙・ウィジェット | [island.nix](home/keewai/desktop/island.nix)（[keewai704/Island](https://github.com/keewai704/Island)） |
+| パネル・ランチャー・通知・壁紙・ウィジェット | [impasto.nix](home/keewai/desktop/impasto.nix)、[パッケージ](pkgs/impasto/default.nix)（[keewai704/impasto](https://github.com/keewai704/impasto)） |
 | 日本語入力 | [input-method.nix](home/keewai/desktop/input-method.nix)、[modules/desktop/input-method.nix](modules/desktop/input-method.nix) |
 | 端末・ブラウザー・ファイル管理 | [kitty.nix](home/keewai/desktop/kitty.nix)、[browser.nix](home/keewai/desktop/browser.nix)、[file-manager.nix](home/keewai/desktop/file-manager.nix) |
 | Discord | [legcord.nix](home/keewai/desktop/legcord.nix) |
@@ -133,8 +133,8 @@ The BEITONG xpad fix is rebuilt with the kernel through `boot.extraModulePackage
 
 ## citrus（デスクトップ）
 
-- **画面構成**：Hyprland + [Island](https://github.com/keewai704/Island)（[impasto](https://github.com/andreumassanet/impasto) のダイナミックアイランドとデスクトップウィジェットに、[HyprFlux](https://github.com/ahmad9059/HyprFlux) の壁紙エフェクトを加えたもの）。`Super+Space` でランチャー、`Super+I` でコントロールセンター、`Super+Shift+Space` で壁紙、`Super+F1` でショートカット一覧。
-- **配色**：Stylix が GTK・Qt・Kitty を、[テーマ](themes/tokyo-night-black/default.nix) が Hyprland の枠線などを担当。Island は壁紙から配色を取り、初期の壁紙は Stylix の画像。
+- **画面構成**：Hyprland + [impasto](https://github.com/keewai704/impasto)。ソースを直接パッケージ化し、Home Manager の `quickshell.service` で起動します。`Super+Space` でランチャー、`Super+I` でコントロールセンター、`Super+Shift+Space` で壁紙、`Super+F1` でショートカット一覧。音量・マイクミュート・再生操作のメディアキーにも対応します。プロファイルで変更したキーは既定より優先されます。操作用 CLI は `impasto`、低レベル IPC は `impastoctl`。
+- **配色**：Stylix が GTK・Qt・Kitty の基礎設定を、[テーマ](themes/tokyo-night-black/default.nix) が Hyprland の枠線などを担当。impasto の配色・端末フォントを GTK・Qt・Kitty と Legcord・Steam・Fcitx5 のテーマへ反映します。初期の壁紙は Stylix の画像で、選択済みの壁紙・配色・キープロファイルは維持します。
 - **Hyprland**：公式 flake の main を hyprland.cachix.org のビルド済みバイナリで導入。
 - **日本語入力**：Hazkey。keyd で `` Alt+` `` を変換キーに割り当て、Logitech 製キーボードは除外。
 - **ブラウザー**：既定は [Helium](https://github.com/imputnet/helium-linux)（公式リリースを [pkgs/helium](pkgs/helium/) でパッケージ化。nixpkgs の Widevine CDM を読み込ませて DRM 動画も再生可）。TwinStar・OpenMouse の WebHID 設定アプリも Helium のアプリモードで開きます。
@@ -159,7 +159,7 @@ moonlight stream citrus "Extend Display" --1080 --fps 120 --bitrate 40000 --vide
 ```
 
 切断だけではアプリは動き続けます。元の画面構成に戻すには Moonlight で「アプリを終了」します。
-配信のため画面ロックは無効です（Island のアイドル時ロック・消灯は既定で無効、ロックのキー割り当てもなし）。
+配信のため impasto のアイドル時ロック・消灯・サスペンドは明示的に無効化し、ロックのキー割り当ても設けません。セッションメニューからの手動ロックは残ります。
 
 ## orange（サーバー）
 
@@ -185,7 +185,7 @@ moonlight stream citrus "Extend Display" --1080 --fps 120 --bitrate 40000 --vide
 
 - [pkgs/default.nix](pkgs/default.nix) に並べたものは `nix build .#<名前>` で単体ビルドできます。
 - パッチは対象パッケージのディレクトリに置きます。
-- `keewai704` 所有の入力（Island、hypr-brightness）は `?ref=main` を明示し、適用前に毎回 `nix flake update` で最新の main に更新します。
+- `keewai704` 所有の入力（impasto、hypr-brightness）は `?ref=main` を明示し、適用前に毎回 `nix flake update` で最新の main に更新します。
 - `claude-code`・`meltype-release`・`meltype-tags` も適用前に毎回 `nix flake update` で最新リリースに更新します。
 - 非自由パッケージは全体で許可しています（`allowUnfree = true`）。
 - `system.stateVersion` / `home.stateVersion` は互換性の基準なので、アップデートに合わせて変えません。

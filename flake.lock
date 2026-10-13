@@ -727,46 +727,24 @@
     "impasto": {
       "flake": false,
       "locked": {
-        "lastModified": 1791805220,
-        "narHash": "sha256-6eIXtTE89sm8fNZSxc/B9Vg9Z9AyKun5KKJzqNItQ9g=",
-        "owner": "keewai704",
-        "repo": "impasto",
-        "rev": "5d51ae3347c9771ad631a57f53296b4ca556e34d",
-        "type": "github"
-      },
-      "original": {
-        "owner": "keewai704",
+        "lastModified": 1791820866,
+        "narHash": "sha256-fUNtuAh+fLMaET3lmfhrlTVZaMD2mbn2Rzuuqhki2fQ=",
         "ref": "main",
-        "repo": "impasto",
-        "type": "github"
-      }
-    },
-    "island": {
-      "inputs": {
-        "impasto": "impasto",
-        "nixpkgs": [
-          "nixpkgs"
-        ]
-      },
-      "locked": {
-        "lastModified": 1791813936,
-        "narHash": "sha256-GIJ8uS1HDNWK7Z7YMg+MLgLcAe0jdO+M8SF2iKcvGI8=",
-        "ref": "main",
-        "rev": "baeb5bb806328b671110c588e5f548221aa6933c",
-        "revCount": 20,
+        "rev": "22e1047614533ba775827e905555280003e732ec",
+        "revCount": 191,
         "type": "git",
-        "url": "https://github.com/keewai704/Island.git"
+        "url": "https://github.com/keewai704/impasto.git"
       },
       "original": {
         "ref": "main",
         "type": "git",
-        "url": "https://github.com/keewai704/Island.git"
+        "url": "https://github.com/keewai704/impasto.git"
       }
     },
     "meltype-release": {
       "flake": false,
       "locked": {
-        "narHash": "sha256-GXlN16RVLKQmJpPGJvR8XpEJh9Gmbwx9mUiAXD6ROyw=",
+        "narHash": "sha256-cr3BSYZSxwjWH7c48yLEBPjupCCPfCe08AO8gtkPP1o=",
         "type": "file",
         "url": "https://api.github.com/repos/yksr-melt/Meltype/releases/latest"
       },
@@ -1061,7 +1039,7 @@
         "home-manager": "home-manager",
         "hypr-brightness": "hypr-brightness",
         "hyprland": "hyprland",
-        "island": "island",
+        "impasto": "impasto",
         "meltype-release": "meltype-release",
         "meltype-tags": "meltype-tags",
         "millennium": "millennium",

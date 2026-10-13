@@ -59,9 +59,9 @@
 
     nixcord.url = "github:4evy/nixcord";
 
-    island = {
-      url = "git+https://github.com/keewai704/Island.git?ref=main";
-      inputs.nixpkgs.follows = "nixpkgs";
+    impasto = {
+      url = "git+https://github.com/keewai704/impasto.git?ref=main";
+      flake = false;
     };
 
     hypr-brightness = {
