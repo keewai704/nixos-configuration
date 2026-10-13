@@ -11,6 +11,9 @@ let
     inherit system;
     overlays = [ inputs.deepseek-harness.overlays.default ];
   };
+  kernel = dshPkgs.callPackage ../../../pkgs/deepseek-harness/kernel.nix {
+    kernel = dshPkgs.dsh.dsh-kernel;
+  };
   compatibleBundle = dshPkgs.dsh.callPackage ../../../pkgs/deepseek-harness/compatible-bundle.nix { };
   claude = compatibleBundle (
     dshPkgs.dsh.callPackage ../../../pkgs/deepseek-harness/claude.nix {
@@ -24,9 +27,18 @@ in
 {
   imports = [ inputs.deepseek-harness.homeModules.default ];
 
+  home.packages = [
+    (lib.hiPrio (
+      pkgs.callPackage ../../../pkgs/deepseek-harness/launcher.nix {
+        inherit publicUrl;
+        inherit (config.services.dsh) package profile environment;
+      }
+    ))
+  ];
+
   programs.dsh = {
     enable = true;
-    package = dshPkgs.dsh.dsh;
+    package = dshPkgs.dsh.dsh.override { dsh-kernel = kernel; };
     defaultProfile = config.programs.dsh.profiles.web.materializedName;
     profiles.web = {
       bundles = [
@@ -35,6 +47,10 @@ in
         claude
       ];
       patch = [
+        {
+          id = "connection";
+          config.browserAuthentication = false;
+        }
         {
           id = "llm-subscriptions";
           config.providers = [ "codex" ];
