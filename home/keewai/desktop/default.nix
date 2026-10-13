@@ -12,6 +12,7 @@
     ./island.nix
     ./kitty.nix
     ./legcord.nix
+    ./office.nix
     ./penpot-mcp.nix
     ./scskiller.nix
     ./steam-theme.nix
