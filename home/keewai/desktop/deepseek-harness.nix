@@ -11,9 +11,12 @@ let
     inherit system;
     overlays = [ inputs.deepseek-harness.overlays.default ];
   };
-  claude = dshPkgs.dsh.callPackage ../../../pkgs/deepseek-harness/claude.nix {
-    src = inputs.dsh-claude;
-  };
+  compatibleBundle = dshPkgs.dsh.callPackage ../../../pkgs/deepseek-harness/compatible-bundle.nix { };
+  claude = compatibleBundle (
+    dshPkgs.dsh.callPackage ../../../pkgs/deepseek-harness/claude.nix {
+      src = inputs.dsh-claude;
+    }
+  );
   claudeCode = inputs.claude-code.packages.${system}.default;
   tailnetHost = "citrus.tail1e65cd.ts.net";
   publicUrl = "https://${tailnetHost}:8443/";
@@ -28,7 +31,7 @@ in
     profiles.web = {
       bundles = [
         dshPkgs.dsh.bundles.web-app
-        dshPkgs.dsh.bundles.subscriptions
+        (compatibleBundle dshPkgs.dsh.bundles.subscriptions)
         claude
       ];
       patch = [

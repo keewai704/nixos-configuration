@@ -1,0 +1,42 @@
+--- a/src/index.ts
++++ b/src/index.ts
+@@ -9,0 +10,2 @@
++  Message,
++  ToolResultBlock,
+@@ -201,0 +204,20 @@
++    options = {
++      ...options,
++      messages: options.messages.map((message) => {
++        if ((message.role as string) !== 'tool') return message
++        const current = message as unknown as {
++          toolCallId: ToolResultBlock['toolCallId']
++          isError?: boolean
++        }
++        return {
++          ...message,
++          role: 'user',
++          content: [{
++            type: 'tool-result',
++            toolCallId: current.toolCallId,
++            content: message.content,
++            isError: current.isError ?? false,
++          }],
++        } as Message
++      }),
++    }
+--- a/tests/tool-bridge.spec.ts
++++ b/tests/tool-bridge.spec.ts
+@@ -255 +255 @@
+-  it('executes one parked MCP call through DSH and resumes the same Claude query', async () => {
++  it.each(['legacy', 'tool'])('resumes the same Claude query with %s tool messages', async (format) => {
+@@ -279 +279,9 @@
+-    const second = await collect(adapter.stream(request([user(), assistantTool(), toolResult()])))
++    const result = format === 'legacy' ? toolResult() : {
++      id: 'r1',
++      role: 'tool',
++      toolCallId: 'toolu_read_1',
++      source: { kind: 'tool', callId: 'toolu_read_1' },
++      content: [{ type: 'text', text: 'fixture-value' }],
++      isError: false,
++    } as unknown as Message
++    const second = await collect(adapter.stream(request([user(), assistantTool(), result])))

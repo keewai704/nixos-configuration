@@ -12,6 +12,7 @@ buildDshBundle {
   pname = manifest.name;
   inherit (manifest) version;
   inherit src;
+  patches = [ ./tool-messages.patch ];
 
   postUnpack = ''
     mv "$sourceRoot" dsh-claude-plugin
