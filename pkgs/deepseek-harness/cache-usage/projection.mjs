@@ -6,7 +6,7 @@ const schemas = createScopedUsageSchemas(z);
 
 export const scopedUsageProjectionDefinition = {
   key: 'scopedUsage',
-  stateVersion: 1,
+  stateVersion: 2,
   stateSchema: schemas.state,
   init: createUsageState,
   apply: applyUsageEvent,

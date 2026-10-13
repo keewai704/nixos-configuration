@@ -32,6 +32,7 @@ export function createScopedUsageSchemas(z) {
     state: z.object({
       ...fields,
       lastSeq: z.number().int().min(-1).max(Number.MAX_SAFE_INTEGER),
+      provider: z.string().nullable(),
       attempt: z.object({ turn: count, step: count, bucket }).strict().nullable(),
       retryKey: z.string().nullable(),
       compaction: z.object({

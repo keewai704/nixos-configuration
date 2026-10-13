@@ -31,11 +31,17 @@ export function combineUsageBuckets(buckets) {
   return result;
 }
 
-export function usageBucket(sample, failed = false) {
+export function usageBucket(sample, failed = false, provider = null) {
   const result = emptyUsageBucket();
   result.calls = 1;
   result.failedCalls = Number(failed);
-  const usage = sample && typeof sample === 'object' ? sample : {};
+  const usage = sample && typeof sample === 'object' ? { ...sample } : {};
+  const requiredKnown = isTokenCount(usage.inputTokens) && isTokenCount(usage.outputTokens);
+  const codexNoWrite = provider === 'codex' && requiredKnown && isTokenCount(usage.cacheReadTokens);
+  const withoutWrite = addTokenCounts(usage.inputTokens, usage.outputTokens, usage.cacheReadTokens ?? 0);
+  const provenZeroWrite = requiredKnown && isTokenCount(usage.totalTokens)
+    && withoutWrite !== null && withoutWrite === usage.totalTokens;
+  if (usage.cacheWriteTokens === undefined && (codexNoWrite || provenZeroWrite)) usage.cacheWriteTokens = 0;
   const fields = [
     ['inputTokens', 'uncachedInputTokens', 'missingInput'],
     ['outputTokens', 'outputTokens', 'missingOutput'],
@@ -74,6 +80,7 @@ export function createUsageState(header, inheritedEventCount = 0) {
     sessionId: header.id,
     inheritedEvents: inheritedEventCount,
     lastSeq: -1,
+    provider: null,
     ordinary: emptyUsageBucket(),
     summaries: emptyUsageBucket(),
     unknownCompactions: 0,
@@ -106,7 +113,8 @@ function replaceBucket(total, previous, next) {
 }
 
 function settleOrdinary(state, data, sample, failed) {
-  const bucket = usageBucket(sample, failed);
+  const provider = data.message?.source?.provider ?? state.provider;
+  const bucket = usageBucket(sample, failed, provider);
   return {
     ...state,
     ordinary: combineUsageBuckets([state.ordinary, bucket]),
@@ -117,8 +125,12 @@ function settleOrdinary(state, data, sample, failed) {
 export function applyUsageEvent(state, event) {
   if (!isTokenCount(event.seq) || event.seq <= state.lastSeq) return state;
   const next = { ...state, lastSeq: event.seq };
-  if (event.seq < state.inheritedEvents) return state;
   const data = event.data ?? {};
+  if (event.type === 'request/header') {
+    const provider = data.header?.config?.provider;
+    return { ...next, provider: typeof provider === 'string' ? provider : null };
+  }
+  if (event.seq < state.inheritedEvents) return state;
   switch (event.type) {
     case 'assistant/message':
     case 'assistant/attempt':
@@ -147,7 +159,7 @@ export function applyUsageEvent(state, event) {
         : { id: data.compactionId, recordedCalls: 0, summarySeen: false, ended: false };
       return {
         ...next,
-        summaries: combineUsageBuckets([next.summaries, usageBucket(data.usage, data.outcome === 'error')]),
+        summaries: combineUsageBuckets([next.summaries, usageBucket(data.usage, data.outcome === 'error', data.provider)]),
         compaction: { ...compaction, recordedCalls: compaction.recordedCalls + 1 },
       };
     }
@@ -158,7 +170,7 @@ export function applyUsageEvent(state, event) {
       const recorded = compaction.recordedCalls > 0;
       return {
         ...next,
-        summaries: recorded ? next.summaries : combineUsageBuckets([next.summaries, usageBucket(data.usage)]),
+        summaries: recorded ? next.summaries : combineUsageBuckets([next.summaries, usageBucket(data.usage, false, data.provider)]),
         legacySummaries: next.legacySummaries + Number(!recorded),
         compaction: { ...compaction, summarySeen: true },
       };

@@ -47,7 +47,7 @@ const UsagePill = (0, react.memo)(function UsagePill({ useProjection, usePerform
     row('output', t('message.turnUsage.output'), exactBucket(rollup.overall.outputTokens, rollup.overall.missingOutput)),
     row('failed', text('Failed / interrupted ordinary or summary attempts', '失败或中断的普通及摘要尝试'), rollup.overall.failedCalls),
     row('compaction-errors', text('Failed compactions · unknown cost', '失败压缩 · 未知用量'), `${rollup.failedCompactions} · ${rollup.unknownCompactions} ${text('unknown', '未知')}`),
-    row('scope', text('Accounting scope', '统计范围'), text('Recorded provider usage, not a bill. Inherited history and embedded snapshots excluded; each descendant session counted once. Unlogged adapter retries may be absent.', '已记录的提供方用量，非账单。排除继承历史与嵌入快照，每个后代会话仅计一次。未记录的适配器重试可能缺失。')),
+    row('scope', text('Accounting scope', '统计范围'), text('Recorded provider usage, not a bill. Inherited history and embedded snapshots excluded; each descendant session counted once. Unlogged adapter retries may be absent. Legacy Codex cache writes are treated as not applicable for this deployment’s Responses adapter.', '已记录的提供方用量，非账单。排除继承历史与嵌入快照，每个后代会话仅计一次。未记录的适配器重试可能缺失。本部署的 Responses 适配器将旧版 Codex 缓存写入视为不适用。')),
   ];
   if (rollup.legacySummaries > 0) detailRows.push(row('legacy', text('Legacy summaries', '旧版摘要'), `${rollup.legacySummaries} · ${text('accepted summaries only; rejected or retried calls may be absent', '仅已接受摘要；被拒绝或重试调用可能缺失')}`));
   for (const child of rollup.rows.filter(item => item.parentId !== null)) {

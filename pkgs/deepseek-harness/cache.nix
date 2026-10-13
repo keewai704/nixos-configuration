@@ -25,6 +25,7 @@ final: prev: {
             cp ${./cache-usage/schema.mjs} "$usage/schema.mjs"
             cp ${./cache-usage/projection.mjs} "$usage/projection.mjs"
             DSH_KERNEL_ROOT="$out/lib/deepseek-harness/node_modules/@deepseek-ai" \
+              DSH_SUBSCRIPTIONS_ROOT="${dshPrev.bundles.subscriptions}/lib/node_modules/dsh-plugin-subscriptions" \
               node --test ${./cache-compaction/compaction.test.mjs} ${./cache-usage/installed.test.mjs}
             node --test ${./cache-usage}/usage.test.mjs
           '';
@@ -90,6 +91,11 @@ final: prev: {
                 DSH_KERNEL_ROOT="${kernel}/lib/deepseek-harness/node_modules/@deepseek-ai" \
                   DSH_WEB_ROOT="$out/lib/node_modules/@deepseek-ai/dsh-web-app/node_modules/@deepseek-ai" \
                   node --test ${./cache-usage/installed.test.mjs}
+              ''
+              + final.lib.optionalString (name == "subscriptions") ''
+                patch --directory="$out" --fuzz=0 --strip=1 < ${./responses-usage.patch}
+                DSH_SUBSCRIPTIONS_ROOT="$out/lib/node_modules/dsh-plugin-subscriptions" \
+                  node --test ${./responses-usage.test.mjs}
               ''
             )
           )

@@ -45,9 +45,79 @@ test('unknown usage and omitted cache buckets are not reported as zero', () => {
   const exactTotal = usageBucket({ inputTokens: 20, cacheReadTokens: 80, outputTokens: 10, totalTokens: 110 });
   assert.equal(exactTotal.measuredCalls, 1);
   assert.equal(exactTotal.cacheMeasuredCalls, 1);
-  assert.equal(exactTotal.missingCacheWrite, 1);
+  assert.equal(exactTotal.missingCacheWrite, 0);
   assert.equal(exactTotal.cacheEligibleInputTokens, 100);
   assert.equal(usageBucket(reported(0, 0, 0)).measuredCalls, 1);
+});
+
+test('historical Codex cache-write absence is normalized only with provider provenance and complete counters', () => {
+  const codex = { inputTokens: 20, outputTokens: 10, cacheReadTokens: 80, reasoningTokens: 5 };
+  const normalized = usageBucket(codex, false, 'codex');
+  assert.equal(normalized.measuredCalls, 1);
+  assert.equal(normalized.cacheMeasuredCalls, 1);
+  assert.equal(normalized.cacheWriteTokens, 0);
+  assert.equal(normalized.missingCacheWrite, 0);
+  assert.equal(normalized.totalTokens, 110);
+  assert.equal(normalized.cacheEligibleInputTokens, 100);
+  assert.equal(normalized.cacheEligibleReadTokens, 80);
+  assert.equal(Object.hasOwn(codex, 'cacheWriteTokens'), false);
+  assert.equal(usageBucket(codex).measuredCalls, 0);
+  assert.equal(usageBucket(codex, false, 'other-provider').measuredCalls, 0);
+  for (const missing of [undefined, {}, { inputTokens: 20 }, { inputTokens: 20, outputTokens: 10 }]) {
+    assert.equal(usageBucket(missing, true, 'codex').measuredCalls, 0);
+    assert.equal(usageBucket(missing, true, 'codex').cacheMeasuredCalls, 0);
+  }
+  assert.equal(usageBucket({ ...codex, cacheReadTokens: 0 }, false, 'codex').cacheMeasuredCalls, 1);
+  assert.equal(usageBucket({ ...codex, totalTokens: 120 }, false, 'codex').measuredCalls, 0);
+  assert.equal(usageBucket({ ...codex, cacheWriteTokens: -1 }, false, 'codex').measuredCalls, 0);
+});
+
+test('authoritative totals prove zero cache-write but do not fabricate omitted cache-read', () => {
+  const writesUnknown = usageBucket({ inputTokens: 20, cacheReadTokens: 80, outputTokens: 10, totalTokens: 115 });
+  assert.equal(writesUnknown.measuredCalls, 1);
+  assert.equal(writesUnknown.missingCacheWrite, 1);
+  const uncached = usageBucket({ inputTokens: 100, outputTokens: 10, totalTokens: 110, cacheWriteTokens: 0 }, false, 'codex');
+  assert.equal(uncached.measuredCalls, 1);
+  assert.equal(uncached.cacheMeasuredCalls, 0);
+  assert.equal(uncached.missingCacheRead, 1);
+  const zeroWrite = usageBucket({ inputTokens: 100, outputTokens: 10, totalTokens: 110 });
+  assert.equal(zeroWrite.measuredCalls, 1);
+  assert.equal(zeroWrite.missingCacheWrite, 0);
+  assert.equal(zeroWrite.cacheMeasuredCalls, 0);
+  assert.equal(zeroWrite.missingCacheRead, 1);
+});
+
+test('durable ordinary and summary provenance supports historical Codex with inherited headers excluded from spend', () => {
+  const codex = { inputTokens: 20, outputTokens: 10, cacheReadTokens: 80 };
+  const result = fold([
+    event(0, 'request/header', { header: { config: { provider: 'codex' } } }),
+    message(1, codex),
+    event(2, 'session/end-seed', { inherited: true }),
+    event(3, 'assistant/attempt', { turn: 1, step: 1, stream: [{ type: 'chunk', chunk: { type: 'usage', usage: codex } }] }),
+    event(4, 'request/header', { header: { config: { provider: 'other-provider' } } }),
+    event(5, 'assistant/message', { turn: 1, step: 1, usage: codex, message: { source: { provider: 'codex' } } }),
+    event(6, 'assistant/message', { turn: 1, step: 2, usage: codex, message: { source: { provider: 'other-provider' } } }),
+    event(7, 'compaction/summary', { compactionId: 'legacy', provider: 'codex', usage: codex }),
+    event(8, 'plugin:cache-efficiency/compaction-usage', { compactionId: 'modern', provider: 'codex', model: 'm', usage: codex, outcome: 'completed' }, { ignorable: true }),
+    event(9, 'compaction/summary', { compactionId: 'modern', provider: 'codex', usage: codex }),
+  ], 'child', 3);
+  assert.equal(result.ordinary.calls, 3);
+  assert.equal(result.ordinary.measuredCalls, 2);
+  assert.equal(result.ordinary.totalTokens, 220);
+  assert.equal(result.ordinary.failedCalls, 1);
+  assert.equal(result.summaries.calls, 2);
+  assert.equal(result.summaries.measuredCalls, 2);
+  assert.equal(result.summaries.totalTokens, 220);
+  assert.equal(result.summaries.cacheEligibleReadTokens, 160);
+});
+
+test('explicit non-Codex assistant provenance overrides a prior Codex request header', () => {
+  const result = fold([
+    event(0, 'request/header', { header: { config: { provider: 'codex' } } }),
+    event(1, 'assistant/message', { turn: 1, step: 1, usage: { inputTokens: 20, outputTokens: 10, cacheReadTokens: 80 }, message: { source: { provider: 'other-provider' } } }),
+  ]);
+  assert.equal(result.ordinary.calls, 1);
+  assert.equal(result.ordinary.measuredCalls, 0);
 });
 
 test('invalid, contradictory, and overflowing provider usage remains unknown', () => {
