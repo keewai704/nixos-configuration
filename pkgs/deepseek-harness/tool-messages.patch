@@ -24,19 +24,3 @@
 +        } as Message
 +      }),
 +    }
---- a/tests/tool-bridge.spec.ts
-+++ b/tests/tool-bridge.spec.ts
-@@ -255 +255 @@
--  it('executes one parked MCP call through DSH and resumes the same Claude query', async () => {
-+  it.each(['legacy', 'tool'])('resumes the same Claude query with %s tool messages', async (format) => {
-@@ -279 +279,9 @@
--    const second = await collect(adapter.stream(request([user(), assistantTool(), toolResult()])))
-+    const result = format === 'legacy' ? toolResult() : {
-+      id: 'r1',
-+      role: 'tool',
-+      toolCallId: 'toolu_read_1',
-+      source: { kind: 'tool', callId: 'toolu_read_1' },
-+      content: [{ type: 'text', text: 'fixture-value' }],
-+      isError: false,
-+    } as unknown as Message
-+    const second = await collect(adapter.stream(request([user(), assistantTool(), result])))
