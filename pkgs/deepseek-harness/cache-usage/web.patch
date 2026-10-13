@@ -1,0 +1,347 @@
+--- a/lib/node_modules/@deepseek-ai/dsh-web-app/node_modules/@deepseek-ai/dsh-client-ui-chat/lib/client.js
++++ b/lib/node_modules/@deepseek-ai/dsh-web-app/node_modules/@deepseek-ai/dsh-client-ui-chat/lib/client.js
+@@ -8328,42 +8328,200 @@
+ 			});
+ 		});
+ 		/** Whole-log token total and cache hit; Compact keeps only the cache hit. */
+-		const UsagePill = (0, react.memo)(function UsagePill({ useProjection, usePerformanceUsage, t }) {
+-			const mode = usePerformanceUsage((value) => value);
+-			const usage = useProjection("tokenUsage");
+-			if (usage === void 0 || billedInputTokens(usage) === 0 && usage.outputTokens === 0) return null;
+-			const cacheHit = cacheHitPercent(usage);
+-			const cacheHitText = cacheHit !== null ? t("stats.cacheHit", { percent: cacheHit }) : null;
+-			const icon = (0, react_jsx_runtime.jsx)(_deepseek_ai_dsh_client_ui_primitives.IconDatabaseOutlineRegular, {});
+-			if (mode === "compact") return cacheHitText === null ? null : (0, react_jsx_runtime.jsx)(PlainPill, {
+-				stat: "usage",
+-				icon,
+-				label: cacheHitText
+-			});
+-			const total = billedInputTokens(usage) + usage.outputTokens;
+-			const totalText = t("message.turnUsage.count", { count: formatTokens(total, t) });
+-			return (0, react_jsx_runtime.jsx)(DialogPill, {
+-				stat: "usage",
+-				icon,
+-				label: joined$1(totalText, cacheHitText),
+-				ariaLabel: cacheHitText === null ? totalText : `${totalText} · ${cacheHitText}`,
+-				title: t("stats.dialog.usageTitle"),
+-				titleValue: exactCount(total, t),
+-				children: (0, react_jsx_runtime.jsxs)("dl", {
+-					className: stat_dialog_module_css_default.details,
+-					"data-session-stats-usage": true,
+-					children: [
+-						cacheHit !== null && (0, react_jsx_runtime.jsxs)(react_jsx_runtime.Fragment, { children: [(0, react_jsx_runtime.jsx)("dt", { children: t("message.turnUsage.cacheHit") }), (0, react_jsx_runtime.jsx)("dd", { children: `${cacheHit}%` })] }),
+-						(0, react_jsx_runtime.jsx)("dt", { children: t("message.turnUsage.input") }),
+-						(0, react_jsx_runtime.jsx)("dd", { children: exactCount(usage.uncachedInputTokens, t) }),
+-						(0, react_jsx_runtime.jsx)("dt", { children: t("message.turnUsage.cacheRead") }),
+-						(0, react_jsx_runtime.jsx)("dd", { children: exactCount(usage.cacheReadTokens, t) }),
+-						usage.cacheWriteTokens !== 0 && (0, react_jsx_runtime.jsxs)(react_jsx_runtime.Fragment, { children: [(0, react_jsx_runtime.jsx)("dt", { children: t("message.turnUsage.cacheWrite") }), (0, react_jsx_runtime.jsx)("dd", { children: exactCount(usage.cacheWriteTokens, t) })] }),
+-						(0, react_jsx_runtime.jsx)("dt", { children: t("message.turnUsage.output") }),
+-						(0, react_jsx_runtime.jsx)("dd", { children: exactCount(usage.outputTokens, t) })
+-					]
+-				})
+-			});
++		const tokenFields = [
++		  'totalTokens', 'uncachedInputTokens', 'outputTokens', 'cacheReadTokens',
++		  'cacheWriteTokens', 'cacheEligibleInputTokens', 'cacheEligibleReadTokens',
++		];
++
++		const countFields = [
++		  'calls', 'measuredCalls', 'cacheMeasuredCalls', 'failedCalls',
++		  'missingInput', 'missingOutput', 'missingCacheRead', 'missingCacheWrite',
++		];
++
++		function emptyUsageBucket() {
++		  return Object.fromEntries([...tokenFields, ...countFields].map(key => [key, 0]));
++		}
++
++		function isTokenCount(value) {
++		  return Number.isSafeInteger(value) && value >= 0;
++		}
++
++		function addTokenCounts(...values) {
++		  if (!values.every(isTokenCount)) return null;
++		  const sum = values.reduce((total, value) => total + value, 0);
++		  return isTokenCount(sum) ? sum : null;
++		}
++
++		function combineUsageBuckets(buckets) {
++		  const result = emptyUsageBucket();
++		  for (const bucket of buckets) {
++		    for (const key of tokenFields) result[key] = addTokenCounts(result[key], bucket[key]);
++		    for (const key of countFields) result[key] += bucket[key];
++		  }
++		  return result;
++		}
++
++
++
++		function collectScopedUsage(sessionId, ownUsage, ownCatalog, sessions) {
++		  const visited = new Set();
++		  const queue = [{ id: sessionId, parentId: null, mode: 'root' }];
++		  const rows = [];
++		  const edges = [];
++		  const missing = [];
++		  const refresh = [];
++		  let ordinary = emptyUsageBucket();
++		  let summaries = emptyUsageBucket();
++		  const childBuckets = [];
++		  let unknownCompactions = 0;
++		  let failedCompactions = 0;
++		  let legacySummaries = 0;
++		  for (let index = 0; index < queue.length; index++) {
++		    const node = queue[index];
++		    if (visited.has(node.id)) continue;
++		    visited.add(node.id);
++		    const snapshot = sessions?.projectionsBySession?.[node.id];
++		    const row = sessions?.byId?.[node.id];
++		    const values = snapshot?.values ?? row?.projectionValues ?? {};
++		    const usage = node.parentId === null ? ownUsage : values.scopedUsage;
++		    const catalog = node.parentId === null ? ownCatalog : values.subagentCatalog;
++		    const external = node.mode === 'external';
++		    const ready = node.parentId === null || snapshot?.state === 'ready' || row?.running === true;
++		    const valid = !external && usage?.version === 1 && usage.sessionId === node.id;
++		    const rowMissing = external ? 'external' : !valid ? 'unavailable'
++		      : snapshot?.state === 'error' ? 'error'
++		      : snapshot?.state === 'migration-required' ? 'migration-required'
++		      : !ready ? 'unverified' : null;
++		    if (rowMissing !== null) missing.push({ id: node.id, reason: rowMissing });
++		    if (!external && snapshot?.state !== 'loading' && snapshot?.state !== 'ready'
++		      && snapshot?.state !== 'migration-required' && snapshot?.state !== 'error'
++		      && (node.parentId !== null || !valid || !Array.isArray(catalog))) refresh.push(node.id);
++		    if (valid) {
++		      const total = combineUsageBuckets([usage.ordinary, usage.summaries]);
++		      if (node.parentId === null) {
++		        ordinary = usage.ordinary;
++		        summaries = usage.summaries;
++		      } else childBuckets.push(total);
++		      unknownCompactions += usage.unknownCompactions;
++		      failedCompactions += usage.failedCompactions;
++		      legacySummaries += usage.legacySummaries;
++		      rows.push({ ...node, usage, total, status: rowMissing, label: row?.displayTitle ?? node.label ?? node.id });
++		    }
++		    if (external) continue;
++		    if (!Array.isArray(catalog)) {
++		      if (rowMissing === null) missing.push({ id: node.id, reason: 'catalog-unavailable' });
++		      continue;
++		    }
++		    for (const child of catalog) {
++		      if (typeof child.id !== 'string' || child.id.length === 0) continue;
++		      edges.push({ parentId: node.id, id: child.id });
++		      if (!visited.has(child.id)) queue.push({ ...child, parentId: node.id });
++		    }
++		  }
++		  const children = combineUsageBuckets(childBuckets);
++		  const overall = combineUsageBuckets([ordinary, summaries, children]);
++		  return {
++		    ordinary, summaries, children, overall, rows, edges, missing, refresh,
++		    unknownCompactions, failedCompactions, legacySummaries,
++		    childSessions: visited.size - 1,
++		    measuredChildSessions: rows.filter(row => row.parentId !== null).length,
++		    partial: missing.length > 0 || unknownCompactions > 0 || overall.measuredCalls < overall.calls,
++		  };
++		}
++
++		function scopedUsagePresentation(rollup, formatPercent) {
++		  const bucket = rollup.overall;
++		  const cacheValid = isTokenCount(bucket.cacheEligibleReadTokens)
++		    && isTokenCount(bucket.cacheEligibleInputTokens) && bucket.cacheEligibleInputTokens > 0;
++		  const cachePercent = cacheValid ? formatPercent(bucket.cacheEligibleReadTokens, bucket.cacheEligibleInputTokens, 1) : null;
++		  return {
++		    cachePercent,
++		    cachePartial: rollup.missing.length > 0 || rollup.unknownCompactions > 0
++		      || bucket.cacheMeasuredCalls < bucket.calls,
++		    total: isTokenCount(bucket.totalTokens) ? bucket.totalTokens : null,
++		    totalPartial: rollup.partial,
++		  };
++		}
++		const UsagePill = (0, react.memo)(function UsagePill({ useProjection, usePerformanceUsage, useScopedUsageSessions, scopedUsageSessionId, refreshScopedUsage, t }) {
++		  const mode = usePerformanceUsage(value => value);
++		  const usage = useProjection('scopedUsage');
++		  const catalog = useProjection('subagentCatalog');
++		  const sessions = useScopedUsageSessions(value => value);
++		  const rollup = (0, react.useMemo)(() => collectScopedUsage(scopedUsageSessionId, usage, catalog, sessions),
++		    [scopedUsageSessionId, usage, catalog, sessions]);
++		  const pendingReads = rollup.refresh.join('\n');
++		  (0, react.useEffect)(() => {
++		    for (const id of rollup.refresh) void refreshScopedUsage(id).catch(() => {});
++		  }, [pendingReads, refreshScopedUsage]);
++		  const chinese = t('message.turnUsage.title') === '本轮用量';
++		  const text = (english, translated) => chinese ? translated : english;
++		  const unknown = text('Unknown', '未知');
++		  const icon = (0, react_jsx_runtime.jsx)(_deepseek_ai_dsh_client_ui_primitives.IconDatabaseOutlineRegular, {});
++		  const display = scopedUsagePresentation(rollup, formatCacheHitPercent);
++		  const totalText = rollup.overall.measuredCalls === 0 || display.total === null ? unknown
++		    : `${display.totalPartial ? '≥ ' : ''}${t('message.turnUsage.count', { count: formatTokens(display.total, t) })}`;
++		  const cacheText = display.cachePercent === null ? text('Cache unknown', '缓存未知')
++		    : `${text(display.cachePartial ? 'Measured cache' : 'Recorded cache', display.cachePartial ? '已测缓存' : '已记录缓存')} ${display.cachePercent}%`;
++		  const label = joined$1(`${text('Recorded', '已记录')} ${totalText}`, cacheText);
++		  const row = (key, name, value) => (0, react_jsx_runtime.jsxs)(react_jsx_runtime.Fragment, {
++		    children: [(0, react_jsx_runtime.jsx)('dt', { children: name }), (0, react_jsx_runtime.jsx)('dd', { children: value })],
++		  }, key);
++		  const bucketText = bucket => {
++		    const measured = bucket.measuredCalls;
++		    const amount = bucket.calls === 0 ? exactCount(0, t) : measured === 0 || bucket.totalTokens === null ? unknown
++		      : `${measured < bucket.calls ? '≥ ' : ''}${exactCount(bucket.totalTokens, t)}`;
++		    const cache = bucket.cacheEligibleInputTokens > 0 && bucket.cacheEligibleReadTokens !== null
++		      ? `${formatCacheHitPercent(bucket.cacheEligibleReadTokens, bucket.cacheEligibleInputTokens, 1)}%` : unknown;
++		    return `${amount} · ${measured}/${bucket.calls} ${text('attempts measured', '次尝试已计量')} · ${text('cache', '缓存')} ${cache}`;
++		  };
++		  const exactBucket = (value, missing) => value === null || missing === rollup.overall.calls && missing > 0
++		    || value === 0 && rollup.missing.length > 0 ? unknown
++		    : `${missing > 0 || rollup.missing.length > 0 ? '≥ ' : ''}${exactCount(value, t)}${missing > 0 ? ` (${missing} ${text('unknown', '未知')})` : ''}`;
++		  const childrenText = rollup.childSessions > 0 && rollup.measuredChildSessions === 0 ? unknown
++		    : `${rollup.measuredChildSessions < rollup.childSessions ? '≥ ' : ''}${bucketText(rollup.children)}`;
++		  const detailRows = [
++		    row('ordinary', text('This session · ordinary', '本会话 · 普通调用'), usage === undefined ? unknown : bucketText(rollup.ordinary)),
++		    row('summaries', text('This session · summaries', '本会话 · 摘要调用'), usage === undefined ? unknown : bucketText(rollup.summaries)),
++		    row('children', text('Descendants · ordinary + summaries', '后代会话 · 普通及摘要'), childrenText),
++		    row('coverage', text('Descendant sessions', '后代会话'), `${rollup.measuredChildSessions}/${rollup.childSessions}`),
++		    row('cache', text('Weighted cache · measured input', '加权缓存 · 已测输入'), display.cachePercent === null ? unknown : `${display.cachePercent}% (${rollup.overall.cacheMeasuredCalls}/${rollup.overall.calls} ${text('attempts', '次尝试')})`),
++		    row('input', t('message.turnUsage.input'), exactBucket(rollup.overall.uncachedInputTokens, rollup.overall.missingInput)),
++		    row('read', t('message.turnUsage.cacheRead'), exactBucket(rollup.overall.cacheReadTokens, rollup.overall.missingCacheRead)),
++		    row('write', t('message.turnUsage.cacheWrite'), exactBucket(rollup.overall.cacheWriteTokens, rollup.overall.missingCacheWrite)),
++		    row('output', t('message.turnUsage.output'), exactBucket(rollup.overall.outputTokens, rollup.overall.missingOutput)),
++		    row('failed', text('Failed / interrupted ordinary or summary attempts', '失败或中断的普通及摘要尝试'), rollup.overall.failedCalls),
++		    row('compaction-errors', text('Failed compactions · unknown cost', '失败压缩 · 未知用量'), `${rollup.failedCompactions} · ${rollup.unknownCompactions} ${text('unknown', '未知')}`),
++		    row('scope', text('Accounting scope', '统计范围'), text('Recorded provider usage, not a bill. Inherited history and embedded snapshots excluded; each descendant session counted once. Unlogged adapter retries may be absent. Legacy Codex cache writes are treated as not applicable for this deployment’s Responses adapter.', '已记录的提供方用量，非账单。排除继承历史与嵌入快照，每个后代会话仅计一次。未记录的适配器重试可能缺失。本部署的 Responses 适配器将旧版 Codex 缓存写入视为不适用。')),
++		  ];
++		  if (rollup.legacySummaries > 0) detailRows.push(row('legacy', text('Legacy summaries', '旧版摘要'), `${rollup.legacySummaries} · ${text('accepted summaries only; rejected or retried calls may be absent', '仅已接受摘要；被拒绝或重试调用可能缺失')}`));
++		  for (const child of rollup.rows.filter(item => item.parentId !== null)) {
++		    detailRows.push(row(`child-${child.id}`, (0, react_jsx_runtime.jsx)('span', { title: `${child.id} ← ${child.parentId}`, children: child.label }), bucketText(child.total)));
++		  }
++		  for (const missing of rollup.missing) detailRows.push(row(`missing-${missing.id}-${missing.reason}`, missing.id, `${unknown} (${missing.reason})`));
++		  if (rollup.missing.length > 0) detailRows.push(row('retry', text('Unavailable sessions', '不可用会话'), (0, react_jsx_runtime.jsx)('button', {
++		    type: 'button',
++		    onClick: () => {
++		      for (const item of rollup.missing) if (item.reason !== 'external') void refreshScopedUsage(item.id).catch(() => {});
++		    },
++		    children: text('Retry projection reads', '重试读取统计'),
++		  })));
++		  return (0, react_jsx_runtime.jsx)(DialogPill, {
++		    stat: 'usage', icon,
++		    label: mode === 'compact' ? cacheText : label,
++		    ariaLabel: `${text('Recorded session and descendant usage', '已记录的会话及后代用量')} · ${totalText} · ${cacheText}`,
++		    title: text('Recorded session + descendant usage', '已记录的会话及后代用量'),
++		    titleValue: totalText,
++		    children: (0, react_jsx_runtime.jsx)('dl', {
++		      className: stat_dialog_module_css_default.details,
++		      'data-session-stats-usage': true,
++		      'data-scoped-usage': true,
++		      'data-usage-partial': rollup.partial,
++		      'data-usage-child-sessions': rollup.childSessions,
++		      'data-usage-missing-sessions': rollup.missing.length,
++		      style: { maxHeight: '60vh', overflowY: 'auto', maxWidth: 'min(42rem, 80vw)', whiteSpace: 'normal', overflowWrap: 'anywhere' },
++		      children: detailRows,
++		    }),
++		  });
+ 		});
+ 		//#endregion
+ 		//#region lib/types/client/conversation-nodes/common.js
+@@ -13942,7 +14100,11 @@
+ 					}
+ 				})
+ 			}, QuotaNoticeHost));
+-			const statPillInject = () => ({ hooks: { performanceUsage } });
++			const refreshScopedUsage = (id) => ctx.sessions.refreshProjections(id);
++			const statPillInject = (sessionId) => ({
++				hooks: { performanceUsage, scopedUsageSessions: ctx.sessions.list },
++				scopedUsageSessionId: sessionId, refreshScopedUsage
++			});
+ 			ctx.slots.inject("conversation.composer.dock", function* () {
+ 				yield ctx.slots.register({
+ 					name: "conversation.composer.dock",
+--- a/lib/node_modules/@deepseek-ai/dsh-web-app/node_modules/@deepseek-ai/dsh-api-remotes/lib/client.js
++++ b/lib/node_modules/@deepseek-ai/dsh-web-app/node_modules/@deepseek-ai/dsh-api-remotes/lib/client.js
+@@ -10040,6 +10040,50 @@
+ 		};
+ 		//#endregion
+ 		//#region ../session-controller/lib/typert.remote-client.js
++		function createScopedUsageSchemas(z) {
++		  const count = z.number().int().nonnegative().max(Number.MAX_SAFE_INTEGER);
++		  const tokens = count.nullable();
++		  const bucket = z.object({
++		    totalTokens: tokens,
++		    uncachedInputTokens: tokens,
++		    outputTokens: tokens,
++		    cacheReadTokens: tokens,
++		    cacheWriteTokens: tokens,
++		    cacheEligibleInputTokens: tokens,
++		    cacheEligibleReadTokens: tokens,
++		    calls: count,
++		    measuredCalls: count,
++		    cacheMeasuredCalls: count,
++		    failedCalls: count,
++		    missingInput: count,
++		    missingOutput: count,
++		    missingCacheRead: count,
++		    missingCacheWrite: count,
++		  }).strict();
++		  const fields = {
++		    sessionId: z.string(),
++		    inheritedEvents: count,
++		    ordinary: bucket,
++		    summaries: bucket,
++		    unknownCompactions: count,
++		    failedCompactions: count,
++		    legacySummaries: count,
++		  };
++		  return {
++		    view: z.object({ version: z.literal(1), ...fields }).strict(),
++		    state: z.object({
++		      ...fields,
++		      lastSeq: z.number().int().min(-1).max(Number.MAX_SAFE_INTEGER),
++		      provider: z.string().nullable(),
++		      attempt: z.object({ turn: count, step: count, bucket }).strict().nullable(),
++		      retryKey: z.string().nullable(),
++		      compaction: z.object({
++		        id: z.string(), recordedCalls: count, summarySeen: z.boolean(), ended: z.boolean(),
++		      }).strict().nullable(),
++		    }).strict(),
++		  };
++		}
++		const scopedUsageSchema = createScopedUsageSchemas({ number, object, string, literal, boolean }).view;
+ 		let JsonValueRemoteCodec$schema$value;
+ 		const JsonValueRemoteCodec$schema = () => JsonValueRemoteCodec$schema$value ??= union([
+ 			literal(null),
+@@ -10249,6 +10293,7 @@
+ 							"seq": intersection(number(), unknown())
+ 						})
+ 					]).optional(),
++					"scopedUsage": scopedUsageSchema.optional(),
+ 					"tokenUsage": object({
+ 						"uncachedInputTokens": number(),
+ 						"outputTokens": number(),
+@@ -10578,7 +10623,8 @@
+ 								"seq": intersection(number(), unknown())
+ 							})
+ 						]).optional(),
+-						"tokenUsage": object({
++						"scopedUsage": scopedUsageSchema.optional(),
++					"tokenUsage": object({
+ 							"uncachedInputTokens": number(),
+ 							"outputTokens": number(),
+ 							"cacheReadTokens": number(),
+@@ -10855,6 +10901,7 @@
+ 							"seq": intersection(number(), unknown())
+ 						})
+ 					]).optional(),
++					"scopedUsage": scopedUsageSchema.optional(),
+ 					"tokenUsage": object({
+ 						"uncachedInputTokens": number(),
+ 						"outputTokens": number(),
+@@ -11155,6 +11202,7 @@
+ 							"seq": intersection(number(), unknown())
+ 						})
+ 					]).optional(),
++					"scopedUsage": scopedUsageSchema.optional(),
+ 					"tokenUsage": object({
+ 						"uncachedInputTokens": number(),
+ 						"outputTokens": number(),
+@@ -11347,6 +11395,7 @@
+ 							"seq": intersection(number(), unknown())
+ 						})
+ 					]).optional(),
++					"scopedUsage": scopedUsageSchema.optional(),
+ 					"tokenUsage": object({
+ 						"uncachedInputTokens": number(),
+ 						"outputTokens": number(),

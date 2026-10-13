@@ -1,0 +1,17 @@
+--- a/lib/node_modules/dsh-plugin-subscriptions/lib/translate/responses.js
++++ b/lib/node_modules/dsh-plugin-subscriptions/lib/translate/responses.js
+@@ -154,9 +154,14 @@
+ export function mapResponsesUsage(usage) {
+     const cached = usage.input_tokens_details?.cached_tokens;
+     const reasoning = usage.output_tokens_details?.reasoning_tokens;
++    const total = usage.input_tokens + usage.output_tokens;
++    const exact = [usage.input_tokens, usage.output_tokens, total].every(value => Number.isSafeInteger(value) && value >= 0)
++        && (cached === undefined || (Number.isSafeInteger(cached) && cached >= 0 && cached <= usage.input_tokens));
+     return {
+         inputTokens: usage.input_tokens - (cached ?? 0),
+         outputTokens: usage.output_tokens,
++        ...exact ? { totalTokens: total } : {},
++        cacheWriteTokens: 0,
+         ...cached !== undefined ? { cacheReadTokens: cached } : {},
+         ...reasoning !== undefined ? { reasoningTokens: reasoning } : {},
+     };
