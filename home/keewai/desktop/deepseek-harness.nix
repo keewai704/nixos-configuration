@@ -103,7 +103,8 @@ in
     ];
     environment = {
       PATH =
-        lib.makeBinPath [
+        "/run/wrappers/bin:"
+        + lib.makeBinPath [
           claudeCode
           pkgs.nodejs
           pkgs.git
@@ -116,6 +117,8 @@ in
       CLAUDE_CODE_DISABLE_GIT_INSTRUCTIONS = "1";
     };
   };
+
+  systemd.user.services.dsh-web.Service.PrivateTmp = lib.mkForce false;
 
   systemd.user.services.dsh-tailscale = {
     Unit = {
