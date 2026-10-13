@@ -283,6 +283,14 @@ test('metadata and target directory symlinks cannot redirect publication', t => 
   assert.throws(() => other.plan(), /Unsafe/);
 });
 
+test('help succeeds without opening any home or lock', () => {
+  for (const flag of ['--help', '-h']) {
+    const help = run([flag], {});
+    assert.match(help.usage, /dsh-storage-migrate/);
+    assert.match(help.safety, /never runs automatically/);
+  }
+});
+
 test('strict CLI refuses contradictory or executable transformation options without reading data', () => {
   for (const args of [[], ['plan'], ['plan', '--home', '/unused', '--migration', edge, '--transform', '/arbitrary.mjs'], ['plan', '--home', '/unused', '--migration', edge, '--confirm', 'yes'], ['plan', '--home', '/unused', '--home', '/other', '--migration', edge]]) assert.throws(() => run(args, env));
 });

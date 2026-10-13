@@ -4,6 +4,7 @@ import { ensure } from './migrate-registry.mjs';
 import { execute } from './migrate.mjs';
 
 export function run(argv, env = process.env) {
+  if (argv.length === 1 && ['--help', '-h'].includes(argv[0])) return { usage: 'dsh-storage-migrate <plan|apply|recover|rollback> --home ABSOLUTE_DSH_HOME', migration: 'session-projcache-v3-to-v7', plan: '--migration session-projcache-v3-to-v7', apply: '--migration session-projcache-v3-to-v7 --plan-hash HASH --confirm MIGRATE:HASH', recover: '--transaction HASH --confirm RECOVER:HASH', rollback: '--transaction HASH --confirm ROLLBACK:HASH', safety: 'Stop all packaged DSH processes first. Plans are read-only and require exclusive locking. Snapshots and legacy data remain. Unknown schemas are refused; migration never runs automatically.' };
   const args = [...argv];
   const action = args.shift();
   ensure(['plan', 'apply', 'recover', 'rollback'].includes(action), 'Usage: dsh-storage-migrate <plan|apply|recover|rollback> --home ABSOLUTE_DSH_HOME --migration session-projcache-v3-to-v7 (plan/apply); apply also needs --plan-hash HASH --confirm MIGRATE:HASH; recover/rollback need --transaction HASH --confirm RECOVER:HASH or ROLLBACK:HASH');
