@@ -49,7 +49,10 @@ in
       patch = [
         {
           id = "connection";
-          config.browserAuthentication = false;
+          config = {
+            browserAuthentication = false;
+            inherit (config.services.dsh) trustedHosts;
+          };
         }
         {
           id = "llm-subscriptions";
