@@ -17,6 +17,7 @@ let
   compatibleBundle = dshPkgs.dsh.callPackage ../../../pkgs/deepseek-harness/compatible-bundle.nix { };
   claude = compatibleBundle (
     dshPkgs.dsh.callPackage ../../../pkgs/deepseek-harness/claude.nix {
+      dsh-kernel = dshPkgs.dsh.dsh-kernel;
       src = inputs.dsh-claude;
     }
   );
