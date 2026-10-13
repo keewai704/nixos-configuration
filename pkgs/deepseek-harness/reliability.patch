@@ -5,7 +5,7 @@
    /** Identities fully frozen by this loop; weak references do not retain replaced history. */
    private readonly frozenMessages = new WeakSet<Message>()
 +  private readonly durableAdmissions = new Map<string, Promise<void>>()
-+  private readonly unflushedInputs = new Set<string>()
++  private readonly unflushedInputs = new Set<UserMessage['id']>()
  
    constructor(
      private loopCtx: Context,

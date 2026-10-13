@@ -397,7 +397,7 @@ new file mode 100644
 +  const fiber = await ctx.plugin(acp, {
 +    command: 'mock-peer',
 +    ...(config.permission === undefined ? {} : { permission: config.permission }),
-+  })
++  } as Parameters<typeof acp.apply>[1])
 +  const start = ctx.subagents.getProvider('acp')?.start
 +  if (start === undefined) throw new Error('ACP provider missing')
 +  const controller = new AbortController()
