@@ -1,0 +1,39 @@
+--- a/packages/bundle/web-app/presets/standard.patch.yml
++++ b/packages/bundle/web-app/presets/standard.patch.yml
+@@ -117,6 +117,10 @@
+                 name: '@deepseek-ai/dsh-workflow-ptc'
+                 config:
+                   provider: spawn
++                  requireJournal: true
++                  timeoutMs: 3600000
++                  maxTotalAgents: 128
++                  maxConcurrentAgents: 8
+               - id: tool-workflow
+                 name: '@deepseek-ai/dsh-tool-workflow'
+           - id: tool-ask-user
+--- a/packages/bundle/web-app/presets/ptc.patch.yml
++++ b/packages/bundle/web-app/presets/ptc.patch.yml
+@@ -118,6 +118,10 @@
+                 disabled: true
+                 config:
+                   provider: spawn
++                  requireJournal: true
++                  timeoutMs: 3600000
++                  maxTotalAgents: 128
++                  maxConcurrentAgents: 8
+               - id: tool-workflow
+                 name: '@deepseek-ai/dsh-tool-workflow'
+                 disabled: true
+--- a/packages/bundle/web-app/presets/cordis.patch.yml
++++ b/packages/bundle/web-app/presets/cordis.patch.yml
+@@ -116,6 +116,10 @@
+                 name: '@deepseek-ai/dsh-workflow-ptc'
+                 config:
+                   provider: spawn
++                  requireJournal: true
++                  timeoutMs: 3600000
++                  maxTotalAgents: 128
++                  maxConcurrentAgents: 8
+               - id: tool-workflow
+                 name: '@deepseek-ai/dsh-tool-workflow'
+           - id: tool-ask-user

@@ -1,0 +1,335 @@
+--- a/scripts/gen-config-catalog.ts
++++ b/scripts/gen-config-catalog.ts
+@@ -652,17 +652,33 @@
+ 
+ /** Resolve the entry file's default export to its class/function declaration
+  * (mirroring the Loader's `unwrapExports`), or null when there is none. */
+-function defaultExport(ctx: FileCtx): ts.ClassDeclaration | ts.FunctionDeclaration | null {
++function defaultExport(
++  ctx: FileCtx,
++  world: World,
++  seen = new Set<string>(),
++): { ctx: FileCtx; decl: ts.ClassDeclaration | ts.FunctionDeclaration } | null {
++  if (seen.has(ctx.abs)) throw new Error(`gen-config-catalog: cyclic default re-export in ${ctx.rel}`)
++  seen.add(ctx.abs)
+   for (const stmt of ctx.sf.statements) {
+     if (ts.isExportAssignment(stmt) && !stmt.isExportEquals && ts.isIdentifier(stmt.expression)) {
+       const name = stmt.expression.text
+       for (const s of ctx.sf.statements) {
+-        if ((ts.isClassDeclaration(s) || ts.isFunctionDeclaration(s)) && s.name?.text === name) return s
++        if ((ts.isClassDeclaration(s) || ts.isFunctionDeclaration(s)) && s.name?.text === name) return { ctx, decl: s }
+       }
+       return null
+     }
+     if ((ts.isClassDeclaration(stmt) || ts.isFunctionDeclaration(stmt))
+-      && stmt.modifiers?.some(m => m.kind === ts.SyntaxKind.DefaultKeyword)) return stmt
++      && stmt.modifiers?.some(m => m.kind === ts.SyntaxKind.DefaultKeyword)) return { ctx, decl: stmt }
++    if (ts.isExportDeclaration(stmt) && !stmt.isTypeOnly
++      && stmt.moduleSpecifier && ts.isStringLiteral(stmt.moduleSpecifier)
++      && stmt.exportClause && ts.isNamedExports(stmt.exportClause)
++      && stmt.exportClause.elements.some(el => !el.isTypeOnly && el.name.text === 'default'
++        && (el.propertyName ?? el.name).text === 'default')) {
++      const specifier = stmt.moduleSpecifier.text
++      if (specifier.startsWith('.') && specifier.endsWith('.ts')) {
++        return defaultExport(loadRelative(world, ctx, specifier), world, seen)
++      }
++    }
+   }
+   return null
+ }
+@@ -725,7 +741,9 @@
+     // Classify, mirroring the Loader's unwrapExports: the default export IS
+     // the plugin when present; else an exported `apply` makes the module
+     // namespace the plugin; else the package is a plain library.
+-    const dflt = defaultExport(ctx)
++    const resolvedDefault = defaultExport(ctx, world)
++    if (resolvedDefault !== null) ctx = resolvedDefault.ctx
++    const dflt = resolvedDefault?.decl ?? null
+     const apply = applyExport(ctx)
+     let pluginClass: ts.ClassDeclaration | null = null
+     let configParam: ts.ParameterDeclaration | undefined
+@@ -764,7 +782,7 @@
+ 
+     // Resolve the config type and paste its package-local transitive closure.
+     if (!configParam.type || !ts.isTypeReferenceNode(configParam.type) || !ts.isIdentifier(configParam.type.typeName)) {
+-      violations.push(`${pkg}: config parameter type (${pointer(entryRel, ctx.sf, configParam)}) is not a plain type-name reference; declare a named config type.`)
++      violations.push(`${pkg}: config parameter type (${pointer(ctx.rel, ctx.sf, configParam)}) is not a plain type-name reference; declare a named config type.`)
+       continue
+     }
+     const typeName = configParam.type.typeName.text
+--- a/scripts/gen-config-catalog.spec.ts
++++ b/scripts/gen-config-catalog.spec.ts
+@@ -62,6 +62,49 @@
+ })
+ 
+ describe('shared config schema catalog', () => {
++  it('classifies a re-exported service without config as a plugin', () => {
++    const { root, write } = fixture()
++    write('packages/test/provider/src/index.ts', "export { default, TypertRegistry } from './service.ts'\n")
++    write('packages/test/provider/src/service.ts', `
++export class TypertRegistry {
++  constructor(ctx: unknown) {}
++}
++export default TypertRegistry
++`)
++    expect(collectConfigCatalog(root).find(entry => entry.pkg === '@test/provider')).toMatchObject({
++      entry: 'packages/test/provider/src/index.ts', kind: 'no-config', className: 'TypertRegistry', inject: [],
++    })
++  })
++
++  it('resolves a re-exported plugin config in its declaring file', () => {
++    const { root, write } = fixture()
++    write('packages/test/provider/src/index.ts', "export { default } from './service.ts'\n")
++    write('packages/test/provider/src/service.ts', `${sharedSchema}
++export default class ConfiguredService {
++  static inject = ['tools']
++  static Config = Shared
++  constructor(ctx: unknown, config: BrowserConfig) {}
++}
++`)
++    const entry = collectConfigCatalog(root).find(value => value.pkg === '@test/provider')
++    expect(entry).toMatchObject({ kind: 'config', className: 'ConfiguredService', configTypeName: 'BrowserConfig', inject: ['tools'] })
++    expect(new Set(entry?.schemaKeys)).toEqual(new Set(['mode', 'headless', 'endpoint']))
++    expect(entry?.pastes?.[0]?.source).toMatch(/^packages\/test\/provider\/src\/service\.ts:/)
++  })
++
++  it('rejects a cyclic default re-export', () => {
++    const { root, write } = fixture()
++    write('packages/test/provider/src/index.ts', "export { default } from './service.ts'\n")
++    write('packages/test/provider/src/service.ts', "export { default } from './index.ts'\n")
++    expect(() => collectConfigCatalog(root)).toThrow('cyclic default re-export')
++  })
++
++  it('does not classify a type-only default re-export as a plugin', () => {
++    const { root, write } = fixture()
++    write('packages/test/provider/src/index.ts', "export type { default } from './service.ts'\n")
++    expect(collectConfigCatalog(root).find(entry => entry.pkg === '@test/provider')?.kind).toBe('library')
++  })
++
+   it('collects every branch through a renamed named import from a public source subpath', () => {
+     const { root } = fixture()
+     const provider = collectConfigCatalog(root).find(entry => entry.pkg === '@test/provider')
+--- a/packages/shell/tool-bash-persistent/src/index.ts
++++ b/packages/shell/tool-bash-persistent/src/index.ts
+@@ -13,8 +13,7 @@
+ import { deadline, timeoutOf } from '@deepseek-ai/dsh-timeout'
+ import { defineTool } from '@deepseek-ai/dsh-tools'
+ 
+-// TODO: Replace the file-search advice; arbitrary command output need not come from a searchable file.
+-const TRUNCATED_MESSAGE = '<response clipped><NOTE>To save on context only part of this file has been shown to you. You should retry this tool after you have searched inside the file with `grep -n` in order to find the line numbers of what you are looking for.</NOTE>'
++const TRUNCATED_MESSAGE = '<response clipped><NOTE>Only part of this command output is shown. If a log exists and read is available, inspect it with read using file_path, offset, and limit. Otherwise, rerun only if safe, saving or filtering the output.</NOTE>'
+ const LOST_PREFIX_MESSAGE = '<response clipped><NOTE>The beginning of this command output was dropped by the terminal scrollback limit. The following text is the earliest retained output.</NOTE>\n'
+ const SHELL_RESET_MESSAGE = 'The persistent bash shell was reset; the next bash call starts from the workspace with a fresh current directory and environment.'
+ // Status trailer for a command that never reported an exit code; settled
+--- a/packages/shell/tool-pwsh-persistent/src/index.ts
++++ b/packages/shell/tool-pwsh-persistent/src/index.ts
+@@ -15,8 +15,7 @@
+ import { deadline, timeoutOf } from '@deepseek-ai/dsh-timeout'
+ import { defineTool } from '@deepseek-ai/dsh-tools'
+ 
+-// TODO: Replace the file-search advice; arbitrary command output need not come from a searchable file.
+-const TRUNCATED_MESSAGE = '<response clipped><NOTE>To save on context only part of this file has been shown to you. You should retry this tool after you have searched inside the file with Select-String in order to find the line numbers of what you are looking for.</NOTE>'
++const TRUNCATED_MESSAGE = '<response clipped><NOTE>Only part of this command output is shown. If a log exists and read is available, inspect it with read using file_path, offset, and limit. Otherwise, rerun only if safe, saving or filtering the output.</NOTE>'
+ const LOST_PREFIX_MESSAGE = '<response clipped><NOTE>The beginning of this command output was dropped by the terminal scrollback limit. The following text is the earliest retained output.</NOTE>\n'
+ const SHELL_RESET_MESSAGE = 'The persistent pwsh shell was reset; the next pwsh call starts from the workspace with a fresh current directory and environment.'
+ const TIMEOUT_CODE = 'PERSISTENT_PWSH_TIMEOUT'
+--- a/packages/shell/tool-bash-persistent/tests/tools.spec.ts
++++ b/packages/shell/tool-bash-persistent/tests/tools.spec.ts
+@@ -377,7 +377,9 @@
+     expect(missingStart).toContain('<response clipped>')
+ 
+     session.mode = 'large'
+-    expect(text(await call(ctx, owner, 'large'))).toContain('<response clipped>')
++    expect(text(await call(ctx, owner, 'large'))).toContain(
++      '<response clipped><NOTE>Only part of this command output is shown. If a log exists and read is available, inspect it with read using file_path, offset, and limit. Otherwise, rerun only if safe, saving or filtering the output.</NOTE>',
++    )
+ 
+     session.mode = 'nonzero'
+     expect(text(await call(ctx, owner, 'false'))).toBe('[Command finished with exit code 7]')
+--- a/packages/shell/tool-pwsh-persistent/tests/tools.spec.ts
++++ b/packages/shell/tool-pwsh-persistent/tests/tools.spec.ts
+@@ -479,7 +479,9 @@
+     expect(missingStart).toContain('<response clipped>')
+ 
+     session.mode = 'large'
+-    expect(text(await call(ctx, owner, 'large'))).toContain('<response clipped>')
++    expect(text(await call(ctx, owner, 'large'))).toContain(
++      '<response clipped><NOTE>Only part of this command output is shown. If a log exists and read is available, inspect it with read using file_path, offset, and limit. Otherwise, rerun only if safe, saving or filtering the output.</NOTE>',
++    )
+ 
+     session.mode = 'nonzero'
+     expect(text(await call(ctx, owner, 'false'))).toBe('[exit code: 7]')
+--- a/packages/fs/tool-fs-search/src/glob.ts
++++ b/packages/fs/tool-fs-search/src/glob.ts
+@@ -307,7 +307,8 @@
+     name: 'glob',
+     description: 'Find files, not directories, whose paths match a glob pattern, including hidden and ignored files. '
+       + `Returns up to ${caps.maxResults} paths in modification-time order; a larger result ${overCapDescription} `
+-      + 'and reports where the complete list was saved.',
++      + 'and reports where the complete list was saved. '
++      + 'Returned paths refer to the command-execution filesystem; file tools must share it to read them.',
+     parameters: {
+       pattern: {
+         type: 'string',
+--- a/packages/fs/tool-fs-search/src/grep.ts
++++ b/packages/fs/tool-fs-search/src/grep.ts
+@@ -278,13 +278,14 @@
+     text: ({ scope }) => ctx.tools.get('grep', scope) === undefined
+       ? ''
+       : 'Use the grep tool — not shell grep or rg — to search file contents.'
+-        + (ctx.tools.get('read', scope) === undefined ? '' : ' Use read on a matched file when you need surrounding context.'),
++        + (ctx.tools.get('read', scope) === undefined ? '' : ' Use read on a matched file for surrounding context only when read and search use the same filesystem.'),
+   })
+ 
+   const tool = defineTool({
+     name: 'grep',
+     description: 'Search file contents with a ripgrep regular expression. Returns matching lines with line numbers, grouped by file. '
+-      + `Returns up to ${caps.maxMatches} matches; a larger result reports where the complete match list was saved.`,
++      + `Returns up to ${caps.maxMatches} matches; a larger result reports where the complete match list was saved. `
++      + 'Returned paths refer to the command-execution filesystem; file tools must share it to read them.',
+     parameters: {
+       pattern: { type: 'string', required: true, description: 'Regular expression to search for (ripgrep syntax).' },
+       path: { type: 'string', description: 'File or directory to search. Defaults to the session workspace; a relative path resolves against it.' },
+--- a/packages/fs/tool-fs-search/tests/tools.spec.ts
++++ b/packages/fs/tool-fs-search/tests/tools.spec.ts
+@@ -1240,7 +1240,7 @@
+ 
+ const originalSearchGuidance = {
+   glob: 'Use the glob tool — not shell find — to discover files by path pattern.',
+-  grep: 'Use the grep tool — not shell grep or rg — to search file contents. Use read on a matched file when you need surrounding context.',
++  grep: 'Use the grep tool — not shell grep or rg — to search file contents. Use read on a matched file for surrounding context only when read and search use the same filesystem.',
+ }
+ 
+ describe('scope-aware search guidance', () => {
+@@ -1253,7 +1253,7 @@
+       expect(assembly.tools.map(tool => tool.name)).toEqual([...allow].sort())
+       expect(renderPrompt(assembly)).toBe(withPersona(...allow.map(name => name === 'glob'
+         ? originalSearchGuidance.glob
+-        : originalSearchGuidance.grep.replace(' Use read on a matched file when you need surrounding context.', ''))))
++        : originalSearchGuidance.grep.replace(' Use read on a matched file for surrounding context only when read and search use the same filesystem.', ''))))
+     } finally {
+       await scope.dispose()
+     }
+--- a/packages/plan/plan-mode/src/index.ts
++++ b/packages/plan/plan-mode/src/index.ts
+@@ -83,7 +83,8 @@
+ const EXIT_DESCRIPTION
+   = 'Use only in plan mode. Present your plan for the user\'s review and, on approval, leave plan mode. '
+   + 'The user may approve (carry out the plan from your next step) or keep '
+-  + 'planning — their feedback comes back in the tool result; revise and present again.'
++  + 'planning — their feedback comes back in the tool result; revise and present again. '
++  + 'Plan mode is guidance only; it does not block tool calls or change sandbox and approval settings.'
+ 
+ /** The plan's first markdown heading (any level), or `undefined` when it has none. */
+ function firstHeading(plan: string): string | undefined {
+--- a/packages/plan/plan-mode/tests/plan-mode.spec.ts
++++ b/packages/plan/plan-mode/tests/plan-mode.spec.ts
+@@ -819,6 +819,7 @@
+     const schema = ctx.tools.schemas().find(entry => entry.name === EXIT_PLAN_MODE)
+     const parameters = schema?.parameters as { required?: string[]; properties?: Record<string, unknown> }
+     expect(schema?.description).toMatch(/^Use only in plan mode\./)
++    expect(schema?.description).toContain('Plan mode is guidance only; it does not block tool calls or change sandbox and approval settings.')
+     expect(Object.keys(parameters.properties ?? {})).toEqual(['plan'])
+     expect(parameters.required).toEqual(['plan'])
+   })
+--- a/packages/client/ui-plan/src/client/locales.ts
++++ b/packages/client/ui-plan/src/client/locales.ts
+@@ -17,7 +17,7 @@
+   'preview.unavailable': '计划预览不可用',
+   'preview.expired': '临时计划预览已失效，请从仍在等待审批的卡片重新打开。',
+   'chip.on.aria': '计划模式已开启，按下关闭',
+-  'chip.on.title': '计划模式已开启 — 点击关闭（/plan off）',
++  'chip.on.title': '计划模式已开启 — 仅提供规划指引，不强制只读；点击关闭（/plan off）',
+   'chip.exitFailed': '退出计划模式失败',
+ } satisfies Record<string, string>
+ 
+@@ -41,6 +41,6 @@
+   'preview.unavailable': 'Plan preview is unavailable',
+   'preview.expired': 'This temporary plan preview has expired. Reopen it from the pending review card.',
+   'chip.on.aria': 'Plan mode on, press to turn off',
+-  'chip.on.title': 'Plan mode on — click to turn off (/plan off)',
++  'chip.on.title': 'Plan mode on — planning guidance, not read-only enforcement. Click to turn off (/plan off)',
+   'chip.exitFailed': 'Failed to exit plan mode',
+ } satisfies Record<PlanKey, string>
+--- a/packages/client/ui-plan/tests/plan-mode-control.client.spec.tsx
++++ b/packages/client/ui-plan/tests/plan-mode-control.client.spec.tsx
+@@ -50,6 +50,7 @@
+   it('renders the Plan status for active and pending-entry targets', () => {
+     setup({ active: true, pending: false })
+     expect(chip().textContent).toBe('计划')
++    expect(chip().getAttribute('title')).toBe('计划模式已开启 — 仅提供规划指引，不强制只读；点击关闭（/plan off）')
+     cleanup()
+     setup({ active: false, pending: true })
+     expect(chip().textContent).toBe('计划')
+--- a/docs/config-catalog.md
++++ b/docs/config-catalog.md
+@@ -3669,7 +3669,7 @@
+ ## `@deepseek-ai/dsh-tool-bash-persistent`
+ 
+ - `inject`: `tools` · `terminals` · `workingDirectory`
+-- `source`: [`packages/shell/tool-bash-persistent/src/index.ts:445`](../packages/shell/tool-bash-persistent/src/index.ts)
++- `source`: [`packages/shell/tool-bash-persistent/src/index.ts:444`](../packages/shell/tool-bash-persistent/src/index.ts)
+ 
+ ```ts config-catalog
+ /** Configuration for the persistent Bash tool. */
+@@ -3873,7 +3873,7 @@
+ ## `@deepseek-ai/dsh-tool-pwsh-persistent`
+ 
+ - `inject`: `tools` · `terminals` · `workingDirectory`
+-- `source`: [`packages/shell/tool-pwsh-persistent/src/index.ts:458`](../packages/shell/tool-pwsh-persistent/src/index.ts)
++- `source`: [`packages/shell/tool-pwsh-persistent/src/index.ts:457`](../packages/shell/tool-pwsh-persistent/src/index.ts)
+ 
+ ```ts config-catalog
+ /** Configuration for the persistent pwsh tool. */
+@@ -4596,6 +4596,7 @@
+ | `@deepseek-ai/dsh-tool-schedule` | `tools` | [`packages/schedule/tool-schedule/src/index.ts`](../packages/schedule/tool-schedule/src/index.ts) |
+ | `@deepseek-ai/dsh-tool-subagent-control` | `tools` · `subagents` | [`packages/subagent/tool-subagent-control/src/index.ts`](../packages/subagent/tool-subagent-control/src/index.ts) |
+ | `@deepseek-ai/dsh-tool-working-directory` | `tools` · `workingDirectory` | [`packages/session/tool-working-directory/src/index.ts`](../packages/session/tool-working-directory/src/index.ts) |
++| `@deepseek-ai/dsh-typert-registry` | — | [`packages/typert/registry/src/index.ts`](../packages/typert/registry/src/index.ts) |
+ | `@deepseek-ai/dsh-user-questions` | — | [`packages/interaction/user-questions/src/index.ts`](../packages/interaction/user-questions/src/index.ts) |
+ | `@deepseek-ai/dsh-webhook` | `agents` · `agentDefaultModel` · `agentPresets` · `permissionPresets` · `sessionTitle` · `workspaceRegistry` | [`packages/experimental/webhook/src/index.ts`](../packages/experimental/webhook/src/index.ts) |
+ | `@deepseek-ai/dsh-workspace` | `storageDomain` · `sessionPersistence` | [`packages/workspace/workspace/src/index.ts`](../packages/workspace/workspace/src/index.ts) |
+@@ -4690,7 +4691,6 @@
+ | `@deepseek-ai/dsh-timeout` | — | [`packages/util/timeout/src/index.ts`](../packages/util/timeout/src/index.ts) |
+ | `@deepseek-ai/dsh-typert-generator` | — | [`packages/typert/generator/src/index.ts`](../packages/typert/generator/src/index.ts) |
+ | `@deepseek-ai/dsh-typert-protocol` | — | [`packages/typert/protocol/src/index.ts`](../packages/typert/protocol/src/index.ts) |
+-| `@deepseek-ai/dsh-typert-registry` | — | [`packages/typert/registry/src/index.ts`](../packages/typert/registry/src/index.ts) |
+ | `@deepseek-ai/dsh-util-code-language` | — | [`packages/util/code-language/src/index.ts`](../packages/util/code-language/src/index.ts) |
+ | `@deepseek-ai/dsh-util-crypto` | — | [`packages/util/crypto/src/index.ts`](../packages/util/crypto/src/index.ts) |
+ | `@deepseek-ai/dsh-util-time` | — | [`packages/util/time/src/index.ts`](../packages/util/time/src/index.ts) |
+--- a/docs/config-catalog.zh.md
++++ b/docs/config-catalog.zh.md
+@@ -3671,7 +3671,7 @@
+ ## `@deepseek-ai/dsh-tool-bash-persistent`
+ 
+ - `inject`: `tools` · `terminals` · `workingDirectory`
+-- `source`: [`packages/shell/tool-bash-persistent/src/index.ts:445`](../packages/shell/tool-bash-persistent/src/index.ts)
++- `source`: [`packages/shell/tool-bash-persistent/src/index.ts:444`](../packages/shell/tool-bash-persistent/src/index.ts)
+ 
+ ```ts config-catalog
+ /** Configuration for the persistent Bash tool. */
+@@ -3875,7 +3875,7 @@
+ ## `@deepseek-ai/dsh-tool-pwsh-persistent`
+ 
+ - `inject`: `tools` · `terminals` · `workingDirectory`
+-- `source`: [`packages/shell/tool-pwsh-persistent/src/index.ts:458`](../packages/shell/tool-pwsh-persistent/src/index.ts)
++- `source`: [`packages/shell/tool-pwsh-persistent/src/index.ts:457`](../packages/shell/tool-pwsh-persistent/src/index.ts)
+ 
+ ```ts config-catalog
+ /** Configuration for the persistent pwsh tool. */
+@@ -4598,6 +4598,7 @@
+ | `@deepseek-ai/dsh-tool-schedule` | `tools` | [`packages/schedule/tool-schedule/src/index.ts`](../packages/schedule/tool-schedule/src/index.ts) |
+ | `@deepseek-ai/dsh-tool-subagent-control` | `tools` · `subagents` | [`packages/subagent/tool-subagent-control/src/index.ts`](../packages/subagent/tool-subagent-control/src/index.ts) |
+ | `@deepseek-ai/dsh-tool-working-directory` | `tools` · `workingDirectory` | [`packages/session/tool-working-directory/src/index.ts`](../packages/session/tool-working-directory/src/index.ts) |
++| `@deepseek-ai/dsh-typert-registry` | — | [`packages/typert/registry/src/index.ts`](../packages/typert/registry/src/index.ts) |
+ | `@deepseek-ai/dsh-user-questions` | — | [`packages/interaction/user-questions/src/index.ts`](../packages/interaction/user-questions/src/index.ts) |
+ | `@deepseek-ai/dsh-webhook` | `agents` · `agentDefaultModel` · `agentPresets` · `permissionPresets` · `sessionTitle` · `workspaceRegistry` | [`packages/experimental/webhook/src/index.ts`](../packages/experimental/webhook/src/index.ts) |
+ | `@deepseek-ai/dsh-workspace` | `storageDomain` · `sessionPersistence` | [`packages/workspace/workspace/src/index.ts`](../packages/workspace/workspace/src/index.ts) |
+@@ -4692,7 +4693,6 @@
+ | `@deepseek-ai/dsh-timeout` | — | [`packages/util/timeout/src/index.ts`](../packages/util/timeout/src/index.ts) |
+ | `@deepseek-ai/dsh-typert-generator` | — | [`packages/typert/generator/src/index.ts`](../packages/typert/generator/src/index.ts) |
+ | `@deepseek-ai/dsh-typert-protocol` | — | [`packages/typert/protocol/src/index.ts`](../packages/typert/protocol/src/index.ts) |
+-| `@deepseek-ai/dsh-typert-registry` | — | [`packages/typert/registry/src/index.ts`](../packages/typert/registry/src/index.ts) |
+ | `@deepseek-ai/dsh-util-code-language` | — | [`packages/util/code-language/src/index.ts`](../packages/util/code-language/src/index.ts) |
+ | `@deepseek-ai/dsh-util-crypto` | — | [`packages/util/crypto/src/index.ts`](../packages/util/crypto/src/index.ts) |
+ | `@deepseek-ai/dsh-util-time` | — | [`packages/util/time/src/index.ts`](../packages/util/time/src/index.ts) |

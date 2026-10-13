@@ -12,7 +12,10 @@ buildDshBundle {
   pname = manifest.name;
   inherit (manifest) version;
   inherit src;
-  patches = [ ./tool-messages.patch ];
+  patches = [
+    ./tool-messages.patch
+    ./claude-request-compat.patch
+  ];
 
   postUnpack = ''
     mv "$sourceRoot" dsh-claude-plugin
@@ -29,6 +32,16 @@ buildDshBundle {
   checkPhase = ''
     runHook preCheck
     npm test -- --maxWorkers=2
+    peers="$PWD/node_modules/@deepseek-ai"
+    savedPeers="$TMPDIR/claude-build-peers"
+    test "$(realpath "$peers")" = "$peers"
+    test ! -e "$savedPeers"
+    mv "$peers" "$savedPeers"
+    ln -s ${dsh-kernel}/lib/deepseek-harness/node_modules/@deepseek-ai "$peers"
+    npm test -- --maxWorkers=2
+    test "$(readlink "$peers")" = ${dsh-kernel}/lib/deepseek-harness/node_modules/@deepseek-ai
+    unlink "$peers"
+    mv "$savedPeers" "$peers"
     runHook postCheck
   '';
 

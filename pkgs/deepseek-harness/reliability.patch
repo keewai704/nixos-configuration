@@ -1,0 +1,1139 @@
+--- a/packages/core/agent-loop/src/agent.ts
++++ b/packages/core/agent-loop/src/agent.ts
+@@ -118,6 +118,8 @@
+   private readonly systemPrompt: SystemPromptProjection
+   /** Identities fully frozen by this loop; weak references do not retain replaced history. */
+   private readonly frozenMessages = new WeakSet<Message>()
++  private readonly durableAdmissions = new Map<string, Promise<void>>()
++  private readonly unflushedInputs = new Set<string>()
+ 
+   constructor(
+     private loopCtx: Context,
+@@ -164,6 +166,31 @@
+     this.send(input, 'next-turn', true)
+   }
+ 
++  async followupDurable(input: UserMessage): Promise<void> {
++    const existing = this.durableAdmissions.get(input.id)
++    if (existing !== undefined) return existing
++    const admitted = Promise.withResolvers<void>()
++    this.durableAdmissions.set(input.id, admitted.promise)
++    void admitted.promise.catch(() => {})
++    try {
++      const exists = this.session.ownEvents().some(event => event.type === 'agent/inbox/spliced'
++        && event.data.inserted.some(message => message.id === input.id))
++      this.unflushedInputs.add(input.id)
++      if (!exists) this.send(input, 'next-turn', false)
++      if (!await this.ctx.sessions.flush(this.session)) throw new Error('Session persistence did not acknowledge durable input')
++      this.unflushedInputs.delete(input.id)
++      admitted.resolve()
++      if ([...this.inbox.nextTurn, ...this.inbox.nextStep].some(message => message.id === input.id)) {
++        this.wakeDriver(this.phase.kind !== 'idle' && this.phase.abort.signal.aborted)
++      }
++    } catch (error) {
++      admitted.reject(error)
++      throw error
++    } finally {
++      this.durableAdmissions.delete(input.id)
++    }
++  }
++
+   steer(input: UserMessage): void {
+     this.send(input, 'next-step', true)
+   }
+@@ -268,7 +295,12 @@
+     /* v8 ignore next -- private callers establish the running phase before proposing a step */
+     if (this.phase.kind !== 'running') throw new Error(`agent "${this.id}": pre-step outside running phase`)
+     const signal = this.phase.abort.signal
+-    const claimed = this.inbox.claim(target, position.turn)
++    while (this.durableAdmissions.size > 0) await Promise.all(this.durableAdmissions.values())
++    const pending = new Set([...this.inbox.nextTurn, ...this.inbox.nextStep].map(message => message.id))
++    for (const id of this.unflushedInputs) if (!pending.has(id)) this.unflushedInputs.delete(id)
++    signal.throwIfAborted()
++    const claimed = this.inbox.claim(target, position.turn, this.unflushedInputs)
++    if (claimed.length === 0 && this.unflushedInputs.size > 0) return { kind: 'reject' }
+     const assembly = await this.loopCtx.systemPrompt.assemble(assembleContextFor(this, signal))
+     signal.throwIfAborted()
+     const decision = await this.dispatch.waterfall(
+--- a/packages/core/agent-loop/src/inbox.ts
++++ b/packages/core/agent-loop/src/inbox.ts
+@@ -106,9 +106,17 @@
+    * @param turn - turn that will own the claimed batch.
+    * @returns next-step input followed by the queued turn, when requested.
+    */
+-  claim(target: InboxTarget, turn: number): UserMessage[] {
+-    const claimed = this.mutate('next-step', 0, this.nextStep.length, [], false)
+-    if (target === 'next-turn') claimed.push(...this.mutate('next-turn', 0, 1, [], false))
++  claim(target: InboxTarget, turn: number, excluded: ReadonlySet<string> = new Set()): UserMessage[] {
++    const claimed: UserMessage[] = []
++    if (excluded.size === 0) claimed.push(...this.mutate('next-step', 0, this.nextStep.length, [], false))
++    else for (let index = 0; index < this.nextStep.length;) {
++      if (excluded.has(this.nextStep[index]!.id)) index += 1
++      else claimed.push(...this.mutate('next-step', index, 1, [], false))
++    }
++    if (target === 'next-turn') {
++      const index = this.nextTurn.findIndex(message => !excluded.has(message.id))
++      if (index >= 0) claimed.push(...this.mutate('next-turn', index, 1, [], false))
++    }
+     for (const message of claimed) this.dispatch.emit('agent/inbox/claimed', { message, turn })
+     return claimed
+   }
+--- a/packages/core/agent-loop/tests/loop.spec.ts
++++ b/packages/core/agent-loop/tests/loop.spec.ts
+@@ -73,6 +73,43 @@
+ }
+ 
+ describe('agent loop', () => {
++  it('keeps failed durable input blocked without poisoning later user messages or removal', async () => {
++    const ctx = await harness(new MockAdapter([textResponse('one'), textResponse('two')]))
++    try {
++      const agent = await ctx.agentLoop.create(SessionId('durable-failure'), { provider: 'mock', model: 'mock' })
++      const message = createUserMessage({ content: [{ type: 'text', text: 'blocked reminder' }], source: { kind: 'user' } })
++      vi.spyOn(ctx.sessions, 'flush').mockResolvedValue(false)
++      await expect(agent.followupDurable!(message)).rejects.toThrow('acknowledge')
++      send(agent, 'ordinary user input')
++      await agent.whenIdle()
++      expect(userTexts(agent)).toEqual(['ordinary user input'])
++      expect(agent.inbox.nextTurn.map(item => item.id)).toEqual([message.id])
++      agent.inbox.remove(message.id)
++      send(agent, 'after removal')
++      await agent.whenIdle()
++      expect(userTexts(agent)).toEqual(['ordinary user input', 'after removal'])
++    } finally { await ctx.fiber.dispose() }
++  })
++
++  it('uses successful Session flush as definitive durable inbox admission', async () => {
++    const ctx = await harness(new MockAdapter([textResponse('acknowledged')]))
++    try {
++      const agent = await ctx.agentLoop.create(SessionId('durable-barrier'), { provider: 'mock', model: 'mock' })
++      const acknowledgment = Promise.withResolvers<boolean>()
++      vi.spyOn(ctx.sessions, 'flush').mockImplementation(() => acknowledgment.promise)
++      const message = createUserMessage({ content: [{ type: 'text', text: 'durable' }], source: { kind: 'user' } })
++      const admission = agent.followupDurable!(message)
++      await new Promise(resolve => setImmediate(resolve))
++      expect(userTexts(agent)).toEqual([])
++      acknowledgment.resolve(true)
++      await admission
++      await agent.whenIdle()
++      expect(userTexts(agent)).toEqual(['durable'])
++      await agent.followupDurable!(message)
++      await agent.whenIdle()
++      expect(userTexts(agent)).toEqual(['durable'])
++    } finally { await ctx.fiber.dispose() }
++  })
+   it('publishes one dense live attempt and commits one v2 message with the exact embedded stream', async () => {
+     const ctx = await harness(new MockAdapter([textResponse('live')]))
+     const agent = await ctx.agentLoop.create(SessionId('live-assistant-attempt'), {
+--- a/packages/core/agent-loop/tests/resume.spec.ts
++++ b/packages/core/agent-loop/tests/resume.spec.ts
+@@ -976,6 +976,34 @@
+     await ctx1.fiber.dispose()
+   })
+ 
++  it.each(['resume', 'fork'] as const)('%s treats a persisted inbox splice as admitted even without an external receipt', async (mode) => {
++    const sessionId = SessionId('inbox-native-ack')
++    const message = createUserMessage({ content: [{ type: 'text', text: 'persisted reminder' }], source: { kind: 'user' } })
++    const { ctx: first, root } = await persistentHarness(new MockAdapter([]))
++    await seedStoredSession(first, sessionId, [
++      { type: 'turn/start', seq: SessionSeq(0), time: 1, data: { turn: 1 } },
++      { type: 'turn/end', seq: SessionSeq(1), time: 2, data: { turn: 1, reason: { kind: 'completed' } } },
++      { type: 'agent/inbox/spliced', seq: SessionSeq(2), time: 3, data: { target: 'next-turn', start: 0, inserted: [message] } },
++    ])
++    await first.fiber.dispose()
++    const next = await mountPersistentHarness(root, new MockAdapter([textResponse('reminder handled'), textResponse('user handled')]))
++    try {
++      const stored = await readStoredEvents(next, sessionId)
++      const handle = mode === 'resume'
++        ? await next.agents.resume({ resumeSessionId: sessionId, agentOptions: { provider: 'mock', model: 'mock' } })
++        : await next.agents.create({ sessionId: SessionId('inbox-native-ack-fork'), seed: stored,
++          meta: { parentSession: sessionId, isSeeded: true }, inheritedEventCount: SessionLogOffset(stored.length),
++          agentOptions: { provider: 'mock', model: 'mock' } })
++      expect(handle.agent.inbox.nextTurn.map(item => item.id)).toEqual([message.id])
++      handle.agent.followup(createUserMessage({ content: [{ type: 'text', text: 'ordinary user' }], source: { kind: 'user' } }))
++      await handle.agent.whenIdle()
++      const admitted = handle.agent.session.snapshotEvents().filter(event => event.type === 'user/message' && event.data.id === message.id)
++      expect(admitted).toHaveLength(1)
++      expect(handle.agent.inbox.nextTurn).toHaveLength(0)
++      await handle.dispose()
++    } finally { await next.fiber.dispose() }
++  })
++
+   it.each(['resume', 'fork'] as const)('%s continues persisted history after a live scheduler failure', async (mode) => {
+     const firstAdapter = new MockAdapter([[
+       { type: 'block-start', index: 0, blockType: 'tool-call' },
+--- a/packages/core/agent/src/runtime-types.ts
++++ b/packages/core/agent/src/runtime-types.ts
+@@ -220,6 +220,7 @@
+    * @param message - identified prompt content and the source that supplied it.
+    */
+     followup(message: UserMessage): void
++    followupDurable?(message: UserMessage): Promise<void>
+ 
+     /**
+    * Submit steering for the nearest step. An idle driver starts a turn;
+--- a/packages/schedule/schedule/src/index.ts
++++ b/packages/schedule/schedule/src/index.ts
+@@ -159,7 +159,7 @@
+           await tasks.put(task.record.id, task)
+           this.emitChanged()
+         },
+-        this.retention)
++        this.retention, domain.table('outbox'))
+       this.runtime.requestDrive()
+       return cleanup
+     })
+--- /dev/null
++++ b/packages/schedule/schedule/src/outbox.ts
+@@ -0,0 +1,67 @@
++import type { Context } from '@deepseek-ai/cordis'
++import type { Agent } from '@deepseek-ai/dsh-agent'
++import { createUserMessage, MessageId } from '@deepseek-ai/dsh-llm'
++import { SessionId } from '@deepseek-ai/dsh-session'
++import { z } from 'zod'
++import type { ScheduleTask } from './storage.ts'
++
++export const outboxSchema = z.object({
++  id: z.string().min(1),
++  sessionId: z.string().min(1).transform(SessionId),
++  text: z.string(),
++  members: z.array(z.object({
++    taskId: z.string().min(1),
++    prompt: z.string(),
++    scheduledAt: z.string(),
++    nextScheduledAt: z.string().optional(),
++  }).strict()).min(1),
++  attempts: z.number().int().min(0).max(5),
++  retryAt: z.number().int().min(0),
++  deliveredAt: z.string().optional(),
++}).strict()
++
++export type OutboxEntry = z.infer<typeof outboxSchema>
++export interface ScheduleOutbox {
++  entries(): IterableIterator<[string, OutboxEntry]>
++  put(key: string, value: OutboxEntry): Promise<void>
++  delete(key: string): Promise<boolean>
++}
++
++export function alreadyDelivered(agent: Agent, messageId: string): boolean {
++  for (const event of agent.session.ownEvents()) {
++    if (event.type === 'agent/inbox/spliced' && event.data.inserted.some(message => message.id === messageId)) return true
++  }
++  return false
++}
++
++export async function wakeAcknowledged(ctx: Context, entry: OutboxEntry): Promise<boolean> {
++  const resolved = await ctx.sessionController.resolveAgent(entry.sessionId)
++  if ('error' in resolved) throw resolved.error
++  const pending = [...resolved.agent.inbox.nextTurn, ...resolved.agent.inbox.nextStep].find(message => message.id === entry.id)
++  if (pending === undefined) {
++    if (!await ctx.sessions.flush(resolved.agent.session)) throw new Error('Schedule consumption was not persisted')
++    return true
++  }
++  if (!alreadyDelivered(resolved.agent, entry.id)) throw new Error('Schedule pending identity is not owned by the target Session')
++  if (resolved.agent.followupDurable === undefined) throw new Error('Schedule requires durable inbox admission')
++  await resolved.agent.followupDurable(pending)
++  return false
++}
++
++export async function deliverOutbox(ctx: Context, entry: OutboxEntry, outbox: ScheduleOutbox): Promise<OutboxEntry> {
++  const attempt = { ...entry, attempts: entry.attempts + 1, retryAt: Date.now() + Math.min(60_000, 1000 * 2 ** entry.attempts) }
++  await outbox.put(entry.id, attempt)
++  const resolved = await ctx.sessionController.resolveAgent(entry.sessionId)
++  if ('error' in resolved) throw resolved.error
++  if (resolved.agent.followupDurable === undefined) throw new Error('Schedule requires durable inbox admission')
++  const message = createUserMessage({ content: [{ type: 'text', text: entry.text }], source: { kind: 'schedule' } })
++  await resolved.agent.followupDurable({ ...message, id: MessageId(entry.id) })
++  const receipt = { ...attempt, deliveredAt: new Date().toISOString() }
++  await outbox.put(entry.id, receipt)
++  return receipt
++}
++
++export function taskWaitingForOutbox(task: ScheduleTask, entries: readonly OutboxEntry[]): boolean {
++  return entries.some(entry => entry.members.some(member => member.taskId === task.record.id
++    && (entry.deliveredAt === undefined || task.record.scheduledAt <= member.scheduledAt)))
++}
+--- a/packages/schedule/schedule/src/runtime.ts
++++ b/packages/schedule/schedule/src/runtime.ts
+@@ -12,6 +12,9 @@
+ import type { DeliveryRetentionBounds, RecurringScheduleRecord } from './types.ts'
+ import type { ScheduleTask } from './storage.ts'
+ import { appendDelivery } from './delivery-history.ts'
++import { deliverOutbox, taskWaitingForOutbox, wakeAcknowledged } from './outbox.ts'
++import type { OutboxEntry, ScheduleOutbox } from './outbox.ts'
++import { MessageId } from '@deepseek-ai/dsh-llm'
+ 
+ /** Largest delay Node timers represent without clamping. */
+ export const MAX_TIMER_DELAY_MS = 2_147_483_647
+@@ -35,6 +38,7 @@
+     private readonly transact: (work: () => Promise<void>) => Promise<void>,
+     private readonly commit: (task: ScheduleTask) => Promise<void>,
+     private readonly retention: DeliveryRetentionBounds,
++    private readonly outbox?: ScheduleOutbox,
+   ) {}
+ 
+   /**
+@@ -82,12 +86,48 @@
+     this.timer = undefined
+   }
+ 
++  private async settleOutbox(entry: OutboxEntry): Promise<void> {
++    if (entry.deliveredAt === undefined || this.outbox === undefined) return
++    for (const member of entry.members) {
++      const task = this.tasks().find(task => task.record.id === member.taskId)
++      if (task === undefined || task.lastDelivery?.messageId === entry.id) continue
++      if (task.sessionId !== entry.sessionId || task.record.scheduledAt > member.scheduledAt) continue
++      await this.commit({
++        ...task,
++        record: { ...task.record, scheduledAt: member.nextScheduledAt ?? member.scheduledAt },
++        status: member.nextScheduledAt === undefined ? 'inactive' : 'active',
++        ...appendDelivery({ ...task, record: { ...task.record, prompt: member.prompt } },
++          { scheduledAt: member.scheduledAt, deliveredAt: entry.deliveredAt, messageId: MessageId(entry.id) }, this.retention),
++      })
++    }
++    if (await wakeAcknowledged(this.ctx, entry)) await this.outbox.delete(entry.id)
++  }
++
+   private async drive(): Promise<void> {
+     this.clearTimer()
++    if (this.outbox !== undefined) {
++      for (const [, entry] of this.outbox.entries()) {
++        if (this.stopping) return
++        if (entry.retryAt > Date.now() || (entry.attempts >= 5 && entry.deliveredAt === undefined)) continue
++        try {
++          if (entry.deliveredAt !== undefined) {
++            await this.outbox.put(entry.id, { ...entry, retryAt: Date.now() + 60_000 })
++          }
++          const delivered = entry.deliveredAt === undefined
++            ? await deliverOutbox(this.ctx, entry, this.outbox)
++            : entry
++          await this.settleOutbox(delivered)
++        } catch (error) {
++          this.ctx.logger.warn(`schedule: outbox ${entry.id} remains unacknowledged: ${String(error)}`)
++        }
++      }
++    }
++    const outboxEntries = [...this.outbox?.entries() ?? []].map(([, entry]) => entry)
+     const failed = new Set<string>()
+     const handled = new Set<string>()
+     const scanNow = Date.now()
+-    const due = this.tasks().filter(task => task.status === 'active' && Date.parse(task.record.scheduledAt) <= scanNow)
++    const due = this.tasks().filter(task => task.status === 'active' && !taskWaitingForOutbox(task, outboxEntries)
++      && Date.parse(task.record.scheduledAt) <= scanNow)
+     for (const task of due) {
+       if (this.stopping) return
+       if (handled.has(task.record.id)) continue
+@@ -98,8 +138,8 @@
+       let admitted = group
+       const committed = new Set<ScheduleTask['record']['id']>()
+       try {
+-        const resolved = await this.ctx.sessionController.resolveAgent(task.sessionId)
+-        if ('error' in resolved) throw resolved.error
++        const resolved = this.outbox === undefined ? await this.ctx.sessionController.resolveAgent(task.sessionId) : undefined
++        if (resolved !== undefined && 'error' in resolved) throw resolved.error
+         // oxlint-disable-next-line typescript/no-unnecessary-condition -- Disposal can run while Session restoration is awaited.
+         if (this.stopping) return
+         const now = Date.now()
+@@ -119,7 +159,24 @@
+         const message = createUserMessage({
+           content: [{ type: 'text', text }], source: { kind: 'schedule' },
+         })
+-        // followup synchronously appends the inbox splice before flush observes the Session.
++        if (this.outbox !== undefined) {
++          const entry: OutboxEntry = {
++            id: message.id, sessionId: task.sessionId, text, attempts: 0, retryAt: 0,
++            members: admitted.map(member => {
++              const occurrence = occurrences.find(item => item.task.record.id === member.record.id)?.occurrence
++              return {
++                taskId: member.record.id,
++                prompt: member.record.prompt,
++                scheduledAt: occurrence?.occurrenceAt ?? member.record.scheduledAt,
++                ...occurrence?.nextScheduledAt === undefined ? {} : { nextScheduledAt: occurrence.nextScheduledAt },
++              }
++            }),
++          }
++          await this.outbox.put(entry.id, entry)
++          await this.settleOutbox(await deliverOutbox(this.ctx, entry, this.outbox))
++          continue
++        }
++        if (resolved === undefined) throw new Error('schedule agent resolution is unavailable')
+         resolved.agent.followup(message)
+         const flushed = await this.ctx.sessions.flush(resolved.agent.session)
+         if (!flushed) throw new Error('Session persistence did not acknowledge the reminder')
+@@ -152,11 +209,18 @@
+       }
+     }
+     if (this.stopping) return
+-    const next = this.tasks().filter(task => task.status === 'active' && !failed.has(task.record.id))
++    const waiting = [...this.outbox?.entries() ?? []].map(([, entry]) => entry)
++    let next = this.tasks().filter(task => task.status === 'active' && !failed.has(task.record.id)
++      && !taskWaitingForOutbox(task, waiting))
+       .reduce<number | undefined>((at, task) => {
+         const target = Date.parse(task.record.scheduledAt)
+         return at === undefined ? target : Math.min(at, target)
+       }, undefined)
++    for (const entry of waiting) {
++      if (entry.deliveredAt === undefined && entry.attempts >= 5) continue
++      const target = Math.max(Date.now() + 1000, entry.retryAt)
++      next = next === undefined ? target : Math.min(next, target)
++    }
+     if (next !== undefined) {
+       this.timer = setTimeout(() => { this.timer = undefined; this.requestDrive() },
+         Math.max(0, Math.min(next - Date.now(), MAX_TIMER_DELAY_MS)))
+--- a/packages/schedule/schedule/src/storage.ts
++++ b/packages/schedule/schedule/src/storage.ts
+@@ -5,6 +5,7 @@
+ import { defineDomain, domainTable } from '@deepseek-ai/dsh-storage-domain'
+ import { decodeScheduleRecord } from './domain.ts'
+ import type { ScheduleId, ScheduleRecord } from './types.ts'
++import { outboxSchema } from './outbox.ts'
+ 
+ const recordSchema = z.unknown().transform((value, context): ScheduleRecord => {
+   try {
+@@ -56,5 +57,5 @@
+ /** Authoritative Schedule storage; malformed tasks reject opening the domain. */
+ export const scheduleDomain = defineDomain({
+   name: 'schedule', version: 1,
+-  tables: { tasks: domainTable<ScheduleId, ScheduleTask>(scheduleTaskSchema) },
++  tables: { tasks: domainTable<ScheduleId, ScheduleTask>(scheduleTaskSchema), outbox: domainTable(outboxSchema) },
+ })
+--- a/packages/schedule/schedule/tests/delivery-history.spec.ts
++++ b/packages/schedule/schedule/tests/delivery-history.spec.ts
+@@ -179,7 +179,7 @@
+   else if (failure === 'flush-reject') test.flush.mockRejectedValueOnce(new Error('flush failed'))
+   else test.pool.failNextWrites = 1
+   await vi.advanceTimersByTimeAsync(300_000)
+-  expect(followup).toHaveBeenCalledTimes(2)
++  expect(followup).toHaveBeenCalledTimes(failure === 'put' ? 1 : 2)
+   expect(await test.service.history({ sessionId, id: record.id, limit: 100 })).toEqual(before)
+   expect(await test.service.catalog()).toEqual(catalog)
+   expect(test.pool.media.get('schedule')!.tables.get('tasks')!.get(record.id)).toEqual(disk)
+--- a/packages/schedule/schedule/tests/harness.ts
++++ b/packages/schedule/schedule/tests/harness.ts
+@@ -126,7 +126,15 @@
+   const session = ctx.sessions.create(SessionId(id), meta === undefined ? undefined : { meta })
+   return {
+     id: session.id, session, ctx: ctx.extend(), options: {}, status: 'idle', inbox: unsupportedInbox(),
+-    send() {}, followup: vi.fn<(message: UserMessage) => void>(), steer() {}, inject() {}, cancel() {},
++    send() {}, followup: vi.fn<(message: UserMessage) => void>(),
++    async followupDurable(message) {
++      if (!session.ownEvents().some(event => event.type === 'agent/inbox/spliced' && event.data.inserted.some(item => item.id === message.id))) {
++        session.append('agent/inbox/spliced', { target: 'next-turn', start: 0, inserted: [message] })
++        this.followup(message)
++      }
++      if (!await ctx.sessions.flush(session)) throw new Error('unacknowledged input')
++    },
++    steer() {}, inject() {}, cancel() {},
+     whenIdle: async () => {}, runMaintenance: operation => operation(new AbortController().signal),
+   }
+ }
+--- /dev/null
++++ b/packages/schedule/schedule/tests/outbox.spec.ts
+@@ -0,0 +1,114 @@
++import { afterEach, beforeEach, expect, it, vi } from 'vitest'
++import { SessionId } from '@deepseek-ai/dsh-session'
++import { harness, agentFor } from './harness.ts'
++import { scheduleDomain } from '../src/storage.ts'
++import { createUserMessage, MessageId } from '@deepseek-ai/dsh-llm'
++import { wakeAcknowledged } from '../src/outbox.ts'
++
++const tests: Awaited<ReturnType<typeof harness>>[] = []
++beforeEach(() => { vi.useFakeTimers(); vi.setSystemTime(new Date('2026-09-16T00:00:00Z')) })
++afterEach(async () => {
++  for (const test of tests.splice(0)) await test.ctx.fiber.dispose()
++  vi.useRealTimers()
++})
++
++it('recovers an acknowledged envelope without enqueueing after task persistence fails', async () => {
++  const first = await harness(); tests.push(first)
++  const sessionId = SessionId('outbox-restart')
++  const agent = agentFor(first.ctx, sessionId)
++  first.resolve.mockResolvedValue({ agent })
++  const record = await first.service.create(sessionId, { prompt: 'One durable reminder', title: 'One', after_seconds: 1 })
++  const flush = first.ctx.sessions.flush.bind(first.ctx.sessions)
++  vi.spyOn(first.ctx.sessions, 'flush').mockImplementation(async session => {
++    const result = await flush(session)
++    first.pool.failNextWrites = 1
++    return result
++  })
++  await vi.advanceTimersByTimeAsync(1000)
++  expect(agent.followup).toHaveBeenCalledOnce()
++  expect((await first.service.catalog())[0]?.status).toBe('active')
++  vi.restoreAllMocks()
++  await vi.advanceTimersByTimeAsync(1000)
++  expect(agent.followup).toHaveBeenCalledOnce()
++  expect((await first.service.catalog())[0]?.status).toBe('inactive')
++  expect(first.pool.media.get('schedule')?.tables.get('outbox')?.size).toBe(0)
++  expect((await first.service.catalog())[0]?.lastDelivery?.messageId).toBe(agent.followup.mock.calls[0]?.[0].id)
++  expect((await first.service.catalog())[0]?.id).toBe(record.id)
++})
++
++it('retains an acknowledged envelope until its pending input is durably consumed', async () => {
++  const test = await harness(); tests.push(test)
++  const sessionId = SessionId('pending-recovery')
++  const agent = agentFor(test.ctx, sessionId)
++  const message = { ...createUserMessage({ content: [{ type: 'text', text: 'queued' }], source: { kind: 'schedule' } }), id: MessageId('queued-id') }
++  agent.session.append('agent/inbox/spliced', { target: 'next-turn', start: 0, inserted: [message] })
++  const pending = [message]
++  Object.defineProperty(agent.inbox, 'nextTurn', { get: () => pending })
++  const wake = vi.spyOn(agent, 'followupDurable')
++  test.resolve.mockResolvedValue({ agent })
++  const entry = { id: 'queued-id', sessionId, text: 'never reinsert this', attempts: 1, retryAt: 0,
++    deliveredAt: '2026-09-16T00:00:00.000Z', members: [{ taskId: 'deleted', prompt: 'queued', scheduledAt: '2026-09-16T00:00:00.000Z' }] }
++  expect(await wakeAcknowledged(test.ctx, entry)).toBe(false)
++  expect(wake).toHaveBeenCalledWith(message)
++  expect(agent.followup).not.toHaveBeenCalled()
++  pending.splice(0)
++  expect(await wakeAcknowledged(test.ctx, entry)).toBe(true)
++  expect(wake).toHaveBeenCalledOnce()
++  expect(test.flush).toHaveBeenCalledTimes(2)
++})
++
++it('preserves the originally enqueued prompt when a task is edited before retry', async () => {
++  const test = await harness(); tests.push(test)
++  const sessionId = SessionId('immutable-prompt')
++  const agent = agentFor(test.ctx, sessionId)
++  test.resolve.mockResolvedValue({ agent })
++  const record = await test.service.create(sessionId, { prompt: 'Original queued prompt', title: 'Original', every_seconds: 300 })
++  test.flush.mockRejectedValueOnce(new Error('flush unavailable'))
++  await vi.advanceTimersByTimeAsync(300_000)
++  expect(await test.service.update({ sessionId, id: record.id, expected: record, prompt: 'Edited future prompt' })).toMatchObject({ updated: true })
++  await vi.advanceTimersByTimeAsync(1000)
++  expect(agent.followup).toHaveBeenCalledOnce()
++  expect(await test.service.history({ sessionId, id: record.id, limit: 100 })).toMatchObject({ records: [{ prompt: 'Original queued prompt' }] })
++  expect((await test.service.catalog())[0]?.prompt).toBe('Edited future prompt')
++})
++
++it('bounds resolver retries across restart and preserves a failed envelope for inspection', async () => {
++  const first = await harness(); tests.push(first)
++  await first.service.create(SessionId('missing'), { prompt: 'Retry bounded', title: 'Retry', after_seconds: 1 })
++  await vi.advanceTimersByTimeAsync(4000)
++  expect(first.resolve).toHaveBeenCalledTimes(3)
++  await first.ctx.fiber.dispose()
++  const second = await harness({ pool: first.pool }); tests.push(second)
++  await vi.advanceTimersByTimeAsync(1_000_000)
++  expect(second.resolve).toHaveBeenCalledTimes(2)
++  const outbox = second.pool.media.get('schedule')?.tables.get('outbox')
++  expect([...outbox?.values() ?? []]).toMatchObject([{ attempts: 5 }])
++  await vi.advanceTimersByTimeAsync(1_000_000)
++  expect(second.resolve).toHaveBeenCalledTimes(2)
++})
++
++it('settles partial recurring batch acknowledgments after restart without redelivery', async () => {
++  const first = await harness(); tests.push(first)
++  const sessionId = SessionId('batch')
++  const a = await first.service.create(sessionId, { prompt: 'A', title: 'A', every_seconds: 300 })
++  const b = await first.service.create(sessionId, { prompt: 'B', title: 'B', every_seconds: 300 })
++  await first.ctx.fiber.dispose()
++  const seeded = await harness({ pool: first.pool, beforeService: async (ctx, facility) => {
++    const agent = agentFor(ctx, sessionId)
++    vi.mocked(ctx.sessionController.resolveAgent).mockResolvedValue({ agent })
++    const domain = await facility.open(scheduleDomain)
++    await domain.table('outbox').put('durable-batch', {
++      id: 'durable-batch', sessionId, text: 'not replayed', attempts: 5, retryAt: 0,
++      deliveredAt: '2026-09-16T00:05:00.000Z',
++      members: [a, b].map(record => ({ taskId: record.id, prompt: record.prompt, scheduledAt: record.scheduledAt, nextScheduledAt: '2026-09-16T00:10:00.000Z' })),
++    })
++    await domain.close()
++  } }); tests.push(seeded)
++  await vi.advanceTimersByTimeAsync(0)
++  expect(seeded.resolve).toHaveBeenCalledOnce()
++  expect(await seeded.service.catalog()).toEqual(expect.arrayContaining([
++    expect.objectContaining({ id: a.id, scheduledAt: '2026-09-16T00:10:00.000Z', lastDelivery: expect.objectContaining({ messageId: 'durable-batch' }) }),
++    expect.objectContaining({ id: b.id, scheduledAt: '2026-09-16T00:10:00.000Z', lastDelivery: expect.objectContaining({ messageId: 'durable-batch' }) }),
++  ]))
++  expect(seeded.pool.media.get('schedule')?.tables.get('outbox')?.size).toBe(0)
++})
+--- a/packages/schedule/schedule/tests/plugin.spec.ts
++++ b/packages/schedule/schedule/tests/plugin.spec.ts
+@@ -376,15 +376,16 @@
+     if (failure === 'flush') test.flush.mockRejectedValueOnce(new Error('flush failed'))
+     else test.pool.failNextWrites = 1
+     await vi.advanceTimersByTimeAsync(1000)
+-    expect(followup).toHaveBeenCalledTimes(1)
+-    expect(test.flush).toHaveBeenCalledTimes(1)
++    expect(followup).toHaveBeenCalledTimes(failure === 'write' ? 0 : 1)
++    expect(test.flush).toHaveBeenCalledTimes(failure === 'write' ? 0 : 1)
+     expect(changed).not.toHaveBeenCalled()
+     expect(await test.service.catalog()).toEqual([{ ...record, sessionId, status: 'active' }])
+     expect(await test.service.list({ sessionId })).toEqual([record])
+     expect(test.pool.media.get('schedule')!.tables.get('tasks')!.get(record.id))
+       .toEqual({ record, sessionId, status: 'active', deliveryHistory: { records: [], earlierRecordsUnavailable: false } })
+     await vi.advanceTimersByTimeAsync(86_400_000)
+-    expect(followup).toHaveBeenCalledTimes(1)
++    expect(followup).toHaveBeenCalledTimes(failure === 'write' ? 0 : 1)
++    if (failure === 'flush') expect((await test.service.catalog())[0]?.status).toBe('inactive')
+   })
+ })
+ 
+--- a/packages/schedule/schedule/tests/update-restart.spec.ts
++++ b/packages/schedule/schedule/tests/update-restart.spec.ts
+@@ -60,7 +60,7 @@
+   expect(JSON.parse(bytes)).toEqual({
+     unit: { name: 'schedule', version: 1 },
+     global: null,
+-    tables: { tasks: { [id]: { ...task, record: updated } } },
++    tables: { tasks: { [id]: { ...task, record: updated } }, outbox: {} },
+   })
+   expect(first.resolve).not.toHaveBeenCalled()
+   expect(first.flush).not.toHaveBeenCalled()
+--- /dev/null
++++ b/packages/workflow/workflow-ptc/src/admission.ts
+@@ -0,0 +1,24 @@
++export class WorkflowAdmission {
++  private started = 0
++  private active = 0
++
++  constructor(
++    readonly deadlineAt: number,
++    readonly maxTotalAgents: number,
++    readonly maxConcurrentAgents: number,
++  ) {}
++
++  reserve(): () => void {
++    if (Date.now() >= this.deadlineAt) throw new Error('workflow deadline exceeded')
++    if (this.started >= this.maxTotalAgents) throw new Error('workflow shared total-agent limit exceeded')
++    if (this.active >= this.maxConcurrentAgents) throw new Error('workflow shared concurrency limit exceeded')
++    this.started += 1
++    this.active += 1
++    let released = false
++    return () => {
++      if (released) return
++      released = true
++      this.active -= 1
++    }
++  }
++}
+--- a/packages/workflow/workflow-ptc/src/host.ts
++++ b/packages/workflow/workflow-ptc/src/host.ts
+@@ -1,4 +1,5 @@
+ /** Workflow child ownership and progress over the shared sandboxed PTC executor. */
++import { randomUUID } from 'node:crypto'
+ import type { Context } from '@deepseek-ai/cordis'
+ import type { Agent } from '@deepseek-ai/dsh-agent'
+ import type {} from '@deepseek-ai/dsh-working-directory'
+@@ -10,16 +11,26 @@
+ import { assertObjectJsonSchema } from '@deepseek-ai/dsh-tools'
+ import type { ObjectJsonSchema } from '@deepseek-ai/dsh-tools'
+ import { assertNever, snapshotJsonValue } from '@deepseek-ai/dsh-util-values'
+-import type { WorkflowAgentEndInfo, WorkflowAgentInfo, WorkflowMeta, WorkflowResult, WorkflowRun, WorkflowRunId } from '@deepseek-ai/dsh-workflow'
++import type { WorkflowAgentEndInfo, WorkflowAgentInfo, WorkflowJournal, WorkflowMeta, WorkflowResult, WorkflowRun, WorkflowRunId } from '@deepseek-ai/dsh-workflow'
+ import { WORKFLOW_GUEST_SOURCE } from './guest-source.ts'
+ import type { WorkflowProgress } from './guest-types.ts'
+ import { renderThrown } from './realm.ts'
+ import type { ExecutionObserver } from './runtime.ts'
+ import type { ChildStartRequest, WorkerInit } from './types.ts'
++import type { WorkflowAdmission } from './admission.ts'
++
++interface Reliability {
++  deadlineAt: number
++  journal: WorkflowJournal | undefined
++  admissions: WorkflowAdmission[]
++  childStarted: (childId: string) => void
++  childDisposed: (childId: string) => void
++}
+ 
+ interface ChildRecord {
+   readonly callId: number
+   readonly run: SubagentActivation
++  readonly release: () => void
+   disposal?: Promise<void>
+ }
+ 
+@@ -121,7 +132,12 @@
+   private cancelReason: string | undefined
+   private disposed: Promise<void> | undefined
+   private readonly externalAbort: () => void
+-  private readonly cwd: Promise<string>
++  private cwd!: Promise<string>
++  private readonly deadlineTimer: ReturnType<typeof setTimeout>
++  private readonly startedAt = Date.now()
++  private active = 0
++  private journalStarted = false
++  private journalChain: Promise<void> = Promise.resolve()
+ 
+   constructor(
+     private readonly ctx: Context,
+@@ -135,12 +151,14 @@
+     private readonly policy: SandboxExecutionPolicy,
+     private readonly observer: ExecutionObserver,
+     private readonly signal?: AbortSignal,
++    private readonly reliability?: Reliability,
+   ) {
+     this.externalAbort = () => { this.cancel('workflow signal aborted') }
+     if (signal?.aborted) this.externalAbort()
+     else signal?.addEventListener('abort', this.externalAbort, { once: true })
+-    this.cwd = ctx.workingDirectory.ensure(parent, this.controller.signal)
+-    // Consumers attach durable run recording after start() returns.
++    this.deadlineTimer = setTimeout(() => { this.cancel('workflow deadline exceeded') },
++      Math.max(0, (reliability?.deadlineAt ?? this.startedAt + 600_000) - Date.now()))
++    this.deadlineTimer.unref()
+     this.result = Promise.resolve().then(() => this.drive())
+   }
+ 
+@@ -166,7 +184,15 @@
+   }
+ 
+   private requireActive(): void {
++    if (Date.now() >= (this.reliability?.deadlineAt ?? this.startedAt + 600_000)) this.cancel('workflow deadline exceeded')
+     this.controller.signal.throwIfAborted()
++  }
++
++  private updateJournal(): Promise<void> {
++    const record = { id: this.id, agentsStarted: this.started, activeAgents: this.active }
++    const update = this.journalChain.then(() => this.reliability?.journal?.update(record))
++    this.journalChain = update.catch(() => {})
++    return update
+   }
+ 
+   private track<T>(task: Promise<T>): Promise<T> {
+@@ -199,33 +225,68 @@
+ 
+   private async startChild(request: ChildStartRequest): Promise<PtcJsonValue> {
+     this.requireActive()
++    if (this.started >= this.init.limits.maxTotalAgents || this.active >= this.init.limits.maxConcurrentAgents) {
++      throw new Error('workflow host admission limit exceeded')
++    }
++    const releases: (() => void)[] = []
++    let released = false
++    const release = (): void => {
++      if (released) return
++      released = true
++      for (const release of releases.reverse()) release()
++    }
++    try {
++      for (const admission of this.reliability?.admissions ?? []) releases.push(admission.reserve())
++    } catch (error) {
++      release()
++      throw error
++    }
+     const callId = ++this.started
+-    const run = await this.subagents.startActivation({
+-      provider: this.provider,
+-      label: `${this.meta.name} child ${callId}`,
+-      delivery: 'caller',
+-      signal: this.controller.signal,
+-      request: {
+-        cwd: await this.cwd,
+-        prompt: [{ type: 'text', text: request.prompt }],
+-        parent: this.parent,
+-        ...request.schema === undefined ? {} : { outputSchema: request.schema },
+-        ...request.provider === undefined && request.model === undefined ? {} : {
+-          agentOptions: {
+-            ...request.provider === undefined ? {} : { provider: request.provider },
+-            ...request.model === undefined ? {} : { model: request.model },
++    this.active += 1
++    const childId = this.subagents.getProvider(this.provider)?.prepareContinuable === undefined
++      ? undefined : SessionId(randomUUID())
++    try {
++      await this.updateJournal().catch((error: unknown) => {
++        this.cancel('workflow journal update failed')
++        throw error
++      })
++      this.requireActive()
++      if (childId !== undefined) this.reliability?.childStarted(childId)
++      const run = await this.subagents.startActivation({
++        ...childId === undefined ? {} : { childId },
++        provider: this.provider,
++        label: `${this.meta.name} child ${callId}`,
++        delivery: 'caller',
++        signal: this.controller.signal,
++        request: {
++          cwd: await this.cwd,
++          prompt: [{ type: 'text', text: request.prompt }],
++          parent: this.parent,
++          ...request.schema === undefined ? {} : { outputSchema: request.schema },
++          ...request.provider === undefined && request.model === undefined ? {} : {
++            agentOptions: {
++              ...request.provider === undefined ? {} : { provider: request.provider },
++              ...request.model === undefined ? {} : { model: request.model },
++            },
+           },
+         },
+-      },
+-    })
+-    const record: ChildRecord = { callId, run }
+-    this.children.set(callId, record)
+-    // A provider can publish after the signal fired while startup was pending.
+-    if (this.controller.signal.aborted) {
+-      await this.disposeChild(record)
+-      throw new Error('workflow child started after cancellation')
+-    }
+-    return { callId, childId: run.childId }
++      })
++      const record: ChildRecord = { callId, run, release }
++      this.children.set(callId, record)
++      this.reliability?.childStarted(run.childId)
++      if (this.controller.signal.aborted) {
++        await this.disposeChild(record)
++        throw new Error('workflow child started after cancellation')
++      }
++      return { callId, childId: run.childId }
++    } catch (error) {
++      if (childId !== undefined) this.reliability?.childDisposed(childId)
++      if (!released) {
++        release()
++        this.active -= 1
++      }
++      throw error
++    }
+   }
+ 
+   private async childResult(record: ChildRecord): Promise<PtcJsonValue> {
+@@ -251,6 +312,9 @@
+       this.ctx.logger.warn(`workflow-ptc: child dispose failed: ${renderThrown(error)}`)
+     }).finally(() => {
+       this.children.delete(record.callId)
++      record.release()
++      this.active -= 1
++      this.reliability?.childDisposed(record.run.childId)
+     })
+     return record.disposal
+   }
+@@ -282,6 +346,19 @@
+   private async drive(): Promise<WorkflowResult> {
+     let result: WorkflowResult
+     try {
++      this.requireActive()
++      await this.reliability?.journal?.start({
++        id: this.id,
++        parentSessionId: this.parent.id,
++        name: this.meta.name,
++        startedAt: this.startedAt,
++        deadlineAt: this.reliability?.deadlineAt ?? this.startedAt + 600_000,
++        maxTotalAgents: this.init.limits.maxTotalAgents,
++        maxConcurrentAgents: this.init.limits.maxConcurrentAgents,
++      })
++      this.journalStarted = true
++      this.requireActive()
++      this.cwd = this.ctx.workingDirectory.ensure(this.parent, this.controller.signal)
+       const cwd = await this.cwd
+       this.requireActive()
+       const outcome = await this.runtime.run(this.runtime.resolve({
+@@ -289,7 +366,7 @@
+         bindings: [{ global: 'workflowHost', functions: this.bindings() }],
+         cwd,
+         sandboxPolicy: this.policy,
+-        timeoutMs: null,
++        timeoutMs: Math.max(1, (this.reliability?.deadlineAt ?? this.startedAt + 600_000) - Date.now()),
+         signal: this.controller.signal,
+       }))
+       this.terminal = true
+@@ -303,6 +380,7 @@
+         : this.cancelled()
+     } finally {
+       this.terminal = true
++      clearTimeout(this.deadlineTimer)
+       this.signal?.removeEventListener('abort', this.externalAbort)
+       this.controller.abort('workflow settled')
+       // Disposing published children releases binding waits; pending starts may publish more.
+@@ -312,6 +390,16 @@
+       this.children.clear()
+       for (const info of this.liveAgents.values()) this.endAgent({ ...info, outcome: 'cancelled' })
+     }
++    if (this.journalStarted) {
++      try {
++        await this.journalChain
++        await this.reliability?.journal?.finish({
++          id: this.id, stopReason: result.stopReason, agentsStarted: this.started, finishedAt: Math.max(this.startedAt, Date.now()),
++        })
++      } catch (error) {
++        return { value: null, stopReason: 'error', error: `workflow journal settlement failed: ${renderThrown(error)}`, agentsStarted: this.started }
++      }
++    }
+     return result
+   }
+ }
+--- a/packages/workflow/workflow-ptc/src/index.ts
++++ b/packages/workflow/workflow-ptc/src/index.ts
+@@ -15,6 +15,7 @@
+ import WorkflowEngine, { WorkflowError, WorkflowRunId } from '@deepseek-ai/dsh-workflow'
+ import type { WorkflowRun, WorkflowRunInfo, WorkflowStartRequest } from '@deepseek-ai/dsh-workflow'
+ import { PtcWorkflowRun } from './host.ts'
++import { WorkflowAdmission } from './admission.ts'
+ import { validateMeta } from './meta.ts'
+ import type { WorkerInit, WorkerLimits } from './types.ts'
+ 
+@@ -41,9 +42,12 @@
+   maxItemsPerCall?: number
+   /** VM timeout for the script's initial synchronous slice (default 5000 ms). */
+   syncTimeoutMs?: number
++  timeoutMs?: number
++  requireJournal?: boolean
+ }
+ 
+ type ResolvedConfig = Required<Config>
++const rootAdmissions = new WeakMap<Context, Map<string, WorkflowAdmission>>()
+ 
+ /** A body that still carries the Claude Code-style meta header (meta rides the seam as data here). */
+ const META_STATEMENT = /^\s*export\s+const\s+meta\b/
+@@ -109,9 +113,12 @@
+     maxTotalAgents: z.natural().min(1).default(1000),
+     maxItemsPerCall: z.natural().min(1).default(4096),
+     syncTimeoutMs: z.natural().min(1).default(5000),
++    timeoutMs: z.natural().min(1).max(2_147_483_647).default(600_000),
++    requireJournal: z.boolean().default(false),
+   })
+ 
+   private readonly config: ResolvedConfig
++  private readonly admissions: Map<string, WorkflowAdmission>
+ 
+   constructor(ctx: Context, config: Config) {
+     super(ctx)
+@@ -119,6 +126,8 @@
+     // schemastery (static Config) has already filled the defaulted fields;
+     // the assertion records that resolution, not a hidden fallback.
+     this.config = config as ResolvedConfig
++    this.admissions = rootAdmissions.get(ctx.root) ?? new Map()
++    rootAdmissions.set(ctx.root, this.admissions)
+   }
+ 
+   /**
+@@ -139,13 +148,33 @@
+     const id = WorkflowRunId(randomUUID())
+     const info: WorkflowRunInfo = { id, meta }
+     const limits: WorkerLimits = {
+-      maxConcurrentAgents: this.config.maxConcurrentAgents === 0
++      maxConcurrentAgents: Math.min(maxTotalAgents, this.config.maxConcurrentAgents === 0
+         ? Math.min(16, Math.max(1, availableParallelism() - 2))
+-        : this.config.maxConcurrentAgents,
++        : this.config.maxConcurrentAgents),
+       maxTotalAgents,
+       maxItemsPerCall: this.config.maxItemsPerCall,
+       syncTimeoutMs: this.config.syncTimeoutMs,
+     }
++    const journal = this.ctx.get('workflowJournal')
++    if (this.config.requireJournal && journal === undefined) {
++      throw new WorkflowError('workflow journal is required but unavailable', 'INVALID_ARGUMENT')
++    }
++    if (request.deadlineAt !== undefined && (!Number.isSafeInteger(request.deadlineAt) || request.deadlineAt <= Date.now())) {
++      throw new WorkflowError('workflow deadlineAt must be a future epoch millisecond', 'INVALID_ARGUMENT')
++    }
++    const ancestors: WorkflowAdmission[] = []
++    const visited = new Set<string>()
++    let parent: typeof request.parent | undefined = request.parent
++    while (parent !== undefined && !visited.has(parent.id)) {
++      visited.add(parent.id)
++      const admission = this.admissions.get(parent.id)
++      if (admission !== undefined && !ancestors.includes(admission)) ancestors.push(admission)
++      const parentId: typeof request.parent.id | undefined = parent.session.header.parentSession
++      parent = parentId === undefined ? undefined : this.ctx.agents.get(parentId)
++    }
++    const deadlineAt = Math.min(Date.now() + this.config.timeoutMs, request.deadlineAt ?? Infinity,
++      ...ancestors.map(admission => admission.deadlineAt))
++    const admission = new WorkflowAdmission(deadlineAt, maxTotalAgents, limits.maxConcurrentAgents)
+     const init: WorkerInit = {
+       meta,
+       body: request.script,
+@@ -172,6 +201,13 @@
+         agentEnd: (agent) => { this.emitWorkflowEvent('workflow/agent-end', info, agent) },
+       },
+       request.signal,
++      {
++        deadlineAt,
++        journal,
++        admissions: [...ancestors, admission],
++        childStarted: childId => { this.admissions.set(childId, admission) },
++        childDisposed: childId => { this.admissions.delete(childId) },
++      },
+     )
+ 
+     this.emitWorkflowEvent('workflow/start', info)
+--- /dev/null
++++ b/packages/workflow/workflow-ptc/tests/admission.spec.ts
+@@ -0,0 +1,23 @@
++import { expect, it, vi } from 'vitest'
++import { WorkflowAdmission } from '../src/admission.ts'
++
++it('reserves shared concurrent slots synchronously and releases each only once', () => {
++  const shared = new WorkflowAdmission(Date.now() + 1000, 3, 1)
++  const release = shared.reserve()
++  expect(() => shared.reserve()).toThrow('concurrency')
++  release()
++  release()
++  const second = shared.reserve()
++  expect(() => shared.reserve()).toThrow('concurrency')
++  second()
++  shared.reserve()()
++  expect(() => shared.reserve()).toThrow('total-agent')
++})
++
++it('refuses work at an expired inherited deadline without reserving capacity', () => {
++  const clock = vi.spyOn(Date, 'now').mockReturnValue(100)
++  try {
++    const shared = new WorkflowAdmission(99, 1, 1)
++    expect(() => shared.reserve()).toThrow('deadline')
++  } finally { clock.mockRestore() }
++})
+--- a/packages/workflow/workflow-ptc/tests/host.spec.ts
++++ b/packages/workflow/workflow-ptc/tests/host.spec.ts
+@@ -58,6 +58,93 @@
+   return { ctx, runtime, start, parent }
+ }
+ 
++describe('workflow reliability', () => {
++  it('waits for durable admission before execution and settlement before publishing the result', async () => {
++    const admitted = Promise.withResolvers<void>()
++    const finished = Promise.withResolvers<void>()
++    const execute = vi.fn(async () => completed)
++    const { ctx, start } = await setup(execute)
++    const journal = {
++      start: vi.fn(() => admitted.promise), update: vi.fn(async () => {}), finish: vi.fn(() => finished.promise),
++    }
++    ctx.provide('workflowJournal', journal)
++    const run = start()
++    await new Promise(resolve => setImmediate(resolve))
++    expect(journal.start).toHaveBeenCalledOnce()
++    expect(execute).not.toHaveBeenCalled()
++    admitted.resolve()
++    await new Promise(resolve => setImmediate(resolve))
++    expect(execute).toHaveBeenCalledOnce()
++    expect(journal.finish).toHaveBeenCalledOnce()
++    let settled = false
++    void run.result.then(() => { settled = true })
++    await Promise.resolve()
++    expect(settled).toBe(false)
++    finished.resolve()
++    expect((await run.result).stopReason).toBe('completed')
++    await run.dispose()
++  })
++
++  it('fails closed before a child starts if its reservation cannot be journaled', async () => {
++    const { ctx, start } = await setup(async bindings => {
++      await bindings.startChild!({ prompt: 'private prompt' })
++      return completed
++    })
++    const journal = { start: vi.fn(async () => {}), update: vi.fn(async () => { throw new Error('disk full') }), finish: vi.fn(async () => {}) }
++    ctx.provide('workflowJournal', journal)
++    const spawn = vi.spyOn(ctx.subagents, 'startActivation')
++    const run = start()
++    expect((await run.result).stopReason).not.toBe('completed')
++    expect(spawn).not.toHaveBeenCalled()
++    expect(JSON.stringify(journal.update.mock.calls)).not.toContain('private prompt')
++    await run.dispose()
++  })
++
++  it('shares inherited total admission across isolated engines before local child publication', async () => {
++    const { ctx, runtime, parent } = await setup()
++    const isolated = ctx.isolate('workflowEngine')
++    await isolated.plugin(PtcWorkflowEngine, { provider: 'stub' })
++    const provider = ctx.subagents.getProvider('stub')!
++    Object.assign(provider, { prepareContinuable: async () => { throw new Error('unused fixture') } })
++    const startChild = vi.spyOn(ctx.subagents, 'startActivation').mockImplementation(async spec => {
++      expect(spec.childId).toBeDefined()
++      const session = ctx.sessions.create(spec.childId!, { meta: { parentSession: parent.id } })
++      const child = { ...parent, id: session.id, session }
++      const nested = isolated.workflowEngine.start({ script: 'return null', meta: { name: 'nested', description: 'nested' }, parent: child })
++      expect(await nested.result).toMatchObject({ stopReason: 'error', error: expect.stringContaining('total-agent') })
++      await nested.dispose()
++      return { childId: child.id, result: Promise.resolve({ output: [], stopReason: 'completed' }), dispose: async () => {} }
++    })
++    runtime.execute = async spec => {
++      const bindings = spec.bindings[0]!.functions
++      await bindings.startChild!({ prompt: 'child' })
++      return completed
++    }
++    const run = ctx.workflowEngine.start({ script: 'return null', meta: { name: 'root', description: 'root' }, parent, maxTotalAgents: 1 })
++    expect((await run.result).stopReason).toBe('completed')
++    expect(startChild).toHaveBeenCalledOnce()
++    await run.dispose()
++  })
++
++  it('reports failed final persistence instead of successful completion', async () => {
++    const { ctx, start } = await setup()
++    ctx.provide('workflowJournal', { start: async () => {}, update: async () => {}, finish: async () => { throw new Error('disk full') } })
++    const run = start()
++    expect(await run.result).toMatchObject({ stopReason: 'error', error: expect.stringContaining('journal settlement failed') })
++    await run.dispose()
++  })
++
++  it('cancels a parked runtime at the inherited absolute deadline', async () => {
++    const { ctx, parent } = await setup(async (_bindings, spec) => {
++      await new Promise<void>(resolve => spec.signal!.addEventListener('abort', () => { resolve() }, { once: true }))
++      return completed
++    })
++    const run = ctx.workflowEngine.start({ script: 'return null', meta: { name: 'deadline', description: 'deadline' }, parent, deadlineAt: Date.now() + 30 })
++    expect(await run.result).toMatchObject({ stopReason: 'cancelled', error: expect.stringContaining('deadline') })
++    await run.dispose()
++  })
++})
++
+ describe('workflow host callback validation', () => {
+   it('retains its selected directory for the process and later children when the parent moves', async () => {
+     const entered = Promise.withResolvers<undefined>()
+@@ -131,9 +218,10 @@
+     } finally { await handle.dispose() }
+   })
+ 
+-  it('carries Session authority and an explicit unlimited deadline to the runtime', async () => {
++  it('carries Session authority and a finite remaining deadline to the runtime', async () => {
+     const { ctx, parent, start } = await setup(async (bindings, spec) => {
+-      expect(spec.timeoutMs).toBeNull()
++      expect(spec.timeoutMs).toBeGreaterThan(0)
++      expect(spec.timeoutMs).toBeLessThanOrEqual(600_000)
+       expect(spec.cwd).toBe(parent.session.header.cwd)
+       expect(spec.sandboxPolicy).toEqual(ctx.sandboxPolicy.resolve({ session: parent.session }))
+       expect(await bindings.begin!({})).toMatchObject({ body: 'return null', meta: { name: 'host-test' } })
+--- a/packages/workflow/workflow/src/index.ts
++++ b/packages/workflow/workflow/src/index.ts
+@@ -12,7 +12,7 @@
+   WorkflowResultInfo,
+   WorkflowRunInfo,
+ } from './types.ts'
+-import type { WorkflowRun, WorkflowStartRequest } from './runtime-types.ts'
++import type { WorkflowJournal, WorkflowRun, WorkflowStartRequest } from './runtime-types.ts'
+ 
+ export { WorkflowRunId } from './types.ts'
+ export type {
+@@ -26,11 +26,12 @@
+   WorkflowRunInfo,
+   WorkflowStopReason,
+ } from './types.ts'
+-export type { WorkflowRun, WorkflowStartRequest } from './runtime-types.ts'
++export type { WorkflowJournal, WorkflowRun, WorkflowStartRequest } from './runtime-types.ts'
+ 
+ declare module '@deepseek-ai/cordis' {
+   interface Context {
+     workflowEngine: WorkflowEngine
++    workflowJournal: WorkflowJournal
+   }
+ 
+   interface Events {
+--- a/packages/workflow/workflow/src/runtime-types.ts
++++ b/packages/workflow/workflow/src/runtime-types.ts
+@@ -27,16 +27,32 @@
+   subagentProvider?: string
+   /** Optional per-run total-child ceiling. */
+   maxTotalAgents?: number
++  deadlineAt?: number
+   /** The agent on whose behalf the run executes (parent of every child). */
+   parent: Agent
+   /** Cancels the run when aborted. */
+   signal?: AbortSignal
+ }
+ 
+-/**
+- * Holder-owned live workflow. `result` never rejects; consumers may cancel
+- * and must call idempotent `dispose()` to await script and child quiescence.
+- */
++export interface WorkflowJournal {
++  start(record: {
++    id: string
++    parentSessionId: string
++    name: string
++    startedAt: number
++    deadlineAt: number
++    maxTotalAgents: number
++    maxConcurrentAgents: number
++  }): Promise<void>
++  update(record: { id: string; agentsStarted: number; activeAgents: number }): Promise<void>
++  finish(record: {
++    id: string
++    stopReason: WorkflowResult['stopReason']
++    agentsStarted: number
++    finishedAt: number
++  }): Promise<void>
++}
++
+ export interface WorkflowRun {
+   readonly id: WorkflowRunId
+   /** The validated meta block available before the script body runs. */

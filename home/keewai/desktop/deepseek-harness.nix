@@ -9,7 +9,10 @@ let
   system = pkgs.stdenv.hostPlatform.system;
   dshPkgs = import inputs.deepseek-harness.inputs.nixpkgs {
     inherit system;
-    overlays = [ inputs.deepseek-harness.overlays.default ];
+    overlays = [
+      inputs.deepseek-harness.overlays.default
+      (import ../../../pkgs/deepseek-harness/overrides.nix inputs.deepseek-harness)
+    ];
   };
   compatibleBundle = dshPkgs.dsh.callPackage ../../../pkgs/deepseek-harness/compatible-bundle.nix { };
   claude = compatibleBundle (
@@ -25,6 +28,7 @@ in
   imports = [ inputs.deepseek-harness.homeModules.default ];
 
   home.packages = [
+    (dshPkgs.dsh.callPackage ../../../pkgs/deepseek-harness/maintenance.nix { })
     (lib.hiPrio (
       pkgs.callPackage ../../../pkgs/deepseek-harness/launcher.nix {
         inherit publicUrl;
@@ -51,8 +55,13 @@ in
         dshPkgs.dsh.bundles.web-app
         (compatibleBundle dshPkgs.dsh.bundles.subscriptions)
         claude
+        (dshPkgs.dsh.callPackage ../../../pkgs/deepseek-harness/operations.nix { })
       ];
       patch = [
+        {
+          id = "operations";
+          config.persistence = "launch-reset";
+        }
         {
           id = "agent-default-model";
           config = {
