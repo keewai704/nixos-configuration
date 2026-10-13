@@ -24,6 +24,8 @@ def editable_files(command, paths, bottles_root):
     state = json.loads(subprocess.check_output(
         ['cpak', 'inspect', 'github.com/bottlesdevs/bottles'], text=True
     ))
+    if isinstance(state, list):
+        state = next(item for item in state if item['instance'] == '' and item['container'] == 'running')
     data_home = Path(os.environ.get('XDG_DATA_HOME', Path.home() / '.local/share'))
     grant_socket = data_home / 'cpak/store/states' / state['container_id'] / 'grant.sock'
     mounted = {}
