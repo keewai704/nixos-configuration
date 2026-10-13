@@ -16,6 +16,8 @@ symlinkJoin {
   paths = [ kernel ];
   nativeBuildInputs = [ gnupatch ];
   postBuild = ''
+    rm -r "$out/lib/deepseek-harness/lib"
+    cp -r "${kernel}/lib/deepseek-harness/lib" "$out/lib/deepseek-harness/lib"
     connection=lib/deepseek-harness/node_modules/@deepseek-ai/dsh-client-connection
     for file in lib/index.js lib/types/index.d.ts lib/types/rpc-host.d.ts; do
       cp --remove-destination "${kernel}/$connection/$file" "$out/$connection/$file"
