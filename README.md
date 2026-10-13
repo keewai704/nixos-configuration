@@ -134,7 +134,7 @@ The BEITONG xpad fix is rebuilt with the kernel through `boot.extraModulePackage
 ## citrus（デスクトップ）
 
 - **画面構成**：Hyprland + [impasto](https://github.com/keewai704/impasto)。ソースを直接パッケージ化し、Home Manager の `quickshell.service` で起動します。`Super+Space` でランチャー、`Super+I` でコントロールセンター、`Super+Shift+Space` で壁紙、`Super+F1` でショートカット一覧。音量・マイクミュート・再生操作のメディアキーにも対応します。プロファイルで変更したキーは既定より優先されます。操作用 CLI は `impasto`、低レベル IPC は `impastoctl`。
-- **配色**：Stylix が GTK・Qt・Kitty の基礎設定を、[テーマ](themes/tokyo-night-black/default.nix) が Hyprland の枠線などを担当。impasto の配色・端末フォントを GTK・Qt・Kitty と Legcord・Steam・Fcitx5 のテーマへ反映します。初期の壁紙は Stylix の画像で、選択済みの壁紙・配色・キープロファイルは維持します。
+- **配色**：Stylix が GTK・Qt・Kitty の基礎設定を、[テーマ](themes/tokyo-night-black/default.nix) が Hyprland の枠線などを担当。impasto の配色・端末フォントを GTK・Qt・Kitty と Legcord・Steam・Fcitx5 のテーマへ反映します。初期の壁紙は [Blender で再制作した Surface Laptop Ultra Dark](themes/tokyo-night-black/surface-laptop-ultra-dark.png)（5120×2160）です。旧 Surface JPEG の選択は新しい PNG へ移行し、それ以外の選択済み壁紙・配色・キープロファイルは維持します。
 - **Hyprland**：公式 flake の main を hyprland.cachix.org のビルド済みバイナリで導入。
 - **日本語入力**：Hazkey。keyd で `` Alt+` `` を変換キーに割り当て、Logitech 製キーボードは除外。
 - **ブラウザー**：既定は [Helium](https://github.com/imputnet/helium-linux)（公式リリースを [pkgs/helium](pkgs/helium/) でパッケージ化。nixpkgs の Widevine CDM を読み込ませて DRM 動画も再生可）。TwinStar・OpenMouse の WebHID 設定アプリも Helium のアプリモードで開きます。
