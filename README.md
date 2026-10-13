@@ -106,7 +106,7 @@ The BEITONG xpad fix is rebuilt with the kernel through `boot.extraModulePackage
   `dsh` または `dsh web`、アプリランチャーの「DeepSeek Harness」で認証付きの URL をブラウザーに開きます。
   `dsh web --no-open` はブラウザーを開かずに URL を表示します。
 - バックエンドは DSH の既定ポート `127.0.0.1:3080` で待ち受けます。
-  tailnet 内の公開 URL は `https://citrus.tail1e65cd.ts.net:8443/` で、Tailscale Serve が HTTPS を提供します。
+  tailnet 内の公開 URL は `https://citrus.tail1e65cd.ts.net/` で、Tailscale Serve が標準ポートの HTTPS を提供します。
   [modules/desktop/deepseek-harness.nix](modules/desktop/deepseek-harness.nix) が `keewai` を Tailscale の operator にします。
 - Codex は DSH の subscriptions バンドル、Claude Code は Claude プラグインで使います。
   Claude Code の実行ファイルは [sadjow/claude-code-nix](https://github.com/sadjow/claude-code-nix) から取得し、DSH の実行環境にだけ追加します。

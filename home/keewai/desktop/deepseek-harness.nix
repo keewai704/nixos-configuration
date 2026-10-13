@@ -19,7 +19,7 @@ let
   );
   claudeCode = inputs.claude-code.packages.${system}.default;
   tailnetHost = "citrus.tail1e65cd.ts.net";
-  publicUrl = "https://${tailnetHost}:8443/";
+  publicUrl = "https://${tailnetHost}/";
 in
 {
   imports = [ inputs.deepseek-harness.homeModules.default ];
@@ -88,7 +88,7 @@ in
     workspace = "${config.home.homeDirectory}/nixos-configuration";
     listenAddress = "127.0.0.1";
     port = 3080;
-    trustedHosts = [ "${tailnetHost}:8443" ];
+    trustedHosts = [ tailnetHost ];
     extraArguments = [
       "--public-url"
       publicUrl
@@ -118,8 +118,8 @@ in
     Service = {
       Type = "oneshot";
       RemainAfterExit = true;
-      ExecStart = "${pkgs.tailscale}/bin/tailscale serve --bg --yes --https=8443 http://127.0.0.1:3080";
-      ExecStop = "${pkgs.tailscale}/bin/tailscale serve --https=8443 off";
+      ExecStart = "${pkgs.tailscale}/bin/tailscale serve --bg --yes --https=443 http://127.0.0.1:3080";
+      ExecStop = "${pkgs.tailscale}/bin/tailscale serve --https=443 off";
       Restart = "on-failure";
       RestartSec = 5;
     };
