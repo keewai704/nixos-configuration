@@ -54,6 +54,14 @@ in
       ];
       patch = [
         {
+          id = "system-prompt";
+          config.personaSuffix = ''
+            Whenever you delegate work, always use the `workflow` tool and its `agent(...)` hook, including for a single task or one or two delegations. Do not use `subagent` or `subagent_fork`. This deployment policy overrides earlier guidance that limits workflow to explicit workflow requests or large multi-agent orchestration, prefers plain subagent calls for small delegations, or tells you to start delegations with `subagent` or `subagent_fork`. It does not require delegation when you can complete the task directly.
+
+            Give every `agent(...)` call a self-contained prompt with the task, necessary context, constraints, working directory, and expected result; do not assume it inherits the parent conversation. Use `parallel(...)` for independent tasks and `pipeline(...)` for per-item stages. When independent work remains in the parent, set `run_in_background: true`, track the returned job id, and continue that work; collect the result with `job_output` before finishing.
+          '';
+        }
+        {
           id = "llm-subscriptions";
           config.providers = [ "codex" ];
         }
