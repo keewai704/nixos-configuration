@@ -143,28 +143,6 @@
         "type": "github"
       }
     },
-    "codex-cli": {
-      "inputs": {
-        "flake-utils": "flake-utils",
-        "nixpkgs": [
-          "nixpkgs"
-        ]
-      },
-      "locked": {
-        "lastModified": 1791736270,
-        "narHash": "sha256-iug4fsFt3MX8jMAxNStEmcjc1ZPjxjRSB4svXmk7kE8=",
-        "owner": "sadjow",
-        "repo": "codex-cli-nix",
-        "rev": "0ba1b93ea032580f9cf19ab26fb8a1b5d0f97f99",
-        "type": "github"
-      },
-      "original": {
-        "owner": "sadjow",
-        "ref": "main",
-        "repo": "codex-cli-nix",
-        "type": "github"
-      }
-    },
     "cpak": {
       "inputs": {
         "nixpkgs": [
@@ -190,7 +168,7 @@
       "inputs": {
         "flake-parts": "flake-parts",
         "nixpkgs": "nixpkgs",
-        "systems": "systems_3"
+        "systems": "systems_2"
       },
       "locked": {
         "lastModified": 1791801994,
@@ -295,24 +273,6 @@
       "original": {
         "owner": "hercules-ci",
         "repo": "flake-parts",
-        "type": "github"
-      }
-    },
-    "flake-utils": {
-      "inputs": {
-        "systems": "systems_2"
-      },
-      "locked": {
-        "lastModified": 1731533236,
-        "narHash": "sha256-l0KFg5HjrsfsO/JpG+r7fRrqm12kzFHyUHqHCVpMMbI=",
-        "owner": "numtide",
-        "repo": "flake-utils",
-        "rev": "11707dc2f618dd54ca8739b309ec4fc024de578b",
-        "type": "github"
-      },
-      "original": {
-        "owner": "numtide",
-        "repo": "flake-utils",
         "type": "github"
       }
     },
@@ -519,7 +479,7 @@
         "hyprwire": "hyprwire",
         "nixpkgs": "nixpkgs_2",
         "pre-commit-hooks": "pre-commit-hooks",
-        "systems": "systems_4",
+        "systems": "systems_3",
         "xdph": "xdph"
       },
       "locked": {
@@ -767,11 +727,11 @@
     "impasto": {
       "flake": false,
       "locked": {
-        "lastModified": 1791820866,
-        "narHash": "sha256-fUNtuAh+fLMaET3lmfhrlTVZaMD2mbn2Rzuuqhki2fQ=",
+        "lastModified": 1791805220,
+        "narHash": "sha256-6eIXtTE89sm8fNZSxc/B9Vg9Z9AyKun5KKJzqNItQ9g=",
         "owner": "keewai704",
         "repo": "impasto",
-        "rev": "22e1047614533ba775827e905555280003e732ec",
+        "rev": "5d51ae3347c9771ad631a57f53296b4ca556e34d",
         "type": "github"
       },
       "original": {
@@ -806,7 +766,7 @@
     "meltype-release": {
       "flake": false,
       "locked": {
-        "narHash": "sha256-u8pHmMgYI98xE5eQ1MsH4r702TYkvkm4l9hwhG6YSvk=",
+        "narHash": "sha256-14oz3RGKGUyCrYscP5rQcxs/mOeghwumma+5fBGOn+g=",
         "type": "file",
         "url": "https://api.github.com/repos/yksr-melt/Meltype/releases/latest"
       },
@@ -1095,7 +1055,6 @@
       "inputs": {
         "agenix": "agenix",
         "claude-code": "claude-code",
-        "codex-cli": "codex-cli",
         "cpak": "cpak",
         "deepseek-harness": "deepseek-harness",
         "dsh-claude": "dsh-claude",
@@ -1109,8 +1068,7 @@
         "nixcord": "nixcord",
         "nixpkgs": "nixpkgs_5",
         "proton-wineland-release": "proton-wineland-release",
-        "stylix": "stylix",
-        "t3code-release": "t3code-release"
+        "stylix": "stylix"
       }
     },
     "stylix": {
@@ -1126,7 +1084,7 @@
           "nixpkgs"
         ],
         "nur": "nur",
-        "systems": "systems_5",
+        "systems": "systems_4",
         "tinted-kitty": "tinted-kitty",
         "tinted-schemes": "tinted-schemes",
         "tinted-tmux": "tinted-tmux",
@@ -1163,21 +1121,6 @@
     },
     "systems_2": {
       "locked": {
-        "lastModified": 1681028828,
-        "narHash": "sha256-Vy1rq5AaRuLzOxct8nz4T6wlgyUR7zLU309k9mBC768=",
-        "owner": "nix-systems",
-        "repo": "default",
-        "rev": "da67096a3b9bf56a91d16901293e51ba5b49a27e",
-        "type": "github"
-      },
-      "original": {
-        "owner": "nix-systems",
-        "repo": "default",
-        "type": "github"
-      }
-    },
-    "systems_3": {
-      "locked": {
         "lastModified": 1776166891,
         "narHash": "sha256-bI8yrEGjrohR5hkQox7UrxDH7XqrYMwI8SL/LrJ1+S8=",
         "owner": "nix-systems",
@@ -1191,7 +1134,7 @@
         "type": "github"
       }
     },
-    "systems_4": {
+    "systems_3": {
       "locked": {
         "lastModified": 1689347949,
         "narHash": "sha256-12tWmuL2zgBgZkdoB6qXZsgJEH9LR3oUgpaQq2RbI80=",
@@ -1206,7 +1149,7 @@
         "type": "github"
       }
     },
-    "systems_5": {
+    "systems_4": {
       "locked": {
         "lastModified": 1774449309,
         "narHash": "sha256-brhZ8DmuGtzkCYHJg4HEd602amKm89Y9ytsFZ5uWD1w=",
@@ -1220,23 +1163,6 @@
         "ref": "future-26.11",
         "repo": "default",
         "type": "github"
-      }
-    },
-    "t3code-release": {
-      "flake": false,
-      "locked": {
-        "lastModified": 1791855478,
-        "narHash": "sha256-LA/GNb3E2L0Nv8q+olIQz25WP2OQb7OD+C/DIZgBvXI=",
-        "ref": "master",
-        "rev": "3b75f4804a656fb1b9397ac360a2524ac71e5b9a",
-        "revCount": 402,
-        "type": "git",
-        "url": "https://aur.archlinux.org/t3code-nightly-bin.git"
-      },
-      "original": {
-        "ref": "master",
-        "type": "git",
-        "url": "https://aur.archlinux.org/t3code-nightly-bin.git"
       }
     },
     "tinted-kitty": {

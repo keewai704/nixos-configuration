@@ -24,16 +24,14 @@ and implementation choices from a native Apple app.
 
 ## Desktop operations belong to Codex
 
-Use browser automation for browser tasks when the harness provides it. In T3
-Code, check `preview_status` and open the collaborative preview if needed.
+Use browser automation for browser tasks when the harness provides it.
 Hypruse is for the local Hyprland desktop when desktop interaction is necessary,
 such as an existing authenticated browser session or a native file dialog.
 
 If already running as Codex, perform the necessary hypruse work directly.
-Otherwise delegate that bounded desktop task to Codex. In T3 Code, discover the
-live catalog with `orchestrator_capabilities` and use `delegate_task` with
-`providerInstanceId: codex` and an explicit `reasoningEffort` option: choose
-`gpt-6-luna` / `max` for inspection or mechanical operations,
+Otherwise delegate that bounded desktop task to Codex through the harness's
+subagent tool, if it supports selecting Codex. When model and effort selection
+are supported, choose `gpt-6-luna` / `max` for inspection or mechanical operations,
 `gpt-6.1-sol` / `medium` for routine implementation and verification, or
 `gpt-6-astra` / `xhigh` for difficult debugging. Honor an explicit user override.
 Retain the returned task ID; do not create an ordinary top-level conversation.

@@ -33,6 +33,15 @@ in
     ))
   ];
 
+  xdg.desktopEntries.deepseek-harness = {
+    name = "DeepSeek Harness";
+    genericName = "Coding Agent Web UI";
+    exec = "dsh web";
+    icon = "utilities-terminal";
+    categories = [ "Development" ];
+    terminal = false;
+  };
+
   programs.dsh = {
     enable = true;
     package = dshPkgs.dsh.dsh;

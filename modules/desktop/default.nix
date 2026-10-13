@@ -9,7 +9,7 @@
     ./input-method.nix
     ./steam.nix
     ./stylix.nix
-    ./t3code.nix
+    ./deepseek-harness.nix
   ];
 
   home-manager.users.keewai.imports = [ ../../home/keewai/desktop ];

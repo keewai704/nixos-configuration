@@ -53,7 +53,7 @@ flake.nix
 | CLI ツールを追加 | [home/keewai/common/packages.nix](home/keewai/common/packages.nix) |
 | シェル・エイリアス・プロンプト | [shell.nix](home/keewai/common/shell.nix)、[starship.toml](home/keewai/common/starship.toml) |
 | Git / GitHub CLI | [git.nix](home/keewai/common/git.nix) |
-| T3 Code / Claude Code / Codex | [pkgs/t3code](pkgs/t3code/default.nix)、[applications.nix](home/keewai/desktop/applications.nix)、[modules/desktop/t3code.nix](modules/desktop/t3code.nix) |
+| DSH Web / Claude Code / Codex | [deepseek-harness.nix](home/keewai/desktop/deepseek-harness.nix)、[pkgs/deepseek-harness](pkgs/deepseek-harness/)、[modules/desktop/deepseek-harness.nix](modules/desktop/deepseek-harness.nix) |
 | 個人スキル・MCP サーバー（Claude Code / Codex 共通） | [skills/](skills/)、[coding-agents](home/keewai/common/coding-agents/default.nix) |
 | 設定不要な GUI アプリを追加 | [home/keewai/desktop/applications.nix](home/keewai/desktop/applications.nix) |
 | ウィンドウ・モニター・キー割り当て | [hyprland.lua](home/keewai/desktop/hyprland.lua) |
@@ -100,20 +100,16 @@ The BEITONG xpad fix is rebuilt with the kernel through `boot.extraModulePackage
 
 ## コーディングエージェント
 
-デスクトップに [T3 Code](https://github.com/pingdotgg/t3code)（`t3code`）を入れています。
+デスクトップには [DeepSeek Harness](https://github.com/deepseek-ai/DeepSeek-Harness) の Web 画面を入れています。
 
-- T3 Code は公式の最新 nightly（AppImage）を展開し、[pkgs/t3code](pkgs/t3code/default.nix) で NixOS 向けにパッケージ化しています。
-  bubblewrap を使わずに起動するため、エージェントの端末でも `sudo` が使えます。
-  版とハッシュは flake 入力 `t3code-release`（upstream が公開する AUR
-  [t3code-nightly-bin](https://aur.archlinux.org/packages/t3code-nightly-bin) の `PKGBUILD`）から読むので、
-  `nix flake update t3code-release` で最新 nightly に追従します。
-- T3 Code が使う Claude Code と Codex は
-  [sadjow/claude-code-nix](https://github.com/sadjow/claude-code-nix) と
-  [sadjow/codex-cli-nix](https://github.com/sadjow/codex-cli-nix) のもので、T3 Code の `PATH` にだけ入れています。
-  ターミナルからは `claude` / `codex` を使えません。
-- T3 Code の「Enable Tailscale HTTPS」は Home Manager の適用時に有効化しています。
-  バックエンドは localhost で待ち受け、tailnet からは Tailscale Serve の HTTPS 443 経由で接続できます。
-  T3 Code が `tailscale serve` を実行できるよう、[modules/desktop/t3code.nix](modules/desktop/t3code.nix) で `keewai` を Tailscale の operator にしています。
+- 設定は [deepseek-harness.nix](home/keewai/desktop/deepseek-harness.nix) にあります。
+  `dsh` または `dsh web`、アプリランチャーの「DeepSeek Harness」で認証付きの URL をブラウザーに開きます。
+  `dsh web --no-open` はブラウザーを開かずに URL を表示します。
+- バックエンドは DSH の既定ポート `127.0.0.1:3080` で待ち受けます。
+  tailnet 内の公開 URL は `https://citrus.tail1e65cd.ts.net:8443/` で、Tailscale Serve が HTTPS を提供します。
+  [modules/desktop/deepseek-harness.nix](modules/desktop/deepseek-harness.nix) が `keewai` を Tailscale の operator にします。
+- Codex は DSH の subscriptions バンドル、Claude Code は Claude プラグインで使います。
+  Claude Code の実行ファイルは [sadjow/claude-code-nix](https://github.com/sadjow/claude-code-nix) から取得し、DSH の実行環境にだけ追加します。
 - Claude Code と Codex の設定（`~/.claude`、`~/.codex`）は基本的に Nix で管理していません。
   例外として [coding-agents](home/keewai/common/coding-agents/default.nix) が両方へ共通にスキルと MCP サーバーを配ります。
   - スキル: `codingAgents.skills`（[skills/](skills/) の全ディレクトリを自動登録）を `~/.claude/skills/` と `~/.agents/skills/`（Codex）にリンクします。
@@ -190,6 +186,6 @@ moonlight stream citrus "Extend Display" --1080 --fps 120 --bitrate 40000 --vide
 - [pkgs/default.nix](pkgs/default.nix) に並べたものは `nix build .#<名前>` で単体ビルドできます。
 - パッチは対象パッケージのディレクトリに置きます。
 - `keewai704` 所有の入力（Island、hypr-brightness）は `?ref=main` を明示し、適用前に毎回 `nix flake update` で最新の main に更新します。
-- `t3code-release`・`claude-code`・`codex-cli` も適用前に毎回 `nix flake update` で最新リリースに更新します。
+- `claude-code`・`meltype-release`・`meltype-tags` も適用前に毎回 `nix flake update` で最新リリースに更新します。
 - 非自由パッケージは全体で許可しています（`allowUnfree = true`）。
 - `system.stateVersion` / `home.stateVersion` は互換性の基準なので、アップデートに合わせて変えません。

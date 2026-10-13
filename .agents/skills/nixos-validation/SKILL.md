@@ -19,7 +19,7 @@ the changed behavior and its imports:
 | --- | --- |
 | Repository documentation or repository-only skills | Whitespace, links, instruction consistency, and skill frontmatter; no Nix evaluation/build. |
 | Local host configuration or deployed files | Use the evaluation/build in required `nixos-rebuild test`, not a duplicate prebuild or equivalent evaluation. Distributed personal skills count as deployed files. |
-| T3 Code packaging | Build the Home Manager `home.path`, confirm `claude` and `codex` resolve only through the `t3code` wrapper `PATH`, and run their `--version`. Do not make a model request. |
+| DeepSeek Harness web integration | Check the authenticated launcher URL, HTTPS response, required assets and WebSockets, loopback backend binding, and Tailscale Serve mapping. Run the configured Claude Code command with `--version`; do not make a model request. |
 | File moves or renames without intended behavior change | Compare each affected host's `system.build.toplevel.drvPath` with the pre-move value; explain any difference. |
 | Another host only | Locally evaluate changed attributes, or build the affected output when package implementation or build logic changed. Shared settings need every host only when host-specific branches warrant validation. |
 | A failing check | Read [Failure diagnosis](references/failure-diagnosis.md); compare configuration values only when they could explain the failure. |

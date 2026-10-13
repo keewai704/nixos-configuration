@@ -14,7 +14,7 @@ reuse context that has not changed.
 
 | Responsibility | Source |
 | --- | --- |
-| T3 Code and its coding agents | `pkgs/t3code/`, `home/keewai/desktop/applications.nix` |
+| DeepSeek Harness and its coding providers | `pkgs/deepseek-harness/`, `home/keewai/desktop/deepseek-harness.nix` |
 | Distributed personal skills | `skills/` |
 | Repository-only validation guidance | `.agents/skills/nixos-validation/` |
 
@@ -123,9 +123,9 @@ revision and hash. Use `?ref=main` for Git flake inputs and refresh from `main`;
 do not rely on the remote default branch. Always track the latest `main`: before
 each local activation, run `nix flake update` for every `keewai704` input and
 include the resulting lock change in the commit. Likewise, run
-`nix flake update t3code-release claude-code codex-cli meltype-release meltype-tags`
-before each local activation so T3 Code tracks its latest nightly, its agents
-track their latest releases, and Meltype tracks its latest release. This is standing authorization to update those inputs only.
+`nix flake update claude-code meltype-release meltype-tags`
+before each local activation so Claude Code and Meltype track their latest
+releases. This is standing authorization to update those inputs only.
 
 Before each local activation on citrus, also run
 `python3 pkgs/kernel-drivers/update.py` and commit any resulting `sources.json`
