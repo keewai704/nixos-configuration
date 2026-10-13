@@ -464,11 +464,11 @@
         "xdph": "xdph"
       },
       "locked": {
-        "lastModified": 1791545463,
-        "narHash": "sha256-EuTde/DbLBZ0nm8Ctj4Il3M5SKsWAKeDITvUuatu5+g=",
+        "lastModified": 1791830869,
+        "narHash": "sha256-6JkVAadW+25LvCUfhcQJxX8Cddufq9AWHmoscgmHFIA=",
         "owner": "hyprwm",
         "repo": "Hyprland",
-        "rev": "663b29b846e4bad17cfa29941f6d2fbb6b61f139",
+        "rev": "6cc0822e24ad18df62689de80593541a61b49924",
         "type": "github"
       },
       "original": {
@@ -708,11 +708,11 @@
     "impasto": {
       "flake": false,
       "locked": {
-        "lastModified": 1791820866,
-        "narHash": "sha256-fUNtuAh+fLMaET3lmfhrlTVZaMD2mbn2Rzuuqhki2fQ=",
+        "lastModified": 1791805220,
+        "narHash": "sha256-6eIXtTE89sm8fNZSxc/B9Vg9Z9AyKun5KKJzqNItQ9g=",
         "owner": "keewai704",
         "repo": "impasto",
-        "rev": "22e1047614533ba775827e905555280003e732ec",
+        "rev": "5d51ae3347c9771ad631a57f53296b4ca556e34d",
         "type": "github"
       },
       "original": {
@@ -747,7 +747,7 @@
     "meltype-release": {
       "flake": false,
       "locked": {
-        "narHash": "sha256-bJTNCrPgAlnvQvKgyZniiypBsCtnKVTmzaZjjqmmLO4=",
+        "narHash": "sha256-FMte3hpVGN+9w1ssXS+aK2meZN20ymL0SY5B2JUk0Ko=",
         "type": "file",
         "url": "https://api.github.com/repos/yksr-melt/Meltype/releases/latest"
       },
@@ -839,11 +839,11 @@
         "treefmt-nix": "treefmt-nix"
       },
       "locked": {
-        "lastModified": 1791730200,
-        "narHash": "sha256-M/DxR1WYRVfwFI/skgURb5bGLc0J265T5wA+os0VpZI=",
+        "lastModified": 1791789228,
+        "narHash": "sha256-H4oPz8lX2fHV4FOhxp9txUT/GVC/QB5mypkAkUhW31o=",
         "owner": "4evy",
         "repo": "nixcord",
-        "rev": "36818fa6196623f1da8c2898499188f440587330",
+        "rev": "58298812834393c79a6c1b78d5b68e3a301a0ec1",
         "type": "github"
       },
       "original": {
@@ -938,11 +938,11 @@
     },
     "nixpkgs_4": {
       "locked": {
-        "lastModified": 1791594108,
-        "narHash": "sha256-XK4KceonkwD8LuMAt/vNrz982mXJM5jeHAxMwsUXXAQ=",
+        "lastModified": 1791734076,
+        "narHash": "sha256-i5qk1kLiit98rRbh1AXmWBNT9QXC/y4l5Wk/u5EdpDQ=",
         "owner": "NixOS",
         "repo": "nixpkgs",
-        "rev": "6510408d147d8c5e6d76043e899e9251756f6a75",
+        "rev": "7fd4004d0511991fff3a0524856a9be09e28c5f0",
         "type": "github"
       },
       "original": {
@@ -1133,11 +1133,11 @@
     "t3code-release": {
       "flake": false,
       "locked": {
-        "lastModified": 1791851281,
-        "narHash": "sha256-oVz16qFbgIV0Rga0i0Yla+/N2KOUb6vZKCkvY7irH+w=",
+        "lastModified": 1791842546,
+        "narHash": "sha256-X98YPK0oKao70HZQZIzBHUh0OkbgsOyh4T7q3BO6Loo=",
         "ref": "master",
-        "rev": "9a00cdb57ddb642e6214094ffff0f84c0b0a3eae",
-        "revCount": 401,
+        "rev": "dd3967df54f9ef560e6af5645962cc6bc41c27c5",
+        "revCount": 400,
         "type": "git",
         "url": "https://aur.archlinux.org/t3code-nightly-bin.git"
       },
