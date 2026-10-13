@@ -727,11 +727,11 @@
     "impasto": {
       "flake": false,
       "locked": {
-        "lastModified": 1791805220,
-        "narHash": "sha256-6eIXtTE89sm8fNZSxc/B9Vg9Z9AyKun5KKJzqNItQ9g=",
+        "lastModified": 1791820866,
+        "narHash": "sha256-fUNtuAh+fLMaET3lmfhrlTVZaMD2mbn2Rzuuqhki2fQ=",
         "owner": "keewai704",
         "repo": "impasto",
-        "rev": "5d51ae3347c9771ad631a57f53296b4ca556e34d",
+        "rev": "22e1047614533ba775827e905555280003e732ec",
         "type": "github"
       },
       "original": {
@@ -766,7 +766,7 @@
     "meltype-release": {
       "flake": false,
       "locked": {
-        "narHash": "sha256-Otp6CkNZN60bA8agoAwKgVKvVL3OBei1WnYIAiWWy5U=",
+        "narHash": "sha256-cr3BSYZSxwjWH7c48yLEBPjupCCPfCe08AO8gtkPP1o=",
         "type": "file",
         "url": "https://api.github.com/repos/yksr-melt/Meltype/releases/latest"
       },
