@@ -9,7 +9,10 @@ let
   system = pkgs.stdenv.hostPlatform.system;
   dshPkgs = import inputs.deepseek-harness.inputs.nixpkgs {
     inherit system;
-    overlays = [ inputs.deepseek-harness.overlays.default ];
+    overlays = [
+      inputs.deepseek-harness.overlays.default
+      (import ../../../pkgs/deepseek-harness/cache.nix)
+    ];
   };
   compatibleBundle = dshPkgs.dsh.callPackage ../../../pkgs/deepseek-harness/compatible-bundle.nix { };
   claude = compatibleBundle (
@@ -24,6 +27,10 @@ let
     "gpt-6-astra"
     "gpt-6.1-sol"
     "gpt-6-luna"
+    "gpt-6-sol"
+    "gpt-5.6-sol"
+    "gpt-5.6-terra"
+    "gpt-5.6-luna"
   ];
   codexContextWindow = 800000;
   compactionThreshold = 400000;
@@ -109,15 +116,14 @@ in
         }
         {
           id = "llm-subscriptions";
-          config.providers = [ "codex" ];
+          config = {
+            providers = [ "codex" ];
+            pool.strategy = "priority";
+          };
         }
         {
           id = "compaction-basic";
-          config.modelPolicies = map (model: {
-            provider = "codex";
-            inherit model;
-            thresholdRatio = (compactionThreshold * 1.0) / codexContextWindow;
-          }) codexModels;
+          config.thresholdTokens = compactionThreshold;
         }
         {
           id = "llm-claude-code";

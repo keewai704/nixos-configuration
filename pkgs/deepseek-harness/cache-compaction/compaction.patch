@@ -1,0 +1,213 @@
+--- a/lib/deepseek-harness/node_modules/@deepseek-ai/dsh-compaction-basic/lib/index.js
++++ b/lib/deepseek-harness/node_modules/@deepseek-ai/dsh-compaction-basic/lib/index.js
+@@ -4,7 +4,7 @@
+ import { assertNever, deepFreeze } from "@deepseek-ai/dsh-util-values";
+ import { randomUUID } from "node:crypto";
+ import { isDeepStrictEqual } from "node:util";
+-import { SessionSeq } from "@deepseek-ai/dsh-session";
++import { SessionSeq, appendPluginRecord } from "@deepseek-ai/dsh-session";
+ //#region lib/types/config.js
+ /**
+ * Load-time validation and routed-model policy resolution for compaction-basic.
+@@ -18,6 +18,7 @@
+ /** Fields shared by top-level defaults and exact-target overrides. */
+ const POLICY_CONFIG_KEYS = [
+ 	"thresholdRatio",
++	"thresholdTokens",
+ 	"headroomTokens",
+ 	"retainRatio",
+ 	"retainTokens",
+@@ -65,15 +66,16 @@
+ 	assertPositiveInteger("BasicCompactionConfig.maxTokens (explicit or from headroomTokens)", maxTokens);
+ 	const thresholdRatio = config.thresholdRatio ?? DEFAULT_THRESHOLD_RATIO;
+ 	const retention = resolveRetention(config, { retainRatio: DEFAULT_RETAIN_RATIO });
+-	validateRatioRetention(thresholdRatio, retention, "BasicCompactionConfig");
++	if (config.thresholdTokens === void 0) validateRatioRetention(thresholdRatio, retention, "BasicCompactionConfig");
+ 	const modelPolicies = resolveModelPolicies(config.modelPolicies);
+ 	for (const [index, policy] of modelPolicies.entries()) {
+ 		if (policy.maxTokens === void 0 && config.maxTokens === void 0 && policy.headroomTokens !== void 0) policy.maxTokens = policy.headroomTokens;
+ 		assertPositiveInteger(`BasicCompactionConfig: modelPolicies[${index}].maxTokens (explicit or from headroomTokens)`, policy.maxTokens ?? maxTokens);
+-		validateRatioRetention(policy.thresholdRatio ?? thresholdRatio, resolveRetention(policy, retention), `BasicCompactionConfig: modelPolicies[${index}]`);
++		if (policy.thresholdTokens === void 0 && config.thresholdTokens === void 0) validateRatioRetention(policy.thresholdRatio ?? thresholdRatio, resolveRetention(policy, retention), `BasicCompactionConfig: modelPolicies[${index}]`);
+ 	}
+ 	return deepFreeze({
+ 		thresholdRatio,
++		...config.thresholdTokens === void 0 ? {} : { thresholdTokens: config.thresholdTokens },
+ 		headroomTokens,
+ 		...retention,
+ 		summarizationProvider: config.summarizationProvider ?? "",
+@@ -100,6 +102,7 @@
+ 			model: target.model
+ 		},
+ 		thresholdRatio: override?.thresholdRatio ?? config.thresholdRatio,
++		thresholdTokens: override?.thresholdTokens ?? config.thresholdTokens,
+ 		headroomTokens: override?.headroomTokens ?? config.headroomTokens,
+ 		...resolveRetention(override ?? {}, inheritedRetention),
+ 		summarizationProvider: override?.summarizationProvider ?? config.summarizationProvider,
+@@ -129,7 +132,7 @@
+ 	if (messageBudgetTokens <= 0) throw new TargetPressureConfigError(targetKey, `compaction-basic: ${targetKey} reserves ${reservedCompletionTokens} completion tokens of its ${contextWindow}-token context window, leaving no message budget; configure the adapter model's contextWindow above the effective request maxTokens`);
+ 	const pressureBudgetTokens = messageBudgetTokens - policy.headroomTokens;
+ 	if (pressureBudgetTokens <= 0) throw new TargetPressureConfigError(targetKey, `compaction-basic: ${targetKey} reserves ${reservedCompletionTokens} completion tokens and ${policy.headroomTokens} headroom tokens of its ${contextWindow}-token context window, leaving no pressure budget; reduce the effective request maxTokens or compaction headroomTokens, or configure a larger adapter model contextWindow`);
+-	const thresholdTokens = Math.floor(Math.min(contextWindow * policy.thresholdRatio, pressureBudgetTokens));
++	const thresholdTokens = Math.floor(Math.min(policy.thresholdTokens ?? contextWindow * policy.thresholdRatio, pressureBudgetTokens));
+ 	const retainTokens = policy.retainTokens === void 0 ? Math.floor(messageBudgetTokens * policy.retainRatio) : policy.retainTokens;
+ 	if (retainTokens >= thresholdTokens) throw new TargetPressureConfigError(targetKey, `BasicCompactionConfig: ${policy.target.provider}/${policy.target.model} retainTokens (${retainTokens}) must be less than threshold tokens ${thresholdTokens}`);
+ 	return deepFreeze({
+@@ -179,6 +182,7 @@
+ /** Validate the fields common to defaults and exact-target partial overrides. */
+ function validatePolicy(config, name) {
+ 	const thresholdRatio = config.thresholdRatio;
++	const thresholdTokens = config.thresholdTokens;
+ 	const headroomTokens = config.headroomTokens;
+ 	const retainRatio = config.retainRatio;
+ 	const retainTokens = config.retainTokens;
+@@ -186,6 +190,7 @@
+ 	const compactionRetries = config.compactionRetries;
+ 	const maxOverflowRetries = config.maxOverflowRetries;
+ 	if (thresholdRatio !== void 0) assertRatio(`${name}.thresholdRatio`, thresholdRatio);
++	if (thresholdTokens !== void 0 && (!Number.isSafeInteger(thresholdTokens) || thresholdTokens <= 0)) throw new Error(`${name}.thresholdTokens (${String(thresholdTokens)}) must be a positive safe integer`);
+ 	if (headroomTokens !== void 0) assertNonNegativeInteger(`${name}.headroomTokens`, headroomTokens);
+ 	if (retainRatio !== void 0) assertRatio(`${name}.retainRatio`, retainRatio);
+ 	if (retainTokens !== void 0) assertNonNegativeInteger(`${name}.retainTokens`, retainTokens);
+@@ -289,7 +294,7 @@
+ * @param signal - optional cancellation forwarded to the adapter.
+ * @returns safe text-only summary blocks and the exact call envelope and output.
+ */
+-async function summarizeWithLlm(ctx, config, input, agent, signal) {
++async function summarizeWithLlm(ctx, config, input, agent, signal, compactionId) {
+ 	const latest = agent.session.requestHeader()?.config;
+ 	const configured = config.summarizationProvider.length === 0 ? void 0 : {
+ 		provider: config.summarizationProvider,
+@@ -301,6 +306,7 @@
+ 	} : void 0;
+ 	const target = configured ?? latest ?? agentTarget;
+ 	if (target === void 0) throw new Error("no provider/model available for summarization: set both BasicCompactionConfig summarization fields, route one request, or set both AgentOptions fields");
++	const controls = latest?.provider === target.provider && latest?.model === target.model ? latest : void 0;
+ 	const assembler = new BlockAssembler();
+ 	const messages = [...input.messages, deepFreeze({
+ 		role: "user",
+@@ -312,6 +318,8 @@
+ 	const options = {
+ 		provider: target.provider,
+ 		model: target.model,
++		...controls?.reasoningEffort === void 0 ? {} : { reasoningEffort: controls.reasoningEffort },
++		...controls?.temperature === void 0 ? {} : { temperature: controls.temperature },
+ 		messages,
+ 		toolHistory: agent.session.toolHistory(),
+ 		...input.tools === void 0 ? {} : { tools: [...input.tools] },
+@@ -320,21 +328,33 @@
+ 		purpose: "compaction",
+ 		...signal === void 0 ? {} : { signal }
+ 	};
+-	for await (const chunk of ctx.llm.stream(options)) assembler.push(chunk);
+-	const error = finishError(assembler.finish);
+-	if (error !== void 0) throw error;
+-	const rawOutput = assembler.blocks();
+-	const summary = summaryText(rawOutput);
+-	if (!summary.some((block) => block.text.trim().length > 0)) throw new Error("summarization produced no text summary content");
+-	return {
+-		summary,
+-		rawOutput,
+-		llmStreamCall: true,
+-		provider: options.provider,
+-		model: options.model,
+-		maxTokens: config.maxTokens,
+-		...assembler.usage === void 0 ? {} : { usage: assembler.usage }
+-	};
++	let outcome = "error";
++	try {
++		for await (const chunk of ctx.llm.stream(options)) assembler.push(chunk);
++		const error = finishError(assembler.finish);
++		if (error !== void 0) throw error;
++		const rawOutput = assembler.blocks();
++		const summary = summaryText(rawOutput);
++		if (!summary.some((block) => block.text.trim().length > 0)) throw new Error("summarization produced no text summary content");
++		outcome = "completed";
++		return {
++			summary,
++			rawOutput,
++			llmStreamCall: true,
++			provider: options.provider,
++			model: options.model,
++			maxTokens: config.maxTokens,
++			...assembler.usage === void 0 ? {} : { usage: assembler.usage }
++		};
++	} finally {
++		if (compactionId !== void 0) appendPluginRecord(agent.session, "plugin:cache-efficiency/compaction-usage", {
++			compactionId,
++			provider: options.provider,
++			model: options.model,
++			...assembler.usage === void 0 ? {} : { usage: assembler.usage },
++			outcome
++		});
++	}
+ }
+ /**
+ * Wrap raw summary blocks in the durable checkpoint framing.
+@@ -584,7 +604,7 @@
+ 	for (;;) {
+ 		signal?.throwIfAborted();
+ 		try {
+-			summaryResult = await dependencies.summarize(prepared.input, agent, signal);
++			summaryResult = await dependencies.summarize(prepared.input, agent, signal, compactionId);
+ 			break;
+ 		} catch (error) {
+ 			if (signal?.aborted === true) throw error;
+@@ -768,6 +788,7 @@
+ 	};
+ }
+ const thresholdRatioSchema = z.number();
++const thresholdTokensSchema = z.number().step(1).min(1).max(Number.MAX_SAFE_INTEGER);
+ const headroomTokensSchema = z.number().step(1).min(0);
+ const retainRatioSchema = z.number();
+ const retainTokensSchema = z.number().step(1).min(0);
+@@ -780,6 +801,7 @@
+ 	provider: z.string().required(),
+ 	model: z.string().required(),
+ 	thresholdRatio: thresholdRatioSchema,
++	thresholdTokens: thresholdTokensSchema,
+ 	headroomTokens: headroomTokensSchema,
+ 	retainRatio: retainRatioSchema,
+ 	retainTokens: retainTokensSchema,
+@@ -805,6 +827,7 @@
+ 	];
+ 	static Config = z.object({
+ 		thresholdRatio: thresholdRatioSchema,
++		thresholdTokens: thresholdTokensSchema,
+ 		headroomTokens: headroomTokensSchema,
+ 		retainRatio: retainRatioSchema,
+ 		retainTokens: retainTokensSchema,
+@@ -896,10 +919,10 @@
+ 	* @param signal - optional cancellation forwarded to the adapter.
+ 	* @returns safe text summary blocks and the exact auxiliary call envelope and output.
+ 	*/
+-	async summarize(input, agent, signal) {
++	async summarize(input, agent, signal, compactionId) {
+ 		const target = conversationTarget(agent);
+ 		const config = target === void 0 ? this.config : resolveTargetPolicy(this.config, target);
+-		return summarizeWithLlm(this.ctx, config, input, agent, signal);
++		return summarizeWithLlm(this.ctx, config, input, agent, signal, compactionId);
+ 	}
+ 	/**
+ 	* Compact for replayed step-boundary pressure or one provider-confirmed context
+@@ -939,11 +962,6 @@
+ 		if (info.context === void 0) throw new TargetPressureConfigError(targetKey, `compaction-basic: no context capacity for ${targetKey}; configure contextWindow on that adapter model`);
+ 		const spec = resolveCompactSpec(policy, info.context.contextWindow, reservedCompletionTokens(agent, info.defaultMaxTokens));
+ 		if (measurement.totalTokens < spec.thresholdTokens) return null;
+-		if (prune !== void 0) {
+-			prune.pruneSession(agent.session);
+-			measurement = meter.measure(agent.session);
+-		}
+-		if (measurement.totalTokens < spec.thresholdTokens) return null;
+ 		let result = null;
+ 		for (let attempt = 0; attempt <= spec.compactionRetries; attempt += 1) {
+ 			const range = selectCompactableRange(agent.session, measurement, spec.retainTokens);
+@@ -1013,7 +1031,7 @@
+ 	regionDependencies() {
+ 		return {
+ 			meter: this.ctx.tokenMeter,
+-			summarize: (input, owner, abort) => this.summarize(input, owner, abort),
++			summarize: (input, owner, abort, compactionId) => this.summarize(input, owner, abort, compactionId),
+ 			recover: (error, agent, sourceEventSeqs, signal) => this.ctx.waterfall("compaction/summary-error", {
+ 				session: agent.session,
+ 				sourceEventSeqs,
