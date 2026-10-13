@@ -75,7 +75,9 @@ stdenvNoCC.mkDerivation {
   pname = "impasto";
   version = "0-unstable-${lib.substring 0 7 impasto.rev}";
   src = impasto;
+  patches = [ ./adaptive-colors.patch ];
   nativeBuildInputs = [ makeWrapper ];
+  nativeCheckInputs = [ imagemagick ];
   buildInputs = [ python3 ];
   dontBuild = true;
 
