@@ -54,6 +54,7 @@ flake.nix
 | シェル・エイリアス・プロンプト | [shell.nix](home/keewai/common/shell.nix)、[starship.toml](home/keewai/common/starship.toml) |
 | Git / GitHub CLI | [git.nix](home/keewai/common/git.nix) |
 | DSH Web / Claude Code / Codex | [deepseek-harness.nix](home/keewai/desktop/deepseek-harness.nix)、[pkgs/deepseek-harness](pkgs/deepseek-harness/)、[modules/desktop/deepseek-harness.nix](modules/desktop/deepseek-harness.nix) |
+| Pi / Pi Web | [pi.nix](home/keewai/desktop/pi.nix), [pkgs/pi](pkgs/pi/) |
 | 個人スキル・MCP サーバー（Claude Code / Codex 共通） | [skills/](skills/)、[coding-agents](home/keewai/common/coding-agents/default.nix) |
 | 設定不要な GUI アプリを追加 | [home/keewai/desktop/applications.nix](home/keewai/desktop/applications.nix) |
 | ウィンドウ・モニター・キー割り当て | [hyprland.lua](home/keewai/desktop/hyprland.lua) |
@@ -130,6 +131,40 @@ The BEITONG xpad fix is rebuilt with the kernel through `boot.extraModulePackage
 | `shadcn` | shadcn/ui の部品の導入・調整、`DESIGN.md` に基づく配色・書体・部品の設計 |
 
 リポジトリ専用の検証手順は [.agents/skills/nixos-validation](.agents/skills/nixos-validation/SKILL.md) にあります。
+
+### Pi Web
+
+[Pi](https://github.com/earendil-works/pi) and
+[agegr/pi-web](https://github.com/agegr/pi-web) run alongside DSH on citrus.
+[pi.nix](home/keewai/desktop/pi.nix) owns the CLI, user services, and configuration;
+[pkgs/pi](pkgs/pi/) pins the published npm packages and dependencies without
+modifying upstream source.
+
+- Open `https://citrus.tail1e65cd.ts.net:8443/`, run `pi-web`, or select **Pi Web**
+  in the application launcher. `pi-web --no-open` prints the URL.
+- `pi-web --password` displays the locally generated browser-login password.
+  It is stored privately at `~/.local/state/pi-web/password`, never in the Nix
+  store. Tailscale Serve forwards HTTPS 8443 to `127.0.0.1:30141`; DSH keeps 443.
+- ChatGPT subscription authentication uses
+  [pi-openai-codex-device-login](https://github.com/MorseWayne/pi-openai-codex-device-login).
+  In Pi, run `/login openai-codex` and choose device code, or use the Pi Web
+  model-provider login screen. Existing Codex CLI credentials are not copied.
+- Claude uses [pi-claude-bridge](https://github.com/elidickinson/pi-claude-bridge)
+  and the Nix-managed Claude Code executable with its existing login. AskClaude
+  delegation is disabled. The context policy defaults conservatively to Pro,
+  without opting into paid Extra Usage.
+- [pi-codex-web-run](https://github.com/IgorWarzocha/howaboua-pi-stuff/tree/main/packages/pi-codex-web-run)
+  provides `web_run` directly against the Codex search endpoint, including while
+  Claude is selected. It uses the Pi OpenAI Codex login, not a Codex coding-agent
+  subprocess, and does not send the surrounding conversation.
+- Use a regular session preset: **Chat only** disables extensions. Select the
+  project directory in the UI. CLI `pi` and Pi Web share `~/.pi/agent`.
+- Settings are initialized once and remain editable. Extension links and Claude
+  bridge settings are managed by Nix. Upgrade the pinned packages through Nix,
+  not Pi Web's npm updater. Restart with `systemctl --user restart pi-web`.
+- Pi Web is a single-user coding environment with the user's filesystem and
+  shell permissions, not a sandbox. The two web ports have separate browser
+  origins, but cookies on the same hostname are not port-isolated.
 
 ## citrus（デスクトップ）
 
