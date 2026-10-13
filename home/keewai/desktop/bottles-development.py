@@ -59,25 +59,6 @@ def editable_files(command, paths, bottles_root):
     return [rewritten.get(str(Path(path).resolve()), path) for path in paths]
 
 
-if os.environ.get('HYPRLAND_INSTANCE_SIGNATURE'):
-    rule = '''if not bottles_office_window_rules_v2 then
-        hl.window_rule({
-            match = { class = "^(excel|winword|powerpnt)[.]exe$" },
-            opacity = "1.0 override 1.0 override 1.0 override",
-            rounding = 0
-        })
-        hl.window_rule({
-            match = {
-                class = "^(excel|winword|powerpnt)[.]exe$",
-                title = "^(Microsoft (Word|Excel|PowerPoint)|ジャンプ|名前を付けて保存|ファイルを開く|セルの書式設定|(Word|Excel|PowerPoint) のオプション)$"
-            },
-            float = true,
-            center = true
-        })
-        bottles_office_window_rules_v2 = true
-    end'''
-    subprocess.run(['hyprctl', 'eval', rule], stdout=subprocess.DEVNULL, check=False)
-
 root = Path.home() / '.local/share/bottles'
 runtime = root / 'compat/nvidia-runtime'
 runtime.mkdir(parents=True, exist_ok=True)

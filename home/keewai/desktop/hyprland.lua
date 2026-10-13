@@ -159,6 +159,20 @@ hl.window_rule({
     no_anim = true,
 })
 
+hl.window_rule({
+    match = { class = "^(excel|winword|powerpnt)[.]exe$" },
+    opacity = "1.0 override 1.0 override 1.0 override",
+    rounding = 0,
+})
+hl.window_rule({
+    match = {
+        class = "^(excel|winword|powerpnt)[.]exe$",
+        title = "^(Microsoft (Word|Excel|PowerPoint)|ジャンプ|名前を付けて保存|ファイルを開く|セルの書式設定|(Word|Excel|PowerPoint) のオプション)$",
+    },
+    float = true,
+    center = true,
+})
+
 hl.window_rule({ match = { class = "^gcr-prompter$" }, tag = "+auth-prompt" })
 hl.window_rule({ match = { class = "^pinentry.*$" }, tag = "+auth-prompt" })
 hl.window_rule({
