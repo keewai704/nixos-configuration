@@ -1,6 +1,5 @@
 {
   config,
-  inputs,
   lib,
   pkgs,
   ...
@@ -8,13 +7,10 @@
 let
   package = pkgs.callPackage ../../../pkgs/pi { };
   modules = "${package}/lib/pi/node_modules";
-  claude = inputs.claude-code.packages.${pkgs.stdenv.hostPlatform.system}.default;
   agentDir = "${config.home.homeDirectory}/.pi/agent";
   publicUrl = "https://citrus.tail1e65cd.ts.net:8443/";
   initialSettings = pkgs.writeText "pi-settings.json" (
     builtins.toJSON {
-      defaultProvider = "claude-bridge";
-      defaultModel = "claude-sonnet-5-5";
       enableInstallTelemetry = false;
       enableAnalytics = false;
       cacheWarming = "off";
@@ -58,24 +54,40 @@ in
     ".pi/agent/node_modules".source = modules;
     ".pi/agent/extensions/pi-openai-codex-device-login".source =
       "${modules}/pi-openai-codex-device-login";
-    ".pi/agent/extensions/pi-claude-bridge".source = "${modules}/pi-claude-bridge";
     ".pi/agent/extensions/pi-codex-web-run".source = "${modules}/@howaboua/pi-codex-web-run";
-    ".pi/agent/claude-bridge.json".text = builtins.toJSON {
-      askClaude.enabled = false;
-      provider = {
-        plan = "pro";
-        longContextExtraUsage = false;
-        strictMcpConfig = true;
-        autoMemoryEnabled = false;
-        pathToClaudeCodeExecutable = lib.getExe claude;
-      };
-    };
   };
 
   home.activation.piSettings = lib.hm.dag.entryAfter [ "linkGeneration" ] ''
     if [ ! -e ${lib.escapeShellArg "${agentDir}/settings.json"} ]; then
       run install -m 600 ${initialSettings} ${lib.escapeShellArg "${agentDir}/settings.json"}
     fi
+    run ${lib.getExe pkgs.python3} - ${lib.escapeShellArg "${agentDir}/settings.json"} <<'PY'
+    import json
+    from pathlib import Path
+    import sys
+    import tempfile
+
+    path = Path(sys.argv[1])
+    original = json.loads(path.read_text())
+    settings = original.copy()
+    if settings.get("defaultProvider") == "claude-bridge":
+        settings.pop("defaultProvider")
+        settings.pop("defaultModel", None)
+    if "enabledModels" in settings:
+        settings["enabledModels"] = [
+            model for model in settings["enabledModels"] if not model.startswith("claude-bridge/")
+        ]
+    if settings != original:
+        with tempfile.NamedTemporaryFile(mode="w", dir=path.parent, delete=False) as temporary:
+            temporaryPath = Path(temporary.name)
+            try:
+                json.dump(settings, temporary, indent=2)
+                temporary.write("\n")
+                temporary.close()
+                temporaryPath.replace(path)
+            finally:
+                temporaryPath.unlink(missing_ok=True)
+    PY
   '';
 
   xdg.desktopEntries.pi-web = {
@@ -106,7 +118,6 @@ in
           "PATH=/run/wrappers/bin:${
             lib.makeBinPath [
               package
-              claude
               pkgs.nodejs
               pkgs.bashInteractive
               pkgs.git
