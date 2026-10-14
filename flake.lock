@@ -685,7 +685,7 @@
     "meltype-release": {
       "flake": false,
       "locked": {
-        "narHash": "sha256-Ok/86uuIcT1paFU05BoJCJn8VMCDXBmsp842xFFTaDY=",
+        "narHash": "sha256-RbBQlOikQGgY4Y22X4j3TFawV6LcC3FNDIjvaq5xU3U=",
         "type": "file",
         "url": "https://api.github.com/repos/yksr-melt/Meltype/releases/latest"
       },
