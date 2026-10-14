@@ -24,15 +24,6 @@
       inputs.nixpkgs.follows = "nixpkgs";
     };
 
-    deepseek-harness = {
-      url = "github:moraxyc/deepseek-harness.nix/main";
-    };
-
-    dsh-claude = {
-      url = "github:snowan/dsh-claude-plugin/main";
-      flake = false;
-    };
-
     meltype-release = {
       url = "file+https://api.github.com/repos/yksr-melt/Meltype/releases/latest";
       flake = false;

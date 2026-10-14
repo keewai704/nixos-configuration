@@ -14,7 +14,6 @@ reuse context that has not changed.
 
 | Responsibility | Source |
 | --- | --- |
-| DeepSeek Harness and its coding providers | `pkgs/deepseek-harness/`, `home/keewai/desktop/deepseek-harness.nix` |
 | Distributed personal skills | `skills/` |
 | Repository-only validation guidance | `.agents/skills/nixos-validation/` |
 

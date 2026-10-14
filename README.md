@@ -53,7 +53,6 @@ flake.nix
 | CLI ツールを追加 | [home/keewai/common/packages.nix](home/keewai/common/packages.nix) |
 | シェル・エイリアス・プロンプト | [shell.nix](home/keewai/common/shell.nix)、[starship.toml](home/keewai/common/starship.toml) |
 | Git / GitHub CLI | [git.nix](home/keewai/common/git.nix) |
-| DSH Web / Claude Code / Codex | [deepseek-harness.nix](home/keewai/desktop/deepseek-harness.nix)、[pkgs/deepseek-harness](pkgs/deepseek-harness/)、[modules/desktop/deepseek-harness.nix](modules/desktop/deepseek-harness.nix) |
 | Pi / Pi Web | [pi.nix](home/keewai/desktop/pi.nix), [pkgs/pi](pkgs/pi/) |
 | 個人スキル・MCP サーバー（Claude Code / Codex 共通） | [skills/](skills/)、[coding-agents](home/keewai/common/coding-agents/default.nix) |
 | 設定不要な GUI アプリを追加 | [home/keewai/desktop/applications.nix](home/keewai/desktop/applications.nix) |
@@ -101,16 +100,6 @@ The BEITONG xpad fix is rebuilt with the kernel through `boot.extraModulePackage
 
 ## コーディングエージェント
 
-デスクトップには [DeepSeek Harness](https://github.com/deepseek-ai/DeepSeek-Harness) の Web 画面を入れています。
-
-- 設定は [deepseek-harness.nix](home/keewai/desktop/deepseek-harness.nix) にあります。
-  `dsh` または `dsh web`、アプリランチャーの「DeepSeek Harness」で認証付きの URL をブラウザーに開きます。
-  `dsh web --no-open` はブラウザーを開かずに URL を表示します。
-- バックエンドは DSH の既定ポート `127.0.0.1:3080` で待ち受けます。
-  tailnet 内の公開 URL は `https://citrus.tail1e65cd.ts.net/` で、Tailscale Serve が標準ポートの HTTPS を提供します。
-  [modules/desktop/deepseek-harness.nix](modules/desktop/deepseek-harness.nix) が `keewai` を Tailscale の operator にします。
-- Codex は DSH の subscriptions バンドル、Claude Code は Claude プラグインで使います。
-  Claude Code の実行ファイルは [sadjow/claude-code-nix](https://github.com/sadjow/claude-code-nix) から取得し、DSH の実行環境にだけ追加します。
 - Claude Code と Codex の設定（`~/.claude`、`~/.codex`）は基本的に Nix で管理していません。
   例外として [coding-agents](home/keewai/common/coding-agents/default.nix) が両方へ共通にスキルと MCP サーバーを配ります。
   - スキル: `codingAgents.skills`（[skills/](skills/) の全ディレクトリを自動登録）を `~/.claude/skills/` と `~/.agents/skills/`（Codex）にリンクします。
@@ -135,7 +124,7 @@ The BEITONG xpad fix is rebuilt with the kernel through `boot.extraModulePackage
 ### Pi Web
 
 [Pi](https://github.com/earendil-works/pi) and
-[agegr/pi-web](https://github.com/agegr/pi-web) run alongside DSH on citrus.
+[agegr/pi-web](https://github.com/agegr/pi-web) run on citrus.
 [pi.nix](home/keewai/desktop/pi.nix) owns the CLI, user services, and configuration;
 [pkgs/pi](pkgs/pi/) pins the published npm packages and dependencies without
 modifying upstream source.
@@ -144,7 +133,7 @@ modifying upstream source.
   in the application launcher. `pi-web --no-open` prints the URL.
 - `pi-web --password` displays the locally generated browser-login password.
   It is stored privately at `~/.local/state/pi-web/password`, never in the Nix
-  store. Tailscale Serve forwards HTTPS 8443 to `127.0.0.1:30141`; DSH keeps 443.
+  store. Tailscale Serve forwards HTTPS 8443 to `127.0.0.1:30141`.
 - ChatGPT subscription authentication uses Pi's built-in OpenAI Codex login.
   In Pi, run `/login openai-codex`, or use the Pi Web model-provider login screen.
   Existing Pi credentials are preserved; Codex CLI credentials are not copied.

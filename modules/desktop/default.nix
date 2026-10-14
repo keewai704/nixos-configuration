@@ -9,7 +9,7 @@
     ./input-method.nix
     ./steam.nix
     ./stylix.nix
-    ./deepseek-harness.nix
+    ./tailscale-operator.nix
   ];
 
   home-manager.users.keewai.imports = [ ../../home/keewai/desktop ];
