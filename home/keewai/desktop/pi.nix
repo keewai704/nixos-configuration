@@ -8,6 +8,7 @@
 let
   package = pkgs.callPackage ../../../pkgs/pi { };
   modules = "${package}/lib/pi/node_modules";
+  sgrep = pkgs.callPackage ../../../pkgs/sgrep { };
   claude = inputs.claude-code.packages.${pkgs.stdenv.hostPlatform.system}.default;
   agentDir = "${config.home.homeDirectory}/.pi/agent";
   publicUrl = "https://citrus.tail1e65cd.ts.net:8443/";
@@ -51,10 +52,25 @@ in
 {
   home.packages = [
     package
+    sgrep
     launcher
   ];
 
   home.file = {
+    ".pi/agent/APPEND_SYSTEM.md".text = ''
+      # Code search
+
+      Prefer Context.dev's `sgrep` via the bash tool over ripgrep for code discovery.
+      Search by intent with `sgrep "plain English description" ./path`; use `-n 10`
+      to limit results or `--json` for structured output. Narrow the search path.
+      Results are approximate: read the matching source before drawing conclusions.
+      Use `rg` only for exact names, literal text, regexes, or file enumeration.
+      To rank focused regex matches, run both commands from the same directory:
+      `rg --json -C 3 'pattern' ./path | sgrep "search intent" --stdin`.
+      Do not alias rg to sgrep: their command-line interfaces differ.
+      Searches stay local. The first search downloads model/parser assets;
+      if downloads fail, report the limitation and use exact search as a fallback.
+    '';
     ".pi/agent/node_modules".source = modules;
     ".pi/agent/extensions/pi-claude-bridge".source = "${modules}/pi-claude-bridge";
     ".pi/agent/extensions/pi-codex-web-run".source = "${modules}/@howaboua/pi-codex-web-run";
@@ -108,6 +124,7 @@ in
               pkgs.nodejs
               pkgs.bashInteractive
               pkgs.git
+              sgrep
               pkgs.ripgrep
               pkgs.fd
               pkgs.coreutils
