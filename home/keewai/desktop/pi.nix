@@ -1,6 +1,5 @@
 {
   config,
-  inputs,
   lib,
   pkgs,
   ...
@@ -9,7 +8,7 @@ let
   package = pkgs.callPackage ../../../pkgs/pi { };
   modules = "${package}/lib/pi/node_modules";
   sgrep = pkgs.callPackage ../../../pkgs/sgrep { };
-  claude = inputs.claude-code.packages.${pkgs.stdenv.hostPlatform.system}.default;
+  claude = config.programs.claude-code.finalPackage;
   agentDir = "${config.home.homeDirectory}/.pi/agent";
   publicUrl = "https://citrus.tail1e65cd.ts.net:8443/";
   initialSettings = pkgs.writeText "pi-settings.json" (

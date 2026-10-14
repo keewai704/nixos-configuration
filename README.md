@@ -54,6 +54,7 @@ flake.nix
 | シェル・エイリアス・プロンプト | [shell.nix](home/keewai/common/shell.nix)、[starship.toml](home/keewai/common/starship.toml) |
 | Git / GitHub CLI | [git.nix](home/keewai/common/git.nix) |
 | Pi / Pi Web | [pi.nix](home/keewai/desktop/pi.nix), [pkgs/pi](pkgs/pi/) |
+| T3 Code nightly / HTTPS | [t3code.nix](home/keewai/desktop/t3code.nix), [pkgs/t3code](pkgs/t3code/) |
 | 個人スキル・MCP サーバー（Claude Code / Codex 共通） | [skills/](skills/)、[coding-agents](home/keewai/common/coding-agents/default.nix) |
 | 設定不要な GUI アプリを追加 | [home/keewai/desktop/applications.nix](home/keewai/desktop/applications.nix) |
 | ウィンドウ・モニター・キー割り当て | [hyprland.lua](home/keewai/desktop/hyprland.lua) |
@@ -100,6 +101,12 @@ The BEITONG xpad fix is rebuilt with the kernel through `boot.extraModulePackage
 
 ## コーディングエージェント
 
+Claude Code (`claude`) and Codex (`codex`) are installed through Home Manager's
+`programs.claude-code` and `programs.codex` in the common profile. Both are on the
+normal user PATH in every shell, independently of T3 Code and Pi. Their existing
+credentials and editable settings are preserved. Claude Code follows the
+`claude-code` flake input; Codex follows the pinned `nixpkgs` input.
+
 - Claude Code と Codex の設定（`~/.claude`、`~/.codex`）は基本的に Nix で管理していません。
   例外として [coding-agents](home/keewai/common/coding-agents/default.nix) が両方へ共通にスキルと MCP サーバーを配ります。
   - スキル: `codingAgents.skills`（[skills/](skills/) の全ディレクトリを自動登録）を `~/.claude/skills/` と `~/.agents/skills/`（Codex）にリンクします。
@@ -120,6 +127,36 @@ The BEITONG xpad fix is rebuilt with the kernel through `boot.extraModulePackage
 | `shadcn` | shadcn/ui の部品の導入・調整、`DESIGN.md` に基づく配色・書体・部品の設計 |
 
 リポジトリ専用の検証手順は [.agents/skills/nixos-validation](.agents/skills/nixos-validation/SKILL.md) にあります。
+
+### T3 Code nightly
+
+[T3 Code](https://github.com/pingdotgg/t3code) runs on citrus. Its official nightly
+AppImage is selected from the GitHub release metadata pinned by `t3code-releases`;
+the artifact URL and SHA-256 come from that same locked metadata. Update with
+`nix flake update t3code-releases`, then follow the activation procedure above.
+The in-app updater is disabled; Nix owns the application and its bundled `t3` CLI.
+
+- Launch **T3 Code (Nightly)** or run `t3code`. The Home Manager user service starts
+  it with the graphical session. Use `systemctl --user restart t3code` after an
+  update, once active tasks have finished. Do not run a second `t3 serve` against
+  the same `~/.t3` state directory.
+- While the desktop app is running, its backend is loopback-only and Tailscale
+  Serve exposes `https://citrus.tail1e65cd.ts.net/` to the tailnet over HTTPS 443,
+  including WebSockets. Existing Pi Web and other Serve ports are left alone.
+  This is not public internet access and does not use Funnel.
+- Pair each browser or mobile device from **Settings → Connections**, or run
+  `t3 pair --tailscale` locally. Pairing links are credentials: keep them private.
+  Opening the bare HTTPS URL does not authorize a new device.
+- Codex uses **existing CLI** mode; Claude also uses its Home Manager executable.
+  They share the ordinary `~/.codex` and `~/.claude` logins. If needed, use
+  `codex login` or `claude auth login`, then rescan the providers in T3 Code.
+- GitHub uses the existing `gh` login and Home Manager's Git credential helper.
+  Check with `gh auth status`; sign in with `gh auth login` if necessary, then
+  choose **Settings → Source Control → Rescan**. No token is copied into Nix.
+- Activation merges only the managed connection/provider fields into the existing
+  settings. Projects, history, other preferences, and stored credentials remain.
+  The app can run commands with the user's permissions; tailnet access does not
+  make it a sandbox.
 
 ### Pi Web
 

@@ -1,5 +1,6 @@
 {
   config,
+  inputs,
   lib,
   pkgs,
   ...
@@ -58,6 +59,12 @@ in
   };
 
   config = {
+    programs.codex.enable = true;
+    programs.claude-code = {
+      enable = true;
+      package = inputs.claude-code.packages.${pkgs.stdenv.hostPlatform.system}.default;
+    };
+
     codingAgents.skills = lib.genAttrs (builtins.attrNames (builtins.readDir skillRoot)) (
       name: skillRoot + "/${name}"
     );

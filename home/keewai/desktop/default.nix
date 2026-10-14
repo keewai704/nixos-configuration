@@ -18,5 +18,6 @@
     ./scskiller.nix
     ./steam-theme.nix
     ./stylix.nix
+    ./t3code.nix
   ];
 }

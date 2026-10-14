@@ -685,7 +685,7 @@
     "meltype-release": {
       "flake": false,
       "locked": {
-        "narHash": "sha256-X/DDLLPTHz1/bmjZRmDDGzxOwKYI5+/kLisLh+MjCas=",
+        "narHash": "sha256-irNHlJfAE+URCIWgXPDPaLugIeIBQJw75ApFpRV7Twk=",
         "type": "file",
         "url": "https://api.github.com/repos/yksr-melt/Meltype/releases/latest"
       },
@@ -969,7 +969,8 @@
         "nixcord": "nixcord",
         "nixpkgs": "nixpkgs_4",
         "proton-wineland-release": "proton-wineland-release",
-        "stylix": "stylix"
+        "stylix": "stylix",
+        "t3code-releases": "t3code-releases"
       }
     },
     "stylix": {
@@ -1049,6 +1050,18 @@
         "ref": "future-26.11",
         "repo": "default",
         "type": "github"
+      }
+    },
+    "t3code-releases": {
+      "flake": false,
+      "locked": {
+        "narHash": "sha256-hoxOBXyr/mTnIdOD9E18aC/WW7KqQBXEgZuES8o7Gwg=",
+        "type": "file",
+        "url": "https://api.github.com/repos/pingdotgg/t3code/releases?per_page=100"
+      },
+      "original": {
+        "type": "file",
+        "url": "https://api.github.com/repos/pingdotgg/t3code/releases?per_page=100"
       }
     },
     "tinted-kitty": {

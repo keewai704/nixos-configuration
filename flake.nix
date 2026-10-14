@@ -24,6 +24,11 @@
       inputs.nixpkgs.follows = "nixpkgs";
     };
 
+    t3code-releases = {
+      url = "file+https://api.github.com/repos/pingdotgg/t3code/releases?per_page=100";
+      flake = false;
+    };
+
     meltype-release = {
       url = "file+https://api.github.com/repos/yksr-melt/Meltype/releases/latest";
       flake = false;
@@ -84,7 +89,7 @@
     {
       nixosConfigurations = nixpkgs.lib.genAttrs [ "citrus" "orange" ] mkHost;
 
-      packages.${system} = import ./pkgs { inherit pkgs; };
+      packages.${system} = import ./pkgs { inherit inputs pkgs; };
 
       devShells.${system}.default = import ./devshell { inherit pkgs; };
 
