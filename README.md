@@ -145,21 +145,22 @@ modifying upstream source.
 - `pi-web --password` displays the locally generated browser-login password.
   It is stored privately at `~/.local/state/pi-web/password`, never in the Nix
   store. Tailscale Serve forwards HTTPS 8443 to `127.0.0.1:30141`; DSH keeps 443.
-- ChatGPT subscription authentication uses
-  [pi-openai-codex-device-login](https://github.com/MorseWayne/pi-openai-codex-device-login).
-  In Pi, run `/login openai-codex` and choose device code, or use the Pi Web
-  model-provider login screen. Existing Codex CLI credentials are not copied.
+- ChatGPT subscription authentication uses Pi's built-in OpenAI Codex login.
+  In Pi, run `/login openai-codex`, or use the Pi Web model-provider login screen.
+  Existing Pi credentials are preserved; Codex CLI credentials are not copied.
+- Claude uses [pi-claude-bridge](https://github.com/elidickinson/pi-claude-bridge)
+  and the Nix-managed Claude Code executable with its existing login. AskClaude
+  delegation is disabled. The context policy defaults conservatively to Pro,
+  without opting into paid Extra Usage.
 - [pi-codex-web-run](https://github.com/IgorWarzocha/howaboua-pi-stuff/tree/main/packages/pi-codex-web-run)
-  provides `web_run` directly against the Codex search endpoint. It uses the Pi
-  OpenAI Codex login, not a Codex coding-agent subprocess, and does not send the
-  surrounding conversation.
+  provides `web_run` directly against the Codex search endpoint, including while
+  Claude is selected. It uses the Pi OpenAI Codex login, not a Codex coding-agent
+  subprocess, and does not send the surrounding conversation.
 - Use a regular session preset: **Chat only** disables extensions. Select the
   project directory in the UI. CLI `pi` and Pi Web share `~/.pi/agent`.
-- Settings are initialized once and remain editable. Removing Claude bridge
-  clears its saved default and model patterns, leaving Pi's automatic model
-  selection in place. Extension links are managed by Nix. Upgrade the pinned
-  packages through Nix, not Pi Web's npm updater. Restart with
-  `systemctl --user restart pi-web`.
+- Settings are initialized once and remain editable. Extension links and Claude
+  bridge settings are managed by Nix. Upgrade the pinned packages through Nix,
+  not Pi Web's npm updater. Restart with `systemctl --user restart pi-web`.
 - Pi Web is a single-user coding environment with the user's filesystem and
   shell permissions, not a sandbox. The two web ports have separate browser
   origins, but cookies on the same hostname are not port-isolated.
