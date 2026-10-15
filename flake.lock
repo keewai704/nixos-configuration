@@ -155,23 +155,6 @@
         "url": "https://downloads.claude.ai/claude-desktop/apt/stable/dists/stable/main/binary-amd64/Packages"
       }
     },
-    "codex-claude-plugin": {
-      "flake": false,
-      "locked": {
-        "lastModified": 1783469820,
-        "narHash": "sha256-S/R4kHTcIHBcG0TRX063C7ILXZZm0oMqunchPGg6ToU=",
-        "owner": "openai",
-        "repo": "codex-plugin-cc",
-        "rev": "db52e28f4d9ded852ab3942cea316258ae4ef346",
-        "type": "github"
-      },
-      "original": {
-        "owner": "openai",
-        "ref": "main",
-        "repo": "codex-plugin-cc",
-        "type": "github"
-      }
-    },
     "cpak": {
       "inputs": {
         "nixpkgs": [
@@ -682,7 +665,7 @@
     "meltype-release": {
       "flake": false,
       "locked": {
-        "narHash": "sha256-R1vy/8h5iYjcYi91ZsuF9Ly0nzGYflPbEM77/VUnBoM=",
+        "narHash": "sha256-mxaE0mB0Zp9Y9UDFrBEFKfoD2a43pI2DrquJJGxhdnA=",
         "type": "file",
         "url": "https://api.github.com/repos/yksr-melt/Meltype/releases/latest"
       },
@@ -956,7 +939,6 @@
         "agenix": "agenix",
         "claude-code": "claude-code",
         "claude-desktop-release": "claude-desktop-release",
-        "codex-claude-plugin": "codex-claude-plugin",
         "cpak": "cpak",
         "home-manager": "home-manager",
         "hypr-brightness": "hypr-brightness",

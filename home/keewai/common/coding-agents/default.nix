@@ -62,6 +62,7 @@ in
     programs.codex.enable = true;
     programs.claude-code = {
       enable = true;
+      mutableSettings = true;
       package = inputs.claude-code.packages.${pkgs.stdenv.hostPlatform.system}.default;
       settings = {
         autoCompactWindow = 400000;

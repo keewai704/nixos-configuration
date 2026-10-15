@@ -29,11 +29,6 @@
       flake = false;
     };
 
-    codex-claude-plugin = {
-      url = "github:openai/codex-plugin-cc/main";
-      flake = false;
-    };
-
     t3code-releases = {
       url = "file+https://api.github.com/repos/pingdotgg/t3code/releases?per_page=100";
       flake = false;

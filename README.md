@@ -110,11 +110,16 @@ Claude Desktop is installed in the desktop profile by
 [claude-desktop.nix](home/keewai/desktop/claude-desktop.nix). Its
 [package](pkgs/claude-desktop/default.nix) uses Anthropic's official Linux `.deb`
 and selects the latest version from the stable apt index pinned in `flake.lock`.
-Run `nix flake update claude-desktop-release codex-claude-plugin` to refresh the
-app and [OpenAI's Codex plugin](https://github.com/openai/codex-plugin-cc), then
-follow the normal NixOS activation procedure. The launcher uses the Nix-managed
-Claude Code, Codex, and Node.js binaries. Home Manager installs the plugin as
-`~/.claude/skills/codex`, shared by the CLI and Desktop's local Code sessions.
+Run `nix flake update claude-desktop-release` to refresh the app, then follow the
+normal NixOS activation procedure. The launcher uses the Nix-managed Claude Code,
+Codex, and Node.js binaries. [OpenAI's Codex plugin](https://github.com/openai/codex-plugin-cc)
+is installed separately with `claude plugin marketplace add openai/codex-plugin-cc`
+and `claude plugin install codex@openai-codex --scope user`, shared by the CLI and
+Desktop's local Code sessions. Update it through Claude's plugin manager or run
+`claude plugin marketplace update openai-codex` followed by
+`claude plugin update codex@openai-codex`. Plugin files and state are writable and
+are not pinned by Nix. Home Manager merges its declared Claude Code settings
+into a writable file while preserving undeclared settings, including plugins.
 Sign in to Desktop, open the Code tab, and use `/codex:setup`,
 `/codex:rescue <task>`, or `/codex:review`. Codex reuses `codex login` credentials
 and `~/.codex/config.toml`. Cowork's virtual machine is not configured here.
