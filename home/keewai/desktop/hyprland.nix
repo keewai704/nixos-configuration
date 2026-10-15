@@ -2,10 +2,10 @@
   config,
   lib,
   pkgs,
+  theme,
   ...
 }:
 let
-  theme = import ../../../themes/tokyo-night-black { inherit pkgs; };
   hyprlandConfig = pkgs.writeTextFile {
     name = "hyprland.lua";
     text =

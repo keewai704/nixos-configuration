@@ -1,12 +1,11 @@
 {
   config,
-  inputs,
   lib,
   pkgs,
   ...
 }:
 let
-  package = pkgs.callPackage ../../../pkgs/impasto { inherit (inputs) impasto; };
+  package = pkgs.local.impasto;
   state = "${config.xdg.stateHome}/quickshell";
   wallpaper = "${config.xdg.dataHome}/wallpapers/surface-laptop-ultra-dark.png";
   settings = pkgs.writeText "impasto-settings.json" (

@@ -1,3 +1,4 @@
+{ inputs, ... }:
 {
   imports = [
     ./home-manager.nix
@@ -6,7 +7,10 @@
     ./users.nix
   ];
 
-  nixpkgs.config.allowUnfree = true;
+  nixpkgs = {
+    config.allowUnfree = true;
+    overlays = [ (import ../../pkgs { inherit inputs; }) ];
+  };
   documentation.nixos.enable = false;
 
   i18n.defaultLocale = "ja_JP.UTF-8";

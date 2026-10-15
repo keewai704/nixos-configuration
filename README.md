@@ -232,11 +232,11 @@ moonlight stream citrus "Extend Display" --1080 --fps 120 --bitrate 40000 --vide
 - 起動順は「HDD マウント → 共有ディレクトリ準備 → 既存データ取り込み → アプリ」です（[storage.nix](hosts/orange/services/storage.nix)）。
 - [local-backup](hosts/orange/services/local-backup.nix) がバックアップ、[health-monitor](hosts/orange/services/health-monitor.nix) が 15 分ごとに異常を Discord へ通知、
   [smart-tests](hosts/orange/services/smart-tests.nix) がディスク診断、[maintenance](hosts/orange/services/maintenance.nix) がログ掃除・TRIM・Store 保守を行います。
-- 長いシェル処理は `.sh` テンプレートに置き、`@名前@` を Nix 側で置換して使います（テンプレートを直接実行しない）。
+- 長いシェル処理は `.sh` テンプレートに置き、`@名前@` を `fillTemplate`（[default.nix](hosts/orange/default.nix)）で置換して使います（テンプレートを直接実行しない）。
 
 ## パッケージと入力の方針
 
-- [pkgs/default.nix](pkgs/default.nix) に並べたものは `nix build .#<名前>` で単体ビルドできます。
+- [pkgs/default.nix](pkgs/default.nix) に並べたものは設定から `pkgs.local.<名前>` で参照でき、`nix build .#<名前>` で単体ビルドもできます。
 - パッチは対象パッケージのディレクトリに置きます。
 - `keewai704` 所有の入力（impasto、hypr-brightness）は `?ref=main` を明示し、適用前に毎回 `nix flake update` で最新の main に更新します。
 - `claude-code`・`meltype-release`・`meltype-tags` も適用前に毎回 `nix flake update` で最新リリースに更新します。

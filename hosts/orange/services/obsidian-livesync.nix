@@ -11,7 +11,7 @@ let
   adminUser = "obsidian";
   database = "obsidian";
   couchdbUrl = "http://127.0.0.1:${toString couchdbPort}";
-  livesync-bridge = pkgs.callPackage ../../../pkgs/livesync-bridge { };
+  livesync-bridge = pkgs.local.livesync-bridge;
   bridgeConfig = pkgs.writeText "livesync-bridge.json" (
     builtins.toJSON {
       peers = [

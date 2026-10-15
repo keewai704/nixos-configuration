@@ -19,9 +19,7 @@
       fontPackages = config.stylix.fonts.packages ++ [ pkgs.noto-fonts ] ++ config.fonts.packages;
       extraPackages = [ pkgs.gamescope ];
       extraCompatPackages = [
-        (pkgs.callPackage ../../pkgs/proton-wineland {
-          release = inputs.proton-wineland-release;
-        })
+        pkgs.local.proton-wineland
       ];
     };
   };

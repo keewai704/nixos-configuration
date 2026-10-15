@@ -1,7 +1,4 @@
-{ inputs, pkgs, ... }:
-let
-  theme = import ../../themes/tokyo-night-black { inherit pkgs; };
-in
+{ inputs, theme, ... }:
 {
   imports = [ inputs.stylix.nixosModules.stylix ];
 

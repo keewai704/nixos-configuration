@@ -5,7 +5,7 @@
 }:
 
 let
-  helium = pkgs.callPackage ../../../pkgs/helium { };
+  helium = pkgs.local.helium;
 
 in
 {

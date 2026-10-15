@@ -2,10 +2,10 @@
   inputs,
   lib,
   pkgs,
+  theme,
   ...
 }:
 let
-  theme = import ../../themes/tokyo-night-black { inherit pkgs; };
   hyprlandSession = "${lib.getExe pkgs.uwsm} start -e -D Hyprland ${pkgs.hyprland}/bin/start-hyprland";
   hyprlandPackages = inputs.hyprland.packages.${pkgs.stdenv.hostPlatform.system};
 in

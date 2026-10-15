@@ -1,5 +1,6 @@
 {
   config,
+  fillTemplate,
   lib,
   pkgs,
   ...
@@ -75,9 +76,7 @@ let
       tailscale
       util-linux
     ];
-    text = lib.replaceStrings (lib.attrNames scriptReplacements) (lib.attrValues scriptReplacements) (
-      builtins.readFile ./health-monitor.sh
-    );
+    text = fillTemplate ./health-monitor.sh scriptReplacements;
   };
 in
 {

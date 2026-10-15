@@ -94,7 +94,7 @@
     {
       nixosConfigurations = nixpkgs.lib.genAttrs [ "citrus" "orange" ] mkHost;
 
-      packages.${system} = import ./pkgs { inherit inputs pkgs; };
+      packages.${system} = (pkgs.extend (import ./pkgs { inherit inputs; })).local;
 
       devShells.${system}.default = import ./devshell { inherit pkgs; };
 

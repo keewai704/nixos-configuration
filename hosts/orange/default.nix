@@ -1,4 +1,4 @@
-{ inputs, ... }:
+{ inputs, lib, ... }:
 let
   inherit (import ./settings.nix) hostName;
 in
@@ -21,6 +21,12 @@ in
     ./services/vaultwarden.nix
     ./services/web.nix
   ];
+
+  _module.args.fillTemplate =
+    file: replacements:
+    lib.replaceStrings (lib.attrNames replacements) (lib.attrValues replacements) (
+      builtins.readFile file
+    );
 
   networking.hostName = hostName;
 

@@ -1,6 +1,5 @@
 {
   config,
-  inputs,
   lib,
   pkgs,
   ...
@@ -12,10 +11,7 @@
 
     fcitx5 = {
       addons = [
-        (pkgs.callPackage ../../../pkgs/meltype {
-          release = inputs.meltype-release;
-          tags = inputs.meltype-tags;
-        })
+        pkgs.local.meltype
       ];
       waylandFrontend = true;
       systemd.enable = false;

@@ -1,4 +1,5 @@
 {
+  fillTemplate,
   lib,
   pkgs,
   ...
@@ -38,9 +39,7 @@ let
       pkgs.findutils
       pkgs.gzip
     ];
-    text = lib.replaceStrings (lib.attrNames scriptReplacements) (lib.attrValues scriptReplacements) (
-      builtins.readFile ./import-immich-database.sh
-    );
+    text = fillTemplate ./import-immich-database.sh scriptReplacements;
   };
 in
 {

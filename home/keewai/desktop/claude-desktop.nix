@@ -1,12 +1,10 @@
 {
   config,
-  inputs,
   pkgs,
   ...
 }:
 let
-  package = pkgs.callPackage ../../../pkgs/claude-desktop {
-    releases = inputs.claude-desktop-release;
+  package = pkgs.local.claude-desktop.override {
     claude-code = config.programs.claude-code.finalPackage;
     codex = config.programs.codex.package;
     git = config.programs.git.package;

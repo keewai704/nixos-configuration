@@ -1,4 +1,9 @@
-{ lib, pkgs, ... }:
+{
+  fillTemplate,
+  lib,
+  pkgs,
+  ...
+}:
 let
   inherit (import ../settings.nix)
     localBackupRoot
@@ -24,9 +29,7 @@ let
       systemd
       zstd
     ];
-    text = lib.replaceStrings (lib.attrNames scriptReplacements) (lib.attrValues scriptReplacements) (
-      builtins.readFile ./local-backup.sh
-    );
+    text = fillTemplate ./local-backup.sh scriptReplacements;
   };
 
 in

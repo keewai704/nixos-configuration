@@ -1,7 +1,7 @@
 { lib, pkgs, ... }:
 
 let
-  penpotMcp = pkgs.callPackage ../../../pkgs/penpot-mcp { };
+  penpotMcp = pkgs.local.penpot-mcp;
   penpotProxy = pkgs.writeShellApplication {
     name = "penpot-mcp";
     runtimeInputs = [ pkgs.mcp-proxy ];

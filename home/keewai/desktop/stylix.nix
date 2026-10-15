@@ -2,11 +2,9 @@
   config,
   inputs,
   pkgs,
+  theme,
   ...
 }:
-let
-  theme = import ../../../themes/tokyo-night-black { inherit pkgs; };
-in
 {
   imports = [ inputs.stylix.homeModules.stylix ];
 

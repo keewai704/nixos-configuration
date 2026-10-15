@@ -1,4 +1,5 @@
 {
+  fillTemplate,
   lib,
   pkgs,
   ...
@@ -37,9 +38,7 @@ let
       pkgs.rsync
       pkgs.sqlite
     ];
-    text = lib.replaceStrings (lib.attrNames scriptReplacements) (lib.attrValues scriptReplacements) (
-      builtins.readFile ./import-vaultwarden-data.sh
-    );
+    text = fillTemplate ./import-vaultwarden-data.sh scriptReplacements;
   };
 in
 {

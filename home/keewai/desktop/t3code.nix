@@ -1,13 +1,11 @@
 {
   config,
-  inputs,
   lib,
   pkgs,
   ...
 }:
 let
-  package = pkgs.callPackage ../../../pkgs/t3code {
-    releases = inputs.t3code-releases;
+  package = pkgs.local.t3code.override {
     claude-code = config.programs.claude-code.finalPackage;
     codex = config.programs.codex.package;
     gh = config.programs.gh.package;

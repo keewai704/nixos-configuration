@@ -5,7 +5,7 @@
   ...
 }:
 let
-  display = lib.getExe (pkgs.callPackage ../../pkgs/sunshine-display { });
+  display = lib.getExe pkgs.local.sunshine-display;
   steam = lib.getExe config.programs.steam.package;
   desktop = name: mode: {
     inherit name;

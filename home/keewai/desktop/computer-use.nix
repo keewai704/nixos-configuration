@@ -1,6 +1,6 @@
 { lib, pkgs, ... }:
 let
-  hypruse = pkgs.callPackage ../../../pkgs/hypruse { };
+  hypruse = pkgs.local.hypruse;
 in
 {
   home.packages = [ hypruse ];
