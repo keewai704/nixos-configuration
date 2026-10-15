@@ -15,6 +15,7 @@
   home-manager.users.keewai.imports = [ ../../home/keewai/desktop ];
 
   programs.dconf.enable = true;
+  programs.nix-ld.enable = true;
 
   services = {
     gnome.at-spi2-core.enable = true;
