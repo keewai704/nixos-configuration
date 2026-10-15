@@ -53,7 +53,6 @@ flake.nix
 | CLI ツールを追加 | [home/keewai/common/packages.nix](home/keewai/common/packages.nix) |
 | シェル・エイリアス・プロンプト | [shell.nix](home/keewai/common/shell.nix)、[starship.toml](home/keewai/common/starship.toml) |
 | Git / GitHub CLI | [git.nix](home/keewai/common/git.nix) |
-| Pi / Pi Web | [pi.nix](home/keewai/desktop/pi.nix), [pkgs/pi](pkgs/pi/) |
 | T3 Code nightly / HTTPS | [t3code.nix](home/keewai/desktop/t3code.nix), [pkgs/t3code](pkgs/t3code/) |
 | 個人スキル・MCP サーバー（Claude Code / Codex 共通） | [skills/](skills/)、[coding-agents](home/keewai/common/coding-agents/default.nix) |
 | 設定不要な GUI アプリを追加 | [home/keewai/desktop/applications.nix](home/keewai/desktop/applications.nix) |
@@ -103,7 +102,7 @@ The BEITONG xpad fix is rebuilt with the kernel through `boot.extraModulePackage
 
 Claude Code (`claude`) and Codex (`codex`) are installed through Home Manager's
 `programs.claude-code` and `programs.codex` in the common profile. Both are on the
-normal user PATH in every shell, independently of T3 Code and Pi. Their existing
+normal user PATH in every shell, independently of T3 Code. Their existing
 credentials and editable settings are preserved. Claude Code follows the
 `claude-code` flake input; Codex follows the pinned `nixpkgs` input.
 
@@ -142,7 +141,7 @@ The in-app updater is disabled; Nix owns the application and its bundled `t3` CL
   the same `~/.t3` state directory.
 - While the desktop app is running, its backend is loopback-only and Tailscale
   Serve exposes `https://citrus.tail1e65cd.ts.net/` to the tailnet over HTTPS 443,
-  including WebSockets. Existing Pi Web and other Serve ports are left alone.
+  including WebSockets.
   This is not public internet access and does not use Funnel.
 - Pair each browser or mobile device from **Settings → Connections**, or run
   `t3 pair --tailscale` locally. Pairing links are credentials: keep them private.
@@ -157,39 +156,6 @@ The in-app updater is disabled; Nix owns the application and its bundled `t3` CL
   settings. Projects, history, other preferences, and stored credentials remain.
   The app can run commands with the user's permissions; tailnet access does not
   make it a sandbox.
-
-### Pi Web
-
-[Pi](https://github.com/earendil-works/pi) and
-[agegr/pi-web](https://github.com/agegr/pi-web) run on citrus.
-[pi.nix](home/keewai/desktop/pi.nix) owns the CLI, user services, and configuration;
-[pkgs/pi](pkgs/pi/) pins the published npm packages and dependencies without
-modifying upstream source.
-
-- Open `https://citrus.tail1e65cd.ts.net:8443/`, run `pi-web`, or select **Pi Web**
-  in the application launcher. `pi-web --no-open` prints the URL.
-- `pi-web --password` displays the locally generated browser-login password.
-  It is stored privately at `~/.local/state/pi-web/password`, never in the Nix
-  store. Tailscale Serve forwards HTTPS 8443 to `127.0.0.1:30141`.
-- ChatGPT subscription authentication uses Pi's built-in OpenAI Codex login.
-  In Pi, run `/login openai-codex`, or use the Pi Web model-provider login screen.
-  Existing Pi credentials are preserved; Codex CLI credentials are not copied.
-- Claude uses [pi-claude-bridge](https://github.com/elidickinson/pi-claude-bridge)
-  and the Nix-managed Claude Code executable with its existing login. AskClaude
-  delegation is disabled. The context policy defaults conservatively to Pro,
-  without opting into paid Extra Usage.
-- [pi-codex-web-run](https://github.com/IgorWarzocha/howaboua-pi-stuff/tree/main/packages/pi-codex-web-run)
-  provides `web_run` directly against the Codex search endpoint, including while
-  Claude is selected. It uses the Pi OpenAI Codex login, not a Codex coding-agent
-  subprocess, and does not send the surrounding conversation.
-- Use a regular session preset: **Chat only** disables extensions. Select the
-  project directory in the UI. CLI `pi` and Pi Web share `~/.pi/agent`.
-- Settings are initialized once and remain editable. Extension links and Claude
-  bridge settings are managed by Nix. Upgrade the pinned packages through Nix,
-  not Pi Web's npm updater. Restart with `systemctl --user restart pi-web`.
-- Pi Web is a single-user coding environment with the user's filesystem and
-  shell permissions, not a sandbox. The two web ports have separate browser
-  origins, but cookies on the same hostname are not port-isolated.
 
 ## citrus（デスクトップ）
 

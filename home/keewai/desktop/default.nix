@@ -14,7 +14,6 @@
     ./legcord.nix
     ./office.nix
     ./penpot-mcp.nix
-    ./pi.nix
     ./scskiller.nix
     ./steam-theme.nix
     ./stylix.nix
