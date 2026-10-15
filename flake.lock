@@ -665,7 +665,7 @@
     "meltype-release": {
       "flake": false,
       "locked": {
-        "narHash": "sha256-mxaE0mB0Zp9Y9UDFrBEFKfoD2a43pI2DrquJJGxhdnA=",
+        "narHash": "sha256-UcHeKksprNe+KfaMNYGrD/NR2UGTOO1deoNBYA7Qzhg=",
         "type": "file",
         "url": "https://api.github.com/repos/yksr-melt/Meltype/releases/latest"
       },
@@ -694,11 +694,11 @@
       },
       "locked": {
         "dir": "packages/nix",
-        "lastModified": 1791991619,
-        "narHash": "sha256-JquPo1pb8gQTazVr5UBEOsWhoV9YR4/yOVtMyR4lQXM=",
+        "lastModified": 1792022604,
+        "narHash": "sha256-xyl3KTB+j4W3dAxQVSolNJCQZOasDnCLB3Dr14adBmU=",
         "owner": "SteamClientHomebrew",
         "repo": "Millennium",
-        "rev": "4ecc644bf728090215294ceeb2c7cc5e22abac66",
+        "rev": "22af2f453777a925fb398a3dab60a407e66aa83f",
         "type": "github"
       },
       "original": {
@@ -757,11 +757,11 @@
         "treefmt-nix": "treefmt-nix"
       },
       "locked": {
-        "lastModified": 1792009791,
-        "narHash": "sha256-l9zdlcuyl6VUFQpUYsj/jvvSxYDZYL4LbsHmP/bNulg=",
+        "lastModified": 1792054404,
+        "narHash": "sha256-xiMdvYhb2lFWPmv/nOfU5+ZNElraTB6DZ65bLO9hdnI=",
         "owner": "4evy",
         "repo": "nixcord",
-        "rev": "c8e747f84f8be2d1d3737eaea8021595bdb8b7ec",
+        "rev": "62bd05e9fb4f66f28bb65c72b1a0122f308fdb22",
         "type": "github"
       },
       "original": {
@@ -856,11 +856,11 @@
     },
     "nixpkgs_4": {
       "locked": {
-        "lastModified": 1791734076,
-        "narHash": "sha256-i5qk1kLiit98rRbh1AXmWBNT9QXC/y4l5Wk/u5EdpDQ=",
+        "lastModified": 1791956154,
+        "narHash": "sha256-jBYGPi4udQ9uo4KQp9m2J0546nJVQitG15gvZSaVVAs=",
         "owner": "NixOS",
         "repo": "nixpkgs",
-        "rev": "7fd4004d0511991fff3a0524856a9be09e28c5f0",
+        "rev": "55bfb4d7437bd4e09ab7cba58a43bd68eb310044",
         "type": "github"
       },
       "original": {
@@ -1036,7 +1036,7 @@
     "t3code-releases": {
       "flake": false,
       "locked": {
-        "narHash": "sha256-Grlk5walCoY6xF4Ew3Fbf4IxR8daDP9zHe7aN21APzM=",
+        "narHash": "sha256-RM2zgcL6GBJESVFZo9Y8AkhAPf7mLhV/nkOTO7SYVYE=",
         "type": "file",
         "url": "https://api.github.com/repos/pingdotgg/t3code/releases?per_page=100"
       },
