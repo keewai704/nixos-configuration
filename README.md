@@ -147,7 +147,8 @@ and `~/.codex/config.toml`. Cowork's virtual machine is not configured here.
 
 ### T3 Code nightly
 
-[T3 Code](https://github.com/pingdotgg/t3code) runs on citrus. Its official nightly
+[T3 Code](https://github.com/pingdotgg/t3code) runs as a desktop app on citrus and a
+headless user service on orange. Its official nightly
 AppImage is selected from the GitHub release metadata pinned by `t3code-releases`;
 the artifact URL and SHA-256 come from that same locked metadata. Update with
 `nix flake update t3code-releases`, then follow the activation procedure above.
@@ -161,8 +162,15 @@ The in-app updater is disabled; Nix owns the application and its bundled `t3` CL
   Serve exposes `https://citrus.tail1e65cd.ts.net/` to the tailnet over HTTPS 443,
   including WebSockets.
   This is not public internet access and does not use Funnel.
-- Pair each browser or mobile device from **Settings → Connections**, or run
-  `t3 pair --tailscale` locally. Pairing links are credentials: keep them private.
+- Orange's `t3code` user service starts at boot and reuses `~/.t3`, including its
+  environment identity, paired devices, projects, and conversation history.
+  [t3code.nix](hosts/orange/services/t3code.nix) routes its API and WebSockets
+  through the shared HTTPS 443 entry point. The root page remains Immich; use the
+  native T3 app or `https://app.t3.codes/` to connect to the orange environment.
+- Pair each browser or mobile device from **Settings → Connections**. On citrus,
+  `t3 pair --tailscale` also works locally. On orange, use
+  `t3 auth pairing create --base-url https://orange.tail1e65cd.ts.net` to preserve
+  the shared nginx routing. Pairing links are credentials: keep them private.
   Opening the bare HTTPS URL does not authorize a new device.
 - Codex uses **existing CLI** mode; Claude also uses its Home Manager executable.
   They share the ordinary `~/.codex` and `~/.claude` logins. If needed, use
@@ -214,6 +222,7 @@ moonlight stream citrus "Extend Display" --1080 --fps 120 --bitrate 40000 --vide
 | --- | --- | --- |
 | Immich | `https://orange.tail1e65cd.ts.net/` | [immich.nix](hosts/orange/services/immich.nix) |
 | Vaultwarden | `https://orange.tail1e65cd.ts.net/vault/` | [vaultwarden.nix](hosts/orange/services/vaultwarden.nix) |
+| T3 Code | Native app / `https://app.t3.codes/`, environment `https://orange.tail1e65cd.ts.net` | [t3code.nix](hosts/orange/services/t3code.nix) |
 | Samba | HDD 共有 | [samba.nix](hosts/orange/services/samba.nix) |
 | Minecraft | Fabric サーバー | [minecraft.nix](hosts/orange/services/minecraft.nix) |
 | Tailscale Exit Node | 出口ノード | [tailscale-exit-node.nix](hosts/orange/services/tailscale-exit-node.nix) |

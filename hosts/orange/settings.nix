@@ -15,6 +15,7 @@ in
   hostName = "orange";
   lanInterface = "enp2s0";
   nginxPort = 8000;
+  t3codePort = 3773;
   couchdbPort = 5984;
   obsidianVault = "/home/keewai/Obsidian";
   smartDevices = [
