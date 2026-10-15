@@ -39,6 +39,7 @@ def sync_claude(servers, stale):
 
 def sync_codex(servers, stale):
     doc = tomlkit.parse(codex_file.read_text()) if codex_file.exists() else tomlkit.document()
+    doc["model_auto_compact_token_limit"] = 400000
     if "mcp_servers" not in doc:
         doc["mcp_servers"] = tomlkit.table(is_super_table=True)
     current = doc["mcp_servers"]
@@ -59,9 +60,7 @@ def sync_codex(servers, stale):
 servers = json.loads(Path(sys.argv[1]).read_text())
 previous = set(json.loads(state_file.read_text())) if state_file.exists() else set()
 stale = previous - servers.keys()
-if not servers and not stale:
-    sys.exit()
-
-sync_claude(servers, stale)
+if servers or stale:
+    sync_claude(servers, stale)
 sync_codex(servers, stale)
 write_atomic(state_file, json.dumps(sorted(servers)) + "\n")

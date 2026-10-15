@@ -22,10 +22,10 @@ let
 
   mcpServers = pkgs.writeText "coding-agent-mcp-servers.json" (builtins.toJSON cfg.mcpServers);
 
-  syncMcp = pkgs.writers.writePython3 "sync-coding-agent-mcp" {
+  syncConfig = pkgs.writers.writePython3 "sync-coding-agent-config" {
     libraries = [ pkgs.python3Packages.tomlkit ];
     flakeIgnore = [ "E501" ];
-  } (builtins.readFile ./sync-mcp.py);
+  } (builtins.readFile ./sync-config.py);
 in
 {
   imports = [ ./shadcn.nix ];
@@ -63,6 +63,10 @@ in
     programs.claude-code = {
       enable = true;
       package = inputs.claude-code.packages.${pkgs.stdenv.hostPlatform.system}.default;
+      settings = {
+        autoCompactWindow = 400000;
+        env.CLAUDE_CODE_SIMPLE_SYSTEM_PROMPT = "1";
+      };
     };
 
     codingAgents.skills = lib.genAttrs (builtins.attrNames (builtins.readDir skillRoot)) (
@@ -71,8 +75,8 @@ in
 
     home.file = skillLinks;
 
-    home.activation.codingAgentMcp = lib.hm.dag.entryAfter [ "writeBoundary" ] ''
-      run ${syncMcp} ${mcpServers}
+    home.activation.codingAgentConfig = lib.hm.dag.entryAfter [ "writeBoundary" ] ''
+      run ${syncConfig} ${mcpServers}
     '';
   };
 }
