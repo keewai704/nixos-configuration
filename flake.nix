@@ -24,6 +24,16 @@
       inputs.nixpkgs.follows = "nixpkgs";
     };
 
+    claude-desktop-release = {
+      url = "file+https://downloads.claude.ai/claude-desktop/apt/stable/dists/stable/main/binary-amd64/Packages";
+      flake = false;
+    };
+
+    codex-claude-plugin = {
+      url = "github:openai/codex-plugin-cc/main";
+      flake = false;
+    };
+
     t3code-releases = {
       url = "file+https://api.github.com/repos/pingdotgg/t3code/releases?per_page=100";
       flake = false;

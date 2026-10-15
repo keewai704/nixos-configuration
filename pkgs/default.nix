@@ -1,5 +1,9 @@
 { inputs, pkgs }:
 {
+  claude-desktop = pkgs.callPackage ./claude-desktop {
+    releases = inputs.claude-desktop-release;
+    claude-code = inputs.claude-code.packages.${pkgs.stdenv.hostPlatform.system}.default;
+  };
   helium = pkgs.callPackage ./helium { };
   t3code = pkgs.callPackage ./t3code {
     releases = inputs.t3code-releases;

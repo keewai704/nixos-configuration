@@ -106,6 +106,19 @@ normal user PATH in every shell, independently of T3 Code. Their existing
 credentials and editable settings are preserved. Claude Code follows the
 `claude-code` flake input; Codex follows the pinned `nixpkgs` input.
 
+Claude Desktop is installed in the desktop profile by
+[claude-desktop.nix](home/keewai/desktop/claude-desktop.nix). Its
+[package](pkgs/claude-desktop/default.nix) uses Anthropic's official Linux `.deb`
+and selects the latest version from the stable apt index pinned in `flake.lock`.
+Run `nix flake update claude-desktop-release codex-claude-plugin` to refresh the
+app and [OpenAI's Codex plugin](https://github.com/openai/codex-plugin-cc), then
+follow the normal NixOS activation procedure. The launcher uses the Nix-managed
+Claude Code, Codex, and Node.js binaries. Home Manager installs the plugin as
+`~/.claude/skills/codex`, shared by the CLI and Desktop's local Code sessions.
+Sign in to Desktop, open the Code tab, and use `/codex:setup`,
+`/codex:rescue <task>`, or `/codex:review`. Codex reuses `codex login` credentials
+and `~/.codex/config.toml`. Cowork's virtual machine is not configured here.
+
 - Claude Code と Codex の設定（`~/.claude`、`~/.codex`）は基本的に Nix で管理していません。
   例外として [coding-agents](home/keewai/common/coding-agents/default.nix) が両方へ共通にスキルと MCP サーバーを配ります。
   - スキル: `codingAgents.skills`（[skills/](skills/) の全ディレクトリを自動登録）を `~/.claude/skills/` と `~/.agents/skills/`（Codex）にリンクします。
