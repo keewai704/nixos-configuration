@@ -20,9 +20,9 @@ safety boundaries where they are loaded before the relevant action. Repository
 operational gates belong in AGENTS.md rather than being copied into every skill.
 
 Home Manager links every `skills/<name>` directory into `~/.claude/skills`
-(Claude Code) and `~/.agents/skills` (Codex) through `codingAgents.skills` in
+(Claude Code) and `~/.agents/skills` through `codingAgents.skills` in
 [coding-agents](/home/keewai/nixos-configuration/home/keewai/common/coding-agents/default.nix).
-The same module registers `codingAgents.mcpServers` with both clients.
+The same module registers `codingAgents.mcpServers` with Claude Code.
 Keep skills harness-neutral: refer to "the harness's subagent tool" or "TODO
 ledger" rather than one client's tool names.
 

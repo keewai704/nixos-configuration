@@ -40,7 +40,6 @@
   zlib,
   releases,
   claude-code,
-  codex,
   gh,
   git,
   tailscale,
@@ -140,7 +139,6 @@ stdenv.mkDerivation {
       --prefix PATH : ${
         lib.makeBinPath [
           claude-code
-          codex
           gh
           git
           tailscale

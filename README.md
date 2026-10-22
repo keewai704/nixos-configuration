@@ -54,7 +54,7 @@ flake.nix
 | シェル・エイリアス・プロンプト | [shell.nix](home/keewai/common/shell.nix)、[starship.toml](home/keewai/common/starship.toml) |
 | Git / GitHub CLI | [git.nix](home/keewai/common/git.nix) |
 | T3 Code nightly / HTTPS | [t3code.nix](home/keewai/desktop/t3code.nix), [pkgs/t3code](pkgs/t3code/) |
-| 個人スキル・MCP サーバー（Claude Code / Codex 共通） | [skills/](skills/)、[coding-agents](home/keewai/common/coding-agents/default.nix) |
+| 個人スキル・MCP サーバー（Claude Code） | [skills/](skills/)、[coding-agents](home/keewai/common/coding-agents/default.nix) |
 | 設定不要な GUI アプリを追加 | [home/keewai/desktop/applications.nix](home/keewai/desktop/applications.nix) |
 | ウィンドウ・モニター・キー割り当て | [hyprland.lua](home/keewai/desktop/hyprland.lua) |
 | Hyprland 本体・ログイン画面 | [modules/desktop/hyprland.nix](modules/desktop/hyprland.nix) |
@@ -100,35 +100,26 @@ The BEITONG xpad fix is rebuilt with the kernel through `boot.extraModulePackage
 
 ## コーディングエージェント
 
-Claude Code (`claude`) and Codex (`codex`) are installed through Home Manager's
-`programs.claude-code` and `programs.codex` in the common profile. Both are on the
-normal user PATH in every shell, independently of T3 Code. Their existing
-credentials and editable settings are preserved. Claude Code follows the
-`claude-code` flake input; Codex follows the pinned `nixpkgs` input.
+Claude Code (`claude`) is installed through Home Manager's `programs.claude-code`
+in the common profile. It is on the normal user PATH in every shell,
+independently of T3 Code. Its existing credentials and editable settings are
+preserved, and it follows the `claude-code` flake input.
 
 Claude Desktop is installed in the desktop profile by
 [claude-desktop.nix](home/keewai/desktop/claude-desktop.nix). Its
 [package](pkgs/claude-desktop/default.nix) uses Anthropic's official Linux `.deb`
 and selects the latest version from the stable apt index pinned in `flake.lock`.
 Run `nix flake update claude-desktop-release` to refresh the app, then follow the
-normal NixOS activation procedure. The launcher uses the Nix-managed Claude Code,
-Codex, and Node.js binaries. [OpenAI's Codex plugin](https://github.com/openai/codex-plugin-cc)
-is installed separately with `claude plugin marketplace add openai/codex-plugin-cc`
-and `claude plugin install codex@openai-codex --scope user`, shared by the CLI and
-Desktop's local Code sessions. Update it through Claude's plugin manager or run
-`claude plugin marketplace update openai-codex` followed by
-`claude plugin update codex@openai-codex`. Plugin files and state are writable and
-are not pinned by Nix. Home Manager merges its declared Claude Code settings
-into a writable file while preserving undeclared settings, including plugins.
-Sign in to Desktop, open the Code tab, and use `/codex:setup`,
-`/codex:rescue <task>`, or `/codex:review`. Codex reuses `codex login` credentials
-and `~/.codex/config.toml`. Cowork's virtual machine is not configured here.
+normal NixOS activation procedure. The launcher uses the Nix-managed Claude Code
+and Node.js binaries. Home Manager merges its declared Claude Code settings into
+a writable file while preserving undeclared settings, including plugins. Sign in to Desktop and open the Code tab
+to use it. Cowork's virtual machine is not configured here.
 
-- Claude Code と Codex の設定（`~/.claude`、`~/.codex`）は基本的に Nix で管理していません。
-  例外として [coding-agents](home/keewai/common/coding-agents/default.nix) が両方へ共通にスキルと MCP サーバーを配ります。
-  - スキル: `codingAgents.skills`（[skills/](skills/) の全ディレクトリを自動登録）を `~/.claude/skills/` と `~/.agents/skills/`（Codex）にリンクします。
+- Claude Code の設定（`~/.claude`）は基本的に Nix で管理していません。
+  例外として [coding-agents](home/keewai/common/coding-agents/default.nix) がスキルと MCP サーバーを配ります。
+  - スキル: `codingAgents.skills`（[skills/](skills/) の全ディレクトリを自動登録）を `~/.claude/skills/` と `~/.agents/skills/` にリンクします。
     [shadcn/ui の公式スキル](https://ui.shadcn.com/docs/skills)は [shadcn.nix](home/keewai/common/coding-agents/shadcn.nix) で取得元のコミットとハッシュを固定し、参照資料とスクリプトを含めて配布します。実行に必要な Node.js・npm・npx も同じ設定で導入します。
-  - MCP: `codingAgents.mcpServers.<name> = { command; args; env; }` を、Home Manager の有効化時に `~/.claude.json` の `mcpServers` と `~/.codex/config.toml` の `[mcp_servers]` へ書き込みます。
+  - MCP: `codingAgents.mcpServers.<name> = { command; args; env; }` を、Home Manager の有効化時に `~/.claude.json` の `mcpServers` へ書き込みます。
     Nix から外したサーバーだけを削除し、手動で追加したサーバーや他の設定はそのまま残します。
 - [hypruse](https://github.com/IlyasKhallouki/hypruse)（デスクトップのみ）は [computer-use.nix](home/keewai/desktop/computer-use.nix) で MCP サーバー `hypruse` として登録しています。
 - UI デザインは [Penpot](https://design.penpot.app/) を使います。[penpot-mcp.nix](home/keewai/desktop/penpot-mcp.nix) がデスクトップ用 MCP とプラグインを提供します。接続手順と Apple 系アプリ向けアセットは [penpot-apple-design](skills/penpot-apple-design/SKILL.md) にまとめています。
@@ -172,9 +163,8 @@ The in-app updater is disabled; Nix owns the application and its bundled `t3` CL
   `t3 auth pairing create --base-url https://orange.tail1e65cd.ts.net` to preserve
   the shared nginx routing. Pairing links are credentials: keep them private.
   Opening the bare HTTPS URL does not authorize a new device.
-- Codex uses **existing CLI** mode; Claude also uses its Home Manager executable.
-  They share the ordinary `~/.codex` and `~/.claude` logins. If needed, use
-  `codex login` or `claude auth login`, then rescan the providers in T3 Code.
+- Claude uses its Home Manager executable and the ordinary `~/.claude` login. If
+  needed, use `claude auth login`, then rescan the providers in T3 Code.
 - GitHub uses the existing `gh` login and Home Manager's Git credential helper.
   Check with `gh auth status`; sign in with `gh auth login` if necessary, then
   choose **Settings → Source Control → Rescan**. No token is copied into Nix.

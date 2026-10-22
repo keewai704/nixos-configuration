@@ -23,7 +23,6 @@ let
   mcpServers = pkgs.writeText "coding-agent-mcp-servers.json" (builtins.toJSON cfg.mcpServers);
 
   syncConfig = pkgs.writers.writePython3 "sync-coding-agent-config" {
-    libraries = [ pkgs.python3Packages.tomlkit ];
     flakeIgnore = [ "E501" ];
   } (builtins.readFile ./sync-config.py);
 in
@@ -34,7 +33,7 @@ in
     skills = lib.mkOption {
       type = lib.types.attrsOf lib.types.path;
       default = { };
-      description = "Skill directories linked into Claude Code and Codex.";
+      description = "Skill directories linked into Claude Code.";
     };
 
     mcpServers = lib.mkOption {
@@ -54,12 +53,11 @@ in
         }
       );
       default = { };
-      description = "Stdio MCP servers registered in Claude Code and Codex user configuration.";
+      description = "Stdio MCP servers registered in Claude Code user configuration.";
     };
   };
 
   config = {
-    programs.codex.enable = true;
     programs.claude-code = {
       enable = true;
       mutableSettings = true;

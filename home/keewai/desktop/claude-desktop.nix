@@ -6,7 +6,6 @@
 let
   package = pkgs.local.claude-desktop.override {
     claude-code = config.programs.claude-code.finalPackage;
-    codex = config.programs.codex.package;
     git = config.programs.git.package;
   };
 in

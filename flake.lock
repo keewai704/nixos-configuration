@@ -129,11 +129,11 @@
         "systems": "systems"
       },
       "locked": {
-        "lastModified": 1792004496,
-        "narHash": "sha256-jLAJQmt8LrPiOKu/Noykb0733ULEfELvWbbm+jy0er8=",
+        "lastModified": 1792645311,
+        "narHash": "sha256-yZmgxDGUbDySY/J4/4yl+eQ7PcnIOuvqDvVD4yVffcs=",
         "owner": "sadjow",
         "repo": "claude-code-nix",
-        "rev": "dd34d649687c7f5e94c8f880e537853941e54761",
+        "rev": "75964e6dac38d737da37c96ba87bca751f935f7d",
         "type": "github"
       },
       "original": {
@@ -665,7 +665,7 @@
     "meltype-release": {
       "flake": false,
       "locked": {
-        "narHash": "sha256-PSkFfrxTs5S2Jo1mydU1cNkQj8NU1KYS5wJ8N793Z1o=",
+        "narHash": "sha256-LASMNzWgSP+DfzJ1vsU6sA2ruIYmWHVSaCduTnaIwvY=",
         "type": "file",
         "url": "https://api.github.com/repos/yksr-melt/Meltype/releases/latest"
       },
@@ -677,7 +677,7 @@
     "meltype-tags": {
       "flake": false,
       "locked": {
-        "narHash": "sha256-AnTPp9E2rpFow3tBuavOCT+hofZ1siuCnNRi37OSR6s=",
+        "narHash": "sha256-mvMitNJQtWen+Vok5q/pohgzsYn9uV3DrFiLkSB/syQ=",
         "type": "file",
         "url": "https://api.github.com/repos/yksr-melt/Meltype/git/matching-refs/tags/"
       },
@@ -1036,7 +1036,7 @@
     "t3code-releases": {
       "flake": false,
       "locked": {
-        "narHash": "sha256-RM2zgcL6GBJESVFZo9Y8AkhAPf7mLhV/nkOTO7SYVYE=",
+        "narHash": "sha256-O92jXPObWYY/YlvxGMccXfCqIzvb+iB/F+dfJTJO2+U=",
         "type": "file",
         "url": "https://api.github.com/repos/pingdotgg/t3code/releases?per_page=100"
       },

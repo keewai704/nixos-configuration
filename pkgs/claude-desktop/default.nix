@@ -43,7 +43,6 @@
   vulkan-loader,
   bubblewrap,
   claude-code,
-  codex,
   git,
   nodejs,
   socat,
@@ -163,7 +162,6 @@ stdenv.mkDerivation {
         lib.makeBinPath [
           bubblewrap
           claude-code
-          codex
           git
           nodejs
           socat

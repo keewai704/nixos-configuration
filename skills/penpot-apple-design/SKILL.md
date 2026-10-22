@@ -22,23 +22,17 @@ and implementation choices from a native Apple app.
   platform behavior to native controls. CSS/HTML inspection is a web handoff,
   not generated SwiftUI, UIKit, or AppKit source.
 
-## Desktop operations belong to Codex
+## Desktop operations
 
 Use browser automation for browser tasks when the harness provides it.
 Hypruse is for the local Hyprland desktop when desktop interaction is necessary,
 such as an existing authenticated browser session or a native file dialog.
 
-If already running as Codex, perform the necessary hypruse work directly.
-Otherwise delegate that bounded desktop task to Codex through the harness's
-subagent tool, if it supports selecting Codex. When model and effort selection
-are supported, choose `gpt-6-luna` / `max` for inspection or mechanical operations,
-`gpt-6.1-sol` / `medium` for routine implementation and verification, or
-`gpt-6-astra` / `xhigh` for difficult debugging. Honor an explicit user override.
-Retain the returned task ID; do not create an ordinary top-level conversation.
-If the required Codex route is unavailable, report the desktop blocker and
-continue independent asset or design work.
+Perform the necessary hypruse work directly, or delegate a bounded desktop task
+through the harness's subagent tool. If hypruse is unavailable, report the desktop
+blocker and continue independent asset or design work.
 
-Give the operator the exact file/window, intended actions, permitted changes,
+When delegating, give the operator the exact file/window, intended actions, permitted changes,
 and evidence to return. Only one operator may control that window at a time.
 Call hypruse `desktop` first; use IPC for window management and fresh screenshots
 for actions inside windows. Login and access requirements remain in force.

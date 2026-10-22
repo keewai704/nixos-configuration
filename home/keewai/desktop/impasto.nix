@@ -34,11 +34,6 @@ let
           shape = "ring";
           figure = "off";
         }
-        {
-          id = "codex";
-          shape = "ring";
-          figure = "off";
-        }
       ];
       chipShape = "icon";
       chipFigure = "off";

@@ -7,7 +7,6 @@
 let
   package = pkgs.local.t3code.override {
     claude-code = config.programs.claude-code.finalPackage;
-    codex = config.programs.codex.package;
     gh = config.programs.gh.package;
     git = config.programs.git.package;
   };
@@ -21,15 +20,6 @@ let
       updateChannelConfiguredByUser = true;
     };
     "settings.json".providerInstances = {
-      codex = {
-        driver = "codex";
-        enabled = true;
-        config = {
-          setupMode = "existing";
-          binaryPath = lib.getExe config.programs.codex.package;
-          homePath = "${config.home.homeDirectory}/.codex";
-        };
-      };
       claudeAgent = {
         driver = "claudeAgent";
         enabled = true;

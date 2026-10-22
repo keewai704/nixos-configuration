@@ -22,5 +22,4 @@ in
   ];
 
   home.file.".claude/CLAUDE.md".text = agentInstructions;
-  home.file.".codex/AGENTS.md".text = agentInstructions;
 }
