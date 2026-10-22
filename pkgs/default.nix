@@ -5,10 +5,6 @@ let
 in
 {
   local = {
-    claude-desktop = final.callPackage ./claude-desktop {
-      releases = inputs.claude-desktop-release;
-      inherit claude-code;
-    };
     helium = final.callPackage ./helium { };
     hypruse = final.callPackage ./hypruse { };
     impasto = final.callPackage ./impasto { inherit (inputs) impasto; };

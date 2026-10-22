@@ -4,7 +4,6 @@
     ./apple-music.nix
     ./bitwarden.nix
     ./browser.nix
-    ./claude-desktop.nix
     ./computer-use.nix
     ./file-manager.nix
     ./hypr-brightness.nix

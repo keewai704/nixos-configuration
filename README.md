@@ -105,16 +105,6 @@ in the common profile. It is on the normal user PATH in every shell,
 independently of T3 Code. Its existing credentials and editable settings are
 preserved, and it follows the `claude-code` flake input.
 
-Claude Desktop is installed in the desktop profile by
-[claude-desktop.nix](home/keewai/desktop/claude-desktop.nix). Its
-[package](pkgs/claude-desktop/default.nix) uses Anthropic's official Linux `.deb`
-and selects the latest version from the stable apt index pinned in `flake.lock`.
-Run `nix flake update claude-desktop-release` to refresh the app, then follow the
-normal NixOS activation procedure. The launcher uses the Nix-managed Claude Code
-and Node.js binaries. Home Manager merges its declared Claude Code settings into
-a writable file while preserving undeclared settings, including plugins. Sign in to Desktop and open the Code tab
-to use it. Cowork's virtual machine is not configured here.
-
 - Claude Code の設定（`~/.claude`）は基本的に Nix で管理していません。
   例外として [coding-agents](home/keewai/common/coding-agents/default.nix) がスキルと MCP サーバーを配ります。
   - スキル: `codingAgents.skills`（[skills/](skills/) の全ディレクトリを自動登録）を `~/.claude/skills/` と `~/.agents/skills/` にリンクします。

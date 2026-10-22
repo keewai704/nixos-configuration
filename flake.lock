@@ -143,18 +143,6 @@
         "type": "github"
       }
     },
-    "claude-desktop-release": {
-      "flake": false,
-      "locked": {
-        "narHash": "sha256-G7i5oNjof1CgYhY3tOCQW5sQzJnf/XPoX71dNRvenO0=",
-        "type": "file",
-        "url": "https://downloads.claude.ai/claude-desktop/apt/stable/dists/stable/main/binary-amd64/Packages"
-      },
-      "original": {
-        "type": "file",
-        "url": "https://downloads.claude.ai/claude-desktop/apt/stable/dists/stable/main/binary-amd64/Packages"
-      }
-    },
     "cpak": {
       "inputs": {
         "nixpkgs": [
@@ -938,7 +926,6 @@
       "inputs": {
         "agenix": "agenix",
         "claude-code": "claude-code",
-        "claude-desktop-release": "claude-desktop-release",
         "cpak": "cpak",
         "home-manager": "home-manager",
         "hypr-brightness": "hypr-brightness",
