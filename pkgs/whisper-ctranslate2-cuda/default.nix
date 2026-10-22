@@ -9,9 +9,7 @@ let
       ctranslate2 = prev.ctranslate2.override {
         ctranslate2-cpp = pkgsCuda.ctranslate2;
       };
-      faster-whisper = prev.faster-whisper.override {
-        ctranslate2 = final.ctranslate2;
-      };
+      faster-whisper = prev.faster-whisper.override { inherit (final) ctranslate2; };
     }
   );
 in

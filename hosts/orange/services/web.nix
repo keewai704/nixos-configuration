@@ -1,5 +1,4 @@
 { pkgs, ... }:
-
 let
   inherit (import ../settings.nix)
     immichPort
@@ -8,26 +7,25 @@ let
     tailnetOrigin
     vaultwardenPort
     ;
-  nginxProxyHeaders = ''
-    proxy_set_header Host $host;
-    proxy_set_header X-Real-IP $tailscale_client_ip;
-    proxy_set_header X-Forwarded-For $tailscale_client_ip;
-    proxy_set_header X-Forwarded-Proto https;
-    proxy_set_header X-Forwarded-Host $host;
-    proxy_set_header X-Forwarded-Server $hostname;
-
-  '';
   mkProxyLocation = port: extraConfig: {
     proxyPass = "http://127.0.0.1:${toString port}";
     proxyWebsockets = true;
     recommendedProxySettings = false;
-    extraConfig = extraConfig + ''
+    extraConfig = ''
+      ${extraConfig}
       proxy_buffering off;
-      ${nginxProxyHeaders}
+      proxy_set_header Host $host;
+      proxy_set_header X-Real-IP $tailscale_client_ip;
+      proxy_set_header X-Forwarded-For $tailscale_client_ip;
+      proxy_set_header X-Forwarded-Proto https;
+      proxy_set_header X-Forwarded-Host $host;
+      proxy_set_header X-Forwarded-Server $hostname;
     '';
   };
 in
 {
+  _module.args = { inherit mkProxyLocation; };
+
   services.nginx = {
     enable = true;
     recommendedOptimisation = true;

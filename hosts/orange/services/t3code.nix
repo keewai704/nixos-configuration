@@ -1,23 +1,10 @@
-{ lib, ... }:
+{ lib, mkProxyLocation, ... }:
 let
   inherit (import ../settings.nix)
     tailnetHostname
     t3codePort
     ;
-  proxy = {
-    proxyPass = "http://127.0.0.1:${toString t3codePort}";
-    proxyWebsockets = true;
-    recommendedProxySettings = false;
-    extraConfig = ''
-      proxy_buffering off;
-      proxy_set_header Host $host;
-      proxy_set_header X-Real-IP $tailscale_client_ip;
-      proxy_set_header X-Forwarded-For $tailscale_client_ip;
-      proxy_set_header X-Forwarded-Proto https;
-      proxy_set_header X-Forwarded-Host $host;
-      proxy_set_header X-Forwarded-Server $hostname;
-    '';
-  };
+  proxy = mkProxyLocation t3codePort "";
   mobileScopes = lib.concatStringsSep "+" (
     map (scope: builtins.replaceStrings [ ":" ] [ "%3A" ] scope) [
       "orchestration:read"
@@ -95,14 +82,12 @@ in
     lib.genAttrs (map (path: "^~ ${path}") apiPrefixes) (_: proxy)
     // lib.genAttrs (map (path: "= ${path}") apiEndpoints) (_: proxy)
     // {
-      "= /oauth/token" = proxy // {
-        extraConfig = proxy.extraConfig + ''
-          client_max_body_size 16k;
-          client_body_buffer_size 16k;
-          client_body_in_single_buffer on;
-          proxy_set_body $t3_mobile_token_body;
-        '';
-      };
+      "= /oauth/token" = mkProxyLocation t3codePort ''
+        client_max_body_size 16k;
+        client_body_buffer_size 16k;
+        client_body_in_single_buffer on;
+        proxy_set_body $t3_mobile_token_body;
+      '';
       "~ ^/api/assets/[A-Za-z0-9_-]+[.][A-Za-z0-9_-]+/" = proxy;
       "= /pair".return = "302 https://app.t3.codes/pair?host=https%3A%2F%2F${tailnetHostname}";
       "= /t3".return = "302 https://app.t3.codes/";

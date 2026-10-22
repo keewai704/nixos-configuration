@@ -21,7 +21,7 @@ let
       src = fetchurl { inherit (source) url hash; };
 
       stdenv = overrideCC llvmPackages_22.stdenv (
-        llvmPackages_22.clang.override { bintools = llvmPackages_22.bintools; }
+        llvmPackages_22.clang.override { inherit (llvmPackages_22) bintools; }
       );
 
       extraMakeFlags = [
