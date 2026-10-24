@@ -25,37 +25,24 @@
     };
     kernelModules = [ "kvm-amd" ];
     extraModulePackages = [ ];
+    supportedFilesystems = [ "zfs" ];
+    zfs.forceImportRoot = false;
   };
 
   fileSystems = {
     "/" = {
-      device = "/dev/disk/by-label/root";
-      fsType = "btrfs";
-      options = [
-        "subvol=@root"
-        "compress=zstd:3"
-        "noatime"
-      ];
+      device = "rpool/root";
+      fsType = "zfs";
     };
 
     "/home" = {
-      device = "/dev/disk/by-label/root";
-      fsType = "btrfs";
-      options = [
-        "subvol=@home"
-        "compress=zstd:3"
-        "noatime"
-      ];
+      device = "rpool/home";
+      fsType = "zfs";
     };
 
     "/nix" = {
-      device = "/dev/disk/by-label/root";
-      fsType = "btrfs";
-      options = [
-        "subvol=@nix"
-        "compress=zstd:3"
-        "noatime"
-      ];
+      device = "rpool/nix";
+      fsType = "zfs";
     };
 
     "/boot" = {
@@ -68,28 +55,13 @@
     };
 
     "/mnt/data" = {
-      device = "/dev/disk/by-label/Data";
+      device = "/dev/disk/by-uuid/a6876b76-f0e9-4799-9886-7058f61f438c";
       fsType = "xfs";
       options = [ "noatime" ];
     };
-
-    "/swap" = {
-      device = "/dev/disk/by-label/root";
-      fsType = "btrfs";
-      options = [
-        "subvol=@swap"
-        "noatime"
-      ];
-    };
   };
 
-  swapDevices = [
-    {
-      device = "/swap/swapfile";
-      size = 16 * 1024;
-      priority = 10;
-    }
-  ];
+  swapDevices = [ ];
 
   zramSwap = {
     enable = true;
@@ -98,6 +70,7 @@
     priority = 100;
   };
 
+  networking.hostId = "f0e37908";
   nixpkgs.hostPlatform = lib.mkDefault "x86_64-linux";
   hardware.cpu.amd.updateMicrocode = lib.mkDefault config.hardware.enableRedistributableFirmware;
 }
