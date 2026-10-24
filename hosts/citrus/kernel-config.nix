@@ -6,14 +6,14 @@ with lib.kernel;
   MAXSMP = lib.mkForce no;
   NR_CPUS = lib.mkForce (freeform "32");
 
-  SCHED_CLASS_EXT = yes;
-  BPF = yes;
-  BPF_SYSCALL = yes;
-  BPF_JIT = yes;
-  BPF_JIT_ALWAYS_ON = yes;
-  BPF_JIT_DEFAULT_ON = yes;
-  DEBUG_INFO_BTF = yes;
-  DEBUG_INFO_BTF_MODULES = yes;
+  SCHED_CLASS_EXT = lib.mkForce yes;
+  BPF = lib.mkForce yes;
+  BPF_SYSCALL = lib.mkForce yes;
+  BPF_JIT = lib.mkForce yes;
+  BPF_JIT_ALWAYS_ON = lib.mkForce yes;
+  BPF_JIT_DEFAULT_ON = lib.mkForce yes;
+  DEBUG_INFO_BTF = lib.mkForce yes;
+  DEBUG_INFO_BTF_MODULES = lib.mkForce yes;
 
   HYPERVISOR_GUEST = lib.mkForce no;
   XEN = lib.mkForce no;
