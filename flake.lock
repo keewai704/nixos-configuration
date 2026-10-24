@@ -323,7 +323,7 @@
     "meltype-release": {
       "flake": false,
       "locked": {
-        "narHash": "sha256-oc/KopVWjelWGM013A9rZ9nPY6bcaPBBgWXs7IjyS7o=",
+        "narHash": "sha256-/JnzP6RHpuBgst3RtK6qEb3W6fbGcrozGoFPZSAN5bw=",
         "type": "file",
         "url": "https://api.github.com/repos/yksr-melt/Meltype/releases/latest"
       },
@@ -390,11 +390,11 @@
         "nixpkgs": "nixpkgs_2"
       },
       "locked": {
-        "lastModified": 1792825458,
-        "narHash": "sha256-4OhFUWfxbhGDARlbudsp2XWXdEsvyU2zRS0U2LNYV2M=",
+        "lastModified": 1792871123,
+        "narHash": "sha256-jmPVQNJIeu6iR1xpTGUdeFurMeMTYmPyum7k/0mGbSo=",
         "owner": "xddxdd",
         "repo": "nix-cachyos-kernel",
-        "rev": "e5f3b46dde090718a7a02d4ea1e1cc64feb2d758",
+        "rev": "33e91ea862fde1d3547879d43c7333b0582b19d3",
         "type": "github"
       },
       "original": {
@@ -521,11 +521,11 @@
     },
     "nixpkgs_2": {
       "locked": {
-        "lastModified": 1792734696,
-        "narHash": "sha256-nAY7gNcbuoQkfPHxwVuRFcazYHptzBpKZN/I1/18Vaw=",
+        "lastModified": 1792839268,
+        "narHash": "sha256-4YdI9qGFDqIm6pILaPsZ9eGG3avTvF84qRSG6NMxRMw=",
         "owner": "NixOS",
         "repo": "nixpkgs",
-        "rev": "3a32588c117116d2bf0edc33915981398fab2b00",
+        "rev": "21f9767ba1ac8b3ab8e7a7d469dff3fa47b684a6",
         "type": "github"
       },
       "original": {
@@ -550,11 +550,11 @@
     },
     "nixpkgs_4": {
       "locked": {
-        "lastModified": 1792502884,
-        "narHash": "sha256-IoNisKcGbUjdd45qCqywGMCYmZ5EnkxezvLII0FWwNA=",
+        "lastModified": 1792773339,
+        "narHash": "sha256-rZLrzrC6i+jnTAlvPZHogKDulY7WWDEv9hJeHieO7Zw=",
         "owner": "NixOS",
         "repo": "nixpkgs",
-        "rev": "02c087f3fe673c9e317f206a627cb6b910336dbe",
+        "rev": "3ec636362e1816bc2f0888fa0fa2c69f1bc9e504",
         "type": "github"
       },
       "original": {
@@ -566,11 +566,11 @@
     },
     "nixpkgs_5": {
       "locked": {
-        "lastModified": 1792094642,
-        "narHash": "sha256-LPFRbrCWWyNsdQLO3SX1B/5UMkFK0hfe7bZR6lENvpc=",
-        "rev": "fe13242281a67641c0102cdb1087f0ebe586c7df",
+        "lastModified": 1792773339,
+        "narHash": "sha256-17eNBI5Khe4JZaRkL5hRGPWf8MZ6qv+bWAr4V8YeKBw=",
+        "rev": "3ec636362e1816bc2f0888fa0fa2c69f1bc9e504",
         "type": "tarball",
-        "url": "https://releases.nixos.org/nixos/unstable/nixos-26.11pre1093333.fe13242281a6/nixexprs.tar.zst"
+        "url": "https://releases.nixos.org/nixos/unstable/nixos-26.11pre1100280.3ec636362e18/nixexprs.tar.zst"
       },
       "original": {
         "type": "tarball",
@@ -595,11 +595,11 @@
         "nixpkgs": "nixpkgs_5"
       },
       "locked": {
-        "lastModified": 1792847815,
-        "narHash": "sha256-YcldoWDW4Ytilb+nvBIQ8L5zXwppCNEZsgWoEfzozdE=",
+        "lastModified": 1792881662,
+        "narHash": "sha256-amOqKxdICJexXdFroeRThfqSHNeuQ88wOXTxcs4U+uc=",
         "owner": "noctalia-dev",
         "repo": "noctalia",
-        "rev": "42c5d09a10f5642fd30fbdb0ded503c0098e6f22",
+        "rev": "490a7ea15a4f83e02106d090ea94e53b21f59052",
         "type": "github"
       },
       "original": {
@@ -612,11 +612,11 @@
     "noctalia-templates": {
       "flake": false,
       "locked": {
-        "lastModified": 1792761285,
-        "narHash": "sha256-b+b7veydPGg4xECHy4ezhUSZqr451fppaK1iklchqsY=",
+        "lastModified": 1792866277,
+        "narHash": "sha256-hoWF7WP2fdL4YR108QimYj6mqWBBqcZtOU+hyQ5EiqU=",
         "owner": "noctalia-dev",
         "repo": "community-templates",
-        "rev": "e598e0c58903d29434a52f512e5f0354cc1c2b9c",
+        "rev": "b70dfe774dd98349f8ee7a2562d7ec57b3b650cb",
         "type": "github"
       },
       "original": {
@@ -674,11 +674,11 @@
     "proton-wineland-release": {
       "flake": false,
       "locked": {
-        "lastModified": 1792695940,
-        "narHash": "sha256-Fj/VNMhM3imQTjqlmlEDvcyS5jWFnRG3nWXeYyn1rPw=",
+        "lastModified": 1792873626,
+        "narHash": "sha256-S8A5JtnM3gqbBVHD5Rb7kJu5tPiaz9VUljjzp/ewriE=",
         "ref": "master",
-        "rev": "f46964946eef92608cb59acce501c7fe4161877c",
-        "revCount": 6,
+        "rev": "46589eabccb1eefb03c92178739f605268ed589c",
+        "revCount": 7,
         "type": "git",
         "url": "https://aur.archlinux.org/proton-wineland-bin.git"
       },
@@ -792,7 +792,7 @@
     "t3code-releases": {
       "flake": false,
       "locked": {
-        "narHash": "sha256-lpfmDoLLl9QMR3G/LiVuMPGZ326ssbGhqjnIhjcoU2I=",
+        "narHash": "sha256-diOLajyO1AVEOz2pZGiK0I6Up0awC2C3U+6oVh24/EU=",
         "type": "file",
         "url": "https://api.github.com/repos/pingdotgg/t3code/releases?per_page=100"
       },
@@ -892,11 +892,11 @@
         "xdg-desktop-portal-umbriel": "xdg-desktop-portal-umbriel"
       },
       "locked": {
-        "lastModified": 1792846959,
-        "narHash": "sha256-rZroxAtbruwkFyOUOsRGpq5sUW8rYYIHo7q4/E2SoWc=",
+        "lastModified": 1792884523,
+        "narHash": "sha256-iaOi1oefNt7wns7QWddizzK+cS/rSeAddKJJllqmdtM=",
         "owner": "noctalia-dev",
         "repo": "umbriel",
-        "rev": "679f4fb1978d006f415767d001123ef87295d4e1",
+        "rev": "ce63e585fedf1430e23b6c224d0b1cb4e05ee29d",
         "type": "github"
       },
       "original": {
@@ -914,11 +914,11 @@
         ]
       },
       "locked": {
-        "lastModified": 1792417147,
-        "narHash": "sha256-uCM9pwVAG4Csf8n+IvFdhEAlXjqVWPidUNY3I1oUkzE=",
+        "lastModified": 1792871979,
+        "narHash": "sha256-g9ch7J7Jrki8qvoxqxSI9K1o4lpY3m3xMl35fYkQHs4=",
         "owner": "noctalia-dev",
         "repo": "xdg-desktop-portal-umbriel",
-        "rev": "1cc6eb18ba0d6c82dd66999646d7e554f76a85b6",
+        "rev": "e69d6f72122a99aa3668e182a4df8755ada81c17",
         "type": "github"
       },
       "original": {
