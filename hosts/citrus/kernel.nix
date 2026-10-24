@@ -45,7 +45,7 @@ in
         autoModules = false;
         processorOpt = "x86_64-v4";
         modDirVersion = "${lib.versions.pad 3 previous.kernel.version}-cachyos-citrus";
-        extraMakeFlags = [ "KCFLAGS=-march=znver5 -mtune=znver5" ];
+        extraMakeFlags = [ "KCFLAGS=-march=znver5" ];
         structuredExtraConfig = import ./kernel-config.nix { inherit lib; };
       };
     }
