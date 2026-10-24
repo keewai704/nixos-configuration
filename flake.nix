@@ -24,6 +24,11 @@
       inputs.nixpkgs.follows = "nixpkgs";
     };
 
+    codex = {
+      url = "github:sadjow/codex-cli-nix/main";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
+
     t3code-releases = {
       url = "file+https://api.github.com/repos/pingdotgg/t3code/releases?per_page=100";
       flake = false;

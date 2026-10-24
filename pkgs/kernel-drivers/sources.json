@@ -1,8 +1,8 @@
 {
   "linux": {
-    "version": "7.2.11",
-    "url": "https://cdn.kernel.org/pub/linux/kernel/v7.x/linux-7.2.11.tar.xz",
-    "hash": "sha256-/Q/EefmDqMBTE/E+nDYzD+ZlHPclOWdIxA1c2T+h5qQ="
+    "version": "7.3",
+    "url": "https://cdn.kernel.org/pub/linux/kernel/v7.x/linux-7.3.tar.xz",
+    "hash": "sha256-hzY8JPEOBjIes2J2VSEJTpRHH2v/i84taz5A858ASVM="
   },
   "nvidia": {
     "version": "615.78.08",

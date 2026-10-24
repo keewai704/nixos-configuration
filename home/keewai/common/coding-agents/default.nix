@@ -58,6 +58,12 @@ in
   };
 
   config = {
+    programs.codex = {
+      enable = true;
+      mutableSettings = true;
+      package = inputs.codex.packages.${pkgs.stdenv.hostPlatform.system}.default;
+    };
+
     programs.claude-code = {
       enable = true;
       mutableSettings = true;
