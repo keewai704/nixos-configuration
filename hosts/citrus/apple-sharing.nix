@@ -4,6 +4,7 @@
 
   services.owly = {
     enable = true;
+    package = pkgs.local.owly;
     settings = {
       station = "wlp9s0";
       country = "JP";

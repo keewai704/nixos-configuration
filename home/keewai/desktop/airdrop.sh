@@ -18,24 +18,30 @@ if [[ "$action" == send && $# == 0 ]]; then
 fi
 
 exec 9>"$XDG_RUNTIME_DIR/airdrop.lock"
+owns_radio=true
 if ! flock -n 9; then
-  printf 'Another AirDrop window is using the radio. Close it first.\n' >&2
-  exit 1
+  if [[ "$action" == receive ]]; then
+    printf 'AirDrop receiving is already active.\n' >&2
+    exit 1
+  fi
+  owns_radio=false
 fi
 
-owly radio up &
-radio_pid=$!
-cleanup() {
-  kill -TERM "$radio_pid" 2>/dev/null || true
-  wait "$radio_pid" 2>/dev/null || true
-}
-trap cleanup EXIT
-trap 'exit 130' INT
-trap 'exit 143' TERM HUP
+if [[ "$owns_radio" == true ]]; then
+  owly radio up &
+  radio_pid=$!
+  cleanup() {
+    kill -TERM "$radio_pid" 2>/dev/null || true
+    wait "$radio_pid" 2>/dev/null || true
+  }
+  trap cleanup EXIT
+  trap 'exit 130' INT
+  trap 'exit 143' TERM HUP
+fi
 
 ready=false
 for (( attempt=0; attempt<300; attempt++ )); do
-  if ! kill -0 "$radio_pid" 2>/dev/null; then
+  if [[ "$owns_radio" == true ]] && ! kill -0 "$radio_pid" 2>/dev/null; then
     wait "$radio_pid"
     exit 1
   fi
@@ -54,7 +60,7 @@ case "$action" in
   receive)
     destination="$(xdg-user-dir DOWNLOAD)/AirDrop"
     mkdir -p "$destination"
-    printf 'On the Apple device, enable AirDrop for Everyone for 10 Minutes.\nSelect this computer from the share sheet and accept the request here.\nReceived files: %s\nClose this window to stop receiving.\n' "$destination"
+    printf 'On the Apple device, enable AirDrop for Everyone for 10 Minutes.\nSelect this computer from the share sheet and accept the desktop prompt.\nReceived files: %s\n' "$destination"
     owly receive --dir "$destination" "$@"
     ;;
   browse)

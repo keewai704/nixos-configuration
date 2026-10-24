@@ -12,6 +12,7 @@ in
       tags = inputs.meltype-tags;
     };
     millennium = final.callPackage ./millennium { upstream = inputs.millennium; };
+    owly = final.callPackage ./owly { upstream = inputs.owly; };
     penpot-mcp = final.callPackage ./penpot-mcp { };
     proton-wineland = final.callPackage ./proton-wineland {
       release = inputs.proton-wineland-release;
