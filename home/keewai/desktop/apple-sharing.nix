@@ -33,7 +33,7 @@ in
     };
     Service = {
       ExecStart = "${lib.getExe pkgs.uxplay} -n ${lib.escapeShellArg osConfig.networking.hostName} -nh -p 7000 -avdec -vs waylandsink -as pulsesink";
-      Restart = "on-failure";
+      Restart = "always";
       RestartSec = 3;
     };
     Install.WantedBy = [ "graphical-session.target" ];
