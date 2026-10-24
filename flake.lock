@@ -323,7 +323,7 @@
     "meltype-release": {
       "flake": false,
       "locked": {
-        "narHash": "sha256-RU2jGSVTmRjHbU1Fws11UT/oQXTKS+iMgocRezJLo3s=",
+        "narHash": "sha256-bG7febNeSNdvGRDpy39blxT2KuepVZhcSBcvsOeRkJA=",
         "type": "file",
         "url": "https://api.github.com/repos/yksr-melt/Meltype/releases/latest"
       },
@@ -335,7 +335,7 @@
     "meltype-tags": {
       "flake": false,
       "locked": {
-        "narHash": "sha256-mvMitNJQtWen+Vok5q/pohgzsYn9uV3DrFiLkSB/syQ=",
+        "narHash": "sha256-DHYk8pupkaMZ3mI7MhED+tPM+BQ6gBnVGp89sMacNKQ=",
         "type": "file",
         "url": "https://api.github.com/repos/yksr-melt/Meltype/git/matching-refs/tags/"
       },
@@ -436,11 +436,11 @@
         "treefmt-nix": "treefmt-nix"
       },
       "locked": {
-        "lastModified": 1792817672,
-        "narHash": "sha256-g/vEFbMB1CPznxKj450NPSLqPagInGPFTicEvyRUcdg=",
+        "lastModified": 1792831283,
+        "narHash": "sha256-/jqKho4Hq2k5kgFr9/cONiDYj6p0j668+dB/jvnTn0M=",
         "owner": "4evy",
         "repo": "nixcord",
-        "rev": "60a9e6d6645df0357daf8e9a13d356535601b4cf",
+        "rev": "5e720f01d326ffd0ca157a3d2456a5d2b490db3d",
         "type": "github"
       },
       "original": {
@@ -753,7 +753,7 @@
     "t3code-releases": {
       "flake": false,
       "locked": {
-        "narHash": "sha256-lfbS43np9bHF+9Evee4PmcBkLsmjAfcBa8Dx+WjQmQY=",
+        "narHash": "sha256-uEy8QJfWCkismczYMQWRnFJw3pQ5URFFfVK4eD9jsug=",
         "type": "file",
         "url": "https://api.github.com/repos/pingdotgg/t3code/releases?per_page=100"
       },
