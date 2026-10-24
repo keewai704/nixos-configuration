@@ -13,6 +13,7 @@ in
       release = inputs.meltype-release;
       tags = inputs.meltype-tags;
     };
+    millennium = final.callPackage ./millennium { upstream = inputs.millennium; };
     penpot-mcp = final.callPackage ./penpot-mcp { };
     proton-wineland = final.callPackage ./proton-wineland {
       release = inputs.proton-wineland-release;

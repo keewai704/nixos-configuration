@@ -5,7 +5,10 @@
   ...
 }:
 {
-  nixpkgs.overlays = [ inputs.millennium.overlays.default ];
+  nixpkgs.overlays = [
+    inputs.millennium.overlays.default
+    (final: _previous: { millennium = final.local.millennium; })
+  ];
 
   programs = {
     gamescope = {
