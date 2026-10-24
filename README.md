@@ -116,18 +116,55 @@ configuration, and wrappers can still require local builds. Adding unrelated
 cache URLs cannot provide those missing outputs. Keep signature verification
 enabled and never trust an unpublished or compromised cache key to avoid builds.
 
-Citrus uses xddxdd's `nix-cachyos-kernel` release branch and pinned package set:
-`linuxPackages-cachyos-latest-lto`, its `nvidiaPackages.latest`, and its
-`zfs_cachyos`. Their versions and hashes are maintained by the input rather than
-a local source manifest or update script. Keep the input's own nixpkgs so its
-kernel and modules use the upstream-tested dependency set. The old Lantian
+Citrus builds a host-optimized kernel from xddxdd's `nix-cachyos-kernel` `master`
+input and its own pinned package set. Select the latest release's ThinLTO package,
+or the RC ThinLTO package when its base release is newer; a final release takes
+precedence over RCs of the same release. This tracks the available mainline
+series through `nix flake update`, including prereleases, rather than LTS or the
+cache-gated `release` branch. Kernel, NVIDIA, and CachyOS ZFS sources remain
+managed by that input, not independent local version manifests.
+
+`hosts/citrus/kernel-config.nix` refines CachyOS's `.config` for the Ryzen 7
+9800X3D: reproducible `znver5` compiler tuning, Clang ThinLTO, CachyOS's `-O3`,
+and a 32-CPU limit. Disable automatic module expansion and omit unrelated PCI
+Ethernet vendors, legacy storage controllers, Intel/old Radeon/Nouveau graphics,
+SoC/FireWire audio, TV/radio hardware, and guest-only hypervisor support. Retain
+Intel I226-V Ethernet, MT7925 Wi-Fi/Bluetooth, AMD integrated graphics, NVIDIA,
+NVMe/AHCI, USB storage/networking, HID/gamepads, HDA/USB audio, common removable
+filesystems, KVM hosting, containers, ZFS, and sched_ext/BPF/BTF. This is a reviewed
+hardware profile, not an impure build-time `localmodconfig` or a snapshot that
+removes every currently unloaded driver. New PCI hardware may require revisiting
+the exclusions. NVIDIA, ZFS, and the BEITONG xpad module rebuild against this
+kernel; do not expect a public cache hit for the customized outputs.
+
+Keep the input's own nixpkgs so its kernel and modules use the upstream dependency
+set. A successful build or activation cannot validate the new kernel's boot,
+NVIDIA, or root-ZFS behavior; those require a subsequent boot. The old Lantian
 binary cache and signing key are deliberately not trusted following the
 upstream incident in `xddxdd/nix-cachyos-kernel#110`. Citrus instead trusts
 `https://cache.xinux.uz`, the independently operated alternative documented by
 upstream in its README and issue #89. Its published signing key verifies the
-selected kernel, NVIDIA, and ZFS cache entries. This is not xddxdd's replacement
+unmodified upstream kernel/module cache entries. This is not xddxdd's replacement
 cache, and trusting it permits substitution of any store path, not only kernels.
 The BEITONG xpad fix is rebuilt with the kernel through `boot.extraModulePackages`.
+
+### Automatic CPU scheduler switching
+
+`modules/desktop/scheduler.nix` runs `scx_loader --auto` as `scx-auto.service`,
+replacing the always-running `scx.service`. The upstream policy attaches LAVD
+after a logical CPU remains above 90% utilization for more than five seconds,
+and returns to the kernel's fair scheduler (EEVDF) after the low-utilization
+timer exceeds 30 seconds. This is load-triggered switching, not game detection
+or merely LAVD's internal Auto power profile. Short load bursts and unexpected
+child exits inherit the upstream controller's timer/recovery limitations.
+
+This mode does not expose the loader's D-Bus interface; `scxctl` is not a control
+interface for this service. Use `systemctl status scx-auto`,
+`journalctl -u scx-auto`, and `/sys/kernel/sched_ext/state` to inspect it.
+`sudo systemctl stop scx-auto` detaches its scheduler and restores EEVDF;
+`sudo systemctl start scx-auto` resumes automatic control. Do not run another
+sched_ext daemon alongside it. Kernel-version support alone is insufficient;
+the customized configuration explicitly retains the BPF/BTF requirements.
 
 ## コーディングエージェント
 

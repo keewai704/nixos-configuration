@@ -18,8 +18,7 @@ stdenv.mkDerivation (finalAttrs: {
   };
 
   postUnpack = ''
-    tar -xf ${kernel.src} --strip-components=4 -C "$sourceRoot" \
-      linux-${kernel.version}/drivers/input/joystick/xpad.c
+    cp ${kernel.src}/drivers/input/joystick/xpad.c "$sourceRoot/xpad.c"
   '';
 
   patches = [ "${finalAttrs.src}/beitong-gip-init.patch" ];
