@@ -77,8 +77,8 @@ flake.nix
 ## よく使うコマンド
 
 ```sh
-sudo nixos-rebuild test --flake .#citrus     # 一時的に適用して動作確認（再起動で戻る）
-sudo nixos-rebuild switch --flake .#citrus   # 本適用（起動時の既定にもなる）
+sudo nixos-rebuild test --accept-flake-config --flake .#citrus     # 一時的に適用して動作確認（再起動で戻る）
+sudo nixos-rebuild switch --accept-flake-config --flake .#citrus   # 本適用（起動時の既定にもなる）
 nix flake update                             # 入力をまとめて更新
 nix flake update <入力名>                     # 特定の入力だけ更新
 nix fmt                                      # Nix ファイルを整形
@@ -89,6 +89,33 @@ nix build .#<パッケージ名>                    # pkgs/ のパッケージ�
 `nixos-rebuild` は必ず実行中のマシン自身の名前（`hostname` の結果）を指定します。
 
 Before activation, run `nix flake update` and commit its lock changes.
+
+The flake's `nixConfig` mirrors the binary-cache URLs and signing keys from
+`modules/common/nix.nix`, `hosts/citrus/kernel.nix`, and
+`hosts/citrus/nvidia.nix`. Keep both declarations synchronized; flake cache
+settings must be literal values, not imports or computed expressions.
+Use `--accept-flake-config` with this repository's rebuilds and `nix build` so
+the first build can use the caches before the new NixOS configuration is active.
+Before that initial activation, run package bootstrap builds with
+`sudo nix build --accept-flake-config --no-link .#<package>`: an untrusted daemon
+client cannot add new substituters or signing keys merely by accepting a flake.
+Do not enable `accept-flake-config` globally: only accept cache trust settings
+from flakes you have reviewed. Accepting this flake enables all its declared
+caches for that invocation; installed CUDA and CachyOS cache settings remain
+Citrus-specific. This does not replace Nix's default `cache.nixos.org` cache.
+
+Flox's public cache is a fallback at priority 50, below `cache.nixos.org`.
+Its endpoint and signing key are published in `flox/flox`'s upstream `flake.nix`.
+It supplies the exact CUDA-enabled Sunshine output used by the current lock,
+without changing Sunshine's features or build inputs. Like other trusted binary
+caches, it can sign any store path; this trust is not restricted to Sunshine.
+
+A cache must contain the exact store path, not merely the same package version.
+Local package patches, CUDA overrides, out-of-tree kernel modules, generated
+configuration, and wrappers can still require local builds. Adding unrelated
+cache URLs cannot provide those missing outputs. Keep signature verification
+enabled and never trust an unpublished or compromised cache key to avoid builds.
+
 Citrus uses xddxdd's `nix-cachyos-kernel` release branch and pinned package set:
 `linuxPackages-cachyos-latest-lto`, its `nvidiaPackages.latest`, and its
 `zfs_cachyos`. Their versions and hashes are maintained by the input rather than
