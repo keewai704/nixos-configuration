@@ -30,11 +30,15 @@ in
       "gtk3"
       "gtk4"
       "kcolorscheme"
-      "kitty"
       "qt"
       "umbriel"
     ];
     user = {
+      kitty = {
+        input_path = "${inputs.noctalia}/assets/templates/kitty/kitty.conf";
+        output_path = "$XDG_CONFIG_HOME/kitty/themes/noctalia.conf";
+        post_hook = "${lib.getExe' pkgs.procps "pkill"} -USR1 -x kitty || true";
+      };
       bat = communityTemplate "bat" "bat" // {
         post_hook = "${lib.getExe config.programs.bat.package} cache --build";
       };
