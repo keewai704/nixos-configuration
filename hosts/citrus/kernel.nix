@@ -1,9 +1,19 @@
 {
   config,
   inputs,
+  lib,
   pkgs,
   ...
 }:
+let
+  latestPackages = pkgs.cachyosKernels.linuxPackages-cachyos-latest-lto;
+  rcPackages = pkgs.cachyosKernels.linuxPackages-cachyos-rc-lto;
+  rcBaseVersion = lib.versions.pad 3 (
+    builtins.head (lib.splitString "-rc" rcPackages.kernel.version)
+  );
+  upstreamPackages =
+    if lib.versionOlder latestPackages.kernel.version rcBaseVersion then rcPackages else latestPackages;
+in
 {
   nixpkgs.overlays = [ inputs.nix-cachyos-kernel.overlays.pinned ];
 
@@ -28,6 +38,17 @@
     ];
   };
 
-  boot.kernelPackages = pkgs.cachyosKernels.linuxPackages-cachyos-latest-lto;
+  boot.kernelPackages = upstreamPackages.extend (
+    _final: previous: {
+      kernel = previous.kernel.override {
+        pname = "linux-cachyos-citrus";
+        autoModules = false;
+        processorOpt = "x86_64-v4";
+        modDirVersion = "${lib.versions.pad 3 previous.kernel.version}-cachyos-citrus";
+        extraMakeFlags = [ "KCFLAGS=-march=znver5 -mtune=znver5" ];
+        structuredExtraConfig = import ./kernel-config.nix { inherit lib; };
+      };
+    }
+  );
   boot.zfs.package = config.boot.kernelPackages.zfs_cachyos;
 }

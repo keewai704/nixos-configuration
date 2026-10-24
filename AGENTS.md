@@ -126,9 +126,13 @@ For GitHub packages owned by `keewai704`, explicitly select `main` with
 Before each local activation, run `nix flake update` and commit resulting lock
 changes. This is standing authorization to refresh the declared inputs. Use
 upstream binary-cache branches when available rather than fixed release tags.
-On citrus, use xddxdd's CachyOS kernel input's release branch and pinned package
-set, including its matching NVIDIA driver and CachyOS ZFS module. Do not override
-that input's nixpkgs or individually replace its kernel/module source versions.
+On citrus, follow xddxdd's CachyOS kernel input's `master` branch for mainline
+sources and its own pinned package set, including the matching NVIDIA driver and
+CachyOS ZFS module. Keep the host-specific configuration and reproducible Zen 5
+compiler target in `hosts/citrus/kernel.nix` and `kernel-config.nix`. Do not
+override that input's nixpkgs or individually replace kernel/module source
+versions. Preserve boot storage, networking, USB/HID, sched_ext, BPF, and BTF
+support when narrowing build targets; do not infer removals solely from `lsmod`.
 
 Outside the repository root, use `git -C` and absolute flake references to the
 actual checkout, normally `/home/keewai/nixos-configuration` and

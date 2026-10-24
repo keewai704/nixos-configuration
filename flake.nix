@@ -71,7 +71,7 @@
 
     noctalia.url = "github:noctalia-dev/noctalia/cachix";
 
-    nix-cachyos-kernel.url = "github:xddxdd/nix-cachyos-kernel/release";
+    nix-cachyos-kernel.url = "github:xddxdd/nix-cachyos-kernel/master";
 
     stylix = {
       url = "github:nix-community/stylix";
