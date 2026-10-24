@@ -1,9 +1,7 @@
-{ config, lib, ... }:
+{ config, ... }:
 {
-  xdg.configFile."millennium/quick.css".text = lib.mkIf (!config.programs.quickshell.enable) (
-    import ./steam-css.nix {
-      colors = config.lib.stylix.colors;
-      fonts = config.stylix.fonts;
-    }
-  );
+  xdg.configFile."millennium/quick.css".text = import ./steam-css.nix {
+    colors = config.lib.stylix.colors;
+    fonts = config.stylix.fonts;
+  };
 }

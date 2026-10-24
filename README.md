@@ -4,7 +4,7 @@
 
 | ホスト | 役割 |
 | --- | --- |
-| `citrus` | デスクトップ（Hyprland、NVIDIA、Steam、Sunshine 配信） |
+| `citrus` | デスクトップ（Umbriel、Noctalia v5、NVIDIA、Steam、Sunshine 配信） |
 | `orange` | 自宅サーバー（Immich、Vaultwarden、Samba、Minecraft、バックアップ） |
 
 OS・ハードウェア・システムサービスは **NixOS**、個人のアプリや設定は **Home Manager** で管理します。
@@ -20,7 +20,7 @@ OS・ハードウェア・システムサービスは **NixOS**、個人のア�
 │   └── orange/          ハードウェア、ストレージ、services/ にサーバー機能
 ├── modules/             複数ホストで使う NixOS 設定
 │   ├── common/          全ホスト共通（Nix、ネットワーク、ユーザー、Home Manager 接続）
-│   └── desktop/         デスクトップ用 OS 設定（Hyprland、Steam、Stylix など）
+│   └── desktop/         デスクトップ用 OS 設定（Umbriel、Steam、Stylix など）
 ├── home/keewai/         個人設定（Home Manager）
 │   ├── common/          全ホスト共通（シェル、Git、スキル）
 │   └── desktop/         デスクトップ用アプリ（ブラウザー、端末、入力、Discord など）
@@ -56,9 +56,10 @@ flake.nix
 | T3 Code nightly / HTTPS | [t3code.nix](home/keewai/desktop/t3code.nix), [pkgs/t3code](pkgs/t3code/) |
 | 個人スキル・MCP サーバー（Claude Code） | [skills/](skills/)、[coding-agents](home/keewai/common/coding-agents/default.nix) |
 | 設定不要な GUI アプリを追加 | [home/keewai/desktop/applications.nix](home/keewai/desktop/applications.nix) |
-| ウィンドウ・モニター・キー割り当て | [hyprland.lua](home/keewai/desktop/hyprland.lua) |
-| Hyprland 本体・ログイン画面 | [modules/desktop/hyprland.nix](modules/desktop/hyprland.nix) |
-| パネル・ランチャー・通知・壁紙・ウィジェット | [impasto.nix](home/keewai/desktop/impasto.nix)、[パッケージ](pkgs/impasto/default.nix)（[keewai704/impasto](https://github.com/keewai704/impasto)） |
+| ウィンドウ・キー割り当て | [umbriel.nix](home/keewai/desktop/umbriel.nix) |
+| モニター・解像度 | [hosts/citrus/display.nix](hosts/citrus/display.nix) |
+| Umbriel 本体・ログイン画面 | [modules/desktop/umbriel.nix](modules/desktop/umbriel.nix) |
+| パネル・ランチャー・通知・壁紙・ウィジェット | [noctalia.nix](home/keewai/desktop/noctalia.nix) |
 | 日本語入力 | [input-method.nix](home/keewai/desktop/input-method.nix)、[modules/desktop/input-method.nix](modules/desktop/input-method.nix) |
 | 端末・ブラウザー・ファイル管理 | [kitty.nix](home/keewai/desktop/kitty.nix)、[browser.nix](home/keewai/desktop/browser.nix)、[file-manager.nix](home/keewai/desktop/file-manager.nix) |
 | Discord | [legcord.nix](home/keewai/desktop/legcord.nix) |
@@ -78,7 +79,8 @@ flake.nix
 ```sh
 sudo nixos-rebuild test --flake .#citrus     # 一時的に適用して動作確認（再起動で戻る）
 sudo nixos-rebuild switch --flake .#citrus   # 本適用（起動時の既定にもなる）
-nix flake update <入力名>                    # 特定の入力だけ更新
+nix flake update                             # 入力をまとめて更新
+nix flake update <入力名>                     # 特定の入力だけ更新
 nix fmt                                      # Nix ファイルを整形
 nix develop                                  # 言語サーバーや整形ツール入りのシェル
 nix build .#<パッケージ名>                    # pkgs/ のパッケージを単体ビルド
@@ -86,16 +88,18 @@ nix build .#<パッケージ名>                    # pkgs/ のパッケージ�
 
 `nixos-rebuild` は必ず実行中のマシン自身の名前（`hostname` の結果）を指定します。
 
-Before activating citrus, run `python3 pkgs/kernel-drivers/update.py` to refresh
-the latest stable upstream Linux and NVIDIA releases and their source hashes.
-Commit `pkgs/kernel-drivers/sources.json` with the configuration. The kernel keeps
-Clang 22, ThinLTO, `-O3`, 1000 Hz, and dynamic preemption without CachyOS patches.
-Rust drivers are disabled because upstream does not support Rust with both LTO
-and BTF enabled.
-Citrus uses `localmodconfig` with an explicit module list in `hosts/citrus/kernel.nix`
-to omit unused hardware drivers. Filesystems, network protocols, input devices,
-USB storage/serial/network adapters, and virtualization support are retained.
-Update the module list when adding hardware outside these groups.
+Before activation, run `nix flake update` and commit its lock changes.
+Citrus uses xddxdd's `nix-cachyos-kernel` release branch and pinned package set:
+`linuxPackages-cachyos-latest-lto`, its `nvidiaPackages.latest`, and its
+`zfs_cachyos`. Their versions and hashes are maintained by the input rather than
+a local source manifest or update script. Keep the input's own nixpkgs so its
+kernel and modules use the upstream-tested dependency set. The old Lantian
+binary cache and signing key are deliberately not trusted following the
+upstream incident in `xddxdd/nix-cachyos-kernel#110`. Citrus instead trusts
+`https://cache.xinux.uz`, the independently operated alternative documented by
+upstream in its README and issue #89. Its published signing key verifies the
+selected kernel, NVIDIA, and ZFS cache entries. This is not xddxdd's replacement
+cache, and trusting it permits substitution of any store path, not only kernels.
 The BEITONG xpad fix is rebuilt with the kernel through `boot.extraModulePackages`.
 
 ## コーディングエージェント
@@ -111,7 +115,7 @@ preserved, and it follows the `claude-code` flake input.
     [shadcn/ui の公式スキル](https://ui.shadcn.com/docs/skills)は [shadcn.nix](home/keewai/common/coding-agents/shadcn.nix) で取得元のコミットとハッシュを固定し、参照資料とスクリプトを含めて配布します。実行に必要な Node.js・npm・npx も同じ設定で導入します。
   - MCP: `codingAgents.mcpServers.<name> = { command; args; env; }` を、Home Manager の有効化時に `~/.claude.json` の `mcpServers` へ書き込みます。
     Nix から外したサーバーだけを削除し、手動で追加したサーバーや他の設定はそのまま残します。
-- [hypruse](https://github.com/IlyasKhallouki/hypruse)（デスクトップのみ）は [computer-use.nix](home/keewai/desktop/computer-use.nix) で MCP サーバー `hypruse` として登録しています。
+- Hyprland 専用の Hypruse MCP は Umbriel への移行に伴い登録を外しています。Noctalia のスクリーンショット機能は使えますが、Hypruse のデスクトップ操作 API の代替ではありません。ブラウザー操作には実行環境が提供するブラウザーツールを使います。
 - UI デザインは [Penpot](https://design.penpot.app/) を使います。[penpot-mcp.nix](home/keewai/desktop/penpot-mcp.nix) がデスクトップ用 MCP とプラグインを提供します。接続手順と Apple 系アプリ向けアセットは [penpot-apple-design](skills/penpot-apple-design/SKILL.md) にまとめています。
 
 | スキル | 用途 |
@@ -165,9 +169,12 @@ The in-app updater is disabled; Nix owns the application and its bundled `t3` CL
 
 ## citrus（デスクトップ）
 
-- **画面構成**：Hyprland + [impasto](https://github.com/keewai704/impasto)。ソースを直接パッケージ化し、Home Manager の `quickshell.service` で起動します。`Super+Space` でランチャー、`Super+I` でコントロールセンター、`Super+Shift+Space` で壁紙、`Super+F1` でショートカット一覧。音量・マイクミュート・再生操作のメディアキーにも対応します。プロファイルで変更したキーは既定より優先されます。操作用 CLI は `impasto`、低レベル IPC は `impastoctl`。
-- **配色**：Stylix が GTK・Qt・Kitty の基礎設定を、[テーマ](themes/tokyo-night-black/default.nix) が Hyprland の枠線などを担当。impasto の配色・端末フォントを GTK・Qt・Kitty と Legcord・Steam・Fcitx5 のテーマへ反映します。初期の壁紙は [Blender で再制作した Surface Laptop Ultra Dark](themes/tokyo-night-black/surface-laptop-ultra-dark.png)（5120×2160）です。旧 Surface JPEG の選択は新しい PNG へ移行し、それ以外の選択済み壁紙・配色・キープロファイルは維持します。
-- **Hyprland**：公式 flake の main を hyprland.cachix.org のビルド済みバイナリで導入。
+- **画面構成**：Umbriel + Noctalia v5。`start-umbriel` がセッションを管理し、Home Manager の `noctalia.service` は `umbriel-session.target` で起動します。`Super+Space` でランチャー、`Super+,` で設定、`Super+V` でクリップボード、`Super+Tab` でワークスペース一覧。音量・マイクミュート・再生・明るさのメディアキーと `Print` のスクリーンショットにも対応します。
+- **配色**：[Tokyo Night Black](themes/tokyo-night-black/default.nix) を Umbriel と Noctalia のカスタムパレットに使います。GTK・Qt・Kitty・Legcord・Steam・Fcitx5 は Stylix と既存のアプリ用テーマを維持します。初期の壁紙は [Surface Laptop Ultra Dark](themes/tokyo-night-black/surface-laptop-ultra-dark.png)（5120×2160）です。旧 Impasto の個人データは削除しませんが、独自の配色・キープロファイルは自動変換しません。
+- **更新とキャッシュ**：Umbriel と Noctalia は公式 `cachix` ブランチを追い、対応する署名付きキャッシュを利用します。各入力の nixpkgs は上書きせず、キャッシュと一致させます。
+- Citrus's configured physical monitor and `SUNSHINE` each keep ten static
+  workspaces. `Super+1` through `Super+0` select them; adding Shift moves a window.
+  Unconfigured additional outputs retain Umbriel's default dynamic inventory.
 - **日本語入力**：Hazkey。keyd で `` Alt+` `` を変換キーに割り当て、Logitech 製キーボードは除外。
 - **ブラウザー**：既定は [Helium](https://github.com/imputnet/helium-linux)（公式リリースを [pkgs/helium](pkgs/helium/) でパッケージ化。nixpkgs の Widevine CDM を読み込ませて DRM 動画も再生可）。TwinStar・OpenMouse の WebHID 設定アプリも Helium のアプリモードで開きます。
 - **Bitwarden**：デスクトップアプリと SSH エージェント。
@@ -175,8 +182,14 @@ The in-app updater is disabled; Nix owns the application and its bundled `t3` CL
 
 ### Sunshine 配信
 
-Hyprland 上に `SUNSHINE` という仮想画面を作り、NVENC で Moonlight に配信します。
+Umbriel 上に `SUNSHINE` という仮想画面を作り、NVENC で Moonlight に配信します。
 管理画面は citrus 上の `https://localhost:47990` のみ。
+
+Recovery restores each output's active workspace and surviving active-window
+focus, then the original focused output. It does not visit inactive workspaces
+to rebuild their internal focus history: doing so can prune anonymous empty
+dynamic workspaces and change their logical positions. Surviving saved windows
+must return to their logical workspace/output before the stream is torn down.
 
 | Moonlight のアプリ | 動作 |
 | --- | --- |
@@ -191,7 +204,7 @@ moonlight stream citrus "Extend Display" --1080 --fps 120 --bitrate 40000 --vide
 ```
 
 切断だけではアプリは動き続けます。元の画面構成に戻すには Moonlight で「アプリを終了」します。
-配信のため impasto のアイドル時ロック・消灯・サスペンドは明示的に無効化し、ロックのキー割り当ても設けません。セッションメニューからの手動ロックは残ります。
+配信のため Noctalia のアイドル時ロック・消灯・サスペンドは明示的に無効化し、ロックのキー割り当ても設けません。Proton の Wayland ドライバーで配信画面を選ぶ必要があるゲームには、起動オプション `WAYLANDDRV_PRIMARY_MONITOR=SUNSHINE %command%` を個別に指定します。
 
 ## orange（サーバー）
 
@@ -218,7 +231,11 @@ moonlight stream citrus "Extend Display" --1080 --fps 120 --bitrate 40000 --vide
 
 - [pkgs/default.nix](pkgs/default.nix) に並べたものは設定から `pkgs.local.<名前>` で参照でき、`nix build .#<名前>` で単体ビルドもできます。
 - パッチは対象パッケージのディレクトリに置きます。
-- `keewai704` 所有の入力（impasto、hypr-brightness）は `?ref=main` を明示し、適用前に毎回 `nix flake update` で最新の main に更新します。
-- `claude-code`・`meltype-release`・`meltype-tags` も適用前に毎回 `nix flake update` で最新リリースに更新します。
+- 更新の入口は `nix flake update` に統一します。再現性のための revision と hash は `flake.lock` に残します。
+- Umbriel／Noctalia は `cachix`、xddxdd のカーネル群は `release`、CPAK は開発ブランチ `v2` を追います。バージョン番号の固定タグは使いません。
+- The flake-update migration is not yet complete: custom packages such as Helium,
+  xpad, Penpot MCP, and LiveSync, the shadcn skill source, and Orange's
+  Minecraft/mod compatibility set still contain manually maintained versions or
+  dependency hashes. Updating `flake.lock` alone does not update those sources.
 - 非自由パッケージは全体で許可しています（`allowUnfree = true`）。
 - `system.stateVersion` / `home.stateVersion` は互換性の基準なので、アップデートに合わせて変えません。

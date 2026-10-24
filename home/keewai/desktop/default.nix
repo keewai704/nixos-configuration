@@ -4,12 +4,10 @@
     ./apple-music.nix
     ./bitwarden.nix
     ./browser.nix
-    ./computer-use.nix
     ./file-manager.nix
-    ./hypr-brightness.nix
-    ./hyprland.nix
+    ./umbriel.nix
     ./input-method.nix
-    ./impasto.nix
+    ./noctalia.nix
     ./kitty.nix
     ./legcord.nix
     ./office.nix

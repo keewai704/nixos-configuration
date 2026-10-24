@@ -4,6 +4,7 @@
     ./apple-device-usb.nix
     ./audio.nix
     ./boot.nix
+    ./display.nix
     ./game-controller.nix
     ./hardware-configuration.nix
     ./input-method.nix

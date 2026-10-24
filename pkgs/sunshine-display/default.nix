@@ -2,11 +2,15 @@
   lib,
   writeShellApplication,
   python3,
-  hyprland,
+  umbriel,
+  wlr-randr,
 }:
 writeShellApplication {
   name = "sunshine-display";
-  runtimeInputs = [ hyprland ];
+  runtimeInputs = [
+    umbriel
+    wlr-randr
+  ];
   text = ''
     exec ${lib.getExe python3} ${./sunshine-display.py} "$@"
   '';

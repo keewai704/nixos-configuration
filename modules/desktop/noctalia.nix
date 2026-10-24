@@ -1,8 +1,8 @@
 { lib, ... }:
 {
-  programs.hyprland.enable = lib.mkDefault true;
   networking.networkmanager.enable = lib.mkDefault true;
   hardware.bluetooth.enable = lib.mkDefault true;
+  hardware.i2c.enable = true;
   security.rtkit.enable = true;
   services = {
     upower.enable = true;

@@ -6,9 +6,8 @@ in
   imports = [
     ./bitwarden.nix
     ./cpak.nix
-    ./hypr-brightness.nix
-    ./impasto.nix
-    ./hyprland.nix
+    ./umbriel.nix
+    ./noctalia.nix
     ./input-method.nix
     ./steam.nix
     ./stylix.nix

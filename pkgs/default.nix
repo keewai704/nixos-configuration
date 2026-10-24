@@ -6,8 +6,6 @@ in
 {
   local = {
     helium = final.callPackage ./helium { };
-    hypruse = final.callPackage ./hypruse { };
-    impasto = final.callPackage ./impasto { inherit (inputs) impasto; };
     livesync-bridge = final.callPackage ./livesync-bridge { };
     meltype = final.callPackage ./meltype {
       release = inputs.meltype-release;
@@ -18,7 +16,9 @@ in
     proton-wineland = final.callPackage ./proton-wineland {
       release = inputs.proton-wineland-release;
     };
-    sunshine-display = final.callPackage ./sunshine-display { };
+    sunshine-display = final.callPackage ./sunshine-display {
+      umbriel = inputs.umbriel.packages.${final.stdenv.hostPlatform.system}.default;
+    };
     t3code = final.callPackage ./t3code {
       releases = inputs.t3code-releases;
       inherit claude-code;

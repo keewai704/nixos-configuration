@@ -17,7 +17,7 @@
   ];
 
   hardware.nvidia = {
-    package = config.boot.kernelPackages.callPackage ../../pkgs/kernel-drivers/nvidia.nix { };
+    package = config.boot.kernelPackages.nvidiaPackages.latest;
     open = true;
     modesetting.enable = true;
     powerManagement.enable = true;
@@ -28,7 +28,7 @@
     SUBSYSTEM=="drm", KERNEL=="card[0-9]*", KERNELS=="0000:01:00.0", SYMLINK+="dri/nvidia"
   '';
   environment.sessionVariables = {
-    AQ_DRM_DEVICES = "/dev/dri/nvidia";
+    WLR_DRM_DEVICES = "/dev/dri/nvidia";
     LIBVA_DRIVER_NAME = "nvidia";
     __GLX_VENDOR_LIBRARY_NAME = "nvidia";
     VKD3D_DISABLE_EXTENSIONS = "VK_NV_raw_access_chains";

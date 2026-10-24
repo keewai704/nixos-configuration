@@ -14,7 +14,8 @@ in
   home.packages = [
     pkgs.brightnessctl
     pkgs.ddcutil
-    pkgs.grimblast
+    pkgs.grim
+    pkgs.slurp
     pkgs.idescriptor
     pkgs.iloader
     pkgs.moonlight-qt

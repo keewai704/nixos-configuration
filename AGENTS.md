@@ -117,19 +117,18 @@ undo completed local work.
 
 ## Package inputs and checkout paths
 
-For GitHub packages owned by `keewai704`, explicitly select `main` and pin the
-revision and hash. Use `?ref=main` for Git flake inputs and refresh from `main`;
-do not rely on the remote default branch. Always track the latest `main`: before
-each local activation, run `nix flake update` for every `keewai704` input and
-include the resulting lock change in the commit. Likewise, run
-`nix flake update claude-code meltype-release meltype-tags`
-before each local activation so Claude Code and Meltype track their latest
-releases. This is standing authorization to update those inputs only.
+Manage external package versions through nixpkgs or moving flake inputs so
+`nix flake update` is the update entry point. Keep reproducible revisions and
+hashes in `flake.lock`; do not replace them with impure evaluation-time fetching.
+For GitHub packages owned by `keewai704`, explicitly select `main` with
+`?ref=main` rather than relying on the remote default branch.
 
-Before each local activation on citrus, also run
-`python3 pkgs/kernel-drivers/update.py` and commit any resulting `sources.json`
-change. Keep Linux and NVIDIA on their latest upstream non-beta releases;
-the source manifest records reproducible hashes, not a permanent version choice.
+Before each local activation, run `nix flake update` and commit resulting lock
+changes. This is standing authorization to refresh the declared inputs. Use
+upstream binary-cache branches when available rather than fixed release tags.
+On citrus, use xddxdd's CachyOS kernel input's release branch and pinned package
+set, including its matching NVIDIA driver and CachyOS ZFS module. Do not override
+that input's nixpkgs or individually replace its kernel/module source versions.
 
 Outside the repository root, use `git -C` and absolute flake references to the
 actual checkout, normally `/home/keewai/nixos-configuration` and

@@ -72,17 +72,6 @@ in
     };
   };
 
-  hyprland = with base16Scheme; {
-    activeBorder = [
-      "rgb(${base0D})"
-      "rgb(${base0E})"
-    ];
-    inactiveBorder = "rgba(${base02}aa)";
-    background = "rgb(${base00})";
-    shadow = "rgba(00000066)";
-    shadowInactive = "rgba(00000044)";
-  };
-
   tuigreetTheme = builtins.concatStringsSep ";" [
     "border=blue"
     "title=magenta"

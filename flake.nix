@@ -10,7 +10,7 @@
     };
 
     cpak = {
-      url = "github:Containerpak/cpak/v2.14.6";
+      url = "github:Containerpak/cpak/v2";
       inputs.nixpkgs.follows = "nixpkgs";
     };
 
@@ -44,7 +44,11 @@
       flake = false;
     };
 
-    hyprland.url = "github:hyprwm/Hyprland/main";
+    umbriel.url = "github:noctalia-dev/umbriel/cachix";
+
+    noctalia.url = "github:noctalia-dev/noctalia/cachix";
+
+    nix-cachyos-kernel.url = "github:xddxdd/nix-cachyos-kernel/release";
 
     stylix = {
       url = "github:nix-community/stylix";
@@ -60,15 +64,6 @@
 
     nixcord.url = "github:4evy/nixcord";
 
-    impasto = {
-      url = "git+https://github.com/keewai704/impasto.git?ref=main";
-      flake = false;
-    };
-
-    hypr-brightness = {
-      url = "git+https://github.com/keewai704/hypr-brightness.git?ref=main";
-      inputs.nixpkgs.follows = "nixpkgs";
-    };
   };
 
   outputs =
