@@ -71,6 +71,11 @@
 
     noctalia.url = "github:noctalia-dev/noctalia/cachix";
 
+    noctalia-templates = {
+      url = "github:noctalia-dev/community-templates";
+      flake = false;
+    };
+
     nix-cachyos-kernel.url = "github:xddxdd/nix-cachyos-kernel/master";
 
     stylix = {

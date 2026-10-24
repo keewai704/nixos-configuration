@@ -1,11 +1,17 @@
 {
+  config,
   lib,
   pkgs,
   ...
 }:
 
 let
-  helium = pkgs.local.helium;
+  helium = pkgs.local.helium.overrideAttrs (previous: {
+    postFixup = (previous.postFixup or "") + ''
+      wrapProgram "$out/bin/helium" \
+        --add-flags ${lib.escapeShellArg "--load-extension=${config.xdg.cacheHome}/noctalia/ungoogled-chromium/theme"}
+    '';
+  });
 
 in
 {

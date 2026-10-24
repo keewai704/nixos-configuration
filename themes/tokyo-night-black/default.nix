@@ -32,6 +32,16 @@ let
     package = pkgs.colloid-icon-theme;
     name = "Colloid-Dark";
   };
+  terminalColors = with base16Scheme; {
+    black = base01;
+    red = base08;
+    green = base0B;
+    yellow = base0A;
+    blue = base0D;
+    magenta = base0E;
+    cyan = base0C;
+    white = base05;
+  };
 in
 {
   inherit
@@ -40,6 +50,41 @@ in
     cursor
     wallpaper
     ;
+
+  noctaliaPalette.dark = with base16Scheme; {
+    mPrimary = "#${base0D}";
+    mOnPrimary = "#${base00}";
+    mSecondary = "#${base0C}";
+    mOnSecondary = "#${base00}";
+    mTertiary = "#${base0E}";
+    mOnTertiary = "#${base00}";
+    mError = "#${base08}";
+    mOnError = "#${base00}";
+    mSurface = "#${base00}";
+    mOnSurface = "#${base05}";
+    mSurfaceVariant = "#${base01}";
+    mOnSurfaceVariant = "#${base04}";
+    mOutline = "#${base02}";
+    mShadow = "#${base00}";
+    mHover = "#${base02}";
+    mOnHover = "#${base05}";
+    terminal = {
+      background = "#${base00}";
+      foreground = "#${base05}";
+      cursor = "#${base05}";
+      cursorText = "#${base00}";
+      selectionBg = "#${base02}";
+      selectionFg = "#${base05}";
+      normal = builtins.mapAttrs (_: color: "#${color}") terminalColors;
+      bright = builtins.mapAttrs (_: color: "#${color}") (
+        terminalColors
+        // {
+          black = base03;
+          white = base07;
+        }
+      );
+    };
+  };
 
   stylix = {
     enable = true;

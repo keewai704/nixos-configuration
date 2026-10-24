@@ -1,6 +1,5 @@
 {
   config,
-  lib,
   pkgs,
   ...
 }:
@@ -36,17 +35,10 @@
         };
         GroupOrder."0" = "Default";
       };
-      themes.stylix.theme = {
-        "InputPanel/Background/Margin" = lib.mapAttrs (_: lib.mkForce) {
-          Left = 14;
-          Right = 14;
-          Top = 14;
-          Bottom = 14;
-        };
-        "InputPanel/Highlight/Margin" = lib.mapAttrs (_: lib.mkForce) {
-          Left = 14;
-          Right = 14;
-        };
+      settings.addons.classicui.globalSection = {
+        Theme = "noctalia";
+        UseDarkTheme = false;
+        UseAccentColor = false;
       };
     };
   };

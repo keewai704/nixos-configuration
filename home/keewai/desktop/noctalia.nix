@@ -6,7 +6,10 @@
   ...
 }:
 {
-  imports = [ inputs.noctalia.homeModules.default ];
+  imports = [
+    inputs.noctalia.homeModules.default
+    ./noctalia-templates.nix
+  ];
 
   programs.noctalia = {
     enable = true;
@@ -38,24 +41,7 @@
         };
       };
     };
-    customPalettes.TokyoNightBlack.dark = with theme.base16Scheme; {
-      mPrimary = "#${base0D}";
-      mOnPrimary = "#${base00}";
-      mSecondary = "#${base0C}";
-      mOnSecondary = "#${base00}";
-      mTertiary = "#${base0E}";
-      mOnTertiary = "#${base00}";
-      mError = "#${base08}";
-      mOnError = "#${base00}";
-      mSurface = "#${base00}";
-      mOnSurface = "#${base05}";
-      mSurfaceVariant = "#${base01}";
-      mOnSurfaceVariant = "#${base04}";
-      mOutline = "#${base02}";
-      mShadow = "#${base00}";
-      mHover = "#${base02}";
-      mOnHover = "#${base05}";
-    };
+    customPalettes.TokyoNightBlack = theme.noctaliaPalette;
   };
 
   systemd.user.services.noctalia = {

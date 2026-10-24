@@ -1,28 +1,22 @@
-{ colors, fonts }:
-let
-  rgb =
-    slot:
-    colors."${slot}-rgb"
-      or "${colors."${slot}-rgb-r"}, ${colors."${slot}-rgb-g"}, ${colors."${slot}-rgb-b"}";
-in
+{ fonts }:
 ''
   :root {
-    --st-accent-1: ${rgb "base0D"} !important;
-    --st-accent-2: ${rgb "base0E"} !important;
-    --st-background: ${rgb "base00"} !important;
-    --st-color-1: ${rgb "base00"} !important;
-    --st-color-2: ${rgb "base01"} !important;
-    --st-color-3: ${rgb "base00"} !important;
-    --st-color-4: ${rgb "base01"} !important;
-    --st-color-5: ${rgb "base02"} !important;
-    --st-color-6: ${rgb "base03"} !important;
-    --st-blue: ${rgb "base0D"} !important;
+    --st-accent-1: {{colors.primary.default.rgb_csv}} !important;
+    --st-accent-2: {{colors.tertiary.default.rgb_csv}} !important;
+    --st-background: {{colors.surface.default.rgb_csv}} !important;
+    --st-color-1: {{colors.surface.default.rgb_csv}} !important;
+    --st-color-2: {{colors.surface_container.default.rgb_csv}} !important;
+    --st-color-3: {{colors.surface.default.rgb_csv}} !important;
+    --st-color-4: {{colors.surface_container.default.rgb_csv}} !important;
+    --st-color-5: {{colors.outline_variant.default.rgb_csv}} !important;
+    --st-color-6: {{colors.outline.default.rgb_csv}} !important;
+    --st-blue: {{colors.terminal_normal_blue.default.rgb_csv}} !important;
     --st-blue-hover: var(--st-blue) !important;
-    --st-green: ${rgb "base0B"} !important;
+    --st-green: {{colors.terminal_normal_green.default.rgb_csv}} !important;
     --st-green-hover: var(--st-green) !important;
-    --st-red: ${rgb "base08"} !important;
+    --st-red: {{colors.terminal_normal_red.default.rgb_csv}} !important;
     --st-red-hover: var(--st-red) !important;
-    --st-yellow: ${rgb "base0A"} !important;
+    --st-yellow: {{colors.terminal_normal_yellow.default.rgb_csv}} !important;
     --st-yellow-hover: var(--st-yellow) !important;
   }
   :root * {

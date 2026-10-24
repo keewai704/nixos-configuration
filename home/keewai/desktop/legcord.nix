@@ -1,5 +1,4 @@
 {
-  config,
   inputs,
   ...
 }:
@@ -16,15 +15,6 @@
         quickCss = true;
         windowStyle = "default";
       };
-    };
-  };
-
-  stylix.targets.nixcord.enable = false;
-
-  xdg.configFile = {
-    "legcord/quickCss.css".text = import ./legcord-system24.nix {
-      colors = config.lib.stylix.colors;
-      fonts = config.stylix.fonts;
     };
   };
 }

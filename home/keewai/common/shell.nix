@@ -3,7 +3,6 @@
   xdg.configFile."starship.toml".source = ./starship.toml;
 
   home.packages = [
-    pkgs.btop
     pkgs.duf
     pkgs.dust
     pkgs.fd
@@ -44,6 +43,7 @@
     };
 
     bat.enable = true;
+    btop.enable = true;
     starship = {
       enable = true;
       enableZshIntegration = true;

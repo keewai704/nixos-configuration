@@ -323,7 +323,7 @@
     "meltype-release": {
       "flake": false,
       "locked": {
-        "narHash": "sha256-hZQTlhE1ONrnNST/141hgcDETphljzj5Wiz58PvHbYE=",
+        "narHash": "sha256-LNKWWkdJp4AS7dzzlZafZROPK3+q56Jg4Q8Dl7gwFB4=",
         "type": "file",
         "url": "https://api.github.com/repos/yksr-melt/Meltype/releases/latest"
       },
@@ -595,17 +595,33 @@
         "nixpkgs": "nixpkgs_5"
       },
       "locked": {
-        "lastModified": 1792813346,
-        "narHash": "sha256-A6aMfqil/CNip/2UlAp0cEX7jYfn1FH02f9lse1fI7c=",
+        "lastModified": 1792847815,
+        "narHash": "sha256-YcldoWDW4Ytilb+nvBIQ8L5zXwppCNEZsgWoEfzozdE=",
         "owner": "noctalia-dev",
         "repo": "noctalia",
-        "rev": "5f864d472676c77e5310881b243f15cc371bb223",
+        "rev": "42c5d09a10f5642fd30fbdb0ded503c0098e6f22",
         "type": "github"
       },
       "original": {
         "owner": "noctalia-dev",
         "ref": "cachix",
         "repo": "noctalia",
+        "type": "github"
+      }
+    },
+    "noctalia-templates": {
+      "flake": false,
+      "locked": {
+        "lastModified": 1792761285,
+        "narHash": "sha256-b+b7veydPGg4xECHy4ezhUSZqr451fppaK1iklchqsY=",
+        "owner": "noctalia-dev",
+        "repo": "community-templates",
+        "rev": "e598e0c58903d29434a52f512e5f0354cc1c2b9c",
+        "type": "github"
+      },
+      "original": {
+        "owner": "noctalia-dev",
+        "repo": "community-templates",
         "type": "github"
       }
     },
@@ -665,6 +681,7 @@
         "nixcord": "nixcord",
         "nixpkgs": "nixpkgs_4",
         "noctalia": "noctalia",
+        "noctalia-templates": "noctalia-templates",
         "proton-wineland-release": "proton-wineland-release",
         "stylix": "stylix",
         "t3code-releases": "t3code-releases",
@@ -753,7 +770,7 @@
     "t3code-releases": {
       "flake": false,
       "locked": {
-        "narHash": "sha256-p2LjJFZzrLzJNonmXj/GkUe4Lb0T/9Ik6AtMov725Ts=",
+        "narHash": "sha256-F/Xf2Sbjpkk8DEYAbb9ilQfA/SDTNB7LZOnoKXnyciI=",
         "type": "file",
         "url": "https://api.github.com/repos/pingdotgg/t3code/releases?per_page=100"
       },
@@ -853,11 +870,11 @@
         "xdg-desktop-portal-umbriel": "xdg-desktop-portal-umbriel"
       },
       "locked": {
-        "lastModified": 1792845821,
-        "narHash": "sha256-Nldo9CL9C6Un34BmegMcrIXDVcFUcXkf7mV2keIVNWE=",
+        "lastModified": 1792846959,
+        "narHash": "sha256-rZroxAtbruwkFyOUOsRGpq5sUW8rYYIHo7q4/E2SoWc=",
         "owner": "noctalia-dev",
         "repo": "umbriel",
-        "rev": "2557bea629f41916322cee019bdf3cafea1e863b",
+        "rev": "679f4fb1978d006f415767d001123ef87295d4e1",
         "type": "github"
       },
       "original": {

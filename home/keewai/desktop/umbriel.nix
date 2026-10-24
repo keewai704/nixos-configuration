@@ -3,7 +3,6 @@
   inputs,
   lib,
   pkgs,
-  theme,
   ...
 }:
 let
@@ -32,6 +31,8 @@ in
         XCURSOR_THEME = config.stylix.cursor.name;
         XCURSOR_SIZE = toString config.stylix.cursor.size;
         QT_QPA_PLATFORM = "wayland";
+        QT_QPA_PLATFORMTHEME = config.home.sessionVariables.QT_QPA_PLATFORMTHEME;
+        QT_STYLE_OVERRIDE = config.qt.style.name;
         MOZ_ENABLE_WAYLAND = "1";
       };
       layout = {
@@ -46,12 +47,7 @@ in
         border_width = 2;
         corner_radius = 12;
       };
-      colors = with theme.base16Scheme; {
-        background = "#${base00}FF";
-        accent_primary = "#${base0D}FF";
-        accent_secondary = "#${base0E}FF";
-        text_primary = "#${base05}FF";
-      };
+      include.optional.files = [ "noctalia.toml" ];
       input = {
         keyboard = {
           layout = "us";

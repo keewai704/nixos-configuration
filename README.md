@@ -63,8 +63,9 @@ flake.nix
 | 日本語入力 | [input-method.nix](home/keewai/desktop/input-method.nix)、[modules/desktop/input-method.nix](modules/desktop/input-method.nix) |
 | 端末・ブラウザー・ファイル管理 | [kitty.nix](home/keewai/desktop/kitty.nix)、[browser.nix](home/keewai/desktop/browser.nix)、[file-manager.nix](home/keewai/desktop/file-manager.nix) |
 | Discord | [legcord.nix](home/keewai/desktop/legcord.nix) |
-| Steam | [modules/desktop/steam.nix](modules/desktop/steam.nix)、[steam-theme.nix](home/keewai/desktop/steam-theme.nix) |
-| 配色・フォント | [themes/tokyo-night-black](themes/tokyo-night-black/default.nix) |
+| Steam | [modules/desktop/steam.nix](modules/desktop/steam.nix)、[steam-css.nix](home/keewai/desktop/steam-css.nix) |
+| アプリの配色・テンプレート | [noctalia-templates.nix](home/keewai/desktop/noctalia-templates.nix) |
+| 共通フォント・初期パレット | [themes/tokyo-night-black](themes/tokyo-night-black/default.nix) |
 | citrus のハードウェア | [hosts/citrus/](hosts/citrus/) |
 | orange のサービス・ポート・保存先 | [hosts/orange/services/](hosts/orange/services/)、[settings.nix](hosts/orange/settings.nix) |
 
@@ -234,7 +235,9 @@ The in-app updater is disabled; Nix owns the application and its bundled `t3` CL
 ## citrus（デスクトップ）
 
 - **画面構成**：Umbriel + Noctalia v5。`start-umbriel` がセッションを管理し、Home Manager の `noctalia.service` は `umbriel-session.target` で起動します。`Super+Space` でランチャー、`Super+,` で設定、`Super+V` でクリップボード、`Super+Tab` でワークスペース一覧。音量・マイクミュート・再生・明るさのメディアキーと `Print` のスクリーンショットにも対応します。
-- **配色**：[Tokyo Night Black](themes/tokyo-night-black/default.nix) を Umbriel と Noctalia のカスタムパレットに使います。GTK・Qt・Kitty・Legcord・Steam・Fcitx5 は Stylix と既存のアプリ用テーマを維持します。初期の壁紙は [Surface Laptop Ultra Dark](themes/tokyo-night-black/surface-laptop-ultra-dark.png)（5120×2160）です。旧 Impasto の個人データは削除しませんが、独自の配色・キープロファイルは自動変換しません。
+- **配色**：Noctalia で選んだパレットをアプリ全体に反映します。公式テンプレートで Umbriel・GTK 3/4・Qt 5/6・KDE・Kitty・btop を統一し、[コミュニティテンプレート](https://github.com/noctalia-dev/community-templates)で Legcord の System24・Fcitx5・bat・FZF・Starship・Helium・Claude Code・Codex CLI を連動させます。Steam は既存スキン用の CSS を同じパレットから生成します。GTK・Qt・Helium など、色を再読み込みしないアプリには再起動が必要です。
+- **テーマの管理**：[noctalia-templates.nix](home/keewai/desktop/noctalia-templates.nix) に連携を集約します。コミュニティのソースは flake 入力で固定し、`nix flake update` で更新します。Nix 管理の設定との競合を避けるため、必要なテンプレートを User Templates として登録します。設定やフォントは Home Manager が管理し、生成される配色ファイルは Noctalia が管理します。FZF は生成したオプションファイルを起動ごとに読むため、シェル設定への色の追記は不要です。
+- **フォントと初期設定**：Stylix は共通のフォント・アイコン・カーソルとコンソールの配色を担当します。Home Manager は NixOS 側の設定を継承します。初期パレットの [Tokyo Night Black](themes/tokyo-night-black/default.nix) は端末の ANSI 色も含めて一か所で定義し、ログイン後は Noctalia の選択に従います。初期の壁紙は [Surface Laptop Ultra Dark](themes/tokyo-night-black/surface-laptop-ultra-dark.png)（5120×2160）です。
 - **更新とキャッシュ**：Umbriel と Noctalia は公式 `cachix` ブランチを追い、対応する署名付きキャッシュを利用します。各入力の nixpkgs は上書きせず、キャッシュと一致させます。
 - Citrus's configured physical monitor and `SUNSHINE` each keep ten static
   workspaces. `Super+1` through `Super+0` select them; adding Shift moves a window.
