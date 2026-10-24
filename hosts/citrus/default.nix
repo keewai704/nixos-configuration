@@ -2,6 +2,7 @@
   imports = [
     ../../modules/desktop
     ./apple-device-usb.nix
+    ./apple-sharing.nix
     ./audio.nix
     ./boot.nix
     ./display.nix

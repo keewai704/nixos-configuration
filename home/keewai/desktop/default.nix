@@ -2,6 +2,7 @@
   imports = [
     ./applications.nix
     ./apple-music.nix
+    ./apple-sharing.nix
     ./bitwarden.nix
     ./browser.nix
     ./file-manager.nix

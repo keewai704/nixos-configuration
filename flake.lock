@@ -323,7 +323,7 @@
     "meltype-release": {
       "flake": false,
       "locked": {
-        "narHash": "sha256-HtNtK6YnOYYbi4m+duxdYJrO9U3REgtAhFlZCqqOFgc=",
+        "narHash": "sha256-iHA3f+B8vUIwrwcYjP77TEJecbt9wMw0YP7bjgyqpWE=",
         "type": "file",
         "url": "https://api.github.com/repos/yksr-melt/Meltype/releases/latest"
       },
@@ -650,6 +650,27 @@
         "type": "github"
       }
     },
+    "owly": {
+      "inputs": {
+        "nixpkgs": [
+          "nixpkgs"
+        ]
+      },
+      "locked": {
+        "lastModified": 1792824717,
+        "narHash": "sha256-tI+5wtLkUzaVmC7sSIV06++7vXAqHm7/6MIK2Sn2Kts=",
+        "ref": "main",
+        "rev": "7ff594a61e1e158fe56f22b9efb9d8ea88dd918b",
+        "revCount": 93,
+        "type": "git",
+        "url": "https://github.com/t4t5/owly"
+      },
+      "original": {
+        "ref": "main",
+        "type": "git",
+        "url": "https://github.com/t4t5/owly"
+      }
+    },
     "proton-wineland-release": {
       "flake": false,
       "locked": {
@@ -682,6 +703,7 @@
         "nixpkgs": "nixpkgs_4",
         "noctalia": "noctalia",
         "noctalia-templates": "noctalia-templates",
+        "owly": "owly",
         "proton-wineland-release": "proton-wineland-release",
         "stylix": "stylix",
         "t3code-releases": "t3code-releases",
@@ -770,7 +792,7 @@
     "t3code-releases": {
       "flake": false,
       "locked": {
-        "narHash": "sha256-avp/9DArSHMmrG2uxwIloIGSNiAQUUPWqgaqXaswkd4=",
+        "narHash": "sha256-I7+nq8db4u83rhr0mlYhKUeHt8OLCV/7UjHEKV5jjgs=",
         "type": "file",
         "url": "https://api.github.com/repos/pingdotgg/t3code/releases?per_page=100"
       },

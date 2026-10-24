@@ -76,6 +76,11 @@
       flake = false;
     };
 
+    owly = {
+      url = "git+https://github.com/t4t5/owly?ref=main";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
+
     nix-cachyos-kernel.url = "github:xddxdd/nix-cachyos-kernel/master";
 
     stylix = {
