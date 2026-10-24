@@ -34,12 +34,8 @@ stdenv.mkDerivation (finalAttrs: {
     "M=$(PWD)"
   ];
   buildTargets = [ "modules" ];
-
-  installPhase = ''
-    runHook preInstall
-    install -Dm444 xpad.ko "$out/lib/modules/${kernel.modDirVersion}/updates/xpad.ko"
-    runHook postInstall
-  '';
+  installFlags = [ "INSTALL_MOD_PATH=${placeholder "out"}" ];
+  installTargets = [ "modules_install" ];
 
   meta = {
     description = "Linux xpad with BEITONG GIP initialization fixes";
