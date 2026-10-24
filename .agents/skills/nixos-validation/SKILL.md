@@ -31,11 +31,6 @@ and deployed-content checks. Do not make a model request merely to validate load
 Before replacing a compositor or session manager, inspect the active session's
 unit graph and the incoming unit definitions. Removing UWSM units can terminate
 the desktop even when greetd and the compositor use `restartIfChanged = false`.
-Check `system.preSwitchChecks` without activation when a migration guard applies;
-do not bypass it with `NIXOS_NO_CHECK`.
-Exercise the generated `system.preSwitchChecksScript` directly, not through
-`nixos-rebuild switch`: rebuild can advance the system profile before that
-guard rejects activation, even though bootloader installation has not run.
 
 Greetd's `initial_session` is boot-only: its runfile prevents repeating autologin
 after a session ends or greetd restarts in the same boot. Restarting greetd,
