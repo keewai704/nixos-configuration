@@ -302,7 +302,7 @@
     "meltype-release": {
       "flake": false,
       "locked": {
-        "narHash": "sha256-Ej5j2yvHC+PuPZFAmx3hURfvpfkpb972BE4ig5WZtTw=",
+        "narHash": "sha256-M4w31Bvn41ZyEKpb4PrlH10Oua/tMkps2Q5WLztyad8=",
         "type": "file",
         "url": "https://api.github.com/repos/yksr-melt/Meltype/releases/latest"
       },
@@ -574,11 +574,11 @@
         "nixpkgs": "nixpkgs_5"
       },
       "locked": {
-        "lastModified": 1792885641,
-        "narHash": "sha256-lfb7OhsnGd/lmL7TFZ61DMZ/bOT9DeYUsmZpcMk4ptU=",
+        "lastModified": 1792889543,
+        "narHash": "sha256-nuh4jmSHXSWomoftfRznQjX4K+R/1sicKsIc8Pl+/lk=",
         "owner": "noctalia-dev",
         "repo": "noctalia",
-        "rev": "f0ffa94befc98e0a846c80a129cb5953d53908dd",
+        "rev": "eda0553a19341597c2328bd8cb71be8b509123d4",
         "type": "github"
       },
       "original": {
@@ -770,7 +770,7 @@
     "t3code-releases": {
       "flake": false,
       "locked": {
-        "narHash": "sha256-GKgewv1JGfJX+Q+b7ZtFwmJ2ThLB/kGq/9C7mUbbmLo=",
+        "narHash": "sha256-VU3OPtiBQOcv1/UiRGENSdvvTlBFNYxzNurC4y7GQEU=",
         "type": "file",
         "url": "https://api.github.com/repos/pingdotgg/t3code/releases?per_page=100"
       },
@@ -870,11 +870,11 @@
         "xdg-desktop-portal-umbriel": "xdg-desktop-portal-umbriel"
       },
       "locked": {
-        "lastModified": 1792888339,
-        "narHash": "sha256-70VOG4n1/FYFokKpmK839R9G8xUCMZ08Air5jfAJjdY=",
+        "lastModified": 1792891302,
+        "narHash": "sha256-rk+qUBU1o6UE0ZQpQ43NNwTG/Wyo2oQLqp8OgXUZmRM=",
         "owner": "noctalia-dev",
         "repo": "umbriel",
-        "rev": "d021c5694435790e4ab3ab834a11ec16ad944a7e",
+        "rev": "9c7a2170996476cc05cf38f506114fd6555bde58",
         "type": "github"
       },
       "original": {
