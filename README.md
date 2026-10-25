@@ -202,8 +202,13 @@ Claude Code と Codex は全ホストで Home Manager が導入し、どのシ�
   で取得元を固定して配ります。
 - **MCP サーバー**：`codingAgents.mcpServers.<名前> = { command; args; env; }` を、適用時に `~/.claude.json` へ書き込みます。
   Nix から外したサーバーだけを消し、手で追加したサーバーはそのまま残します。
-- **共通の指示**：citrus では [CLAUDE.md](home/keewai/common/coding-agents/CLAUDE.md) を `~/.claude/CLAUDE.md` に置きます
+- **Claude Code の共通指示**：citrus では [CLAUDE.md](home/keewai/common/coding-agents/CLAUDE.md) を `~/.claude/CLAUDE.md` に置きます
   （`codingAgents.globalInstructions`）。
+- **Codex の共通指示**：[codex-instructions.md](home/keewai/common/coding-agents/codex-instructions.md) を
+  両ホストの `~/.codex/config.toml` の `developer_instructions` に設定します。
+  [OpenCode の方針](https://github.com/anomalyco/opencode/blob/dev/AGENTS.md)を参考にした実装・検証の指示が、
+  全プロジェクトの新しい Codex セッションで組み込み指示に追加されます。
+  プロジェクト固有の `AGENTS.md` の規約を尊重し、手動の設定やログイン情報は保持します。
 - UI デザインには [Penpot](https://design.penpot.app/) を使います。デスクトップ用 MCP は
   [penpot-mcp.nix](home/keewai/desktop/penpot-mcp.nix)、手順は [penpot-apple-design](skills/penpot-apple-design/SKILL.md) にあります。
 

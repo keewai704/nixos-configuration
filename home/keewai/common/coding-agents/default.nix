@@ -64,6 +64,7 @@ in
       enable = true;
       mutableSettings = true;
       package = inputs.codex.packages.${pkgs.stdenv.hostPlatform.system}.default;
+      settings.developer_instructions = builtins.readFile ./codex-instructions.md;
     };
 
     programs.claude-code = {
