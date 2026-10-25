@@ -613,9 +613,7 @@ class DisplayController:
                 self.restore()
                 self.ensure_output()
                 if any(window["output"] == OUTPUT for window in self.query("windows")):
-                    raise RuntimeError(
-                        "Refusing to hide SUNSHINE while it contains windows"
-                    )
+                    return
                 self.action("output-disable", OUTPUT)
                 self.wait_for(
                     lambda outputs: all(
@@ -630,7 +628,10 @@ class DisplayController:
                 self.restore()
             elif action == "stop":
                 self.restore()
-                self.destroy_output()
+                if not any(
+                    window["output"] == OUTPUT for window in self.query("windows")
+                ):
+                    self.destroy_output()
             else:
                 raise ValueError(f"Unknown action: {action}")
 
