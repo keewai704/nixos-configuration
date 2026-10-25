@@ -8,6 +8,7 @@
     ./file-manager.nix
     ./umbriel.nix
     ./input-method.nix
+    ./iphone-control.nix
     ./noctalia.nix
     ./kitty.nix
     ./legcord.nix
