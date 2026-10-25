@@ -46,6 +46,17 @@ in
       appearance = {
         border_width = 2;
         corner_radius = 12;
+        opaque_fullscreen = true;
+        blur = {
+          enabled = true;
+          optimized = false;
+          passes = 3;
+          radius = 8;
+          noise = 0.02;
+          brightness = 1.0;
+          contrast = 1.0;
+          saturation = 1.05;
+        };
       };
       include.optional.files = [ "noctalia.toml" ];
       input = {
@@ -94,6 +105,24 @@ in
       };
       window_rule = [
         {
+          opacity = 0.9;
+          blur = true;
+        }
+        {
+          match.app_id = "^kitty$";
+          opacity = 1.0;
+        }
+        {
+          match.content_type = "video";
+          opacity = 1.0;
+          blur = false;
+        }
+        {
+          match.content_type = "game";
+          opacity = 1.0;
+          blur = false;
+        }
+        {
           match = {
             app_id = "^steam$";
             title = "[Bb]ig [Pp]icture";
@@ -104,6 +133,8 @@ in
         {
           match.app_id = "^steam_app_";
           default_output = "SUNSHINE";
+          opacity = 1.0;
+          blur = false;
         }
       ];
     };
