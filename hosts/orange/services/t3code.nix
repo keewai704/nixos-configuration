@@ -59,12 +59,9 @@ let
   ];
 in
 {
-  home-manager.users.keewai = {
-    imports = [ ../../../home/keewai/common/t3code-server.nix ];
-    services.t3code-server = {
-      enable = true;
-      port = t3codePort;
-    };
+  home-manager.users.keewai.services.t3code = {
+    mode = "server";
+    port = t3codePort;
   };
 
   services.nginx.appendHttpConfig = ''

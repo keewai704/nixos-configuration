@@ -1,20 +1,22 @@
 {
   imports = [
-    ./applications.nix
-    ./apple-music.nix
-    ./apple-sharing.nix
+    ./packages.nix
+    ./apple-music
+    ./apple-sharing
     ./bitwarden.nix
     ./browser.nix
     ./file-manager.nix
     ./umbriel.nix
     ./input-method.nix
-    ./noctalia.nix
+    ./noctalia
     ./kitty.nix
     ./legcord.nix
     ./office.nix
     ./penpot-mcp.nix
-    ./scskiller.nix
+    ./scskiller
     ./stylix.nix
-    ./t3code.nix
   ];
+
+  codingAgents.globalInstructions = true;
+  services.t3code.mode = "desktop";
 }

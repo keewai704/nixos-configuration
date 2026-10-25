@@ -47,7 +47,9 @@ evaluated, or built locally without connecting to it.
 
 Match filenames to responsibilities. Keep tightly coupled code together; use a
 named module for a substantial feature rather than placing it in a convenient
-import. `hosts/<host>/` holds that machine's hardware, boot, and services, with
+import. A feature spanning several files gets its own directory with
+`default.nix` as the entry point, keeping its scripts and assets beside it.
+`hosts/<host>/` holds that machine's hardware, boot, and services, with
 `default.nix` limited to imports and small host-wide settings. `modules/common/`
 is only for settings used by every host; `modules/desktop/` is the system side of
 the desktop profile. Scope moves and caller updates to the request, and explain

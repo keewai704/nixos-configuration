@@ -7,7 +7,7 @@
 }:
 let
   upstream = builtins.fromJSON (builtins.readFile "${inputs.noctalia}/assets/translations/ja.json");
-  supplement = builtins.fromJSON (builtins.readFile ./noctalia-ja.json);
+  supplement = builtins.fromJSON (builtins.readFile ./ja.json);
   catalog = pkgs.writeText "noctalia-ja.json" (
     builtins.toJSON (lib.recursiveUpdate supplement upstream)
   );
