@@ -323,7 +323,7 @@
     "meltype-release": {
       "flake": false,
       "locked": {
-        "narHash": "sha256-/JnzP6RHpuBgst3RtK6qEb3W6fbGcrozGoFPZSAN5bw=",
+        "narHash": "sha256-2GYsj46Q/I9ijM5odP9tw0Exi0WRyuYY+8WSZTkpDiQ=",
         "type": "file",
         "url": "https://api.github.com/repos/yksr-melt/Meltype/releases/latest"
       },
@@ -595,11 +595,11 @@
         "nixpkgs": "nixpkgs_5"
       },
       "locked": {
-        "lastModified": 1792881662,
-        "narHash": "sha256-amOqKxdICJexXdFroeRThfqSHNeuQ88wOXTxcs4U+uc=",
+        "lastModified": 1792885641,
+        "narHash": "sha256-lfb7OhsnGd/lmL7TFZ61DMZ/bOT9DeYUsmZpcMk4ptU=",
         "owner": "noctalia-dev",
         "repo": "noctalia",
-        "rev": "490a7ea15a4f83e02106d090ea94e53b21f59052",
+        "rev": "f0ffa94befc98e0a846c80a129cb5953d53908dd",
         "type": "github"
       },
       "original": {
@@ -792,7 +792,7 @@
     "t3code-releases": {
       "flake": false,
       "locked": {
-        "narHash": "sha256-diOLajyO1AVEOz2pZGiK0I6Up0awC2C3U+6oVh24/EU=",
+        "narHash": "sha256-F2cuX928dHBHAhaRc/FqaRB5jh/ntWDO2wdu3Mmzk2U=",
         "type": "file",
         "url": "https://api.github.com/repos/pingdotgg/t3code/releases?per_page=100"
       },
