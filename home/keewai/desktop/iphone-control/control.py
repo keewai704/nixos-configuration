@@ -42,6 +42,17 @@ class HeaderReader:
         return getattr(self.reader, name)
 
 
+def touch_point(x, y, orientation):
+    if not (0 <= x <= 65535 and 0 <= y <= 65535):
+        raise ValueError("Touch is outside the screen")
+    return {
+        "portrait": (x, y),
+        "landscapeLeft": (65535 - y, x),
+        "portraitUpsideDown": (65535 - x, 65535 - y),
+        "landscapeRight": (y, 65535 - x),
+    }[orientation]
+
+
 class BrowserVideo:
     def __init__(self, server):
         self.server = server
@@ -193,6 +204,21 @@ def make_server(rsd, directory, port, token):
     )
 
     class LocalScreenServer(ScreenStreamServer):
+        async def _handle_touch(self, body):
+            from control import current_display
+
+            data = json.loads(body)
+            operation = data["type"]
+            if operation == "tap" or not getattr(self, "touch_active", False):
+                display = await current_display(self._rsd)
+                self.touch_orientation = display["orientation"]
+            data["x"], data["y"] = touch_point(
+                int(data["x"]), int(data["y"]), self.touch_orientation
+            )
+            result = await super()._handle_touch(json.dumps(data).encode())
+            self.touch_active = operation == "contact" and result[0] == 200
+            return result
+
         async def _eager_stream_start(self):
             await super()._eager_stream_start()
             try:
@@ -291,6 +317,15 @@ def make_server(rsd, directory, port, token):
                     )
                     body = body.replace(
                         b"description.length", b"(description?.length || 0)"
+                    )
+                    body = body.replace(
+                        b"async function postJson(path, payload) {",
+                        b"let inputQueue = Promise.resolve();\n"
+                        b"function postJson(path, payload) {\n"
+                        b"  const send = () => sendInputJson(path, payload);\n"
+                        b"  inputQueue = inputQueue.then(send, send);\n"
+                        b"  return inputQueue;\n}\n"
+                        b"async function sendInputJson(path, payload) {",
                     )
                     self._send_static(
                         writer, body, b"application/javascript; charset=utf-8"
