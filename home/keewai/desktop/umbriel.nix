@@ -49,6 +49,7 @@ in
       };
       include.optional.files = [ "noctalia.toml" ];
       input = {
+        focus.follows_mouse = true;
         keyboard = {
           layout = "us";
           repeat_rate = 35;

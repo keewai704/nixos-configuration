@@ -8,6 +8,7 @@
 {
   imports = [
     inputs.noctalia.homeModules.default
+    ./noctalia-japanese.nix
     ./noctalia-templates.nix
   ];
 
