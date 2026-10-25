@@ -1,9 +1,15 @@
 { inputs }:
-final: _previous:
+final: previous:
 let
   claude-code = inputs.claude-code.packages.${final.stdenv.hostPlatform.system}.default;
 in
 {
+  mcp-proxy = previous.mcp-proxy.override {
+    python3Packages = final.python3Packages // {
+      mcp = final.python3Packages.mcp_1;
+    };
+  };
+
   local = {
     helium = final.callPackage ./helium { };
     livesync-bridge = final.callPackage ./livesync-bridge { };
