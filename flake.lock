@@ -263,11 +263,11 @@
         ]
       },
       "locked": {
-        "lastModified": 1792818371,
-        "narHash": "sha256-yhEZAzZRNvzYpoAlyFY3wM75V9BmkIXJIueof8S5gOg=",
+        "lastModified": 1792896866,
+        "narHash": "sha256-/0tELNnhdSnP+bHSdWiEe6KpfSwi6WrTnT9cm/jNkjA=",
         "owner": "nix-community",
         "repo": "home-manager",
-        "rev": "2cd3234928f60bbff695a7ee56115ef7799c47cd",
+        "rev": "c216bf5a1f173b0481bd5c8c489ebe5595ecc68c",
         "type": "github"
       },
       "original": {
@@ -299,10 +299,31 @@
         "type": "github"
       }
     },
+    "iphone-control": {
+      "inputs": {
+        "nixpkgs": [
+          "nixpkgs"
+        ]
+      },
+      "locked": {
+        "lastModified": 1792898983,
+        "narHash": "sha256-aIHvSLyuM8jzB1xRQz1z6nb2Rz+9M+AkUzQ6c+Fua6I=",
+        "ref": "main",
+        "rev": "6c171f7138da5a395c5d71a14a9f4573388230e6",
+        "revCount": 2,
+        "type": "git",
+        "url": "https://github.com/keewai704/iphone-control"
+      },
+      "original": {
+        "ref": "main",
+        "type": "git",
+        "url": "https://github.com/keewai704/iphone-control"
+      }
+    },
     "meltype-release": {
       "flake": false,
       "locked": {
-        "narHash": "sha256-biNeAGDw44ZAdM2GslJMzpjl5X9MiQhjwhG8BbW37rw=",
+        "narHash": "sha256-15wQzmKMdv6TVN5Gu/3JSj5ZbXI/uzpuPeFG/TG4amA=",
         "type": "file",
         "url": "https://api.github.com/repos/yksr-melt/Meltype/releases/latest"
       },
@@ -574,11 +595,11 @@
         "nixpkgs": "nixpkgs_5"
       },
       "locked": {
-        "lastModified": 1792889543,
-        "narHash": "sha256-nuh4jmSHXSWomoftfRznQjX4K+R/1sicKsIc8Pl+/lk=",
+        "lastModified": 1792896157,
+        "narHash": "sha256-UmKgnpRUr3XnwyBEj8uxeuES9qEtwP5aPyknujcCcuU=",
         "owner": "noctalia-dev",
         "repo": "noctalia",
-        "rev": "eda0553a19341597c2328bd8cb71be8b509123d4",
+        "rev": "40a82f21ab5f135f4324b1862f7b7732af581856",
         "type": "github"
       },
       "original": {
@@ -673,6 +694,7 @@
         "claude-code": "claude-code",
         "codex": "codex",
         "home-manager": "home-manager",
+        "iphone-control": "iphone-control",
         "meltype-release": "meltype-release",
         "meltype-tags": "meltype-tags",
         "millennium": "millennium",
@@ -770,7 +792,7 @@
     "t3code-releases": {
       "flake": false,
       "locked": {
-        "narHash": "sha256-AYP6fi5AMRm2gG4Wfpy3YKeBs1+kpsgmD4Sloww6CaY=",
+        "narHash": "sha256-msCtYdU0tNNVxFCI+xS2dQANYYKv1h6sKHX40F4vf3w=",
         "type": "file",
         "url": "https://api.github.com/repos/pingdotgg/t3code/releases?per_page=100"
       },
@@ -870,11 +892,11 @@
         "xdg-desktop-portal-umbriel": "xdg-desktop-portal-umbriel"
       },
       "locked": {
-        "lastModified": 1792895109,
-        "narHash": "sha256-tysFdHVnlhGb9pKHwYEir8+NknJHOsZAk5eL1UttW0s=",
+        "lastModified": 1792898392,
+        "narHash": "sha256-xXBEQQOd0wjS209xdb9Ey3XcfhxyupeXzhtp/5LbA/E=",
         "owner": "noctalia-dev",
         "repo": "umbriel",
-        "rev": "e7746b817c59816a173a1dc0f93d0107614ddcce",
+        "rev": "0bb8befd18c447e9d400403e55adfb6c4ba2bfb6",
         "type": "github"
       },
       "original": {

@@ -1,6 +1,6 @@
-{ lib, pkgs, ... }:
+{ inputs, pkgs, ... }:
 let
-  mobileDeviceCommand = import ./apple-device-command.nix { inherit lib pkgs; };
+  packages = inputs.iphone-control.packages.${pkgs.stdenv.hostPlatform.system};
 in
 {
   programs.zsh.siteFunctions._pymobiledevice3 = ''
@@ -9,14 +9,7 @@ in
   '';
 
   home.packages = [
-    (mobileDeviceCommand {
-      name = "pymobiledevice3";
-      command = "pymobiledevice3";
-    })
-    (mobileDeviceCommand {
-      name = "apple-device-usb";
-      command = "python ${../../../skills/apple-device-usb/scripts}/control.py";
-      runtimeInputs = [ pkgs.iproute2 ];
-    })
+    packages.pymobiledevice3
+    packages.apple-device-usb
   ];
 }

@@ -19,8 +19,9 @@ the session. Editing this skill does not authorize a device connection.
   requested VNC viewer, read [Troubleshooting](references/troubleshooting.md).
 
 Use the installed [launcher](/home/keewai/nixos-configuration/home/keewai/common/apple-device-usb.nix),
-[scripts/connection.py](scripts/connection.py), and
-[scripts/control.py](scripts/control.py), not another upstream version's commands.
+[transport adapter](https://github.com/keewai704/iphone-control/blob/main/src/iphone_control/connection.py),
+and [controller](https://github.com/keewai704/iphone-control/blob/main/src/iphone_control/agent.py)
+from the pinned `iphone-control` package, not another upstream version's commands.
 USB requires iOS/iPadOS 17.4+ and compatible display/input services; that OS version
 alone is not a support guarantee. Wi-Fi also requires compatible services.
 
@@ -65,7 +66,8 @@ cable changes do not switch an active session. Close it before choosing again.
 Adapted from [Omarchy iPhone Mirror](https://github.com/daniellemky/omarchy-iphone-mirror/tree/cd076dc9721554f2169c1f2a5cfb818d6ca0e954),
 particularly its [phone setup](https://github.com/daniellemky/omarchy-iphone-mirror/blob/cd076dc9721554f2169c1f2a5cfb818d6ca0e954/docs/phone-setup.md)
 and [agent setup](https://github.com/daniellemky/omarchy-iphone-mirror/blob/cd076dc9721554f2169c1f2a5cfb818d6ca0e954/docs/agent-setup.md).
-The connection adaptation retains the [MIT license](scripts/LICENSE.omarchy).
+The connection adaptation retains the
+[MIT license](https://github.com/keewai704/iphone-control/blob/main/LICENSES/omarchy.txt).
 This is not its installer or GUI wrapper: do not run that installer, invent
 `setup-phone.sh` commands, or enable autostart. The existing skill and command
 names apply to both transports.

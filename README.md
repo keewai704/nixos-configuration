@@ -223,6 +223,10 @@ Claude Code と Codex は全ホストで Home Manager が導入し、どのシ�
 | `faster-whisper` | 音声・動画の文字起こし |
 | `shadcn` | shadcn/ui の部品の導入・調整 |
 
+端末操作 GUI と `apple-device-usb` の実装は
+[iphone-control](https://github.com/keewai704/iphone-control) で管理します。
+このリポジトリには flake 入力、導入設定、スキルの手順を置きます。
+
 リポジトリ専用の検証手順は [.agents/skills/nixos-validation](.agents/skills/nixos-validation/SKILL.md) にあります。
 
 ### T3 Code nightly

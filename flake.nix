@@ -92,6 +92,11 @@
 
     nixcord.url = "github:4evy/nixcord";
 
+    iphone-control = {
+      url = "git+https://github.com/keewai704/iphone-control?ref=main";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
+
   };
 
   outputs =
