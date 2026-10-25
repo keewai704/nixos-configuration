@@ -8,7 +8,7 @@
 let
   cfg = config.codingAgents;
   skillRoot = ../../../../skills;
-  interfaceInstructions = builtins.readFile ./interface-instructions.md;
+  sharedInstructions = builtins.readFile ./shared-instructions.md;
 
   skillLinks = lib.concatMapAttrs (name: source: {
     ".claude/skills/${name}" = {
@@ -66,7 +66,7 @@ in
       mutableSettings = true;
       package = inputs.codex.packages.${pkgs.stdenv.hostPlatform.system}.default;
       settings.developer_instructions =
-        builtins.readFile ./codex-instructions.md + "\n" + interfaceInstructions;
+        builtins.readFile ./codex-instructions.md + "\n" + sharedInstructions;
     };
 
     programs.claude-code = {
@@ -86,7 +86,7 @@ in
     home.file = skillLinks // {
       ".claude/CLAUDE.md".text =
         lib.optionalString cfg.globalInstructions (builtins.readFile ./CLAUDE.md + "\n")
-        + interfaceInstructions;
+        + sharedInstructions;
     };
 
     home.activation.codingAgentConfig = lib.hm.dag.entryAfter [ "writeBoundary" ] ''

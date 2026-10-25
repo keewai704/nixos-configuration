@@ -202,10 +202,10 @@ Claude Code と Codex は全ホストで Home Manager が導入し、どのシ�
   で取得元を固定して配ります。
 - **MCP サーバー**：`codingAgents.mcpServers.<名前> = { command; args; env; }` を、適用時に `~/.claude.json` へ書き込みます。
   Nix から外したサーバーだけを消し、手で追加したサーバーはそのまま残します。
-- **Claude Code の共通指示**：全ホストで [共通の UI 方針](home/keewai/common/coding-agents/interface-instructions.md)を
+- **Claude Code の共通指示**：全ホストで [共通の UI・開発方針](home/keewai/common/coding-agents/shared-instructions.md)を
   `~/.claude/CLAUDE.md` に置きます。citrus では [CLAUDE.md](home/keewai/common/coding-agents/CLAUDE.md) の
   日本語応答・Git 操作の方針も追加します（`codingAgents.globalInstructions`）。
-- **Codex の共通指示**：[codex-instructions.md](home/keewai/common/coding-agents/codex-instructions.md) と共通の UI 方針を
+- **Codex の共通指示**：[codex-instructions.md](home/keewai/common/coding-agents/codex-instructions.md) と共通の UI・開発方針を
   両ホストの `~/.codex/config.toml` の `developer_instructions` に設定します。
   [OpenCode の方針](https://github.com/anomalyco/opencode/blob/dev/AGENTS.md)を参考にした実装・検証の指示が、
   全プロジェクトの新しい Codex セッションで組み込み指示に追加されます。
