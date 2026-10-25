@@ -10,6 +10,11 @@
 OS・ハードウェア・システムサービスは **NixOS**、個人のアプリや設定は **Home Manager** で管理します。
 作業ルール（検証・コミット・適用の手順）は [AGENTS.md](AGENTS.md) にあります。
 
+両ホストの Tailscale SSH は、[Tailworm の報告](https://tailworm.com/)への暫定対策として
+TCP・Unix ソケットのローカル／リモート転送を禁止しています。SSH ログインは利用できます。
+`tailscaled` のメモリは 1 GiB、スワップは 0 に制限し、メモリ枯渇時の影響を抑えます。
+設定は [modules/common/network.nix](modules/common/network.nix) で管理します。
+
 ## ディレクトリ構成
 
 ```text

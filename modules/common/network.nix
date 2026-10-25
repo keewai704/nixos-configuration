@@ -19,4 +19,12 @@
       ];
     };
   };
+
+  systemd.services.tailscaled = {
+    environment.TS_SSH_DISABLE_FORWARDING = "true";
+    serviceConfig = {
+      MemoryMax = "1G";
+      MemorySwapMax = 0;
+    };
+  };
 }
