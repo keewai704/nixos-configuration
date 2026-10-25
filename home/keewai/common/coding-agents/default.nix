@@ -8,6 +8,7 @@
 let
   cfg = config.codingAgents;
   skillRoot = ../../../../skills;
+  interfaceInstructions = builtins.readFile ./interface-instructions.md;
 
   skillLinks = lib.concatMapAttrs (name: source: {
     ".claude/skills/${name}" = {
@@ -56,7 +57,7 @@ in
       description = "Stdio MCP servers registered in Claude Code user configuration.";
     };
 
-    globalInstructions = lib.mkEnableOption "the shared CLAUDE.md user instructions";
+    globalInstructions = lib.mkEnableOption "additional Claude Code language and Git instructions";
   };
 
   config = {
@@ -64,7 +65,8 @@ in
       enable = true;
       mutableSettings = true;
       package = inputs.codex.packages.${pkgs.stdenv.hostPlatform.system}.default;
-      settings.developer_instructions = builtins.readFile ./codex-instructions.md;
+      settings.developer_instructions =
+        builtins.readFile ./codex-instructions.md + "\n" + interfaceInstructions;
     };
 
     programs.claude-code = {
@@ -81,11 +83,11 @@ in
       name: skillRoot + "/${name}"
     );
 
-    home.file =
-      skillLinks
-      // lib.optionalAttrs cfg.globalInstructions {
-        ".claude/CLAUDE.md".text = builtins.readFile ./CLAUDE.md;
-      };
+    home.file = skillLinks // {
+      ".claude/CLAUDE.md".text =
+        lib.optionalString cfg.globalInstructions (builtins.readFile ./CLAUDE.md + "\n")
+        + interfaceInstructions;
+    };
 
     home.activation.codingAgentConfig = lib.hm.dag.entryAfter [ "writeBoundary" ] ''
       run ${syncConfig} ${mcpServers}
