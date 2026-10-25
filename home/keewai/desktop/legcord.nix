@@ -1,5 +1,6 @@
 {
   inputs,
+  pkgs,
   ...
 }:
 {
@@ -10,6 +11,7 @@
     discord.enable = false;
     legcord = {
       enable = true;
+      package = pkgs.local.legcord;
       settings = {
         mods = [ "equicord" ];
         quickCss = true;

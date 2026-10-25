@@ -12,6 +12,7 @@ in
 
   local = {
     helium = final.callPackage ./helium { };
+    legcord = final.callPackage ./legcord { };
     livesync-bridge = final.callPackage ./livesync-bridge { };
     meltype = final.callPackage ./meltype {
       release = inputs.meltype-release;
