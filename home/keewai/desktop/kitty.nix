@@ -4,7 +4,6 @@
     enable = true;
     settings = {
       remember_window_size = false;
-      background_opacity = 0.9;
       dynamic_background_opacity = true;
     };
     extraConfig = ''
@@ -17,5 +16,8 @@
     };
   };
 
-  stylix.targets.kitty.enable = true;
+  stylix = {
+    opacity.terminal = 0.9;
+    targets.kitty.enable = true;
+  };
 }
