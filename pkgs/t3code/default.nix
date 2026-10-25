@@ -2,6 +2,7 @@
   lib,
   stdenv,
   appimageTools,
+  asar,
   autoPatchelfHook,
   fetchurl,
   makeWrapper,
@@ -64,6 +65,7 @@ stdenv.mkDerivation {
   src = contents;
 
   nativeBuildInputs = [
+    asar
     autoPatchelfHook
     makeWrapper
     wrapGAppsHook3
@@ -119,6 +121,15 @@ stdenv.mkDerivation {
   dontStrip = true;
   dontBuild = true;
 
+  postPatch = ''
+    asar extract resources/app.asar app
+    serverBundles=(app/apps/server/dist/binCli-*.mjs)
+    test "''${#serverBundles[@]}" -eq 1
+    patch --fuzz=0 "''${serverBundles[0]}" ${./codex-session-recovery.patch}
+    asar pack app resources/app.asar --unpack-dir node_modules
+    rm -r app
+  '';
+
   installPhase = ''
     runHook preInstall
     mkdir -p $out/libexec/t3code $out/bin
@@ -157,6 +168,9 @@ stdenv.mkDerivation {
     runHook preInstallCheck
     ELECTRON_RUN_AS_NODE=1 $out/bin/t3code -p 'process.versions.electron'
     $out/bin/t3 --version | grep -F '${version}'
+    asar extract $out/libexec/t3code/resources/app.asar t3code-install-check
+    ELECTRON_RUN_AS_NODE=1 $out/bin/t3code ${./test-codex-recovery.mjs} \
+      "$PWD/t3code-install-check/apps/server/dist"
     runHook postInstallCheck
   '';
 

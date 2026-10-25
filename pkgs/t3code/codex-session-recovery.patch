@@ -1,0 +1,40 @@
+Subject: Retire Codex sessions when their app-server exits
+Upstream: https://github.com/pingdotgg/t3code/pull/22791
+
+--- a/binCli.mjs
++++ b/binCli.mjs
+@@ -231786,6 +231786,7 @@
+ }));
+ const make$103 = fn("effect-codex-app-server/CodexAppServerClient.make")(function* (stdio, options = {}, terminationError) {
+ 	const requestHandlers = /* @__PURE__ */ new Map();
++	const termination = yield* make$263();
+ 	const notificationHandlers = /* @__PURE__ */ new Map();
+ 	let unknownRequestHandler;
+ 	let unknownNotificationHandler;
+@@ -231817,11 +231818,13 @@
+ 		...options.logOutgoing !== void 0 ? { logOutgoing: options.logOutgoing } : {},
+ 		...options.logger ? { logger: options.logger } : {},
+ 		onNotification: dispatchNotification,
+-		onRequest: dispatchRequest
++		onRequest: dispatchRequest,
++		onTermination: (error) => fail$3(termination, error).pipe(asVoid)
+ 	});
+ 	const request = (method, payload) => encodeOptionalPayload(method, getClientRequestParamSchema(method), payload).pipe(flatMap$1((encoded) => transport.request(method, encoded)), flatMap$1((raw) => decodeOptionalPayload(method, getClientRequestResponseSchema(method), raw)));
+ 	const notify = (method, payload) => encodeOptionalPayload(method, getClientNotificationParamSchema(method), payload).pipe(flatMap$1((encoded) => transport.notify(method, encoded)));
+ 	return CodexAppServerClient.of({
++		awaitTermination: _await(termination),
+ 		raw: {
+ 			notifications: transport.incomingNotifications,
+ 			requests: transport.incomingRequests,
+@@ -233689,6 +233692,11 @@
+ 				now: now$103
+ 			});
+ 			const events = yield* unbounded$2();
++			yield* client.awaitTermination.pipe(catch_((cause) => fail$6(events, new ProviderAdapterEventStreamError({
++				driver: CODEX_PROVIDER,
++				providerSessionId: input.providerSessionId,
++				cause
++			}))), forkScoped);
+ 			const rateLimitSnapshot = yield* make$239(void 0);
+ 			const limitedTurnItems = yield* make$239(/* @__PURE__ */ new Map());
+ 			const activeTurns = yield* make$239(/* @__PURE__ */ new Map());
