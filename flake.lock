@@ -132,27 +132,6 @@
         "type": "github"
       }
     },
-    "cpak": {
-      "inputs": {
-        "nixpkgs": [
-          "nixpkgs"
-        ]
-      },
-      "locked": {
-        "lastModified": 1792815720,
-        "narHash": "sha256-Q1360umrfm/aKRciwwr8f5jkY+MLhSknrMAYfKJfJU4=",
-        "owner": "Containerpak",
-        "repo": "cpak",
-        "rev": "a5d9cbab220e81be39a8fc9751c9a424f6ec294f",
-        "type": "github"
-      },
-      "original": {
-        "owner": "Containerpak",
-        "ref": "v2",
-        "repo": "cpak",
-        "type": "github"
-      }
-    },
     "firefox-gnome-theme": {
       "flake": false,
       "locked": {
@@ -323,7 +302,7 @@
     "meltype-release": {
       "flake": false,
       "locked": {
-        "narHash": "sha256-QbyMwtOMpXEljM2z/gQR5W2WO+MS1wi0cQsH/bVI6Gc=",
+        "narHash": "sha256-Ej5j2yvHC+PuPZFAmx3hURfvpfkpb972BE4ig5WZtTw=",
         "type": "file",
         "url": "https://api.github.com/repos/yksr-melt/Meltype/releases/latest"
       },
@@ -693,7 +672,6 @@
         "agenix": "agenix",
         "claude-code": "claude-code",
         "codex": "codex",
-        "cpak": "cpak",
         "home-manager": "home-manager",
         "meltype-release": "meltype-release",
         "meltype-tags": "meltype-tags",
@@ -792,7 +770,7 @@
     "t3code-releases": {
       "flake": false,
       "locked": {
-        "narHash": "sha256-N/JftY66wWSNM8n6kLsSPfS/4Yvelib3x4LmXdLZRjI=",
+        "narHash": "sha256-GKgewv1JGfJX+Q+b7ZtFwmJ2ThLB/kGq/9C7mUbbmLo=",
         "type": "file",
         "url": "https://api.github.com/repos/pingdotgg/t3code/releases?per_page=100"
       },
@@ -892,11 +870,11 @@
         "xdg-desktop-portal-umbriel": "xdg-desktop-portal-umbriel"
       },
       "locked": {
-        "lastModified": 1792887311,
-        "narHash": "sha256-xWPv7svHwn6UME5YXk2DBWCE6PaHUYBgWOMRLzCPUBQ=",
+        "lastModified": 1792888339,
+        "narHash": "sha256-70VOG4n1/FYFokKpmK839R9G8xUCMZ08Air5jfAJjdY=",
         "owner": "noctalia-dev",
         "repo": "umbriel",
-        "rev": "0345e9059656b0543aef6819256f6a7947ae7491",
+        "rev": "d021c5694435790e4ab3ab834a11ec16ad944a7e",
         "type": "github"
       },
       "original": {

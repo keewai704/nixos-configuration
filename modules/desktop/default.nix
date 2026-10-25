@@ -5,7 +5,6 @@ in
 {
   imports = [
     ./bitwarden.nix
-    ./cpak.nix
     ./umbriel.nix
     ./noctalia.nix
     ./scheduler.nix

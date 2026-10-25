@@ -32,11 +32,6 @@
       inputs.nixpkgs.follows = "nixpkgs";
     };
 
-    cpak = {
-      url = "github:Containerpak/cpak/v2";
-      inputs.nixpkgs.follows = "nixpkgs";
-    };
-
     agenix = {
       url = "github:ryantm/agenix";
       inputs.nixpkgs.follows = "nixpkgs";
