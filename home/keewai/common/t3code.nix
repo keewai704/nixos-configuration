@@ -93,6 +93,7 @@ in
           UMask = "0077";
           Environment = environment;
           Restart = "on-failure";
+          SuccessExitStatus = 130;
           RestartSec = 5;
           TimeoutStopSec = 30;
         };
