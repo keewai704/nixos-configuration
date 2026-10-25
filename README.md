@@ -299,7 +299,7 @@ moonlight stream citrus "Extend Display" --1080 --fps 120 --bitrate 40000 --vide
 - [pkgs/default.nix](pkgs/default.nix) に並べたものは設定から `pkgs.local.<名前>` で参照でき、`nix build .#<名前>` で単体ビルドもできます。
 - パッチは対象パッケージのディレクトリに置きます。
 - 更新の入口は `nix flake update` に統一します。再現性のための revision と hash は `flake.lock` に残します。
-- Umbriel／Noctalia は `cachix`、xddxdd のカーネル群は `release`、CPAK は開発ブランチ `v2` を追います。バージョン番号の固定タグは使いません。
+- Umbriel／Noctalia は `cachix`、xddxdd のカーネル群は `master` を追います。バージョン番号の固定タグは使いません。
 - The flake-update migration is not yet complete: custom packages such as Helium,
   xpad, Penpot MCP, and LiveSync, the shadcn skill source, and Orange's
   Minecraft/mod compatibility set still contain manually maintained versions or
