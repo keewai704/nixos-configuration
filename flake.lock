@@ -323,7 +323,7 @@
     "meltype-release": {
       "flake": false,
       "locked": {
-        "narHash": "sha256-1hFIPFriHN3cVBCh4j3L4MJdDeFAqguYL7bk5x68+EA=",
+        "narHash": "sha256-3RuQO0w6wB4to8DasVng3za9unxHNV0vAySJaKbyUYY=",
         "type": "file",
         "url": "https://api.github.com/repos/yksr-melt/Meltype/releases/latest"
       },
@@ -792,7 +792,7 @@
     "t3code-releases": {
       "flake": false,
       "locked": {
-        "narHash": "sha256-HxtGW7wD3GnCtuxzQMPfvckIcnyV1CfVfS1oa76QuIk=",
+        "narHash": "sha256-Et7RFN2Eqsh0F9DlMlKxVeyOw2/HeM5nRoWfnqD5vkQ=",
         "type": "file",
         "url": "https://api.github.com/repos/pingdotgg/t3code/releases?per_page=100"
       },
@@ -892,11 +892,11 @@
         "xdg-desktop-portal-umbriel": "xdg-desktop-portal-umbriel"
       },
       "locked": {
-        "lastModified": 1792887311,
-        "narHash": "sha256-xWPv7svHwn6UME5YXk2DBWCE6PaHUYBgWOMRLzCPUBQ=",
+        "lastModified": 1792888339,
+        "narHash": "sha256-70VOG4n1/FYFokKpmK839R9G8xUCMZ08Air5jfAJjdY=",
         "owner": "noctalia-dev",
         "repo": "umbriel",
-        "rev": "0345e9059656b0543aef6819256f6a7947ae7491",
+        "rev": "d021c5694435790e4ab3ab834a11ec16ad944a7e",
         "type": "github"
       },
       "original": {
