@@ -7,6 +7,7 @@
 }:
 let
   noctalia = lib.getExe config.programs.noctalia.package;
+  taskbarHeroAppId = "steam_app_3678970";
   shell = command: "spawn:${noctalia} msg ${command}";
   workspaceKeys = lib.listToAttrs (
     lib.concatMap (
@@ -133,8 +134,13 @@ in
         {
           match.app_id = "^steam_app_";
           default_output = "SUNSHINE";
+          default_fullscreen = true;
           opacity = 1.0;
           blur = false;
+        }
+        {
+          match.app_id = "^${taskbarHeroAppId}$";
+          default_fullscreen = false;
         }
       ];
     };
