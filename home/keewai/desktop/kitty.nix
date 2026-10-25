@@ -2,7 +2,10 @@
 {
   programs.kitty = {
     enable = true;
-    settings.remember_window_size = false;
+    settings = {
+      remember_window_size = false;
+      dynamic_background_opacity = true;
+    };
     extraConfig = ''
       include themes/noctalia.conf
     '';
@@ -13,5 +16,8 @@
     };
   };
 
-  stylix.targets.kitty.enable = true;
+  stylix = {
+    opacity.terminal = 0.9;
+    targets.kitty.enable = true;
+  };
 }
