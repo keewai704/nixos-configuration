@@ -10,6 +10,8 @@
     (final: _previous: { millennium = final.local.millennium; })
   ];
 
+  boot.kernelModules = [ "ntsync" ];
+
   programs = {
     gamescope = {
       enable = true;
