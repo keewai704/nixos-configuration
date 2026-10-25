@@ -30,6 +30,7 @@ in
       releases = inputs.t3code-releases;
       inherit claude-code;
     };
+    uxplay = final.callPackage ./uxplay { };
     whisper-ctranslate2-cuda = final.callPackage ./whisper-ctranslate2-cuda { };
   };
 }

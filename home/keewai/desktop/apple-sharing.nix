@@ -31,7 +31,7 @@ in
 {
   home.packages = [
     airdrop
-    pkgs.uxplay
+    pkgs.local.uxplay
   ];
 
   systemd.user.services.uxplay = {
@@ -41,7 +41,7 @@ in
       After = [ "graphical-session.target" ];
     };
     Service = {
-      ExecStart = "${lib.getExe pkgs.uxplay} -n ${lib.escapeShellArg osConfig.networking.hostName} -nh -p 7000 -avdec -vs ximagesink -as pulsesink -hls";
+      ExecStart = "${lib.getExe pkgs.local.uxplay} -n ${lib.escapeShellArg osConfig.networking.hostName} -nh -p 7000 -avdec -vs ximagesink -as pulsesink -hls";
       Environment = [ "GIO_EXTRA_MODULES=${pkgs.glib-networking}/lib/gio/modules" ];
       Restart = "always";
       RestartSec = 3;
