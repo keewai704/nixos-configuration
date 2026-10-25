@@ -69,7 +69,7 @@ in
       };
       steam = {
         input_path = pkgs.writeText "noctalia-steam.css" (
-          import ./steam-css.nix { fonts = config.stylix.fonts; }
+          import ./steam.nix { fonts = config.stylix.fonts; }
         );
         output_path = "$XDG_CONFIG_HOME/millennium/quick.css";
       };
@@ -78,7 +78,7 @@ in
           ''
             palette = "noctalia"
           ''
-          + builtins.readFile ../common/starship.toml
+          + builtins.readFile ../../../common/shell/starship.toml
           + "\n"
           + builtins.readFile "${community}/starship/starship.toml"
         );

@@ -55,6 +55,8 @@ in
       default = { };
       description = "Stdio MCP servers registered in Claude Code user configuration.";
     };
+
+    globalInstructions = lib.mkEnableOption "the shared CLAUDE.md user instructions";
   };
 
   config = {
@@ -78,7 +80,11 @@ in
       name: skillRoot + "/${name}"
     );
 
-    home.file = skillLinks;
+    home.file =
+      skillLinks
+      // lib.optionalAttrs cfg.globalInstructions {
+        ".claude/CLAUDE.md".text = builtins.readFile ./CLAUDE.md;
+      };
 
     home.activation.codingAgentConfig = lib.hm.dag.entryAfter [ "writeBoundary" ] ''
       run ${syncConfig} ${mcpServers}

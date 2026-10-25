@@ -5,6 +5,7 @@
     ./faster-whisper.nix
     ./git.nix
     ./packages.nix
-    ./shell.nix
+    ./shell
+    ./t3code.nix
   ];
 }

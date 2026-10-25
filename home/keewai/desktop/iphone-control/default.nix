@@ -1,9 +1,9 @@
 { lib, pkgs, ... }:
 let
-  mobileDeviceCommand = import ../common/apple-device-command.nix { inherit lib pkgs; };
+  mobileDeviceCommand = import ../../common/apple-device-command.nix { inherit lib pkgs; };
   control = mobileDeviceCommand {
     name = "iphone-control";
-    command = "python ${./iphone-control.py} --helper-dir ${../../../skills/apple-device-usb/scripts} --browser ${lib.getExe pkgs.local.helium}";
+    command = "python ${./control.py} --helper-dir ${../../../../skills/apple-device-usb/scripts} --browser ${lib.getExe pkgs.local.helium}";
     runtimeInputs = [
       pkgs.ffmpeg-headless
       pkgs.iproute2

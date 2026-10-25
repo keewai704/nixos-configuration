@@ -22,7 +22,6 @@ in
   };
 
   programs.dconf.enable = true;
-  programs.nix-ld.enable = true;
 
   services = {
     gnome.at-spi2-core.enable = true;

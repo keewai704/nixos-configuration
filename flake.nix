@@ -119,7 +119,19 @@
 
       packages.${system} = (pkgs.extend (import ./pkgs { inherit inputs; })).local;
 
-      devShells.${system}.default = import ./devshell { inherit pkgs; };
+      devShells.${system}.default = pkgs.mkShellNoCC {
+        packages = with pkgs; [
+          nixd
+          nixfmt
+          statix
+          deadnix
+          lua-language-server
+          stylua
+          bash-language-server
+          shellcheck
+          shfmt
+        ];
+      };
 
       formatter.${system} = nixpkgs.legacyPackages.${system}.nixfmt-tree;
     };
