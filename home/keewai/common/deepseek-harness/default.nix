@@ -61,7 +61,7 @@ in
 
   home.activation.deepseekHarness = lib.hm.dag.entryAfter [ "linkGeneration" ] ''
     profileManifest=${config.home.homeDirectory}/.dsh/profiles/web/package.json
-    for previousPlugin in dsh-claude-bridge dsh-codex-native; do
+    for previousPlugin in dsh-claude-bridge dsh-codex-native rdsh-locale-ja; do
       if [[ -f "$profileManifest" ]] && ${lib.getExe pkgs.jq} -e --arg plugin "$previousPlugin" \
         '.dependencies[$plugin] != null' "$profileManifest" > /dev/null; then
         run ${lib.getExe' pkgs.coreutils "env"} DSH_HOME=${config.home.homeDirectory}/.dsh \
@@ -75,7 +75,7 @@ in
       link:${pluginRoot}/dsh-claude-agent \
       link:${pluginRoot}/dsh-mobile-maxxing \
       link:${pluginRoot}/rdsh-markdown-cjk \
-      link:${pluginRoot}/rdsh-locale-ja \
+      link:${pluginRoot}/dsh-locale-ja \
       link:${pluginRoot}/dsh-chatgpt-subscription \
       link:${pluginRoot}/dsh-subscription-usage
     ${lib.hm.generators.mkImpureConfigMerger {

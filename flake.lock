@@ -91,7 +91,7 @@
     "claude-agent-sdk-release": {
       "flake": false,
       "locked": {
-        "narHash": "sha256-djDrLEHyAHM0NCpDC7B3MTiF3vTA1Jvj7shRo7adS2o=",
+        "narHash": "sha256-nHeobpt//PYr9khxYAGjV3bkT3qsEgQat7NoTLhPzWY=",
         "type": "file",
         "url": "https://registry.npmjs.org/@anthropic-ai/claude-agent-sdk/latest"
       },
@@ -108,11 +108,11 @@
         "systems": "systems"
       },
       "locked": {
-        "lastModified": 1792800194,
-        "narHash": "sha256-g40Rh4hV5MN72frk8m/nWS12xoxdkYtHt7GYG6kpcx4=",
+        "lastModified": 1793052132,
+        "narHash": "sha256-Gk2MXKG8bMenapVoLP6gyB6HJqFWBl+2YWn4qHg7PZM=",
         "owner": "sadjow",
         "repo": "claude-code-nix",
-        "rev": "272fc587339d97079d5f98980bca775444013180",
+        "rev": "9f13dbabe8a0f786e3b95a2231bdeeb8d363932b",
         "type": "github"
       },
       "original": {
@@ -147,7 +147,7 @@
     "deepseek-harness-release": {
       "flake": false,
       "locked": {
-        "narHash": "sha256-0DT4OuH6R+oDJYr6FLIZQYmOty6LUAWYxNLs2HT5hwo=",
+        "narHash": "sha256-RPvdpEwA5M/ngggHPwbsGQ6+u1hVZCq5vQzC2gwmy9U=",
         "type": "file",
         "url": "https://registry.npmjs.org/@deepseek-ai/dsh/next"
       },
@@ -171,7 +171,7 @@
     "dsh-codex-native-releases": {
       "flake": false,
       "locked": {
-        "narHash": "sha256-sFpz6EmhJCdYh3///C9JxvUDjUMXsvq29WljUsuTdgM=",
+        "narHash": "sha256-DiaOxx3ztpcBzJIZJYcb4YXSOBt8C2qN2g4HkUAEILE=",
         "type": "file",
         "url": "https://api.github.com/repos/Tests4gptplay/dsh-codex-native/releases?per_page=20"
       },
@@ -183,11 +183,11 @@
     "dsh-mobile-maxxing": {
       "flake": false,
       "locked": {
-        "lastModified": 1793019804,
-        "narHash": "sha256-M+XbETmoKH0LtXrK/7JCXix60GkjYa+8b92HYfPM2RE=",
+        "lastModified": 1793050904,
+        "narHash": "sha256-QoUOYDMKrrwAcuIlMlATBY2Il+YbQ7M5B7kX7IfwJwU=",
         "owner": "kuraneko1",
         "repo": "dsh-mobile-maxxing",
-        "rev": "a6fb70cbfc39f7657d0cf9353fc3566d44dda937",
+        "rev": "070e137b8cd5eb13bfae8eeb33e120b941115f62",
         "type": "github"
       },
       "original": {
@@ -328,11 +328,11 @@
         ]
       },
       "locked": {
-        "lastModified": 1792896866,
-        "narHash": "sha256-/0tELNnhdSnP+bHSdWiEe6KpfSwi6WrTnT9cm/jNkjA=",
+        "lastModified": 1793033486,
+        "narHash": "sha256-fXVURa0+CSCgaxLt8tmPNJq2U+fGYOwbk5j2YUe7kSc=",
         "owner": "nix-community",
         "repo": "home-manager",
-        "rev": "c216bf5a1f173b0481bd5c8c489ebe5595ecc68c",
+        "rev": "7db163b2aee7e410e396b48aed02f646d742b9b8",
         "type": "github"
       },
       "original": {
@@ -388,7 +388,7 @@
     "meltype-release": {
       "flake": false,
       "locked": {
-        "narHash": "sha256-L+1ZYA2SSBQjKwbkh89xsfDGWW0qV8jxj1PH8PXOw70=",
+        "narHash": "sha256-uXqG/sJqoI3Moa7r1FIPtXTD7AhFD8XdkIZ6B+CpQ+A=",
         "type": "file",
         "url": "https://api.github.com/repos/yksr-melt/Meltype/releases/latest"
       },
@@ -417,11 +417,11 @@
       },
       "locked": {
         "dir": "packages/nix",
-        "lastModified": 1792943446,
-        "narHash": "sha256-JQ7ff1427PoYtxXbj+keMsNr+Nikc1/RuPm4l/VjX8U=",
+        "lastModified": 1793036394,
+        "narHash": "sha256-vKNDa2aF7mi8I5SJVlqtePTwel64sYEAiHQR7HbUpwk=",
         "owner": "SteamClientHomebrew",
         "repo": "Millennium",
-        "rev": "de5e9bdc251e2a422549ebe8b932015e126b994f",
+        "rev": "d6a7822a43744b6290a0e059bdd032d9b9a2ec94",
         "type": "github"
       },
       "original": {
@@ -455,11 +455,11 @@
         "nixpkgs": "nixpkgs_2"
       },
       "locked": {
-        "lastModified": 1792958280,
-        "narHash": "sha256-jQmIHwZdr3NI+UYOzeqnur9juiDco3wz661xDGmPa0k=",
+        "lastModified": 1793051482,
+        "narHash": "sha256-nDlV6JnYoSyGFugHB/BHttLK6D06N0b8uMM+pd6GPGA=",
         "owner": "xddxdd",
         "repo": "nix-cachyos-kernel",
-        "rev": "06243b090821665195da63559232fc446ae6f860",
+        "rev": "054370a979b64ba73db72a22cbc055b29cea56fb",
         "type": "github"
       },
       "original": {
@@ -501,11 +501,11 @@
         "treefmt-nix": "treefmt-nix"
       },
       "locked": {
-        "lastModified": 1793021930,
-        "narHash": "sha256-cBt5t1EAuEPllPznQa5qAAr6UqZoIqIGra2TKbkqY50=",
+        "lastModified": 1793049812,
+        "narHash": "sha256-UuxjX2E0V6LFmlD9z8nizrINWs+ytmT3ak0GplVFB7Y=",
         "owner": "4evy",
         "repo": "nixcord",
-        "rev": "5d9cbc77242752bd5353df2407ee9cd9966fe466",
+        "rev": "a9f0632f7731461516eef1df10537936c8527ffa",
         "type": "github"
       },
       "original": {
@@ -586,11 +586,11 @@
     },
     "nixpkgs_2": {
       "locked": {
-        "lastModified": 1792925778,
-        "narHash": "sha256-aCg6fAHZszDX68IsLPUm/NQ7ZVXMHk74bjHAIr8K5dM=",
+        "lastModified": 1793036176,
+        "narHash": "sha256-EnBV0ArpWUU2LdWgobehk8u5D6seY3E9abbcXem4gso=",
         "owner": "NixOS",
         "repo": "nixpkgs",
-        "rev": "acc2ec71996e90e6e011fa14979b13cdc070ec79",
+        "rev": "31f3e225826b4111450ebfb223ff2ef474d7f16e",
         "type": "github"
       },
       "original": {
@@ -862,7 +862,7 @@
     "t3code-releases": {
       "flake": false,
       "locked": {
-        "narHash": "sha256-lUDxc2K9WdmAf5OKdADkDel3Hxh29z8OQ8ku9IFscII=",
+        "narHash": "sha256-JNVh8SZA5ffNS01FQd8/V+TKJv9Bs3M/wflS3iH0aNM=",
         "type": "file",
         "url": "https://api.github.com/repos/pingdotgg/t3code/releases?per_page=100"
       },
@@ -962,11 +962,11 @@
         "xdg-desktop-portal-umbriel": "xdg-desktop-portal-umbriel"
       },
       "locked": {
-        "lastModified": 1793020571,
-        "narHash": "sha256-4UpeYlVMEueYO63nGuRsB5/4oYokGu9bZONs2TDOPqs=",
+        "lastModified": 1793040322,
+        "narHash": "sha256-/ev57LNm1QmDpUJRA+IllezHQDTT+SJd4oA08nbfIxE=",
         "owner": "noctalia-dev",
         "repo": "umbriel",
-        "rev": "d9497f366c4fc8ae09a248ad49aa842d47e2b53f",
+        "rev": "366739955d3905d7600638eb637941b2782c0c68",
         "type": "github"
       },
       "original": {

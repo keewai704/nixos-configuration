@@ -32,9 +32,9 @@ let
           lib.filter (release: !release.draft) (lib.importJSON codexReleases)
         )
       );
-  localeManifest = writeText "rdsh-locale-ja-package.json" (
+  localeManifest = writeText "dsh-locale-ja-package.json" (
     builtins.toJSON (
-      lib.recursiveUpdate (lib.importJSON "${mobilePlugin}/packages/rdsh-locale-ja/package.json") {
+      lib.recursiveUpdate (lib.importJSON "${mobilePlugin}/packages/dsh-locale-ja/package.json") {
         dsh.bundle.patch = "./cordis.patch.yml";
         peerDependencies."@deepseek-ai/dsh-client-locale" = (lib.importJSON release).version;
       }
@@ -103,14 +103,14 @@ buildNpmPackage {
     ln -s ../plugins/chatgpt "$out/lib/deepseek-harness/node_modules/dsh-chatgpt-subscription"
     ln -s ../plugins/usage "$out/lib/deepseek-harness/node_modules/dsh-subscription-usage"
     cp -r ${mobilePlugin} "$out/lib/deepseek-harness/node_modules/dsh-mobile-maxxing"
-    localeRoot="$out/lib/deepseek-harness/node_modules/rdsh-locale-ja"
-    cp -r ${mobilePlugin}/packages/rdsh-locale-ja "$localeRoot"
+    localeRoot="$out/lib/deepseek-harness/node_modules/dsh-locale-ja"
+    cp -r ${mobilePlugin}/packages/dsh-locale-ja "$localeRoot"
     chmod u+w "$localeRoot"
     cp --remove-destination ${localeManifest} "$localeRoot/package.json"
     cat > "$localeRoot/cordis.patch.yml" <<'EOF'
     - insert:
-        - id: rdsh-locale-ja
-          name: rdsh-locale-ja
+        - id: dsh-locale-ja
+          name: dsh-locale-ja
           config: {}
     EOF
     cjkRoot="$out/lib/deepseek-harness/node_modules/rdsh-markdown-cjk"
@@ -151,7 +151,7 @@ buildNpmPackage {
     chmod -R u+w "$localeCheck"
     git init --quiet --initial-branch=main "$localeCheck"
     ${lib.getExe nodejs} "$localeCheck/tools/build-client.mjs" --check
-    ${lib.getExe nodejs} --test "$localeCheck/packages/rdsh-locale-ja/test/stage2.test.mjs"
+    ${lib.getExe nodejs} --test "$localeCheck/packages/dsh-locale-ja/test/stage2.test.mjs"
     DSH_ORIG_BIN="$out/lib/deepseek-harness/node_modules/@deepseek-ai/dsh/lib/bin.js" \
       ${lib.getExe nodejs} --test \
       ${mobilePlugin}/packages/dsh-mobile-maxxing/tests/markdown-cjk.test.mjs \
@@ -162,7 +162,7 @@ buildNpmPackage {
       link:"$out/lib/deepseek-harness/node_modules/dsh-claude-agent" \
       link:"$out/lib/deepseek-harness/node_modules/dsh-mobile-maxxing" \
       link:"$out/lib/deepseek-harness/node_modules/rdsh-markdown-cjk" \
-      link:"$out/lib/deepseek-harness/node_modules/rdsh-locale-ja" \
+      link:"$out/lib/deepseek-harness/node_modules/dsh-locale-ja" \
       link:"$out/lib/deepseek-harness/node_modules/dsh-chatgpt-subscription" \
       link:"$out/lib/deepseek-harness/node_modules/dsh-subscription-usage"
     "$out/bin/dsh" --profile web --dump-config > "$TMPDIR/dsh-composed.yml"

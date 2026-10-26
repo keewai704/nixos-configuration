@@ -276,7 +276,7 @@ Claude Code と Codex は全ホストで Home Manager が導入し、どのシ�
   Nix の Node.js では `--expose-internals` で同じ内部ローダーを取得し、ネイティブアドオンの実行形式への依存を避けます。
 - [dsh-mobile-maxxing](https://github.com/kuraneko1/dsh-mobile-maxxing) が PWA・通知・モバイル操作を提供します。
   iPhone など別端末からの利用には HTTPS の入口が必要です。この設定ではループバックだけで待ち受けます。
-- 同じ配布元の [rdsh-locale-ja](https://github.com/kuraneko1/dsh-mobile-maxxing/tree/main/packages/rdsh-locale-ja) が言語選択に **日本語** を追加します。
+- 同じ配布元の [dsh-locale-ja](https://github.com/kuraneko1/dsh-mobile-maxxing/tree/main/packages/dsh-locale-ja) が言語選択に **日本語** を追加します。
   DSH の bundle 登録定義と現在のランタイムに対する依存宣言を Nix 側で補い、選択中の表示言語は保持します。
 - 独自の [dsh-chatgpt-subscription](pkgs/deepseek-harness/plugins/chatgpt/) が **ChatGPT (subscription)** を追加します。
   Home Manager が導入する公式 Codex CLI の App Server を起動し、通常の `codex login` の認証と ChatGPT 契約に含まれる Codex / ChatGPT Work の利用枠を使います。
