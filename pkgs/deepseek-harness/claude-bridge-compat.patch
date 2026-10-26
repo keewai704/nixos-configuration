@@ -1,0 +1,73 @@
+--- a/lib/adapter.js
++++ b/lib/adapter.js
+@@ -72,6 +72,11 @@
+ const promptFrom = (messages) => {
+     const turns = [];
+     for (const message of messages) {
++        if (message.role === 'system') continue;
++        if (message.role === 'tool') {
++            turns.push(`[Tool ${message.toolCallId} ${message.isError ? 'failed' : 'returned'}: ${textOf(message.content) || '(no output)'}]`);
++            continue;
++        }
+         const lines = [];
+         for (const block of message.content) {
+             if (block.type === 'text') {
+@@ -132,17 +137,13 @@
+ const resultsFor = (messages, wanted) => {
+     const found = new Map();
+     for (const message of messages) {
+-        for (const block of message.content) {
+-            if (block.type !== 'tool-result')
+-                continue;
+-            const id = String(block.toolCallId);
+-            if (!wanted.has(id) || found.has(id))
+-                continue;
+-            found.set(id, {
+-                content: [{ type: 'text', text: textOf(block.content) || '(no output)' }],
+-                ...(block.isError === true ? { isError: true } : {}),
+-            });
+-        }
++        if (message.role !== 'tool') continue;
++        const id = String(message.toolCallId);
++        if (!wanted.has(id) || found.has(id)) continue;
++        found.set(id, {
++            content: [{ type: 'text', text: textOf(message.content) || '(no output)' }],
++            ...(message.isError === true ? { isError: true } : {}),
++        });
+     }
+     return found;
+ };
+@@ -260,6 +261,9 @@
+         session.toolNames = server?.dshName;
+         const longContext = this.config.longContext === true;
+         const effort = options.reasoningEffort === undefined ? undefined : EFFORT[options.reasoningEffort];
++        const system = options.system ?? options.messages
++            .filter(message => message.role === 'system')
++            .map(message => textOf(message.content)).join('\n\n');
+         /*
+          * The child's own abort route. Without it the only teardown is a control
+          * request the child has to be well enough to answer, which is exactly what
+@@ -285,9 +289,9 @@
+                 // the child at an API key. The inline `settings` above is the highest
+                 // tier, so it still applies; it does not suppress the ones below it.
+                 settingSources: [],
+-                systemPrompt: options.system === undefined
++                systemPrompt: system.length === 0
+                     ? { type: 'preset', preset: 'claude_code' }
+-                    : { type: 'preset', preset: 'claude_code', append: options.system },
++                    : { type: 'preset', preset: 'claude_code', append: system },
+                 extraArgs: {
+                     model: cliModelId(options.model, longContext),
+                     'strict-mcp-config': null,
+--- a/lib/models.js
++++ b/lib/models.js
+@@ -10,6 +10,9 @@
+  */
+ /** What the harness offers, newest first. Mirrors what the CLI itself accepts. */
+ export const MODELS = [
++    { id: 'opus', name: 'Claude Opus', contextWindow: 200_000, longContext: false },
++    { id: 'sonnet', name: 'Claude Sonnet', contextWindow: 200_000, longContext: false },
++    { id: 'haiku', name: 'Claude Haiku', contextWindow: 200_000, longContext: false },
+     { id: 'claude-opus-5', name: 'Claude Opus 5', contextWindow: 200_000, longContext: true },
+     { id: 'claude-sonnet-5', name: 'Claude Sonnet 5', contextWindow: 200_000, longContext: true },
+     { id: 'claude-fable-5', name: 'Claude Fable 5', contextWindow: 200_000, longContext: false },

@@ -88,6 +88,18 @@
         "type": "github"
       }
     },
+    "claude-agent-sdk-release": {
+      "flake": false,
+      "locked": {
+        "narHash": "sha256-djDrLEHyAHM0NCpDC7B3MTiF3vTA1Jvj7shRo7adS2o=",
+        "type": "file",
+        "url": "https://registry.npmjs.org/@anthropic-ai/claude-agent-sdk/latest"
+      },
+      "original": {
+        "type": "file",
+        "url": "https://registry.npmjs.org/@anthropic-ai/claude-agent-sdk/latest"
+      }
+    },
     "claude-code": {
       "inputs": {
         "nixpkgs": [
@@ -129,6 +141,47 @@
         "owner": "sadjow",
         "ref": "main",
         "repo": "codex-cli-nix",
+        "type": "github"
+      }
+    },
+    "deepseek-harness-release": {
+      "flake": false,
+      "locked": {
+        "narHash": "sha256-0DT4OuH6R+oDJYr6FLIZQYmOty6LUAWYxNLs2HT5hwo=",
+        "type": "file",
+        "url": "https://registry.npmjs.org/@deepseek-ai/dsh/next"
+      },
+      "original": {
+        "type": "file",
+        "url": "https://registry.npmjs.org/@deepseek-ai/dsh/next"
+      }
+    },
+    "dsh-claude-bridge-release": {
+      "flake": false,
+      "locked": {
+        "narHash": "sha256-twfMQ47yUACD6c5P404SVDqd+NFycHIx4W8Oki7GHEc=",
+        "type": "file",
+        "url": "https://registry.npmjs.org/dsh-claude-bridge/latest"
+      },
+      "original": {
+        "type": "file",
+        "url": "https://registry.npmjs.org/dsh-claude-bridge/latest"
+      }
+    },
+    "dsh-mobile-maxxing": {
+      "flake": false,
+      "locked": {
+        "lastModified": 1792990292,
+        "narHash": "sha256-mBVO5prz7d4lmY/y6gJHep1K99utzhH19PiUk//sgss=",
+        "owner": "kuraneko1",
+        "repo": "dsh-mobile-maxxing",
+        "rev": "24e2e49671de7754c25feffddaf1ba519f6507eb",
+        "type": "github"
+      },
+      "original": {
+        "owner": "kuraneko1",
+        "ref": "main",
+        "repo": "dsh-mobile-maxxing",
         "type": "github"
       }
     },
@@ -323,7 +376,7 @@
     "meltype-release": {
       "flake": false,
       "locked": {
-        "narHash": "sha256-YyrKHOSRnMfGg+8UySHWmGxWLA0vhgrWF3Dfe3NNIJ4=",
+        "narHash": "sha256-IUoF0NuF/hSXaX/rSkDKChuYXvHIbOZJiVGpSXeuzoc=",
         "type": "file",
         "url": "https://api.github.com/repos/yksr-melt/Meltype/releases/latest"
       },
@@ -436,11 +489,11 @@
         "treefmt-nix": "treefmt-nix"
       },
       "locked": {
-        "lastModified": 1792951801,
-        "narHash": "sha256-3k2ZI2OzEqq1n8d7ccCcTbDlEGbQf8TyXwe4ZfRbtCs=",
+        "lastModified": 1792984624,
+        "narHash": "sha256-i8nr7pMfov5q0W5m1UCeNYGClbA4hdbmTwa+OkumdlY=",
         "owner": "4evy",
         "repo": "nixcord",
-        "rev": "33aef60077e134dbc170f317d1a2896b547045cf",
+        "rev": "63e33cd00b08ef49b6623a1b6f9f27f69049d1a9",
         "type": "github"
       },
       "original": {
@@ -595,11 +648,11 @@
         "nixpkgs": "nixpkgs_5"
       },
       "locked": {
-        "lastModified": 1792969604,
-        "narHash": "sha256-1OasQBpd9V83gSHc1X8gOdKuYky07TcivkILjFdncHA=",
+        "lastModified": 1792989497,
+        "narHash": "sha256-TKGEboxTLrOysRfIxC5dHM2FKk5Rj1bkBUGT01GEo78=",
         "owner": "noctalia-dev",
         "repo": "noctalia",
-        "rev": "6c83e27c5a1b3fa5acd6c925104968f00d13e17b",
+        "rev": "0568e1da66afa596c312618577284c3692e5c0b1",
         "type": "github"
       },
       "original": {
@@ -691,8 +744,12 @@
     "root": {
       "inputs": {
         "agenix": "agenix",
+        "claude-agent-sdk-release": "claude-agent-sdk-release",
         "claude-code": "claude-code",
         "codex": "codex",
+        "deepseek-harness-release": "deepseek-harness-release",
+        "dsh-claude-bridge-release": "dsh-claude-bridge-release",
+        "dsh-mobile-maxxing": "dsh-mobile-maxxing",
         "home-manager": "home-manager",
         "iphone-control": "iphone-control",
         "meltype-release": "meltype-release",
@@ -792,7 +849,7 @@
     "t3code-releases": {
       "flake": false,
       "locked": {
-        "narHash": "sha256-rDtrZ1dXVOOoYqO+9ncASZ1qtcf9dHw7fZxDEELaDuA=",
+        "narHash": "sha256-sCH1IBLkbPeUc32Gud7y0UTge5RGEAFoqOqQ1Pxe3jg=",
         "type": "file",
         "url": "https://api.github.com/repos/pingdotgg/t3code/releases?per_page=100"
       },
@@ -892,11 +949,11 @@
         "xdg-desktop-portal-umbriel": "xdg-desktop-portal-umbriel"
       },
       "locked": {
-        "lastModified": 1792946643,
-        "narHash": "sha256-n/HpqcMLHFK6TEqSo1BRQ73EG9nRSM2yCQjBqasAGuU=",
+        "lastModified": 1792980345,
+        "narHash": "sha256-XgSh+ceUnwPd7M5dzz45liHnJdLuBqjRBpEobFQfqnA=",
         "owner": "noctalia-dev",
         "repo": "umbriel",
-        "rev": "fd0a6e9a2335355d3848290d805e9bb50efcbb74",
+        "rev": "76477c29d864fa64069e443c350cf671f65bdc31",
         "type": "github"
       },
       "original": {

@@ -47,6 +47,26 @@
       inputs.nixpkgs.follows = "nixpkgs";
     };
 
+    deepseek-harness-release = {
+      url = "file+https://registry.npmjs.org/@deepseek-ai/dsh/next";
+      flake = false;
+    };
+
+    dsh-claude-bridge-release = {
+      url = "file+https://registry.npmjs.org/dsh-claude-bridge/latest";
+      flake = false;
+    };
+
+    claude-agent-sdk-release = {
+      url = "file+https://registry.npmjs.org/@anthropic-ai/claude-agent-sdk/latest";
+      flake = false;
+    };
+
+    dsh-mobile-maxxing = {
+      url = "github:kuraneko1/dsh-mobile-maxxing/main";
+      flake = false;
+    };
+
     t3code-releases = {
       url = "file+https://api.github.com/repos/pingdotgg/t3code/releases?per_page=100";
       flake = false;

@@ -1,0 +1,17 @@
+{
+  "name": "deepseek-harness",
+  "version": "0.2.1-rc.3",
+  "private": true,
+  "dependencies": {
+    "@deepseek-ai/dsh": "0.2.1-rc.3",
+    "@deepseek-ai/dsh-llm": "0.2.1-rc.3",
+    "dsh-claude-bridge": "0.2.0",
+    "@anthropic-ai/claude-agent-sdk": "0.3.310"
+  },
+  "overrides": {
+    "dsh-claude-bridge": {
+      "@anthropic-ai/claude-agent-sdk": "$@anthropic-ai/claude-agent-sdk",
+      "@deepseek-ai/dsh-llm": "$@deepseek-ai/dsh-llm"
+    }
+  }
+}

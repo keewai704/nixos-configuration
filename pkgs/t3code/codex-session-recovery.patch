@@ -3,15 +3,15 @@ Upstream: https://github.com/pingdotgg/t3code/pull/22791
 
 --- a/binCli.mjs
 +++ b/binCli.mjs
-@@ -231436,6 +231436,7 @@
+@@ -228298,6 +228298,7 @@
  }));
  const make$103 = fn("effect-codex-app-server/CodexAppServerClient.make")(function* (stdio, options = {}, terminationError) {
  	const requestHandlers = /* @__PURE__ */ new Map();
-+	const termination = yield* make$263();
++	const termination = yield* make$265();
  	const notificationHandlers = /* @__PURE__ */ new Map();
  	let unknownRequestHandler;
  	let unknownNotificationHandler;
-@@ -231467,11 +231468,13 @@
+@@ -228329,11 +228330,13 @@
  		...options.logOutgoing !== void 0 ? { logOutgoing: options.logOutgoing } : {},
  		...options.logger ? { logger: options.logger } : {},
  		onNotification: dispatchNotification,
@@ -26,7 +26,7 @@ Upstream: https://github.com/pingdotgg/t3code/pull/22791
  		raw: {
  			notifications: transport.incomingNotifications,
  			requests: transport.incomingRequests,
-@@ -233187,5 +233190,10 @@
+@@ -230029,5 +230032,10 @@
  			});
  			const events = yield* unbounded$2();
 +			yield* client.awaitTermination.pipe(catch_((cause) => fail$6(events, new ProviderAdapterEventStreamError({
@@ -34,6 +34,6 @@ Upstream: https://github.com/pingdotgg/t3code/pull/22791
 +				providerSessionId: input.providerSessionId,
 +				cause
 +			}))), forkScoped);
- 			const rateLimitSnapshot = yield* make$239(void 0);
- 			const limitedTurnItems = yield* make$239(/* @__PURE__ */ new Map());
- 			const activeTurns = yield* make$239(/* @__PURE__ */ new Map());
+ 			const rateLimitSnapshot = yield* make$241(void 0);
+ 			const limitedTurnItems = yield* make$241(/* @__PURE__ */ new Map());
+ 			const activeTurns = yield* make$241(/* @__PURE__ */ new Map());

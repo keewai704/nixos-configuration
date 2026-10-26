@@ -11,6 +11,12 @@ in
   };
 
   local = {
+    deepseek-harness = final.callPackage ./deepseek-harness {
+      release = inputs.deepseek-harness-release;
+      bridgeRelease = inputs.dsh-claude-bridge-release;
+      sdkRelease = inputs.claude-agent-sdk-release;
+      mobilePlugin = inputs.dsh-mobile-maxxing;
+    };
     helium = final.callPackage ./helium { };
     legcord = final.callPackage ./legcord { };
     livesync-bridge = final.callPackage ./livesync-bridge { };

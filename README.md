@@ -62,6 +62,7 @@ flake.nix
 | Git / GitHub CLI | [git.nix](home/keewai/common/git.nix) |
 | Claude Code・Codex・スキル・MCP サーバー | [coding-agents/](home/keewai/common/coding-agents/default.nix)、[skills/](skills/) |
 | T3 Code（デスクトップ版・サーバー版） | [t3code.nix](home/keewai/common/t3code.nix)、[pkgs/t3code](pkgs/t3code/) |
+| DeepSeek Harness・Claude 接続・モバイルプラグイン | [deepseek-harness](home/keewai/common/deepseek-harness/)、[pkgs/deepseek-harness](pkgs/deepseek-harness/) |
 | 設定のいらない GUI アプリを追加 | [home/keewai/desktop/packages.nix](home/keewai/desktop/packages.nix) |
 | ウィンドウ操作・キー割り当て | [umbriel.nix](home/keewai/desktop/umbriel.nix) |
 | モニター・解像度 | [hosts/citrus/display.nix](hosts/citrus/display.nix) |
@@ -259,6 +260,25 @@ Claude Code と Codex は全ホストで Home Manager が導入し、どのシ�
   **Settings → Source Control → Rescan** を選びます。トークンを Nix にコピーすることはありません。
 - 適用時に書き換えるのは、接続とプロバイダーに関する項目だけです。T3 Code は利用者の権限でコマンドを実行できます。
   tailnet 内だけの公開でも、隔離された環境になるわけではありません。
+
+### DeepSeek Harness pre-release
+
+[DeepSeek Harness](https://github.com/deepseek-ai/deepseek-harness) の npm `next` チャンネルを両ホストに導入します。
+`dsh-web` ユーザーサービスが `http://127.0.0.1:3080` で Web UI を起動します。
+ランチャーの **DeepSeek Harness** または `dsh-open` が認証付き URL をブラウザーで開きます。
+ワークスペースを追加すると、既定の Claude Opus で会話できます。サービスの操作は
+`systemctl --user restart dsh-web`、ログは `journalctl --user -u dsh-web` です。
+
+- [dsh-claude-bridge](https://github.com/shaneconner/dsh-claude-bridge) と公式 Claude Agent SDK を使います。
+  Home Manager の Claude Code を明示し、通常の `claude auth login` の認証を利用します。
+  DSH のシステムメッセージ・ツール結果の形式と、Claude のモデルエイリアスに対応するパッチを同梱します。
+  Nix の Node.js では `--expose-internals` で同じ内部ローダーを取得し、ネイティブアドオンの実行形式への依存を避けます。
+- [dsh-mobile-maxxing](https://github.com/kuraneko1/dsh-mobile-maxxing) が PWA・通知・モバイル操作を提供します。
+  iPhone など別端末からの利用には HTTPS の入口が必要です。この設定ではループバックだけで待ち受けます。
+- 取得元は flake 入力、npm の依存関係はパッケージ内のロックで管理します。
+  更新は `nix flake update` のあと、リポジトリのルートで
+  `nix run --no-write-lock-file .#deepseek-harness.updateScript` を実行し、生成された変更もコミットします。
+  適用時は指定のプラグインと Claude 実行パスを設定し、利用者が追加したプラグインやモデル選択を保持します。
 
 ## orange（サーバー）
 
