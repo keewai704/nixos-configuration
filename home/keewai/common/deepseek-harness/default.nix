@@ -33,8 +33,8 @@ let
   };
   settings = [
     {
-      id = "claude-bridge";
-      config.pathToClaudeCodeExecutable = claudeExecutable;
+      id = "dsh-claude-agent";
+      config.executable = claudeExecutable;
     }
     {
       id = "agent-default-model";
@@ -60,23 +60,33 @@ in
   };
 
   home.activation.deepseekHarness = lib.hm.dag.entryAfter [ "linkGeneration" ] ''
+    profileManifest=${config.home.homeDirectory}/.dsh/profiles/web/package.json
+    for previousPlugin in dsh-claude-bridge dsh-codex-native; do
+      if [[ -f "$profileManifest" ]] && ${lib.getExe pkgs.jq} -e --arg plugin "$previousPlugin" \
+        '.dependencies[$plugin] != null' "$profileManifest" > /dev/null; then
+        run ${lib.getExe' pkgs.coreutils "env"} DSH_HOME=${config.home.homeDirectory}/.dsh \
+          ${lib.getExe package} plugin --profile web remove "$previousPlugin" \
+          --offline --ignore-scripts --config.auto-install-peers=false
+      fi
+    done
     run ${lib.getExe' pkgs.coreutils "env"} DSH_HOME=${config.home.homeDirectory}/.dsh \
       ${lib.getExe package} plugin --profile web add \
       --offline --ignore-scripts --config.auto-install-peers=false \
-      link:${pluginRoot}/dsh-claude-bridge \
+      link:${pluginRoot}/dsh-claude-agent \
       link:${pluginRoot}/dsh-mobile-maxxing \
       link:${pluginRoot}/rdsh-markdown-cjk \
       link:${pluginRoot}/rdsh-locale-ja \
-      link:${pluginRoot}/dsh-codex-native
+      link:${pluginRoot}/dsh-chatgpt-subscription \
+      link:${pluginRoot}/dsh-subscription-usage
     ${lib.hm.generators.mkImpureConfigMerger {
       inherit pkgs;
       format = "yaml";
       empty = "[]";
       jqOperation = ''
-        reduce $static[] as $entry ($dynamic;
+        reduce $static[] as $entry ($dynamic | map(select(.id != "claude-bridge"));
           if any(.[]; .id == $entry.id) then
-            map(if .id == $entry.id and .id == "claude-bridge" then
-              .config.pathToClaudeCodeExecutable = $entry.config.pathToClaudeCodeExecutable
+            map(if .id == $entry.id and .id == "dsh-claude-agent" then
+              .config.executable = $entry.config.executable
             else . end)
           else . + [$entry] end)
       '';

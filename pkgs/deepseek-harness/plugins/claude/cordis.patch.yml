@@ -1,0 +1,4 @@
+- insert:
+    - id: dsh-claude-agent
+      name: dsh-claude-agent
+      config: {}

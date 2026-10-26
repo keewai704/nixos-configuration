@@ -6,7 +6,13 @@ import { dirname, join } from "node:path";
 const directory = process.argv[2];
 const cli = createRequire(join(directory, "@deepseek-ai/dsh/package.json"));
 const dshVersion = cli("./package.json").version;
-for (const plugin of ["dsh-claude-bridge", "dsh-codex-native"]) {
+for (const plugin of [
+  "dsh-claude-bridge",
+  "dsh-codex-native",
+  "dsh-claude-agent",
+  "dsh-chatgpt-subscription",
+  "dsh-subscription-usage",
+]) {
   const require = createRequire(join(directory, plugin, "package.json"));
   for (const name of ["@deepseek-ai/cordis", "@deepseek-ai/dsh-llm"]) {
     assert.equal(
@@ -15,6 +21,15 @@ for (const plugin of ["dsh-claude-bridge", "dsh-codex-native"]) {
       `${name} must share its module instance between DSH and ${plugin}`,
     );
   }
+}
+
+for (const path of [
+  "dsh-claude-agent/index.mjs",
+  "dsh-chatgpt-subscription/index.mjs",
+  "dsh-subscription-usage/index.mjs",
+]) {
+  const plugin = await import(join(directory, path));
+  assert.equal(typeof plugin.apply, "function");
 }
 
 const codex = createRequire(join(directory, "dsh-codex-native/package.json"));

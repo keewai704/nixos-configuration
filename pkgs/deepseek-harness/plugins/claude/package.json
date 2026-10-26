@@ -1,0 +1,9 @@
+{
+  "name": "dsh-claude-agent",
+  "version": "0.1.0",
+  "type": "module",
+  "description": "Claude Agent SDK subscription provider with live model discovery",
+  "license": "MIT",
+  "exports": "./index.mjs",
+  "dsh": { "bundle": { "patch": "./cordis.patch.yml" } }
+}

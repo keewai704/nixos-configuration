@@ -3,6 +3,7 @@
   stdenv,
   buildNpmPackage,
   autoPatchelfHook,
+  esbuild,
   makeWrapper,
   nodejs,
   pnpm_11,
@@ -60,6 +61,7 @@ buildNpmPackage {
 
   nativeBuildInputs = [
     autoPatchelfHook
+    esbuild
     makeWrapper
     git
   ];
@@ -81,6 +83,10 @@ buildNpmPackage {
 
   postConfigure = ''
     patch --fuzz=0 -d node_modules/dsh-claude-bridge -p1 < ${./claude-bridge-compat.patch}
+    substituteInPlace node_modules/dsh-claude-bridge/lib/adapter.js \
+      --replace-fail 'EFFORT[options.reasoningEffort]' 'String(options.reasoningEffort)'
+    substituteInPlace node_modules/dsh-codex-native/lib/index.js \
+      --replace-fail 'export { AppServerEventMapper,' 'export { DshCodexAdapter, AppServerEventMapper,'
     substituteInPlace node_modules/node-addon-require-builtin/lib/index.js \
       --replace-fail 'return api.requireBuiltin(moduleId);' 'return require(moduleId);'
   '';
@@ -89,6 +95,13 @@ buildNpmPackage {
     runHook preInstall
     mkdir -p "$out/lib/deepseek-harness" "$out/bin"
     cp -r node_modules "$out/lib/deepseek-harness/"
+    cp -r plugins "$out/lib/deepseek-harness/"
+    pluginDirectory="$out/lib/deepseek-harness/plugins"
+    esbuild "$pluginDirectory/usage/client.jsx" --format=iife \
+      --outfile="$pluginDirectory/usage/lib/client.js"
+    ln -s ../plugins/claude "$out/lib/deepseek-harness/node_modules/dsh-claude-agent"
+    ln -s ../plugins/chatgpt "$out/lib/deepseek-harness/node_modules/dsh-chatgpt-subscription"
+    ln -s ../plugins/usage "$out/lib/deepseek-harness/node_modules/dsh-subscription-usage"
     cp -r ${mobilePlugin} "$out/lib/deepseek-harness/node_modules/dsh-mobile-maxxing"
     localeRoot="$out/lib/deepseek-harness/node_modules/rdsh-locale-ja"
     cp -r ${mobilePlugin}/packages/rdsh-locale-ja "$localeRoot"
@@ -132,6 +145,7 @@ buildNpmPackage {
     runHook preInstallCheck
     "$out/bin/dsh" --version | grep -Fx '${(lib.importJSON release).version}'
     ${lib.getExe nodejs} --expose-internals ${./test-runtime.mjs} "$out/lib/deepseek-harness/node_modules"
+    ${lib.getExe nodejs} --expose-internals --test "$out/lib/deepseek-harness/plugins/usage/test-usage.mjs"
     localeCheck="$TMPDIR/dsh-locale-check"
     cp -r ${mobilePlugin} "$localeCheck"
     chmod -R u+w "$localeCheck"
@@ -145,11 +159,12 @@ buildNpmPackage {
     export DSH_HOME="$TMPDIR/dsh-install-check"
     "$out/bin/dsh" plugin --profile web add \
       --offline --ignore-scripts --config.auto-install-peers=false \
-      link:"$out/lib/deepseek-harness/node_modules/dsh-claude-bridge" \
+      link:"$out/lib/deepseek-harness/node_modules/dsh-claude-agent" \
       link:"$out/lib/deepseek-harness/node_modules/dsh-mobile-maxxing" \
       link:"$out/lib/deepseek-harness/node_modules/rdsh-markdown-cjk" \
       link:"$out/lib/deepseek-harness/node_modules/rdsh-locale-ja" \
-      link:"$out/lib/deepseek-harness/node_modules/dsh-codex-native"
+      link:"$out/lib/deepseek-harness/node_modules/dsh-chatgpt-subscription" \
+      link:"$out/lib/deepseek-harness/node_modules/dsh-subscription-usage"
     "$out/bin/dsh" --profile web --dump-config > "$TMPDIR/dsh-composed.yml"
     runHook postInstallCheck
   '';
@@ -166,7 +181,7 @@ buildNpmPackage {
   };
 
   meta = {
-    description = "DeepSeek Harness prerelease with Claude, ChatGPT, Japanese and mobile plugins";
+    description = "DeepSeek Harness prerelease with live Claude/ChatGPT models, usage, Japanese and mobile plugins";
     homepage = "https://github.com/deepseek-ai/deepseek-harness";
     license = with lib.licenses; [
       mit

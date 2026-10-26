@@ -1,0 +1,9 @@
+{
+  "name": "dsh-chatgpt-subscription",
+  "version": "0.1.0",
+  "type": "module",
+  "description": "ChatGPT subscription provider with the official Codex App Server live catalog",
+  "license": "MIT",
+  "exports": "./index.mjs",
+  "dsh": { "bundle": { "patch": "./cordis.patch.yml" } }
+}

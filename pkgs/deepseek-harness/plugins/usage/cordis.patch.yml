@@ -1,0 +1,4 @@
+- insert:
+    - id: dsh-subscription-usage
+      name: dsh-subscription-usage
+      config: {}
