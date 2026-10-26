@@ -12,6 +12,7 @@
   bash,
   git,
   ripgrep,
+  ncurses,
   zlib,
   release,
   bridgeRelease,
@@ -63,6 +64,7 @@ buildNpmPackage {
   ];
   buildInputs = [
     stdenv.cc.cc.lib
+    ncurses
     zlib
   ];
   autoPatchelfIgnoreMissingDeps = [ "libc.musl-x86_64.so.1" ];
