@@ -278,6 +278,7 @@ Claude Code と Codex は全ホストで Home Manager が導入し、どのシ�
 - 同じ配布元の [rdsh-locale-ja](https://github.com/kuraneko1/dsh-mobile-maxxing/tree/main/packages/rdsh-locale-ja) が言語選択に **日本語** を追加します。
   DSH の bundle 登録定義と現在のランタイムに対する依存宣言を Nix 側で補い、選択中の表示言語は保持します。
 - [dsh-codex-native](https://github.com/Tests4gptplay/dsh-codex-native) が ChatGPT サブスクリプション用の **Codex (local login)** を追加します。
+  ChatGPT の契約に含まれる Codex / ChatGPT Work の利用枠を使います。
   プラグインの既定設定と同梱の公式 Codex App Server を使い、通常の `codex login` の認証を再利用します。
   未認証の場合は設定画面の **Codex official login** からログインできます。既定の Claude モデルは保持します。
 - 同じ配布元の CJK 修正コードを `rdsh-markdown-cjk` として登録し、PC・モバイル両方の Markdown 表示を修正します。
