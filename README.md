@@ -296,7 +296,7 @@ Claude Code と Codex は全ホストで Home Manager が導入し、どのシ�
 
 ### 使用状況の集計規則
 
-稼働版と同じ T3 Code `0.1.3-nightly.20261026.3717`（`1316d48`）の
+実装時に調査した T3 Code `0.1.3-nightly.20261026.3717`（`1316d48`）の
 [利用ガイド](https://github.com/pingdotgg/t3code/blob/1316d48b0c68151afd8b47eb0c11a114cf0b4daa/docs/user/usage.md)、
 [トークン契約](https://github.com/pingdotgg/t3code/blob/1316d48b0c68151afd8b47eb0c11a114cf0b4daa/packages/contracts/src/usage.ts)、
 [集計](https://github.com/pingdotgg/t3code/blob/1316d48b0c68151afd8b47eb0c11a114cf0b4daa/apps/server/src/usage/usageAggregation.ts)、

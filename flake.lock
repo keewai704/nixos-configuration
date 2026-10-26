@@ -171,7 +171,7 @@
     "dsh-codex-native-releases": {
       "flake": false,
       "locked": {
-        "narHash": "sha256-DiaOxx3ztpcBzJIZJYcb4YXSOBt8C2qN2g4HkUAEILE=",
+        "narHash": "sha256-rxbiIq8niwJGhpa9x7nu8j/UqgQXZEIwlPJRa2FrfKA=",
         "type": "file",
         "url": "https://api.github.com/repos/Tests4gptplay/dsh-codex-native/releases?per_page=20"
       },
@@ -388,7 +388,7 @@
     "meltype-release": {
       "flake": false,
       "locked": {
-        "narHash": "sha256-uXqG/sJqoI3Moa7r1FIPtXTD7AhFD8XdkIZ6B+CpQ+A=",
+        "narHash": "sha256-lQJN3ijJv7SVQkcuyOg+ZIiUgMDOGGjk6DLsacFdSQ0=",
         "type": "file",
         "url": "https://api.github.com/repos/yksr-melt/Meltype/releases/latest"
       },
@@ -862,7 +862,7 @@
     "t3code-releases": {
       "flake": false,
       "locked": {
-        "narHash": "sha256-JNVh8SZA5ffNS01FQd8/V+TKJv9Bs3M/wflS3iH0aNM=",
+        "narHash": "sha256-bx4TpNZ8J4SDoQc92D0PsniQS0x1hCGWVAvyaoBRTPg=",
         "type": "file",
         "url": "https://api.github.com/repos/pingdotgg/t3code/releases?per_page=100"
       },
