@@ -14,6 +14,7 @@ in
     deepseek-harness = final.callPackage ./deepseek-harness {
       release = inputs.deepseek-harness-release;
       bridgeRelease = inputs.dsh-claude-bridge-release;
+      codexReleases = inputs.dsh-codex-native-releases;
       sdkRelease = inputs.claude-agent-sdk-release;
       mobilePlugin = inputs.dsh-mobile-maxxing;
     };

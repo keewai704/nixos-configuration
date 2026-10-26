@@ -5,14 +5,37 @@ import { dirname, join } from "node:path";
 
 const directory = process.argv[2];
 const cli = createRequire(join(directory, "@deepseek-ai/dsh/package.json"));
-const bridge = createRequire(join(directory, "dsh-claude-bridge/package.json"));
+const dshVersion = cli("./package.json").version;
+for (const plugin of ["dsh-claude-bridge", "dsh-codex-native"]) {
+  const require = createRequire(join(directory, plugin, "package.json"));
+  for (const name of ["@deepseek-ai/cordis", "@deepseek-ai/dsh-llm"]) {
+    assert.equal(
+      require.resolve(name),
+      cli.resolve(name),
+      `${name} must share its module instance between DSH and ${plugin}`,
+    );
+  }
+}
 
-for (const name of ["@deepseek-ai/cordis", "@deepseek-ai/dsh-llm"]) {
-  assert.equal(
-    bridge.resolve(name),
-    cli.resolve(name),
-    `${name} must share its module instance between DSH and the Claude bridge`,
+const codex = createRequire(join(directory, "dsh-codex-native/package.json"));
+const { CODEX_APP_SERVER_VERSION } = await import(
+  join(directory, "dsh-codex-native/lib/index.js")
+);
+const codexManifest = JSON.parse(
+  await readFile(codex.resolve("@openai/codex/package.json"), "utf8"),
+);
+assert.equal(codexManifest.version, CODEX_APP_SERVER_VERSION);
+const pluginManifest = JSON.parse(
+  await readFile(join(directory, "dsh-codex-native/package.json"), "utf8"),
+);
+for (const name of Object.keys(pluginManifest.peerDependencies).filter((name) =>
+  name.startsWith("@deepseek-ai/dsh-"),
+)) {
+  assert.equal(codex.resolve(name), cli.resolve(name));
+  const peer = JSON.parse(
+    await readFile(codex.resolve(`${name}/package.json`), "utf8"),
   );
+  assert.equal(peer.version, dshVersion);
 }
 
 const assets = join(

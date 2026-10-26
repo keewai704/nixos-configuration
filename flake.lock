@@ -168,6 +168,18 @@
         "url": "https://registry.npmjs.org/dsh-claude-bridge/latest"
       }
     },
+    "dsh-codex-native-releases": {
+      "flake": false,
+      "locked": {
+        "narHash": "sha256-P0LbtvSpFNaY3Jqy+OD/rVlCaF/ORwtY+PxgnhkdDkk=",
+        "type": "file",
+        "url": "https://api.github.com/repos/Tests4gptplay/dsh-codex-native/releases?per_page=20"
+      },
+      "original": {
+        "type": "file",
+        "url": "https://api.github.com/repos/Tests4gptplay/dsh-codex-native/releases?per_page=20"
+      }
+    },
     "dsh-mobile-maxxing": {
       "flake": false,
       "locked": {
@@ -376,7 +388,7 @@
     "meltype-release": {
       "flake": false,
       "locked": {
-        "narHash": "sha256-iABYbEZ/EHk0gcAopyDJsxBEjYTeyb3ANhu9zEAM49A=",
+        "narHash": "sha256-ZBtUqBS/o6hAu1yHYVsnJT3uJMhQUV19zkYCpO4KxZU=",
         "type": "file",
         "url": "https://api.github.com/repos/yksr-melt/Meltype/releases/latest"
       },
@@ -489,11 +501,11 @@
         "treefmt-nix": "treefmt-nix"
       },
       "locked": {
-        "lastModified": 1793013789,
-        "narHash": "sha256-kwmDHCyBnIafMB8G/a8OhvcyvCOLnWIqxLzLy2g++X0=",
+        "lastModified": 1793015768,
+        "narHash": "sha256-bvhY5WRhlDj7VtOKHGenwscmM9ouREdUfF20taYTFIE=",
         "owner": "4evy",
         "repo": "nixcord",
-        "rev": "21467e0dcfb6f01e14a93eada38a68e761638b2f",
+        "rev": "d3d43915d6af53e8f4987eae291c69664f30b5df",
         "type": "github"
       },
       "original": {
@@ -749,6 +761,7 @@
         "codex": "codex",
         "deepseek-harness-release": "deepseek-harness-release",
         "dsh-claude-bridge-release": "dsh-claude-bridge-release",
+        "dsh-codex-native-releases": "dsh-codex-native-releases",
         "dsh-mobile-maxxing": "dsh-mobile-maxxing",
         "home-manager": "home-manager",
         "iphone-control": "iphone-control",
@@ -849,7 +862,7 @@
     "t3code-releases": {
       "flake": false,
       "locked": {
-        "narHash": "sha256-Kr0pHYdHIePuCMqf9tWraRWnPOchVsTkZYYAWYjy19Q=",
+        "narHash": "sha256-xtrEhfa6JT4epeJplILU9uuL9U7h03C6TC5rBazV/4M=",
         "type": "file",
         "url": "https://api.github.com/repos/pingdotgg/t3code/releases?per_page=100"
       },

@@ -57,6 +57,11 @@
       flake = false;
     };
 
+    dsh-codex-native-releases = {
+      url = "file+https://api.github.com/repos/Tests4gptplay/dsh-codex-native/releases?per_page=20";
+      flake = false;
+    };
+
     claude-agent-sdk-release = {
       url = "file+https://registry.npmjs.org/@anthropic-ai/claude-agent-sdk/latest";
       flake = false;

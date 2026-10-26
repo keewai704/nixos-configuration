@@ -3,10 +3,16 @@ import { mkdtempSync, readFileSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
 
-const [release, bridge, sdk] = process.argv.slice(2, 5).map((path) =>
+const [release, bridge, sdk, codexReleases] = process.argv.slice(2, 6).map((path) =>
   JSON.parse(readFileSync(path, "utf8")),
 );
-const destination = resolve(process.argv[5] ?? "pkgs/deepseek-harness");
+const destination = resolve(process.argv[6] ?? "pkgs/deepseek-harness");
+const codexArchive = codexReleases
+  .filter((release) => !release.draft)
+  .flatMap((release) => release.assets)
+  .find((asset) => /^dsh-codex-native-.*\.tgz$/.test(asset.name));
+if (!codexArchive)
+  throw new Error("No packaged DSH Codex Native release is available");
 const temporary = mkdtempSync(join(tmpdir(), "deepseek-harness-lock-"));
 const manifest = {
   name: "deepseek-harness",
@@ -16,9 +22,29 @@ const manifest = {
     "@deepseek-ai/dsh": release.version,
     "@deepseek-ai/dsh-llm": release.version,
     "dsh-claude-bridge": bridge.version,
+    "dsh-codex-native": codexArchive.browser_download_url,
     "@anthropic-ai/claude-agent-sdk": sdk.version,
   },
   overrides: {
+    "dsh-codex-native": Object.fromEntries(
+      [
+        "attachment",
+        "client-connection",
+        "client-locale",
+        "client-ui-renderer",
+        "client-ui-settings",
+        "client-ui-slots",
+        "client-ui-primitives",
+        "llm",
+        "system-prompt",
+        "working-directory",
+        "session",
+        "settings",
+        "subprocess",
+        "tools",
+        "user-questions",
+      ].map((name) => [`@deepseek-ai/dsh-${name}`, release.version]),
+    ),
     "dsh-claude-bridge": {
       "@anthropic-ai/claude-agent-sdk": "$@anthropic-ai/claude-agent-sdk",
       "@deepseek-ai/dsh-llm": "$@deepseek-ai/dsh-llm",

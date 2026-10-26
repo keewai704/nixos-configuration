@@ -62,7 +62,7 @@ flake.nix
 | Git / GitHub CLI | [git.nix](home/keewai/common/git.nix) |
 | Claude Code・Codex・スキル・MCP サーバー | [coding-agents/](home/keewai/common/coding-agents/default.nix)、[skills/](skills/) |
 | T3 Code（デスクトップ版・サーバー版） | [t3code.nix](home/keewai/common/t3code.nix)、[pkgs/t3code](pkgs/t3code/) |
-| DeepSeek Harness・Claude 接続・モバイルプラグイン | [deepseek-harness](home/keewai/common/deepseek-harness/)、[pkgs/deepseek-harness](pkgs/deepseek-harness/) |
+| DeepSeek Harness・Claude/ChatGPT 接続・日本語 | [deepseek-harness](home/keewai/common/deepseek-harness/)、[pkgs/deepseek-harness](pkgs/deepseek-harness/) |
 | 設定のいらない GUI アプリを追加 | [home/keewai/desktop/packages.nix](home/keewai/desktop/packages.nix) |
 | ウィンドウ操作・キー割り当て | [umbriel.nix](home/keewai/desktop/umbriel.nix) |
 | モニター・解像度 | [hosts/citrus/display.nix](hosts/citrus/display.nix) |
@@ -275,6 +275,11 @@ Claude Code と Codex は全ホストで Home Manager が導入し、どのシ�
   Nix の Node.js では `--expose-internals` で同じ内部ローダーを取得し、ネイティブアドオンの実行形式への依存を避けます。
 - [dsh-mobile-maxxing](https://github.com/kuraneko1/dsh-mobile-maxxing) が PWA・通知・モバイル操作を提供します。
   iPhone など別端末からの利用には HTTPS の入口が必要です。この設定ではループバックだけで待ち受けます。
+- 同じ配布元の [rdsh-locale-ja](https://github.com/kuraneko1/dsh-mobile-maxxing/tree/main/packages/rdsh-locale-ja) が言語選択に **日本語** を追加します。
+  DSH の bundle 登録定義と現在のランタイムに対する依存宣言を Nix 側で補い、選択中の表示言語は保持します。
+- [dsh-codex-native](https://github.com/Tests4gptplay/dsh-codex-native) が ChatGPT サブスクリプション用の **Codex (local login)** を追加します。
+  プラグインの既定設定と同梱の公式 Codex App Server を使い、通常の `codex login` の認証を再利用します。
+  未認証の場合は設定画面の **Codex official login** からログインできます。既定の Claude モデルは保持します。
 - 同じ配布元の CJK 修正コードを `rdsh-markdown-cjk` として登録し、PC・モバイル両方の Markdown 表示を修正します。
   URL 直後の日本語の括弧や太字の終端をリンクに巻き込まず、URL 内の日本語パスは保持します。
   修正版の配信パスでもコードの色付け用ファイルと CSS を取得できるよう、相対参照を補正します。

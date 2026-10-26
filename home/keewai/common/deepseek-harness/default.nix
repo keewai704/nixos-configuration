@@ -65,7 +65,9 @@ in
       --offline --ignore-scripts --config.auto-install-peers=false \
       link:${pluginRoot}/dsh-claude-bridge \
       link:${pluginRoot}/dsh-mobile-maxxing \
-      link:${pluginRoot}/rdsh-markdown-cjk
+      link:${pluginRoot}/rdsh-markdown-cjk \
+      link:${pluginRoot}/rdsh-locale-ja \
+      link:${pluginRoot}/dsh-codex-native
     ${lib.hm.generators.mkImpureConfigMerger {
       inherit pkgs;
       format = "yaml";
@@ -86,7 +88,7 @@ in
 
   systemd.user.services.dsh-web = {
     Unit = {
-      Description = "DeepSeek Harness Web UI with Claude Agent SDK";
+      Description = "DeepSeek Harness Web UI with Claude and ChatGPT";
       After = [ "network.target" ];
     };
     Service = {
