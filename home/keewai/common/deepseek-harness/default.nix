@@ -66,7 +66,7 @@ in
         '.dependencies[$plugin] != null' "$profileManifest" > /dev/null; then
         run ${lib.getExe' pkgs.coreutils "env"} DSH_HOME=${config.home.homeDirectory}/.dsh \
           ${lib.getExe package} plugin --profile web remove "$previousPlugin" \
-          --offline --ignore-scripts --config.auto-install-peers=false
+          --config.offline=true --config.ignore-scripts=true --config.auto-install-peers=false
       fi
     done
     run ${lib.getExe' pkgs.coreutils "env"} DSH_HOME=${config.home.homeDirectory}/.dsh \
