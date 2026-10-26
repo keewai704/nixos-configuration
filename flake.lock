@@ -171,11 +171,11 @@
     "dsh-mobile-maxxing": {
       "flake": false,
       "locked": {
-        "lastModified": 1792990292,
-        "narHash": "sha256-mBVO5prz7d4lmY/y6gJHep1K99utzhH19PiUk//sgss=",
+        "lastModified": 1792997549,
+        "narHash": "sha256-r2WWmbdH5VA4M8sSVH4Cn/12Y1TJnTczlBGXiMajJlg=",
         "owner": "kuraneko1",
         "repo": "dsh-mobile-maxxing",
-        "rev": "24e2e49671de7754c25feffddaf1ba519f6507eb",
+        "rev": "25a8ed117d43a59a2ec3ac2fba38d98bf234b860",
         "type": "github"
       },
       "original": {
@@ -376,7 +376,7 @@
     "meltype-release": {
       "flake": false,
       "locked": {
-        "narHash": "sha256-IUoF0NuF/hSXaX/rSkDKChuYXvHIbOZJiVGpSXeuzoc=",
+        "narHash": "sha256-dU9RpgCPseb9VAUmD1FsRytx1CYY9y6mb92TsJcyVVo=",
         "type": "file",
         "url": "https://api.github.com/repos/yksr-melt/Meltype/releases/latest"
       },
@@ -648,11 +648,11 @@
         "nixpkgs": "nixpkgs_5"
       },
       "locked": {
-        "lastModified": 1792989497,
-        "narHash": "sha256-TKGEboxTLrOysRfIxC5dHM2FKk5Rj1bkBUGT01GEo78=",
+        "lastModified": 1792990725,
+        "narHash": "sha256-ro0+LW36/WjKD1MddTnGuHHaxTIyrs7yPx54AYAvKuw=",
         "owner": "noctalia-dev",
         "repo": "noctalia",
-        "rev": "0568e1da66afa596c312618577284c3692e5c0b1",
+        "rev": "1af14b8cdb701175bec57ddf27d070b92461024b",
         "type": "github"
       },
       "original": {
@@ -710,11 +710,11 @@
         ]
       },
       "locked": {
-        "lastModified": 1792824717,
-        "narHash": "sha256-tI+5wtLkUzaVmC7sSIV06++7vXAqHm7/6MIK2Sn2Kts=",
+        "lastModified": 1793000920,
+        "narHash": "sha256-PCjhYBdxKRf4vAR1iq9cu7dci/qwNbb/MFubp1/W1Vo=",
         "ref": "main",
-        "rev": "7ff594a61e1e158fe56f22b9efb9d8ea88dd918b",
-        "revCount": 93,
+        "rev": "70c608def0f756860c4161f7de60bf7b9e601a0e",
+        "revCount": 94,
         "type": "git",
         "url": "https://github.com/t4t5/owly"
       },
@@ -849,7 +849,7 @@
     "t3code-releases": {
       "flake": false,
       "locked": {
-        "narHash": "sha256-sCH1IBLkbPeUc32Gud7y0UTge5RGEAFoqOqQ1Pxe3jg=",
+        "narHash": "sha256-a+zuPBmnpAOj10hQAEx5zDF8wAcMfl0p5qvCnXK8bxA=",
         "type": "file",
         "url": "https://api.github.com/repos/pingdotgg/t3code/releases?per_page=100"
       },

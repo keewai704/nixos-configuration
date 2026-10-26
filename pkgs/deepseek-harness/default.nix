@@ -8,6 +8,7 @@
   pnpm_11,
   prefetch-npm-deps,
   writeShellApplication,
+  writeText,
   bash,
   git,
   ripgrep,
@@ -19,6 +20,16 @@
 }:
 let
   manifest = lib.importJSON ./package.json;
+  cjkManifest = writeText "rdsh-markdown-cjk-package.json" (
+    builtins.toJSON {
+      name = "rdsh-markdown-cjk";
+      version = (lib.importJSON "${mobilePlugin}/package.json").version;
+      type = "module";
+      license = "MIT";
+      exports."." = "./index.js";
+      dsh.bundle.patch = "./cordis.patch.yml";
+    }
+  );
 in
 buildNpmPackage {
   pname = "deepseek-harness";
@@ -57,6 +68,18 @@ buildNpmPackage {
     mkdir -p "$out/lib/deepseek-harness" "$out/bin"
     cp -r node_modules "$out/lib/deepseek-harness/"
     cp -r ${mobilePlugin} "$out/lib/deepseek-harness/node_modules/dsh-mobile-maxxing"
+    cjkRoot="$out/lib/deepseek-harness/node_modules/rdsh-markdown-cjk"
+    mkdir -p "$cjkRoot"
+    cp ${cjkManifest} "$cjkRoot/package.json"
+    cp ${mobilePlugin}/packages/dsh-mobile-maxxing/lib/markdown-cjk.js "$cjkRoot/index.js"
+    cp ${mobilePlugin}/packages/dsh-mobile-maxxing/lib/markdown-cjk-runtime.js "$cjkRoot/"
+    cp ${mobilePlugin}/LICENSE "$cjkRoot/"
+    cat > "$cjkRoot/cordis.patch.yml" <<'EOF'
+    - insert:
+        - id: rdsh-markdown-cjk
+          name: rdsh-markdown-cjk
+          config: {}
+    EOF
     makeWrapper ${lib.getExe nodejs} "$out/bin/dsh" \
       --add-flags --expose-internals \
       --add-flags "$out/lib/deepseek-harness/node_modules/@deepseek-ai/dsh/lib/bin.js" \
@@ -76,11 +99,16 @@ buildNpmPackage {
     runHook preInstallCheck
     "$out/bin/dsh" --version | grep -Fx '${(lib.importJSON release).version}'
     ${lib.getExe nodejs} ${./test-runtime.mjs} "$out/lib/deepseek-harness/node_modules"
+    DSH_ORIG_BIN="$out/lib/deepseek-harness/node_modules/@deepseek-ai/dsh/lib/bin.js" \
+      ${lib.getExe nodejs} --test \
+      ${mobilePlugin}/packages/dsh-mobile-maxxing/tests/markdown-cjk.test.mjs \
+      ${mobilePlugin}/packages/dsh-mobile-maxxing/tests/markdown-cjk-plugin.test.mjs
     export DSH_HOME="$TMPDIR/dsh-install-check"
     "$out/bin/dsh" plugin --profile web add \
       --offline --ignore-scripts --config.auto-install-peers=false \
       link:"$out/lib/deepseek-harness/node_modules/dsh-claude-bridge" \
-      link:"$out/lib/deepseek-harness/node_modules/dsh-mobile-maxxing"
+      link:"$out/lib/deepseek-harness/node_modules/dsh-mobile-maxxing" \
+      link:"$out/lib/deepseek-harness/node_modules/rdsh-markdown-cjk"
     "$out/bin/dsh" --profile web --dump-config > "$TMPDIR/dsh-composed.yml"
     runHook postInstallCheck
   '';

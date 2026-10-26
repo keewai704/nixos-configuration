@@ -275,6 +275,8 @@ Claude Code と Codex は全ホストで Home Manager が導入し、どのシ�
   Nix の Node.js では `--expose-internals` で同じ内部ローダーを取得し、ネイティブアドオンの実行形式への依存を避けます。
 - [dsh-mobile-maxxing](https://github.com/kuraneko1/dsh-mobile-maxxing) が PWA・通知・モバイル操作を提供します。
   iPhone など別端末からの利用には HTTPS の入口が必要です。この設定ではループバックだけで待ち受けます。
+- 同じ配布元の CJK 修正コードを `rdsh-markdown-cjk` として登録し、PC・モバイル両方の Markdown 表示を修正します。
+  URL 直後の日本語の括弧や太字の終端をリンクに巻き込まず、URL 内の日本語パスは保持します。
 - 取得元は flake 入力、npm の依存関係はパッケージ内のロックで管理します。
   更新は `nix flake update` のあと、リポジトリのルートで
   `nix run --no-write-lock-file .#deepseek-harness.updateScript` を実行し、生成された変更もコミットします。

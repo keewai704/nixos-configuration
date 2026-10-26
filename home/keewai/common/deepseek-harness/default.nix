@@ -64,7 +64,8 @@ in
       ${lib.getExe package} plugin --profile web add \
       --offline --ignore-scripts --config.auto-install-peers=false \
       link:${pluginRoot}/dsh-claude-bridge \
-      link:${pluginRoot}/dsh-mobile-maxxing
+      link:${pluginRoot}/dsh-mobile-maxxing \
+      link:${pluginRoot}/rdsh-markdown-cjk
     ${lib.hm.generators.mkImpureConfigMerger {
       inherit pkgs;
       format = "yaml";
