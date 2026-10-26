@@ -74,6 +74,7 @@ buildNpmPackage {
     cp ${mobilePlugin}/packages/dsh-mobile-maxxing/lib/markdown-cjk.js "$cjkRoot/index.js"
     cp ${mobilePlugin}/packages/dsh-mobile-maxxing/lib/markdown-cjk-runtime.js "$cjkRoot/"
     cp ${mobilePlugin}/LICENSE "$cjkRoot/"
+    patch --fuzz=0 -d "$cjkRoot" -p1 < ${./markdown-cjk-assets.patch}
     cat > "$cjkRoot/cordis.patch.yml" <<'EOF'
     - insert:
         - id: rdsh-markdown-cjk

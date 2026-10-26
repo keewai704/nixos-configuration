@@ -1,0 +1,14 @@
+--- a/markdown-cjk-runtime.js
++++ b/markdown-cjk-runtime.js
+@@ -109,7 +109,10 @@
+ 	// table, so anchor on the import clause itself rather than the file name.
+ 	const clause = `from"./vendor-${vendorAsset.replace(/^vendor-/, "")}"`;
+ 	if (source.split(clause).length - 1 !== 1) return null;
+-	return source.replace(clause, `from"${MARKDOWN_FIX_PATH}/${vendorAsset}"`);
++	return source
++		.replace(clause, `from"${MARKDOWN_FIX_PATH}/${vendorAsset}"`)
++		.replaceAll('"./langs/', '"/assets/langs/')
++		.replace(/"\.\/(vendor-[\w-]+\.css)"/g, '"/assets/$1"');
+ }
+ 
+ /**
