@@ -13,7 +13,7 @@ await import(pathToFileURL(target).href);
 
 async function runCodexRecoveryTests() {
   for (const termination of ["exit", "SIGKILL"]) {
-    await runPromise(
+    await runPromiseWith(runSync(context()))(
       scoped(
         gen$1(function* () {
           const child = NodeChildProcess.spawn(
