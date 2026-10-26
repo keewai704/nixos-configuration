@@ -61,6 +61,7 @@ buildNpmPackage {
   nativeBuildInputs = [
     autoPatchelfHook
     makeWrapper
+    git
   ];
   buildInputs = [
     stdenv.cc.cc.lib
@@ -134,6 +135,7 @@ buildNpmPackage {
     localeCheck="$TMPDIR/dsh-locale-check"
     cp -r ${mobilePlugin} "$localeCheck"
     chmod -R u+w "$localeCheck"
+    git init --quiet --initial-branch=main "$localeCheck"
     ${lib.getExe nodejs} "$localeCheck/tools/build-client.mjs" --check
     ${lib.getExe nodejs} --test "$localeCheck/packages/rdsh-locale-ja/test/stage2.test.mjs"
     DSH_ORIG_BIN="$out/lib/deepseek-harness/node_modules/@deepseek-ai/dsh/lib/bin.js" \
