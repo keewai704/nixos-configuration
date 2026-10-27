@@ -39,6 +39,10 @@ let
         EPGCount = 1;
         Priority = 1;
       };
+      TVTEST = {
+        Num = 1;
+        "0" = "BonDriver_coax.so";
+      };
       EPG_CAP = {
         Count = 1;
         "0" = "04:00";
@@ -230,6 +234,7 @@ in
 
     edcb = {
       description = "Native xtne6f EDCB recording and EPG server";
+      restartTriggers = lib.attrValues edcbSettings;
       wantedBy = [ "multi-user.target" ];
       requires = [ "edcb-setup.service" ];
       after = [ "edcb-setup.service" ];
