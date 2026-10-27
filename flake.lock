@@ -219,11 +219,11 @@
     "dsh-mobile-maxxing": {
       "flake": false,
       "locked": {
-        "lastModified": 1793092777,
-        "narHash": "sha256-tz06Eb+Va19dllSjeUJy4+03Sn2jI/fXYMLI5XSPOuc=",
+        "lastModified": 1793096610,
+        "narHash": "sha256-tBUxb6F3SS9jVSKjPE/SAHTY1OUf3trKsvQJ/AiI8Jc=",
         "owner": "kuraneko1",
         "repo": "dsh-mobile-maxxing",
-        "rev": "5c006bbcdfc421b2275eede5890be280c22da30f",
+        "rev": "20be1bd8eef259ab598ef4e2ace70cdbe9c38231",
         "type": "github"
       },
       "original": {
@@ -1053,7 +1053,7 @@
     "t3code-releases": {
       "flake": false,
       "locked": {
-        "narHash": "sha256-FYOEZCzudyKf27VbZlW3U0NrEs5joyjt5AaLj1p7oS0=",
+        "narHash": "sha256-ZPhcGxcCwuMomJ36+6Wdm29runI3r73ueI9+ij7ne0o=",
         "type": "file",
         "url": "https://api.github.com/repos/pingdotgg/t3code/releases?per_page=100"
       },
@@ -1129,11 +1129,11 @@
     "torne-driver": {
       "flake": false,
       "locked": {
-        "lastModified": 1793039626,
-        "narHash": "sha256-TKjEVPEwsxyXxfyyHUs+4qQA/ShDorJWCZ30TjxM6KY=",
+        "lastModified": 1793096485,
+        "narHash": "sha256-K1cvAdWxjWhwPNYoGzJcM3m2pn3VTrm5NXKSxXpKI+Q=",
         "ref": "main",
-        "rev": "af41ad7dc373a08ad7a9683ff0baa6c40370022e",
-        "revCount": 7,
+        "rev": "62ef72140adc1b61bff0a1d19b91900b77167286",
+        "revCount": 9,
         "type": "git",
         "url": "https://github.com/mihalinn/torne_drv"
       },

@@ -22,9 +22,17 @@ struct receiver {
     struct torne_card card;
     pthread_mutex_t lock;
     int card_listener;
+    int tuning_fd;
 };
 
 static volatile sig_atomic_t stopping;
+
+static bool disconnected(int fd)
+{
+    struct pollfd client = { .fd = fd, .events = POLLIN | POLLRDHUP };
+    return poll(&client, 1, 0) > 0 &&
+        (client.revents & (POLLIN | POLLHUP | POLLRDHUP | POLLERR | POLLNVAL));
+}
 
 static void stop(int signal_number)
 {
@@ -41,7 +49,13 @@ static uint64_t now_ms(void *private)
 static void sleep_ms(void *private, unsigned int milliseconds)
 {
     struct receiver *receiver = private;
-    torne_bridge_flush(&receiver->bridge);
+    int result = torne_bridge_flush(&receiver->bridge);
+    if (!result && receiver->tuning_fd >= 0 &&
+        (stopping || disconnected(receiver->tuning_fd))) {
+        receiver->bridge.err = -ECANCELED;
+        receiver->dib.err = -ECANCELED;
+        return;
+    }
     struct timespec delay = { milliseconds / 1000, (milliseconds % 1000) * 1000000 };
     while (nanosleep(&delay, &delay) < 0 && errno == EINTR && !stopping)
         ;
@@ -191,6 +205,10 @@ static void *serve_card(void *private)
             int flushed = torne_bridge_flush(&receiver->bridge);
             if (!message.result)
                 message.result = flushed;
+            if (receiver->bridge.err) {
+                fputs("USB control failed; restarting receiver\n", stderr);
+                exit(1);
+            }
             pthread_mutex_unlock(&receiver->lock);
             if (send(fd, &message, sizeof(message), MSG_NOSIGNAL) != sizeof(message))
                 break;
@@ -204,17 +222,34 @@ static int capture(struct receiver *receiver, int fd, uint32_t channel)
 {
     if (channel < 13 || channel > 62)
         return -EINVAL;
+    if (disconnected(fd))
+        return -ECANCELED;
     uint64_t started = now_ms(NULL);
     pthread_mutex_lock(&receiver->lock);
+    if (disconnected(fd)) {
+        pthread_mutex_unlock(&receiver->lock);
+        return -ECANCELED;
+    }
+    receiver->tuning_fd = fd;
     int result = torne_bridge_prepare_stream(&receiver->bridge);
     if (!result)
         result = torne_dib_tune(&receiver->dib, (473143u + (channel - 13) * 6000u) * 1000u);
+    if (!result && (stopping || disconnected(fd)))
+        result = -ECANCELED;
+    receiver->tuning_fd = -1;
     if (!result)
         result = torne_dib_set_output(&receiver->dib, TORNE_OUT_PARALLEL_GATED);
     if (!result)
         result = torne_bridge_start_stream(&receiver->bridge);
     if (!result)
         result = torne_bridge_flush(&receiver->bridge);
+    if (receiver->bridge.err == -ECANCELED) {
+        receiver->bridge.err = 0;
+        receiver->dib.err = 0;
+    } else if (receiver->bridge.err) {
+        fputs("USB control failed; restarting receiver\n", stderr);
+        exit(1);
+    }
     pthread_mutex_unlock(&receiver->lock);
     int32_t status = result;
     if (send_all(fd, &status, sizeof(status)) || result)
@@ -224,8 +259,7 @@ static int capture(struct receiver *receiver, int fd, uint32_t channel)
     struct torne_framer framer;
     torne_framer_reset(&framer);
     while (!stopping) {
-        struct pollfd client = { .fd = fd, .events = POLLIN | POLLRDHUP };
-        if (poll(&client, 1, 0) > 0 && client.revents & (POLLIN | POLLHUP | POLLRDHUP | POLLERR))
+        if (disconnected(fd))
             break;
         int length = bulk(receiver, 0x81, raw, sizeof(raw), 100);
         if (length == -ETIMEDOUT || length == -EINTR)
@@ -240,16 +274,28 @@ static int capture(struct receiver *receiver, int fd, uint32_t channel)
     }
 done:
     pthread_mutex_lock(&receiver->lock);
+    if (receiver->bridge.err == -ECANCELED) {
+        receiver->bridge.err = 0;
+        receiver->dib.err = 0;
+    }
+    if (receiver->bridge.err) {
+        fputs("USB control failed; restarting receiver\n", stderr);
+        exit(1);
+    }
     torne_bridge_stop_stream(&receiver->bridge);
     torne_dib_set_output(&receiver->dib, TORNE_OUT_HIGHZ);
     torne_bridge_flush(&receiver->bridge);
+    if (receiver->bridge.err) {
+        fputs("USB stream shutdown failed; restarting receiver\n", stderr);
+        exit(1);
+    }
     pthread_mutex_unlock(&receiver->lock);
     return result;
 }
 
 static int daemon_main(void)
 {
-    struct receiver receiver = { .lock = PTHREAD_MUTEX_INITIALIZER };
+    struct receiver receiver = { .lock = PTHREAD_MUTEX_INITIALIZER, .tuning_fd = -1 };
     int result = libusb_init(&receiver.context);
     if (result)
         return 1;
@@ -301,11 +347,11 @@ static int daemon_main(void)
         uint32_t channel;
         if (recv(fd, &channel, sizeof(channel), MSG_WAITALL) == sizeof(channel)) {
             result = capture(&receiver, fd, channel);
-            if (result)
+            if (result && result != -ECANCELED)
                 fprintf(stderr, "RF%u capture failed: %d\n", channel, result);
         }
         close(fd);
-        if (result == -ENODEV)
+        if (result == -ENODEV || result == -EIO || result == -EPIPE)
             return 1;
     }
     exit(0);
