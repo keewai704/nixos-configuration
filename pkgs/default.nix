@@ -11,6 +11,18 @@ in
   };
 
   local = {
+    edcb = final.callPackage ./edcb { upstream = inputs.edcb; };
+    b25-decoder = final.callPackage ./b25-decoder { upstream = inputs.b25-decoder; };
+    konomitv = final.callPackage ./konomitv {
+      upstream = inputs.konomitv;
+      thirdparty = inputs.konomitv-thirdparty;
+      inherit inputs;
+    };
+    coax = final.callPackage ./coax { upstream = inputs.coax; };
+    bondriver-coax = final.callPackage ./bondriver-coax {
+      upstream = inputs.bondriver-coax;
+      coaxRs = inputs.coax-rs;
+    };
     deepseek-harness = final.callPackage ./deepseek-harness {
       release = inputs.deepseek-harness-release;
       bridgeRelease = inputs.dsh-claude-bridge-release;

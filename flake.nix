@@ -27,6 +27,59 @@
   inputs = {
     nixpkgs.url = "github:NixOS/nixpkgs/nixos-unstable";
 
+    coax = {
+      url = "git+https://github.com/Till0196/coax?ref=main";
+      flake = false;
+    };
+
+    bondriver-coax = {
+      url = "git+https://github.com/Till0196/BonDriver_coax?ref=main";
+      flake = false;
+    };
+
+    coax-rs = {
+      url = "git+https://github.com/Till0196/coax-rs?ref=main";
+      flake = false;
+    };
+
+    b25-decoder = {
+      url = "git+https://github.com/tsukumijima/Multi2Dec?ref=master";
+      flake = false;
+    };
+
+    pyproject-nix = {
+      url = "git+https://github.com/pyproject-nix/pyproject.nix?ref=master";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
+
+    uv2nix = {
+      url = "git+https://github.com/pyproject-nix/uv2nix?ref=master";
+      inputs.pyproject-nix.follows = "pyproject-nix";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
+
+    pyproject-build-systems = {
+      url = "git+https://github.com/pyproject-nix/build-system-pkgs?ref=master";
+      inputs.pyproject-nix.follows = "pyproject-nix";
+      inputs.uv2nix.follows = "uv2nix";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
+
+    edcb = {
+      url = "git+https://github.com/xtne6f/EDCB?ref=work-plus-s";
+      flake = false;
+    };
+
+    konomitv-thirdparty = {
+      url = "file+https://github.com/tsukumijima/KonomiTV/releases/latest/download/thirdparty-linux.tar.xz";
+      flake = false;
+    };
+
+    konomitv = {
+      url = "git+https://github.com/tsukumijima/KonomiTV?ref=master";
+      flake = false;
+    };
+
     home-manager = {
       url = "github:nix-community/home-manager/master";
       inputs.nixpkgs.follows = "nixpkgs";

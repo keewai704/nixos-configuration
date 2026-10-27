@@ -18,6 +18,7 @@ in
     ./services/storage.nix
     ./services/t3code.nix
     ./services/tailscale-exit-node.nix
+    ./services/tv
     ./services/vaultwarden.nix
     ./services/web.nix
   ];
