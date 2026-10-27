@@ -13,6 +13,11 @@
 #define TORNE_CARD_SOCKET "/run/torne/card.sock"
 #define TORNE_CAPTURE_SOCKET "/run/torne/capture.sock"
 
+struct torne_capture_request {
+    uint32_t channel;
+    uint32_t tsid;
+};
+
 struct torne_card_message {
     uint32_t command;
     int32_t result;
@@ -40,7 +45,7 @@ static int torne_socket_connect(const char *path, int type)
     return fd;
 }
 
-static int torne_card_call(int fd, uint32_t command, void *data)
+static inline int torne_card_call(int fd, uint32_t command, void *data)
 {
     struct torne_card_message message = { .command = command, .size = _IOC_SIZE(command) };
     if (message.size > sizeof(message.data)) {
