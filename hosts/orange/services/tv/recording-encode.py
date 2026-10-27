@@ -1,6 +1,5 @@
 import argparse
 import bisect
-import collections
 import csv
 import hashlib
 import json
@@ -59,7 +58,7 @@ def program(info, sid):
     if len(matches) != 1:
         raise ValueError(f'Expected one program for service {sid}')
     selected = matches[0]
-    videos = [item for item in selected['streams'] if item['codec_type'] == 'video']
+    videos = [item for item in selected['streams'] if item.get('codec_type') == 'video']
     if len(videos) != 1:
         raise ValueError('Expected one video stream in the selected service')
     return selected, videos[0]
@@ -160,7 +159,7 @@ def psi_sections(path, pid):
 
 
 def pmt_bindings(path, pid, video_pid, codec):
-    tables = collections.Counter()
+    tables = set()
     for section in psi_sections(path, pid):
         if len(section) < 16 or section[0] != 2:
             raise ValueError('Invalid PMT')
@@ -191,8 +190,8 @@ def pmt_bindings(path, pid, video_pid, codec):
             start = end
         if not found:
             raise ValueError('Video binding missing from PMT')
-        tables[(bytes(section[3:5]), section[5] & 1, section[6], section[7],
-                descriptors, tuple(others))] += 1
+        tables.add((bytes(section[3:5]), section[5] & 1, section[6], section[7],
+                    descriptors, tuple(others)))
     if not tables:
         raise ValueError('No PMT sections found')
     return tables
@@ -247,8 +246,6 @@ def verify_timeline(before, after, bob):
     if step <= 0 or step > 90000:
         raise ValueError('Invalid source frame interval')
     expected = [point for point in before if point >= first_keyframe]
-    if bob:
-        expected = sorted([*expected, *[round(point + step / 2) for point in expected]])
     tolerance = max(4, step / 10)
     if abs(expected[-1] - after[-1]) > step / (2 if bob else 1):
         raise ValueError('Output video ends before or after the original')
@@ -310,6 +307,8 @@ def convert(job, args):
                '--preserve-other-services', '--no-remove-typed', '--copy-filets',
                '-e', args.encoder, '--avhw', '-i', '-', '--input-format', 'mpegts',
                *interlace, '-c', 'hevc', '--icq', '23', '--gop-len', '120',
+               '--colormatrix', 'auto', '--colorprim', 'auto', '--transfer', 'auto',
+               '--colorrange', 'auto',
                '--quality', 'balanced', '--avsync', 'vfr', '--disable-opencl',
                '--output-format', 'mpegts', '-o', '-']
     try:
@@ -323,6 +322,10 @@ def convert(job, args):
             for dimension in ('width', 'height'):
                 if new_video[dimension] != old_video[dimension]:
                     raise ValueError(f'Video {dimension} was changed')
+            for key in ('sample_aspect_ratio', 'color_range', 'color_space',
+                        'color_transfer', 'color_primaries'):
+                if key in old_video and new_video.get(key) != old_video[key]:
+                    raise ValueError(f'Video {key} was changed')
             for timestamp in ('start_time', 'duration'):
                 if timestamp not in old_video or timestamp not in new_video:
                     raise ValueError(f'Missing video {timestamp}')
