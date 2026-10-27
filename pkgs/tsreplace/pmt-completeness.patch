@@ -10,3 +10,12 @@
      if (psi->section_length < 9) {
          return RGY_ERR_INVALID_BINARY;
      }
+@@ -2600,7 +2603,5 @@
+                         }
+-                        if (tspkt->header.PayloadStartFlag) {
+-                            writeReplacedPMT(ret);
+-                        }
++                        writeReplacedPMT(ret);
+                         break;
+                     case RGYTSPacketType::PCR: {
+                         const auto pcr = m_demuxer->pcr();

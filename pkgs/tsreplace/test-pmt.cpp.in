@@ -33,6 +33,11 @@ struct TSReplace {
     std::vector<std::vector<uint8_t>> packets;
     void writePacket(const RGYTSPacket *packet) { packets.push_back(packet->packet); }
     RGY_ERR writeReplacedPMT(const RGYTSDemuxResult& result);
+    void dispatchPMT(const RGYTSDemuxResult& ret, bool start) {
+        struct { struct { bool PayloadStartFlag; } header; } packet{{start}};
+        auto tspkt = &packet;
+        @dispatch@
+    }
 };
 
 @implementation@
@@ -65,7 +70,7 @@ RGYTSDemuxResult table(bool large) {
 void complete_table(bool large) {
     auto input = table(large);
     TSReplace writer;
-    require(writer.writeReplacedPMT(input) == RGY_ERR_NONE, "Complete PMT was rejected");
+    writer.dispatchPMT(input, !large);
     require(writer.packets.size() == (large ? 2u : 1u), "Unexpected PMT packet count");
     std::vector<uint8_t> output;
     for (size_t i = 0; i < writer.packets.size(); i++) {
@@ -92,6 +97,8 @@ int main() {
         TSReplace writer;
         require(writer.writeReplacedPMT(incomplete) == RGY_ERR_NONE, "Incomplete PMT should wait for completion");
         require(writer.packets.empty(), "An incomplete PMT was emitted");
+        writer.dispatchPMT(incomplete, true);
+        require(writer.packets.empty(), "An incomplete PMT start was emitted");
         complete_table(false);
         complete_table(true);
         RGYTSDemuxResult absent;

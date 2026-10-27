@@ -1,4 +1,5 @@
 import os
+import re
 import shlex
 import subprocess
 import sys
@@ -8,7 +9,9 @@ from pathlib import Path
 source = (Path(sys.argv[1]) / 'app/tsreplace.cpp').read_text()
 start = source.index('RGY_ERR TSReplace::writeReplacedPMT(')
 end = source.index('void TSReplace::pushPESPTS(', start)
-template = Path(sys.argv[2]).read_text()
+branch = source[source.index('case RGYTSPacketType::PMT:'):source.index('case RGYTSPacketType::PCR:')]
+dispatch = re.search(r'(if \(tspkt->header.PayloadStartFlag\) \{\s+writeReplacedPMT\(ret\);\s+\}|writeReplacedPMT\(ret\);)\s+break;', branch).group(1)
+template = Path(sys.argv[2]).read_text().replace('@dispatch@', dispatch)
 if template.count('@implementation@') != 1:
     raise RuntimeError('Expected one implementation placeholder')
 with tempfile.TemporaryDirectory() as directory:
