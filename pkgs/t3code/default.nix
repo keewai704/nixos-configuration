@@ -6,6 +6,7 @@
   autoPatchelfHook,
   fetchurl,
   makeWrapper,
+  python3,
   wrapGAppsHook3,
   alsa-lib,
   at-spi2-atk,
@@ -68,6 +69,7 @@ stdenv.mkDerivation {
     asar
     autoPatchelfHook
     makeWrapper
+    python3
     wrapGAppsHook3
   ];
 
@@ -126,6 +128,7 @@ stdenv.mkDerivation {
     serverBundles=(app/apps/server/dist/binCli-*.mjs)
     test "''${#serverBundles[@]}" -eq 1
     patch --fuzz=0 "''${serverBundles[0]}" ${./codex-session-recovery.patch}
+    python3 ${./web-subpath.py} app
     asar pack app resources/app.asar --unpack-dir node_modules
     rm -r app
   '';

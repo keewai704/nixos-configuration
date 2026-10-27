@@ -19,5 +19,4 @@
   ];
 
   codingAgents.globalInstructions = true;
-  services.t3code.mode = "desktop";
 }

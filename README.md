@@ -61,7 +61,7 @@ flake.nix
 | シェル・エイリアス・プロンプト | [shell/](home/keewai/common/shell/default.nix)（`starship.toml` も同じ場所） |
 | Git / GitHub CLI | [git.nix](home/keewai/common/git.nix) |
 | Claude Code・Codex・スキル・MCP サーバー | [coding-agents/](home/keewai/common/coding-agents/default.nix)、[skills/](skills/) |
-| T3 Code（デスクトップ版・サーバー版） | [t3code.nix](home/keewai/common/t3code.nix)、[pkgs/t3code](pkgs/t3code/) |
+| T3 Code（nightly サーバー） | [t3code.nix](home/keewai/common/t3code.nix)、[pkgs/t3code](pkgs/t3code/) |
 | DeepSeek Harness・Claude/ChatGPT 接続・日本語 | [deepseek-harness](home/keewai/common/deepseek-harness/)、[pkgs/deepseek-harness](pkgs/deepseek-harness/) |
 | 設定のいらない GUI アプリを追加 | [home/keewai/desktop/packages.nix](home/keewai/desktop/packages.nix) |
 | ウィンドウ操作・キー割り当て | [umbriel.nix](home/keewai/desktop/umbriel.nix) |
@@ -237,28 +237,28 @@ Claude Code と Codex は全ホストで Home Manager が導入し、どのシ�
 
 ### T3 Code nightly
 
-[T3 Code](https://github.com/pingdotgg/t3code) は、citrus ではデスクトップアプリ、orange では画面のないサーバーとして動きます。
-どちらも [t3code.nix](home/keewai/common/t3code.nix) の `services.t3code.mode`（`"desktop"` か `"server"`）で切り替えます。
-公式の nightly AppImage を、`t3code-releases` 入力で固定したリリース情報から選びます。
-更新は `nix flake update t3code-releases` のあと、通常の適用手順に従います。アプリ内の自動更新は無効です。
+[T3 Code](https://github.com/pingdotgg/t3code) は、両ホストとも Home Manager の常駐サーバーとして動きます。
+共通設定は [t3code.nix](modules/common/t3code.nix)、ユーザーサービスは [t3code.nix](home/keewai/common/t3code.nix) が管理します。
+公式の nightly AppImage に含まれる CLI を `t3 serve` で実行し、グラフィカルセッションには依存しません。
+リリース情報は `t3code-releases` 入力で固定し、更新は `nix flake update` と通常の適用手順で行います。
+アプリ内の自動更新は無効です。
 
-- citrus では **T3 Code (Nightly)** を起動するか `t3code` を実行します。グラフィカルセッションと一緒に起動します。
-  更新後は作業が終わってから `systemctl --user restart t3code` を実行します。同じ `~/.t3` に対して
-  `t3 serve` を2つ動かさないでください。
-- citrus のバックエンドはループバックだけで待ち受け、Tailscale Serve が
-  `https://citrus.tail1e65cd.ts.net/` として tailnet に HTTPS 443 で公開します（WebSocket を含む）。
-  インターネットには公開しません。
-- orange のサーバーは起動時に始まり、`~/.t3` の状態（ペアリング済みの端末、プロジェクト、会話履歴）を使います。
-  API と WebSocket は共通の HTTPS 443 の入口を通ります（[hosts/orange/services/t3code.nix](hosts/orange/services/t3code.nix)）。
-  ルートのページは Immich のままなので、ネイティブアプリか `https://app.t3.codes/` から接続します。
-- 端末のペアリングは **Settings → Connections** から行います。citrus では `t3 pair --tailscale` も使えます。
-  orange では `t3 auth pairing create --base-url https://orange.tail1e65cd.ts.net` を使います。
+- Web 画面は `https://orange.tail1e65cd.ts.net/t3/` と `https://citrus.tail1e65cd.ts.net/t3/` です。
+  Tailscale Serve HTTPS 443 → `127.0.0.1:8000` の nginx → `127.0.0.1:3773` のサーバーで配信し、API と WebSocket も同じ HTTPS 入口を通ります。
+  `/t3/` 用に Web 画面のルーター、静的ファイル参照、PWA manifest をパッケージ内で補正します。
+  orange のルートは Immich、citrus のルートは `/t3/` への転送です。
+- 起動時にサービスが始まり、既存の `~/.t3` のペアリング、プロジェクト、会話履歴を使います。
+  同じ `~/.t3` に対してデスクトップ版や別の `t3 serve` を同時起動しないでください。
+- 端末のペアリングは **Settings → Sharing & access** または
+  `t3 auth pairing create --base-url https://orange.tail1e65cd.ts.net` を使います。
+  citrus では URL を `https://citrus.tail1e65cd.ts.net` に置き換えます。
+  `t3 pair --tailscale` は共通の Serve 設定を変更するため使いません。
   ペアリングのリンクは認証情報なので、ほかの人に見せないでください。
 - Claude は Home Manager の実行ファイルと通常の `~/.claude` のログインを使います。必要なら
   `claude auth login` のあと、T3 Code でプロバイダーを再検出します。
 - GitHub は既存の `gh` のログインを使います。`gh auth status` で確かめ、必要なら `gh auth login` のあと
   **Settings → Source Control → Rescan** を選びます。トークンを Nix にコピーすることはありません。
-- 適用時に書き換えるのは、接続とプロバイダーに関する項目だけです。T3 Code は利用者の権限でコマンドを実行できます。
+- T3 Code は利用者の権限でコマンドを実行できます。
   tailnet 内だけの公開でも、隔離された環境になるわけではありません。
 
 ### DeepSeek Harness pre-release
@@ -276,7 +276,7 @@ Claude Code と Codex は全ホストで Home Manager が導入し、どのシ�
   Nix の Node.js では `--expose-internals` で同じ内部ローダーを取得し、ネイティブアドオンの実行形式への依存を避けます。
 - [dsh-mobile-maxxing](https://github.com/kuraneko1/dsh-mobile-maxxing) が PWA・通知・モバイル操作を提供します。
   両ホストとも Tailscale Serve HTTPS → ループバック nginx → `127.0.0.1:3080` で公開します。
-  入口は `https://orange.tail1e65cd.ts.net/dsh/` と `https://citrus-1.tail1e65cd.ts.net/dsh/` です。
+  入口は `https://orange.tail1e65cd.ts.net/dsh/` と `https://citrus.tail1e65cd.ts.net/dsh/` です。
   `dsh-open` が開く認証付き URL を使います。認証トークンはログに含まれるため共有しないでください。
 - 同じ配布元の [dsh-locale-ja](https://github.com/kuraneko1/dsh-mobile-maxxing/tree/main/packages/dsh-locale-ja) が言語選択に **日本語** を追加します。
   DSH の bundle 登録定義と現在のランタイムに対する依存宣言を Nix 側で補い、選択中の表示言語は保持します。
@@ -325,7 +325,7 @@ T3 は複数の接続先・アカウントもプールします。このプラ�
 | Immich | `https://orange.tail1e65cd.ts.net/` | [immich.nix](hosts/orange/services/immich.nix) |
 | Vaultwarden | `https://orange.tail1e65cd.ts.net/vault/` | [vaultwarden.nix](hosts/orange/services/vaultwarden.nix) |
 | Obsidian LiveSync | `https://orange.tail1e65cd.ts.net/couchdb/` | [obsidian-livesync.nix](hosts/orange/services/obsidian-livesync.nix) |
-| T3 Code | ネイティブアプリか `https://app.t3.codes/` から接続 | [t3code.nix](hosts/orange/services/t3code.nix) |
+| T3 Code | `https://orange.tail1e65cd.ts.net/t3/` | [t3code.nix](modules/common/t3code.nix) |
 | Samba | HDD の共有 | [samba.nix](hosts/orange/services/samba.nix) |
 | Minecraft | Fabric サーバー | [minecraft.nix](hosts/orange/services/minecraft.nix) |
 | Tailscale 出口ノード | 出口ノード | [tailscale-exit-node.nix](hosts/orange/services/tailscale-exit-node.nix) |
