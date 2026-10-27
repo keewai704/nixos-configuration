@@ -90,12 +90,19 @@ stdenvNoCC.mkDerivation {
   postPatch = ''
     python ${./edcb.py} .
     python ${./playback.py} .
+    python ${./recording.py} .
     python ${./subpath.py} .
     substituteInPlace server/app/constants.py \
       --replace-fail "DATA_DIR = BASE_DIR / 'data'" "DATA_DIR = Path('/var/lib/konomitv/data')" \
       --replace-fail "LOGS_DIR = BASE_DIR / 'logs'" "LOGS_DIR = Path('/var/log/konomitv')"
     substituteInPlace server/app/config.py \
       --replace-fail "_CONFIG_YAML_PATH = BASE_DIR.parent / 'config.yaml'" "_CONFIG_YAML_PATH = Path('/var/lib/konomitv/config.yaml')"
+  '';
+  doCheck = true;
+  checkPhase = ''
+    runHook preCheck
+    python ${./test-recording.py} .
+    runHook postCheck
   '';
   installPhase = ''
     runHook preInstall
