@@ -85,7 +85,7 @@ let
       {
         name = "Sony CECH-ZD1 J";
         types = [ "GR" ];
-        command = "${pkgs.local.coax}/bin/coax tune --no-start --system ISDBT --ch {{{channel}}}";
+        command = "${pkgs.local.torne-receiver}/bin/torne-receiver tune --ch {{{channel}}}";
       }
     ];
     filters.decode-filter.command = "${lib.getExe pkgs.aribb25} - -";
@@ -103,17 +103,16 @@ in
     description = "Shared broadcast receiver for KonomiTV and native EDCB";
     wantedBy = [ "multi-user.target" ];
     requires = [
-      "coaxd.service"
-      "coax-pcsc.service"
+      "torne-receiver.service"
+      "pcscd.service"
     ];
     after = [
-      "coaxd.service"
-      "coax-pcsc.service"
+      "torne-receiver.service"
+      "pcscd.service"
     ];
     path = [ pkgs.local.mirakc-arib ];
     environment = {
-      COAXD_SOCKET = "/run/coax/http.sock";
-      PCSCLITE_CSOCK_NAME = "/run/coax/pcscd.comm";
+      PCSCLITE_CSOCK_NAME = "/run/pcscd/pcscd.comm";
       RUST_LOG = "info";
     };
     preStart = ''

@@ -27,18 +27,8 @@
   inputs = {
     nixpkgs.url = "github:NixOS/nixpkgs/nixos-unstable";
 
-    coax = {
-      url = "git+https://github.com/Till0196/coax?ref=main";
-      flake = false;
-    };
-
-    coax-go-text = {
-      url = "git+https://github.com/golang/text?ref=master";
-      flake = false;
-    };
-
-    bondriver-coax = {
-      url = "git+https://github.com/Till0196/BonDriver_coax?ref=main";
+    torne-driver = {
+      url = "git+https://github.com/mihalinn/torne_drv?ref=main";
       flake = false;
     };
 
@@ -59,11 +49,6 @@
 
     bondriver-linuxmirakc = {
       url = "git+https://github.com/matching/BonDriver_LinuxMirakc?ref=main&submodules=1";
-      flake = false;
-    };
-
-    coax-rs = {
-      url = "git+https://github.com/Till0196/coax-rs?ref=main";
       flake = false;
     };
 

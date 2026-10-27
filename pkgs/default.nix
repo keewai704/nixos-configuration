@@ -19,13 +19,8 @@ in
       thirdparty = inputs.konomitv-thirdparty;
       inherit inputs;
     };
-    coax = final.callPackage ./coax {
-      upstream = inputs.coax;
-      goText = inputs.coax-go-text;
-    };
-    bondriver-coax = final.callPackage ./bondriver-coax {
-      upstream = inputs.bondriver-coax;
-      coaxRs = inputs.coax-rs;
+    torne-receiver = final.callPackage ./torne-receiver {
+      upstream = inputs.torne-driver;
     };
     mirakc-arib = final.callPackage ./mirakc-arib { upstream = inputs.mirakc-arib; };
     mirakc = final.callPackage ./mirakc {

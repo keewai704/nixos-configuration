@@ -122,9 +122,7 @@ let
     capture.upload_folders = [ captures ];
   };
   tvEnvironment = {
-    COAXD_SOCKET = "/run/coax/http.sock";
-    COAXD_SOCKET_DIR = "/run/coax";
-    PCSCLITE_CSOCK_NAME = "/run/coax/pcscd.comm";
+    PCSCLITE_CSOCK_NAME = "/run/pcscd/pcscd.comm";
   };
   serviceDefaults = {
     User = "tv";
@@ -139,7 +137,10 @@ let
   };
 in
 {
-  imports = [ ./mirakc.nix ];
+  imports = [
+    ./receiver.nix
+    ./mirakc.nix
+  ];
 
   users.groups.tv = { };
   users.users.tv = {
@@ -177,56 +178,17 @@ in
       };
     };
 
-    coaxd = {
-      description = "USB tuner host for the Sony CECH-ZD1 J";
-      wantedBy = [ "multi-user.target" ];
-      environment = tvEnvironment;
-      postStart = ''
-        for attempt in {1..100}; do
-          if ${pkgs.local.coax}/bin/coax list --no-start >/dev/null 2>&1; then
-            exit 0
-          fi
-          sleep 0.1
-        done
-        exit 1
-      '';
-      serviceConfig = serviceDefaults // {
-        RuntimeDirectory = "coax";
-        RuntimeDirectoryMode = "0750";
-        ExecStart = "${pkgs.local.coax}/bin/coaxd --idle 0 --socket-dir /run/coax";
-      };
-    };
-
-    coax-pcsc = {
-      description = "Expose the tuner's B-CAS slot to PC/SC clients";
-      wantedBy = [ "multi-user.target" ];
-      requires = [ "coaxd.service" ];
-      after = [ "coaxd.service" ];
-      environment = tvEnvironment;
-      postStart = ''
-        for attempt in {1..100}; do
-          test ! -S /run/coax/pcscd.comm || exit 0
-          sleep 0.1
-        done
-        exit 1
-      '';
-      serviceConfig = serviceDefaults // {
-        ReadWritePaths = [ "/run/coax" ];
-        ExecStart = "${pkgs.local.coax}/bin/coax pcsc --idle 0 --no-start";
-      };
-    };
-
     edcb-setup = {
       description = "Prepare native EDCB and scan the terrestrial tuner on first start";
       requires = [
         "mirakc.service"
-        "coax-pcsc.service"
+        "pcscd.service"
         "tv-storage-prepare.service"
         "tv-recording-encode.service"
       ];
       after = [
         "mirakc.service"
-        "coax-pcsc.service"
+        "pcscd.service"
         "tv-storage-prepare.service"
         "tv-recording-encode.service"
       ];

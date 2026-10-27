@@ -1,0 +1,140 @@
+--- a/ifd/ifd_torne.c
++++ b/ifd/ifd_torne.c
+@@ -20,6 +20,7 @@
+ #include <PCSC/reader.h>
+ 
+ #include "torne_ioctl.h"
++#include "card-socket.h"
+ 
+ #define MAX_READERS 16
+ #define SLOT_NAME_LEN 64
+@@ -55,92 +56,18 @@
+ 	done = 1;
+ }
+ 
+-/* the USB bus and device number of /dev/tornecardN, from sysfs; -1 when unknown */
+-static int usb_numbers(int card, int *bus, int *dev)
+-{
+-	char path[128];
+-	FILE *f;
+-
+-	*bus = *dev = -1;
+-	snprintf(path, sizeof(path), "/sys/class/misc/tornecard%d/device/../busnum", card);
+-	f = fopen(path, "r");
+-	if (!f)
+-		return -1;
+-	if (fscanf(f, "%d", bus) != 1)
+-		*bus = -1;
+-	fclose(f);
+-	snprintf(path, sizeof(path), "/sys/class/misc/tornecard%d/device/../devnum", card);
+-	f = fopen(path, "r");
+-	if (!f)
+-		return -1;
+-	if (fscanf(f, "%d", dev) != 1)
+-		*dev = -1;
+-	fclose(f);
+-	return 0;
+-}
+-
+-/* pcscd names a USB reader "usb:VVVV/PPPP:libusb-1.0:BUS:DEV:IF" or "usb:VVVV/PPPP:libudev:N:/dev/bus/usb/BBB/DDD" */
+-static void parse_device_name(const char *name, int *bus, int *dev)
+-{
+-	const char *p;
+-
+-	*bus = *dev = -1;
+-	p = strstr(name, "libusb-1.0:");
+-	if (p) {
+-		sscanf(p + strlen("libusb-1.0:"), "%d:%d", bus, dev);
+-		return;
+-	}
+-	p = strstr(name, "/dev/bus/usb/");
+-	if (p)
+-		sscanf(p + strlen("/dev/bus/usb/"), "%d/%d", bus, dev);
+-}
+-
+ static RESPONSECODE open_reader(DWORD lun, const char *name)
+ {
+-	unsigned int index = lun >> 16;
+-	int want_bus = -1, want_dev = -1, card, chosen = -1, first = -1;
+-
+-	init_readers();
+-	if (index >= MAX_READERS)
+-		return IFD_COMMUNICATION_ERROR;
+-	if (name)
+-		parse_device_name(name, &want_bus, &want_dev);
+-
+-	pthread_mutex_lock(&readers_lock);
+-	if (readers[index].fd >= 0) {
+-		pthread_mutex_unlock(&readers_lock);
+-		return IFD_SUCCESS; /* another slot of the same reader */
+-	}
+-	for (card = 0; card < MAX_READERS; card++) {
+-		char path[SLOT_NAME_LEN];
+-		int bus, dev;
+-
+-		snprintf(path, sizeof(path), "/dev/tornecard%d", card);
+-		if (access(path, F_OK) != 0)
+-			continue;
+-		if (first < 0)
+-			first = card;
+-		if (want_bus >= 0 && usb_numbers(card, &bus, &dev) == 0 && bus == want_bus && dev == want_dev) {
+-			chosen = card;
+-			break;
+-		}
+-	}
+-	if (chosen < 0)
+-		chosen = first;
+-	if (chosen < 0) {
+-		pthread_mutex_unlock(&readers_lock);
+-		Log1(PCSC_LOG_ERROR, "no /dev/tornecardN (is torne_drv loaded?)");
+-		return IFD_COMMUNICATION_ERROR;
+-	}
+-	snprintf(readers[index].path, sizeof(readers[index].path), "/dev/tornecard%d", chosen);
+-	readers[index].fd = open(readers[index].path, O_RDWR | O_CLOEXEC);
+-	readers[index].atr_len = 0;
+-	pthread_mutex_unlock(&readers_lock);
+-	if (readers[index].fd < 0) {
+-		Log3(PCSC_LOG_ERROR, "open %s: %s", readers[index].path, strerror(errno));
+-		return IFD_COMMUNICATION_ERROR;
+-	}
+-	return IFD_SUCCESS;
++    unsigned int index = lun >> 16;
++    init_readers();
++    if (index >= MAX_READERS)
++        return IFD_COMMUNICATION_ERROR;
++    pthread_mutex_lock(&readers_lock);
++    if (readers[index].fd < 0)
++        readers[index].fd = torne_socket_connect(name ? name : TORNE_CARD_SOCKET, SOCK_SEQPACKET);
++    readers[index].atr_len = 0;
++    pthread_mutex_unlock(&readers_lock);
++    return readers[index].fd < 0 ? IFD_COMMUNICATION_ERROR : IFD_SUCCESS;
+ }
+ 
+ RESPONSECODE IFDHCreateChannelByName(DWORD Lun, LPSTR lpcDevice)
+@@ -236,7 +163,7 @@
+ 	case IFD_POWER_UP:
+ 	case IFD_RESET:
+ 		memset(&atr, 0, sizeof(atr));
+-		if (ioctl(r->fd, TORNE_CARD_IOC_RESET, &atr) < 0) {
++		if (torne_card_call(r->fd, Action == IFD_POWER_UP ? TORNE_CARD_POWER_UP : TORNE_CARD_IOC_RESET, &atr) < 0) {
+ 			*AtrLength = 0;
+ 			r->atr_len = 0;
+ 			Log2(PCSC_LOG_INFO, "reset: %s", strerror(errno));
+@@ -270,7 +197,7 @@
+ 	apdu.tx_len = TxLength;
+ 	memcpy(apdu.tx, TxBuffer, TxLength);
+ 	apdu.rx_len = sizeof(apdu.rx);
+-	if (ioctl(r->fd, TORNE_CARD_IOC_TRANSMIT, &apdu) < 0) {
++	if (torne_card_call(r->fd, TORNE_CARD_IOC_TRANSMIT, &apdu) < 0) {
+ 		*RxLength = 0;
+ 		Log2(PCSC_LOG_INFO, "transmit: %s", strerror(errno));
+ 		return errno == ETIMEDOUT ? IFD_RESPONSE_TIMEOUT : IFD_COMMUNICATION_ERROR;
+@@ -302,7 +229,7 @@
+ 
+ 	if (!r)
+ 		return IFD_COMMUNICATION_ERROR;
+-	if (ioctl(r->fd, TORNE_CARD_IOC_PRESENT, &present) < 0)
++	if (torne_card_call(r->fd, TORNE_CARD_IOC_PRESENT, &present) < 0)
+ 		return IFD_COMMUNICATION_ERROR;
+ 	return present ? IFD_ICC_PRESENT : IFD_ICC_NOT_PRESENT;
+ }

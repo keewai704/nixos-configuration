@@ -105,23 +105,6 @@
         "type": "github"
       }
     },
-    "bondriver-coax": {
-      "flake": false,
-      "locked": {
-        "lastModified": 1792592860,
-        "narHash": "sha256-RogvxkGBzh4hsb4S8jrh2mScci8SpCpCVjpr49sgFDg=",
-        "ref": "main",
-        "rev": "ce82552dc645146402c332d22650eaefdafc147d",
-        "revCount": 5,
-        "type": "git",
-        "url": "https://github.com/Till0196/BonDriver_coax"
-      },
-      "original": {
-        "ref": "main",
-        "type": "git",
-        "url": "https://github.com/Till0196/BonDriver_coax"
-      }
-    },
     "bondriver-linuxmirakc": {
       "flake": false,
       "locked": {
@@ -173,57 +156,6 @@
         "ref": "main",
         "repo": "claude-code-nix",
         "type": "github"
-      }
-    },
-    "coax": {
-      "flake": false,
-      "locked": {
-        "lastModified": 1792494337,
-        "narHash": "sha256-6r4qf6/JnXopStYrhmBItNzpgJ+kD9XOykHFUR41rgI=",
-        "ref": "main",
-        "rev": "2d9f2c263a3b080ecef3a8ede1eb86c6afa48405",
-        "revCount": 5,
-        "type": "git",
-        "url": "https://github.com/Till0196/coax"
-      },
-      "original": {
-        "ref": "main",
-        "type": "git",
-        "url": "https://github.com/Till0196/coax"
-      }
-    },
-    "coax-go-text": {
-      "flake": false,
-      "locked": {
-        "lastModified": 1792599976,
-        "narHash": "sha256-WxiMFrO4VV48w/ytV9aDe4GzeCmDK5qX2fYdAfZHyEs=",
-        "ref": "master",
-        "rev": "972f2683e8864ae75860c0da80ef7c4c5a7cdee8",
-        "revCount": 794,
-        "type": "git",
-        "url": "https://github.com/golang/text"
-      },
-      "original": {
-        "ref": "master",
-        "type": "git",
-        "url": "https://github.com/golang/text"
-      }
-    },
-    "coax-rs": {
-      "flake": false,
-      "locked": {
-        "lastModified": 1792492707,
-        "narHash": "sha256-KPhJXfPkLpnCfwMmphiSIRzXnNo+4KX1/7twZkDDG0E=",
-        "ref": "main",
-        "rev": "5d3dad3ce60a6223b665e9dac8beed88ebdc7e9e",
-        "revCount": 6,
-        "type": "git",
-        "url": "https://github.com/Till0196/coax-rs"
-      },
-      "original": {
-        "ref": "main",
-        "type": "git",
-        "url": "https://github.com/Till0196/coax-rs"
       }
     },
     "codex": {
@@ -538,7 +470,7 @@
     "meltype-release": {
       "flake": false,
       "locked": {
-        "narHash": "sha256-zWbdKirMJaKvtRtEJ+1xtNiUL4Q2eiCvcLSt4eCR53Q=",
+        "narHash": "sha256-y58lo2MCCiBZCF1ND2zeT/odd2yvT8JxjuptboDRKP4=",
         "type": "file",
         "url": "https://api.github.com/repos/yksr-melt/Meltype/releases/latest"
       },
@@ -1003,13 +935,9 @@
       "inputs": {
         "agenix": "agenix",
         "b25-decoder": "b25-decoder",
-        "bondriver-coax": "bondriver-coax",
         "bondriver-linuxmirakc": "bondriver-linuxmirakc",
         "claude-agent-sdk-release": "claude-agent-sdk-release",
         "claude-code": "claude-code",
-        "coax": "coax",
-        "coax-go-text": "coax-go-text",
-        "coax-rs": "coax-rs",
         "codex": "codex",
         "deepseek-harness-release": "deepseek-harness-release",
         "dsh-claude-bridge-release": "dsh-claude-bridge-release",
@@ -1037,6 +965,7 @@
         "pyproject-nix": "pyproject-nix",
         "stylix": "stylix",
         "t3code-releases": "t3code-releases",
+        "torne-driver": "torne-driver",
         "tsreplace": "tsreplace",
         "umbriel": "umbriel",
         "uv2nix": "uv2nix"
@@ -1124,7 +1053,7 @@
     "t3code-releases": {
       "flake": false,
       "locked": {
-        "narHash": "sha256-A4bPSZauaPMxmCCeg5jJS5cDDk1ztXC9SH9Nd6mqc5M=",
+        "narHash": "sha256-FYOEZCzudyKf27VbZlW3U0NrEs5joyjt5AaLj1p7oS0=",
         "type": "file",
         "url": "https://api.github.com/repos/pingdotgg/t3code/releases?per_page=100"
       },
@@ -1195,6 +1124,23 @@
         "owner": "tinted-theming",
         "repo": "base16-zed",
         "type": "github"
+      }
+    },
+    "torne-driver": {
+      "flake": false,
+      "locked": {
+        "lastModified": 1793039626,
+        "narHash": "sha256-TKjEVPEwsxyXxfyyHUs+4qQA/ShDorJWCZ30TjxM6KY=",
+        "ref": "main",
+        "rev": "af41ad7dc373a08ad7a9683ff0baa6c40370022e",
+        "revCount": 7,
+        "type": "git",
+        "url": "https://github.com/mihalinn/torne_drv"
+      },
+      "original": {
+        "ref": "main",
+        "type": "git",
+        "url": "https://github.com/mihalinn/torne_drv"
       }
     },
     "treefmt-nix": {

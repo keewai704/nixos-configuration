@@ -348,17 +348,17 @@ T3 は複数の接続先・アカウントもプールします。このプラ�
 
 ### テレビ
 
-Sony CECH-ZD1 J の地デジ1チューナーを coaxd → mirakc の順に接続し、KonomiTV のライブ受信と
+Sony CECH-ZD1 J の地デジ1チューナーを 専用の `torne-receiver` → mirakc の順に接続し、KonomiTV のライブ受信と
 BonDriver_LinuxMirakc → xtne6f 版 EDCB（Linux ネイティブ）の録画で共有します。
 KonomiTV は EDCB バックエンドの `always_receive_tv_from_mirakurun` を有効にし、番組情報・録画予約は EDCB、放送波は mirakc から取得します。
 mirakc は `127.0.0.1:40772` の内部接続だけで利用します。同じ放送波は共有し、別の放送波で競合した場合は EDCB の録画を優先します。
-内蔵 B-CAS スロットは `coax pcsc` で公開し、ライブは aribb25、EDCB は B25Decoder で復号します。映像は Intel QSV で変換します。
+内蔵 B-CAS スロットは専用 IFD と標準 pcscd で公開し、ライブは aribb25、EDCB は B25Decoder で復号します。映像は Intel QSV で変換します。
 8TB HDD 上の録画専用ディレクトリは `/srv/storage/KonomiTV/Recordings`、キャプチャは `/srv/storage/KonomiTV/Captures`、設定・番組表は
 `/var/lib/edcb` と `/var/lib/konomitv` に保存します。
 
 再視聴を速くするため、視聴終了後も配信を最大120秒保持します。
 携帯回線の低遅延モードは初回適用時に有効化し、その後の手動変更は維持します。
-チューナーは受信に成功した周波数のパラメーターを再利用し、ロックできなければ自動探索へ戻します。
+専用ドライバーは libusb で直接制御し、初期化と校正を常駐プロセスで保持します。レジスター書き込みは USB コマンドへまとめ、受信に成功した周波数の TMCC を再利用します。フルセグと TMCC のロックに失敗した場合は自動探索へ戻します。
 NHK総合の京都・神戸とサンテレビ2は、EDCB の表示・EPG取得・検索を無効にし、KonomiTV の一覧にも反映します。
 
 今後の録画は EDCB の `PostRecEnd.lua` からキューへ登録し、`tv-recording-encode` が `tsreplace` と QSVEncC で映像だけを H.265 に置換します。
@@ -367,11 +367,11 @@ NHK総合の京都・神戸とサンテレビ2は、EDCB の表示・EPG取得�
 映像の符号化方式を示す PMT と、必要な場合の PCR 配置は更新します。検証成功後に同じファイル名へ置換し、元 TS を削除します。
 失敗時は元 TS を残し、ジョブを `/var/lib/tv-recording/failed`、ログを `/var/log/tv-recording` に保存します。既存録画の一括変換は行いません。
 
-coax・mirakc・mirakc-arib・BonDriver・EDCB・B25Decoder・tsreplace・KonomiTV と配布バイナリは [flake.nix](flake.nix) の入力で管理します。
+torne_drv・mirakc・mirakc-arib・BonDriver・EDCB・B25Decoder・tsreplace・KonomiTV と配布バイナリは [flake.nix](flake.nix) の入力で管理します。
 mirakc は上流の `release` ブランチを追います。
 KonomiTV は `master`、対応するバイナリは上流の nightly 配布を追います。
 更新は `nix flake update` と通常の Orange への適用で行い、ソースの revision と配布物の hash は `flake.lock` に残します。
-Rust と Python の依存は取得元のロックから、coax の Go 依存は専用の flake 入力から構築します。
+Rust と Python の依存は取得元のロックから構築します。専用ドライバーは GPL-2.0 の torne_drv の中核を基に C で実装し、coax の実行・ビルド依存はありません。
 
 ## パッケージと入力の方針
 
