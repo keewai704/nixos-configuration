@@ -98,6 +98,11 @@ nix build --accept-flake-config .#<パッケージ名>                   # pkgs/
 
 `nixos-rebuild` には、必ず実行中のマシン自身の名前（`hostname` の結果）を指定します。
 
+`nix` は、`gh auth login --hostname github.com` で認証済みなら、実行時に GitHub CLI から
+トークンを取得して GitHub 入力と GitHub API への直接アクセスに使います。認証情報がなければ
+認証なしで実行します。トークンは Nix ストアやリポジトリに保存せず、API 用の一時認証ファイルは
+コマンド終了時に削除します。既存の Nix 設定と他のホスト用の認証情報も引き継ぎます。
+
 ## バイナリキャッシュ
 
 `flake.nix` の `nixConfig` には、`modules/common/nix.nix`、`hosts/citrus/kernel.nix`、
