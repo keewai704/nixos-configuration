@@ -243,7 +243,7 @@ Claude Code と Codex は全ホストで Home Manager が導入し、どのシ�
 リリース情報は `t3code-releases` 入力で固定し、更新は `nix flake update` と通常の適用手順で行います。
 アプリ内の自動更新は無効です。
 
-- Web 画面は `https://orange.tail1e65cd.ts.net/t3/` と `https://citrus-1.tail1e65cd.ts.net/t3/` です。
+- Web 画面は `https://orange.tail1e65cd.ts.net/t3/` と `https://citrus.tail1e65cd.ts.net/t3/` です。
   Tailscale Serve HTTPS 443 → `127.0.0.1:8000` の nginx → `127.0.0.1:3773` のサーバーで配信し、API と WebSocket も同じ HTTPS 入口を通ります。
   `/t3/` 用に Web 画面のルーター、静的ファイル参照、PWA manifest をパッケージ内で補正します。
   orange のルートは Immich、citrus のルートは `/t3/` への転送です。
@@ -251,7 +251,7 @@ Claude Code と Codex は全ホストで Home Manager が導入し、どのシ�
   同じ `~/.t3` に対してデスクトップ版や別の `t3 serve` を同時起動しないでください。
 - 端末のペアリングは **Settings → Sharing & access** または
   `t3 auth pairing create --base-url https://orange.tail1e65cd.ts.net` を使います。
-  citrus では URL を `https://citrus-1.tail1e65cd.ts.net` に置き換えます。
+  citrus では URL を `https://citrus.tail1e65cd.ts.net` に置き換えます。
   `t3 pair --tailscale` は共通の Serve 設定を変更するため使いません。
   ペアリングのリンクは認証情報なので、ほかの人に見せないでください。
 - Claude は Home Manager の実行ファイルと通常の `~/.claude` のログインを使います。必要なら
