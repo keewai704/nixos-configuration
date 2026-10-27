@@ -19,10 +19,14 @@ rustPlatform.buildRustPackage {
     substituteInPlace mirakc-core/tests/config.yml mirakc-core/tests/config.toml \
       --replace-fail /bin/true ${coreutils}/bin/true
   '';
+  preConfigure = ''
+    cp ${swaggerUi} "$TMPDIR/swagger-ui.zip"
+    chmod u+w "$TMPDIR/swagger-ui.zip"
+    export SWAGGER_UI_DOWNLOAD_URL="file://$TMPDIR/swagger-ui.zip"
+  '';
   env = {
     VERGEN_GIT_SHA = upstream.rev;
     VERGEN_GIT_BRANCH = "release";
-    SWAGGER_UI_DOWNLOAD_URL = "file://${swaggerUi}";
   };
   cargoBuildFlags = [
     "-p"
