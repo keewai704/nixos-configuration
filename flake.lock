@@ -183,11 +183,11 @@
     "dsh-mobile-maxxing": {
       "flake": false,
       "locked": {
-        "lastModified": 1793073465,
-        "narHash": "sha256-pE8Sh5LtoEdpe4zUniknwrLap2Y2stENtMAH+D1/tr4=",
+        "lastModified": 1793074721,
+        "narHash": "sha256-8LroLgkX/KMeYjo8zvDXVet3uw8HbNYNzqpIRhsT1zo=",
         "owner": "kuraneko1",
         "repo": "dsh-mobile-maxxing",
-        "rev": "b0caec2f13e5f501d73575259d82fc9bf721d0bd",
+        "rev": "cc98e16670c47248ee24946c9a8243b800ed2ce9",
         "type": "github"
       },
       "original": {
@@ -388,7 +388,7 @@
     "meltype-release": {
       "flake": false,
       "locked": {
-        "narHash": "sha256-ujBN56EPjCcH4iou2Dl8m9uR8h+emO1lDSPccm+KWTA=",
+        "narHash": "sha256-O/nkunR3Qeif1BAGC6DUHy5gWGFxclx8CnvO4Sl1whU=",
         "type": "file",
         "url": "https://api.github.com/repos/yksr-melt/Meltype/releases/latest"
       },
@@ -862,7 +862,7 @@
     "t3code-releases": {
       "flake": false,
       "locked": {
-        "narHash": "sha256-7isKUxMqp2W+ISJdUWn2uqwdkvSLK/FVvOWzZlZH0lw=",
+        "narHash": "sha256-q4b6gLBsvuqz8v0/s3EcOL9EXxZhlgh8Yt9QNR2CFJE=",
         "type": "file",
         "url": "https://api.github.com/repos/pingdotgg/t3code/releases?per_page=100"
       },
