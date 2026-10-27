@@ -2,6 +2,7 @@
   lib,
   rustPlatform,
   git,
+  coreutils,
   upstream,
   swaggerUi,
 }:
@@ -14,6 +15,10 @@ rustPlatform.buildRustPackage {
     allowBuiltinFetchGit = true;
   };
   nativeBuildInputs = [ git ];
+  postPatch = ''
+    substituteInPlace mirakc-core/tests/config.yml mirakc-core/tests/config.toml \
+      --replace-fail /bin/true ${coreutils}/bin/true
+  '';
   env = {
     VERGEN_GIT_SHA = upstream.rev;
     VERGEN_GIT_BRANCH = "release";
