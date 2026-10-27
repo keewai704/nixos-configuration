@@ -207,7 +207,7 @@
     "dsh-codex-native-releases": {
       "flake": false,
       "locked": {
-        "narHash": "sha256-/EUIArE0fTW8VNG6sufRdiSbQPPPATzXjlnYblulUFQ=",
+        "narHash": "sha256-QlIGi5Or7wvhQ+SlWdPScDQohum0lhjxSlHjLvn3F+0=",
         "type": "file",
         "url": "https://api.github.com/repos/Tests4gptplay/dsh-codex-native/releases?per_page=20"
       },
@@ -470,7 +470,7 @@
     "meltype-release": {
       "flake": false,
       "locked": {
-        "narHash": "sha256-RjuMX5xkryoh+FugCNkIkmxFfcmi72rX9qAkzprgWdo=",
+        "narHash": "sha256-9bnVc3k1n8ZfiaxqqpdbLFSFLr910QIC30/6tYwRzf0=",
         "type": "file",
         "url": "https://api.github.com/repos/yksr-melt/Meltype/releases/latest"
       },
@@ -1053,7 +1053,7 @@
     "t3code-releases": {
       "flake": false,
       "locked": {
-        "narHash": "sha256-QvF5ODy6QyPWZiSJ619cTaKOes74j3R1n3diuJOHm+U=",
+        "narHash": "sha256-2aYcXs1ZiQz+LjnXCjd6pUZFkvvV7YyFUMQNczhrs00=",
         "type": "file",
         "url": "https://api.github.com/repos/pingdotgg/t3code/releases?per_page=100"
       },
@@ -1129,11 +1129,11 @@
     "torne-driver": {
       "flake": false,
       "locked": {
-        "lastModified": 1793096485,
-        "narHash": "sha256-K1cvAdWxjWhwPNYoGzJcM3m2pn3VTrm5NXKSxXpKI+Q=",
+        "lastModified": 1793117711,
+        "narHash": "sha256-JBvjzfBaQZOIG2Gm24TnqTCPUmvjaQzjbTzuQNteUIY=",
         "ref": "main",
-        "rev": "62ef72140adc1b61bff0a1d19b91900b77167286",
-        "revCount": 9,
+        "rev": "fc662902a3e4ad56566b00cae4a0ead922e3dd02",
+        "revCount": 11,
         "type": "git",
         "url": "https://github.com/mihalinn/torne_drv"
       },
