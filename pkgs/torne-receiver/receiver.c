@@ -213,7 +213,7 @@ static void *serve_card(void *private)
 
 static unsigned int pat_tsid(const unsigned char *packet)
 {
-    if ((packet[1] & 31) || packet[2] || !(packet[1] & 0x40))
+    if ((packet[1] & 0x9f) || packet[2] || !(packet[1] & 0x40) || (packet[3] & 0xc0))
         return 0;
     unsigned int control = (packet[3] >> 4) & 3;
     if (control != 1 && control != 3)
@@ -223,6 +223,18 @@ static unsigned int pat_tsid(const unsigned char *packet)
         return 0;
     offset += 1 + packet[offset];
     if (offset + 8 > 188 || packet[offset] != 0)
+        return 0;
+    unsigned int length = 3 + (((unsigned int)packet[offset + 1] & 15) << 8 | packet[offset + 2]);
+    if (!(packet[offset + 1] & 0x80) || !(packet[offset + 5] & 1) ||
+        length < 12 || length > 188 - offset)
+        return 0;
+    uint32_t crc = 0xffffffffu;
+    for (unsigned int i = 0; i < length; i++) {
+        crc ^= (uint32_t)packet[offset + i] << 24;
+        for (unsigned int bit = 0; bit < 8; bit++)
+            crc = crc & 0x80000000u ? (crc << 1) ^ 0x04c11db7u : crc << 1;
+    }
+    if (crc)
         return 0;
     return (unsigned int)packet[offset + 3] << 8 | packet[offset + 4];
 }
