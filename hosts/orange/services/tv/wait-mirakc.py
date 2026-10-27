@@ -18,8 +18,9 @@ for attempt in range(300):
     found = {(service['channel']['channel'], service['serviceId']) for service in services
              if service['channel']['type'] == 'GR'}
     missing = expected - found
-    if not missing:
-        print(f'mirakc is ready with {len(expected)} terrestrial services')
+    available = expected & found
+    if available:
+        print(f'mirakc is ready with {len(available)} terrestrial services')
         break
     time.sleep(1)
 else:
