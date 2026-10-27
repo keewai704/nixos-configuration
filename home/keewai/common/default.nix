@@ -5,6 +5,7 @@
     ./deepseek-harness
     ./faster-whisper.nix
     ./git.nix
+    ./nix
     ./packages.nix
     ./shell
     ./t3code.nix
