@@ -507,19 +507,19 @@
     "konomitv-thirdparty": {
       "flake": false,
       "locked": {
-        "narHash": "sha256-sMKQtCVgb3tubnCFqcvV8SBHMyTOnObeyFILkXBU2VI=",
+        "narHash": "sha256-AKbWVWLrsfkmuYhC6QUvdNJYohCcV91402m33y/E7+w=",
         "type": "file",
-        "url": "https://github.com/tsukumijima/KonomiTV/releases/latest/download/thirdparty-linux.tar.xz"
+        "url": "https://nightly.link/tsukumijima/KonomiTV/workflows/build_thirdparty.yaml/master/thirdparty-linux.tar.xz.zip"
       },
       "original": {
         "type": "file",
-        "url": "https://github.com/tsukumijima/KonomiTV/releases/latest/download/thirdparty-linux.tar.xz"
+        "url": "https://nightly.link/tsukumijima/KonomiTV/workflows/build_thirdparty.yaml/master/thirdparty-linux.tar.xz.zip"
       }
     },
     "meltype-release": {
       "flake": false,
       "locked": {
-        "narHash": "sha256-XoebZ7N7j7aGX87xbOmTLn7F2FuVMzRHdAMRgkqEQ0M=",
+        "narHash": "sha256-IuFTApbD4KQPrFvJ/JNCnaJaECDOLc7VYhBUPXW8jI4=",
         "type": "file",
         "url": "https://api.github.com/repos/yksr-melt/Meltype/releases/latest"
       },
@@ -1052,7 +1052,7 @@
     "t3code-releases": {
       "flake": false,
       "locked": {
-        "narHash": "sha256-wHn/KciFr92iCblT6kNUIIpU59dV7UeCsH4KEikf3NU=",
+        "narHash": "sha256-fwguRo8KiG+iJjbT5yMS928VTpEo4HRjR9HkxxFoFfA=",
         "type": "file",
         "url": "https://api.github.com/repos/pingdotgg/t3code/releases?per_page=100"
       },

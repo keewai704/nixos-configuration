@@ -354,6 +354,7 @@ KonomiTV の順に接続します。内蔵 B-CAS スロットは `coax pcsc` と
 `/var/lib/edcb` と `/var/lib/konomitv` に保存します。
 
 coax・BonDriver・EDCB・B25Decoder・KonomiTV と配布バイナリは [flake.nix](flake.nix) の入力で管理します。
+KonomiTV は `master`、対応するバイナリは上流の nightly 配布を追います。
 更新は `nix flake update` と通常の Orange への適用で行い、ソースの revision と配布物の hash は `flake.lock` に残します。
 Rust と Python の依存は取得元のロックから、coax の Go 依存は専用の flake 入力から構築します。
 

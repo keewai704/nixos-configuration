@@ -76,7 +76,7 @@
     };
 
     konomitv-thirdparty = {
-      url = "file+https://github.com/tsukumijima/KonomiTV/releases/latest/download/thirdparty-linux.tar.xz";
+      url = "file+https://nightly.link/tsukumijima/KonomiTV/workflows/build_thirdparty.yaml/master/thirdparty-linux.tar.xz.zip";
       flake = false;
     };
 

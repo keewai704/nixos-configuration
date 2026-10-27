@@ -6,6 +6,7 @@
   python313,
   autoPatchelfHook,
   makeWrapper,
+  unzip,
   openssl,
   zlib,
   libdrm,
@@ -49,11 +50,12 @@ let
     src = thirdparty;
     sourceRoot = ".";
     unpackPhase = ''
-      tar -xJf "$src" --exclude='thirdparty/Python' --exclude='thirdparty/NVEncC' --exclude='thirdparty/VCEEncC' --exclude='thirdparty/rkmppenc' --exclude='thirdparty/Akebi'
+      unzip -p "$src" thirdparty-linux.tar.xz | tar -xJ --exclude='thirdparty/Python' --exclude='thirdparty/NVEncC' --exclude='thirdparty/VCEEncC' --exclude='thirdparty/rkmppenc' --exclude='thirdparty/Akebi'
     '';
     nativeBuildInputs = [
       autoPatchelfHook
       makeWrapper
+      unzip
     ];
     buildInputs = [
       stdenv.cc.cc.lib
