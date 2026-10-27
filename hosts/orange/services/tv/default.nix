@@ -109,13 +109,27 @@ in
     SUBSYSTEM=="usb", ATTR{idVendor}=="054c", ATTR{idProduct}=="04b2", MODE="0660", GROUP="tv"
   '';
 
-  systemd.tmpfiles.rules = [
-    "d ${storageRoot}/TV 0770 tv tv -"
-    "d ${recordings} 0770 tv tv -"
-    "d ${captures} 0770 tv tv -"
-  ];
-
   systemd.services = {
+    tv-storage-prepare = {
+      description = "Prepare television recording and capture directories on the HDD";
+      requires = [ storageMountUnit ];
+      after = [ storageMountUnit ];
+      serviceConfig = {
+        Type = "oneshot";
+        RemainAfterExit = true;
+        NoNewPrivileges = true;
+        ProtectSystem = "strict";
+        ReadWritePaths = [ storageRoot ];
+        ExecStart = "${pkgs.coreutils}/bin/install --directory --mode=0770 --owner=tv --group=tv ${
+          lib.escapeShellArgs [
+            "${storageRoot}/TV"
+            recordings
+            captures
+          ]
+        }";
+      };
+    };
+
     coaxd = {
       description = "USB tuner host for the Sony CECH-ZD1 J";
       wantedBy = [ "multi-user.target" ];
@@ -160,12 +174,12 @@ in
       requires = [
         "coaxd.service"
         "coax-pcsc.service"
-        storageMountUnit
+        "tv-storage-prepare.service"
       ];
       after = [
         "coaxd.service"
         "coax-pcsc.service"
-        storageMountUnit
+        "tv-storage-prepare.service"
       ];
       environment = tvEnvironment;
       path = [
