@@ -139,10 +139,6 @@ stdenv.mkDerivation {
     cp -r . $out/libexec/t3code/
     rm -r $out/libexec/t3code/usr/lib
     ln -sf ${vulkan-loader}/lib/libvulkan.so.1 $out/libexec/t3code/libvulkan.so.1
-    install -Dm644 ${contents}/t3code.desktop $out/share/applications/t3code.desktop
-    substituteInPlace $out/share/applications/t3code.desktop \
-      --replace-fail 'Exec=AppRun' 'Exec=t3code'
-    cp -r ${contents}/usr/share/icons $out/share/icons
     runHook postInstall
   '';
 
@@ -159,7 +155,6 @@ stdenv.mkDerivation {
         ]
       }
     )
-    makeWrapper $out/libexec/t3code/t3code $out/bin/t3code "''${wrapperArgs[@]}"
     makeWrapper $out/libexec/t3code/t3code $out/bin/t3 "''${wrapperArgs[@]}" \
       --set ELECTRON_RUN_AS_NODE 1 \
       --set T3CODE_CLI_PATH $out/bin/t3 \
@@ -169,20 +164,20 @@ stdenv.mkDerivation {
   doInstallCheck = true;
   installCheckPhase = ''
     runHook preInstallCheck
-    ELECTRON_RUN_AS_NODE=1 $out/bin/t3code -p 'process.versions.electron'
+    ELECTRON_RUN_AS_NODE=1 $out/libexec/t3code/t3code -p 'process.versions.electron'
     $out/bin/t3 --version | grep -F '${version}'
     asar extract $out/libexec/t3code/resources/app.asar t3code-install-check
-    ELECTRON_RUN_AS_NODE=1 $out/bin/t3code ${./test-codex-recovery.mjs} \
+    ELECTRON_RUN_AS_NODE=1 $out/libexec/t3code/t3code ${./test-codex-recovery.mjs} \
       "$PWD/t3code-install-check/apps/server/dist"
     runHook postInstallCheck
   '';
 
   meta = {
-    description = "T3 Code nightly desktop and CLI for coding agents";
+    description = "T3 Code nightly headless server and CLI for coding agents";
     homepage = "https://github.com/pingdotgg/t3code";
     changelog = release.html_url;
     license = lib.licenses.mit;
-    mainProgram = pname;
+    mainProgram = "t3";
     platforms = [ "x86_64-linux" ];
     sourceProvenance = [ lib.sourceTypes.binaryNativeCode ];
   };

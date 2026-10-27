@@ -62,7 +62,7 @@ const indexAsset = files.find((file) => /^index-[\w-]+\.js$/.test(file));
 const vendorAsset = files.find((file) => /^vendor-[\w-]+\.js$/.test(file));
 assert.ok(indexAsset);
 assert.ok(vendorAsset);
-const { rewriteIndexChunk } = await import(
+const { rewriteIndexChunk, rewriteIndexHtml } = await import(
   join(directory, "rdsh-markdown-cjk/markdown-cjk-runtime.js")
 );
 const rewritten = rewriteIndexChunk(
@@ -70,15 +70,25 @@ const rewritten = rewriteIndexChunk(
   vendorAsset,
 );
 assert.notEqual(rewritten, null);
-const baseUrl = `http://localhost/markdown-cjk/v1/${indexAsset}`;
-for (const [, specifier] of rewritten.matchAll(
-  /"(\/assets\/[^"\n]+|\.\/[^"\n]+\.(?:js|css))"/g,
-)) {
-  const pathname = new URL(specifier, baseUrl).pathname;
-  if (pathname === `/markdown-cjk/v1/${vendorAsset}`) continue;
-  assert.ok(
-    pathname.startsWith("/assets/"),
-    `${specifier} must resolve to a served asset`,
+for (const prefix of ["/", "/dsh/"]) {
+  const baseUrl = `https://localhost${prefix}markdown-cjk/v1/${indexAsset}`;
+  for (const [, specifier] of rewritten.matchAll(
+    /"((?:\/assets\/|(?:\.\.?\/)+)[^"\n]+\.(?:js|css))"/g,
+  )) {
+    const pathname = new URL(specifier, baseUrl).pathname;
+    if (pathname === `${prefix}markdown-cjk/v1/${vendorAsset}`) continue;
+    assert.ok(
+      pathname.startsWith(`${prefix}assets/`),
+      `${specifier} must resolve to a served asset under ${prefix}`,
+    );
+    await access(join(assets, pathname.slice(`${prefix}assets/`.length)));
+  }
+  const html = rewriteIndexHtml(
+    await readFile(join(assets, "../index.html"), "utf8"),
+    indexAsset,
+    vendorAsset,
   );
-  await access(join(assets, pathname.slice("/assets/".length)));
+  for (const asset of [indexAsset, vendorAsset]) {
+    assert.ok(html.includes(`./markdown-cjk/v1/${asset}`));
+  }
 }
