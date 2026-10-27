@@ -42,6 +42,26 @@
       flake = false;
     };
 
+    mirakc = {
+      url = "git+https://github.com/mirakc/mirakc?ref=release";
+      flake = false;
+    };
+
+    mirakc-arib = {
+      url = "git+https://github.com/mirakc/mirakc-arib?ref=main&submodules=1";
+      flake = false;
+    };
+
+    mirakc-swagger-ui = {
+      url = "file+https://github.com/swagger-api/swagger-ui/archive/refs/heads/master.zip";
+      flake = false;
+    };
+
+    bondriver-linuxmirakc = {
+      url = "git+https://github.com/matching/BonDriver_LinuxMirakc?ref=main&submodules=1";
+      flake = false;
+    };
+
     coax-rs = {
       url = "git+https://github.com/Till0196/coax-rs?ref=main";
       flake = false;

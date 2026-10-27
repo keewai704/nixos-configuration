@@ -27,6 +27,14 @@ in
       upstream = inputs.bondriver-coax;
       coaxRs = inputs.coax-rs;
     };
+    mirakc-arib = final.callPackage ./mirakc-arib { upstream = inputs.mirakc-arib; };
+    mirakc = final.callPackage ./mirakc {
+      upstream = inputs.mirakc;
+      swaggerUi = inputs.mirakc-swagger-ui;
+    };
+    bondriver-linuxmirakc = final.callPackage ./bondriver-linuxmirakc {
+      upstream = inputs.bondriver-linuxmirakc;
+    };
     deepseek-harness = final.callPackage ./deepseek-harness {
       release = inputs.deepseek-harness-release;
       bridgeRelease = inputs.dsh-claude-bridge-release;

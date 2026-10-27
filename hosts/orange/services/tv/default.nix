@@ -62,6 +62,11 @@ let
         ServiceMode = 49;
       };
       "BonDriver_coax.so" = {
+        Count = 0;
+        GetEpg = 0;
+        EPGCount = 0;
+      };
+      "BonDriver_LinuxMirakc.so" = {
         Count = 1;
         GetEpg = 1;
         EPGCount = 1;
@@ -69,7 +74,7 @@ let
       };
       TVTEST = {
         Num = 1;
-        "0" = "BonDriver_coax.so";
+        "0" = "BonDriver_LinuxMirakc.so";
       };
       EPG_CAP = {
         Count = 1;
@@ -93,18 +98,22 @@ let
       };
     };
   };
-  bonDriverConfig = ini.generate "BonDriver_coax.ini" {
-    coax = {
-      Host = "/run/coax/http.sock";
-      StartDaemon = 0;
+  bonDriverConfig = ini.generate "BonDriver_LinuxMirakc.so.ini" {
+    GLOBAL = {
+      SERVER_TYPE = "http";
+      SERVER_HOST = "127.0.0.1";
+      SERVER_PORT = 40772;
+      PRIORITY = 100;
+      DECODE_B25 = 0;
+      SERVICE_SPLIT = 0;
     };
-    Tuners.terrestrial = "ISDBT, cech-zd1j:*, bands=UHF";
-    Spaces."0" = "地デジ, terrestrial";
   };
   konomitvConfig = (pkgs.formats.yaml { }).generate "konomitv.yaml" {
     general = {
       backend = "EDCB";
       edcb_url = "tcp://127.0.0.1:4510/";
+      always_receive_tv_from_mirakurun = true;
+      mirakurun_url = "http://127.0.0.1:40772/";
       encoder = "QSVEncC";
     };
     server.port = 7000;
@@ -130,6 +139,8 @@ let
   };
 in
 {
+  imports = [ ./mirakc.nix ];
+
   users.groups.tv = { };
   users.users.tv = {
     isSystemUser = true;
@@ -208,13 +219,13 @@ in
     edcb-setup = {
       description = "Prepare native EDCB and scan the terrestrial tuner on first start";
       requires = [
-        "coaxd.service"
+        "mirakc.service"
         "coax-pcsc.service"
         "tv-storage-prepare.service"
         "tv-recording-encode.service"
       ];
       after = [
-        "coaxd.service"
+        "mirakc.service"
         "coax-pcsc.service"
         "tv-storage-prepare.service"
         "tv-recording-encode.service"
@@ -239,8 +250,8 @@ in
         };
       script = ''
         install -d -m 0770 /var/lib/edcb/Setting /var/lib/edcb/lib
-        ln -sfn ${pkgs.local.bondriver-coax}/lib/BonDriver_coax.so /var/lib/edcb/lib/BonDriver_coax.so
-        ln -sfn ${bonDriverConfig} /var/lib/edcb/lib/BonDriver_coax.ini
+        ln -sfn ${pkgs.local.bondriver-linuxmirakc}/lib/BonDriver_LinuxMirakc.so /var/lib/edcb/lib/BonDriver_LinuxMirakc.so
+        ln -sfn ${bonDriverConfig} /var/lib/edcb/lib/BonDriver_LinuxMirakc.so.ini
         ln -sfn ${recordingHook} /var/lib/edcb/PostRecEnd.lua
         for plugin in ${pkgs.local.edcb}/lib/edcb/*.so ${pkgs.local.b25-decoder}/lib/edcb/*.so; do
           ln -sfn "$plugin" "/var/lib/edcb/lib/$(basename "$plugin")"
@@ -254,14 +265,14 @@ in
           '') edcbSettings
         )}
         if ! test -s /var/lib/edcb/Setting/ChSet5.txt ||
-          test -z "$(find /var/lib/edcb/Setting -name 'BonDriver_coax*.ChSet4.txt' -size +0c -print -quit)"; then
-          EpgDataCap_Bon -d BonDriver_coax.so -chscan
+          test -z "$(find /var/lib/edcb/Setting -name 'BonDriver_LinuxMirakc*.ChSet4.txt' -size +0c -print -quit)"; then
+          EpgDataCap_Bon -d BonDriver_LinuxMirakc.so -chscan
           test -s /var/lib/edcb/Setting/ChSet5.txt
-          test -n "$(find /var/lib/edcb/Setting -name 'BonDriver_coax*.ChSet4.txt' -size +0c -print -quit)"
+          test -n "$(find /var/lib/edcb/Setting -name 'BonDriver_LinuxMirakc*.ChSet4.txt' -size +0c -print -quit)"
         fi
         ${pkgs.python3}/bin/python ${./configure-channels.py} /var/lib/edcb/Setting ${disabledChannels}
         if ! test -e /var/lib/edcb/.initial-epg-complete; then
-          EpgDataCap_Bon -d BonDriver_coax.so -epgcap
+          EpgDataCap_Bon -d BonDriver_LinuxMirakc.so -epgcap
           test -n "$(find /var/lib/edcb/Setting/EpgData -name '*_epg.dat' -size +0c -print -quit)"
           touch /var/lib/edcb/.initial-epg-complete
         fi
@@ -350,10 +361,12 @@ in
       wantedBy = [ "multi-user.target" ];
       requires = [
         "edcb.service"
+        "mirakc.service"
         storageMountUnit
       ];
       after = [
         "edcb.service"
+        "mirakc.service"
         storageMountUnit
       ];
       environment = {

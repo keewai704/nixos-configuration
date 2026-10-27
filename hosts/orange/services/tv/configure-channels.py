@@ -7,7 +7,7 @@ policy = json.loads(Path(sys.argv[2]).read_text())
 networks = set(policy['networks'])
 services = {tuple(service) for service in policy['services']}
 
-for path in [directory / 'ChSet5.txt', *directory.glob('BonDriver_coax*.ChSet4.txt')]:
+for path in [directory / 'ChSet5.txt', *directory.glob('BonDriver_*.ChSet4.txt')]:
     raw = path.read_bytes()
     if raw.startswith((b'\xff\xfe', b'\xfe\xff')):
         encoding = 'utf-16'
