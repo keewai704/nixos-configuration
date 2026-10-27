@@ -207,7 +207,7 @@
     "dsh-codex-native-releases": {
       "flake": false,
       "locked": {
-        "narHash": "sha256-K+smV1SbwqTD9ViTRrN6EP1NoQmhbUpDrCPFesi71pU=",
+        "narHash": "sha256-4qnh3FCPDjL5xmZeaaEHlUF7l/rRJT4SXydMerUHeJ0=",
         "type": "file",
         "url": "https://api.github.com/repos/Tests4gptplay/dsh-codex-native/releases?per_page=20"
       },
@@ -470,7 +470,7 @@
     "meltype-release": {
       "flake": false,
       "locked": {
-        "narHash": "sha256-Sx+620tSDALgicdsCExRgnwnemLlHrZWc3b8rMtvBGc=",
+        "narHash": "sha256-QQ4cwNJkQ1aaB6AyLltV2CcQy5+AwijlKgSaJKpvmZU=",
         "type": "file",
         "url": "https://api.github.com/repos/yksr-melt/Meltype/releases/latest"
       },
@@ -585,11 +585,11 @@
         "nixpkgs": "nixpkgs_2"
       },
       "locked": {
-        "lastModified": 1793051482,
-        "narHash": "sha256-nDlV6JnYoSyGFugHB/BHttLK6D06N0b8uMM+pd6GPGA=",
+        "lastModified": 1793136575,
+        "narHash": "sha256-OwEKRlHty+HrmbFM0vFCusvylLh6CURf6jU0XcLeQyk=",
         "owner": "xddxdd",
         "repo": "nix-cachyos-kernel",
-        "rev": "054370a979b64ba73db72a22cbc055b29cea56fb",
+        "rev": "465aeefea2faff3ab6bbf69f6d5c81ac904ceb99",
         "type": "github"
       },
       "original": {
@@ -716,11 +716,11 @@
     },
     "nixpkgs_2": {
       "locked": {
-        "lastModified": 1793036176,
-        "narHash": "sha256-EnBV0ArpWUU2LdWgobehk8u5D6seY3E9abbcXem4gso=",
+        "lastModified": 1793111474,
+        "narHash": "sha256-fNb723JKSSGJgyBmVDLKPYXk4VS7w7t45t1u1g3iHzk=",
         "owner": "NixOS",
         "repo": "nixpkgs",
-        "rev": "31f3e225826b4111450ebfb223ff2ef474d7f16e",
+        "rev": "5e5f1c5a9e648c17f99a0f54a1bf5b08fda53d40",
         "type": "github"
       },
       "original": {
@@ -1053,7 +1053,7 @@
     "t3code-releases": {
       "flake": false,
       "locked": {
-        "narHash": "sha256-8q3XCbeLbZYXrG6g0TtMa7zav4aXe4vfHBvftqrxjTg=",
+        "narHash": "sha256-Nibb19wuH2fw9ucchlFabL2Gb7qM3nysqXPo9LUOC3Y=",
         "type": "file",
         "url": "https://api.github.com/repos/pingdotgg/t3code/releases?per_page=100"
       },
@@ -1187,11 +1187,11 @@
         "xdg-desktop-portal-umbriel": "xdg-desktop-portal-umbriel"
       },
       "locked": {
-        "lastModified": 1793112935,
-        "narHash": "sha256-wj+nJiRg+qicwCAK9YzqZKme0VU9+HGtckFBe9JrqfI=",
+        "lastModified": 1793137405,
+        "narHash": "sha256-hXhx6pWFxEsswVdYDL2FD1GA7ayIqfFKcV+vP4Rul3s=",
         "owner": "noctalia-dev",
         "repo": "umbriel",
-        "rev": "814d761e4a753cc6a8b214749dc49349daa445f4",
+        "rev": "8c6e5c9d092bc30aa38a4a16d72836e1c3d339bb",
         "type": "github"
       },
       "original": {

@@ -7,7 +7,7 @@
     "@deepseek-ai/dsh-llm": "0.2.1-rc.4",
     "dsh-claude-bridge": "0.2.0",
     "dsh-codex-native": "https://github.com/Tests4gptplay/dsh-codex-native/releases/download/v0.2.1-alpha.9-http.7/dsh-codex-native-0.2.1-alpha.9-http.7.tgz",
-    "@anthropic-ai/claude-agent-sdk": "0.3.311"
+    "@anthropic-ai/claude-agent-sdk": "0.3.312"
   },
   "overrides": {
     "dsh-codex-native": {
