@@ -1,6 +1,6 @@
 { config, pkgs, ... }:
 {
-  services.deepseek-web.publicHost = "citrus-1.tail1e65cd.ts.net";
+  services.deepseek-web.publicHost = "citrus.tail1e65cd.ts.net";
 
   services.nginx = {
     enable = true;
