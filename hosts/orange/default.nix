@@ -16,7 +16,6 @@ in
     ./services/samba.nix
     ./services/smart-tests.nix
     ./services/storage.nix
-    ./services/t3code.nix
     ./services/tailscale-exit-node.nix
     ./services/vaultwarden.nix
     ./services/web.nix

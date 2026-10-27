@@ -11,6 +11,7 @@
     ./input-method.nix
     ./kernel.nix
     ./nvidia.nix
+    ./t3code.nix
     ./sunshine.nix
     ./web.nix
     ./webhid.nix
