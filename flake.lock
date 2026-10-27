@@ -268,11 +268,11 @@
     "dsh-mobile-maxxing": {
       "flake": false,
       "locked": {
-        "lastModified": 1793089013,
-        "narHash": "sha256-CE5kvEnzi223eUG1HBMYdRs8+VxYR4nMTiIDCzrsw44=",
+        "lastModified": 1793089720,
+        "narHash": "sha256-FQqetWUx0SF65EF/DnJs2wRW8GQHtLug9mK8PraeH9k=",
         "owner": "kuraneko1",
         "repo": "dsh-mobile-maxxing",
-        "rev": "e884e0172bd5aeccef07a7704cc54eb6e0262cbc",
+        "rev": "33bd86bbc30168b39a1b80a97c29d9cec3633cda",
         "type": "github"
       },
       "original": {
@@ -519,7 +519,7 @@
     "meltype-release": {
       "flake": false,
       "locked": {
-        "narHash": "sha256-fLn64XnBKWLvPXNlm85lWZaEZrQJyrNaCI23/x9R0r8=",
+        "narHash": "sha256-qGTocs2S8zhpnaUoU67vZGQf3a0gpKiMrz+qc4+kAQ8=",
         "type": "file",
         "url": "https://api.github.com/repos/yksr-melt/Meltype/releases/latest"
       },
@@ -791,11 +791,11 @@
         "nixpkgs": "nixpkgs_5"
       },
       "locked": {
-        "lastModified": 1793076550,
-        "narHash": "sha256-t+bLsze33OVl+jMJODjOxi4krrxKEpr74XxC0AivVXQ=",
+        "lastModified": 1793087587,
+        "narHash": "sha256-4xAK0J4YqR70359Z0EX6HZL0v9u9IvgIeK7GV7d8MY4=",
         "owner": "noctalia-dev",
         "repo": "noctalia",
-        "rev": "d8d6616cf53cd04378abe2f911a6144bd7a9cc6f",
+        "rev": "e5cd37db36c168e1f39520ee1cf48015c4e00fef",
         "type": "github"
       },
       "original": {
@@ -1053,7 +1053,7 @@
     "t3code-releases": {
       "flake": false,
       "locked": {
-        "narHash": "sha256-QXfOMynHyqhb6oicRlJNHNlaQP8Vgi7PpsGUFDdyOq0=",
+        "narHash": "sha256-aSSUrIa5gD+00nmCNPXcPy8vN9pNTX3CdmXI6YeO6B0=",
         "type": "file",
         "url": "https://api.github.com/repos/pingdotgg/t3code/releases?per_page=100"
       },
