@@ -88,6 +88,7 @@ stdenvNoCC.mkDerivation {
     makeWrapper
   ];
   postPatch = ''
+    python ${./performance.py} .
     python ${./subpath.py} .
     substituteInPlace server/app/constants.py \
       --replace-fail "DATA_DIR = BASE_DIR / 'data'" "DATA_DIR = Path('/var/lib/konomitv/data')" \

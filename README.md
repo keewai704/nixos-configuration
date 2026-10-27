@@ -353,6 +353,9 @@ KonomiTV の順に接続します。内蔵 B-CAS スロットは `coax pcsc` と
 録画は `/srv/storage/TV/Recordings`、キャプチャは `/srv/storage/TV/Captures`、設定・番組表は
 `/var/lib/edcb` と `/var/lib/konomitv` に保存します。
 
+再視聴を速くするため、視聴終了後も配信を最大120秒保持します。
+携帯回線の低遅延モードは初回適用時に有効化し、その後の手動変更は維持します。
+
 coax・BonDriver・EDCB・B25Decoder・KonomiTV と配布バイナリは [flake.nix](flake.nix) の入力で管理します。
 KonomiTV は `master`、対応するバイナリは上流の nightly 配布を追います。
 更新は `nix flake update` と通常の Orange への適用で行い、ソースの revision と配布物の hash は `flake.lock` に残します。

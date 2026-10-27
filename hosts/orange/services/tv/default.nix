@@ -13,6 +13,7 @@ let
     ;
   recordings = "${storageRoot}/TV/Recordings";
   captures = "${storageRoot}/TV/Captures";
+  keepAliveSeconds = 120;
   ini = pkgs.formats.ini { };
   edcbSettings = {
     "Common.ini" = ini.generate "Common.ini" {
@@ -51,6 +52,7 @@ let
     };
     "EpgDataCap_Bon.ini" = ini.generate "EpgDataCap_Bon.ini" {
       SET = {
+        OpenWait = 0;
         SaveLogo = 1;
         SaveLogoTypeFlags = 63;
         TraceBonDriverLevel = 2;
@@ -77,6 +79,7 @@ let
       encoder = "QSVEncC";
     };
     server.port = 7000;
+    tv.max_alive_time = keepAliveSeconds;
     video.recorded_folders = [ recordings ];
     capture.upload_folders = [ captures ];
   };
@@ -289,12 +292,24 @@ in
       preStart = ''
         install -d -m 0770 /var/lib/konomitv/data/{account-icons,thumbnails,twitter-debug-screenshots}
         test -e /var/lib/konomitv/config.yaml || install -m 0660 ${konomitvConfig} /var/lib/konomitv/config.yaml
+        ${pkgs.local.konomitv.pythonEnv}/bin/python ${./configure-konomitv.py} /var/lib/konomitv/config.yaml ${toString keepAliveSeconds}
       '';
     };
   };
 
   services.nginx.virtualHosts.${tailnetHostname}.locations = {
     "= /tv".return = "308 ${tailnetOrigin}/tv/";
+    "= /tv/sw.js" =
+      (mkProxyLocation 7000 ''
+        proxy_set_header If-Modified-Since "";
+        proxy_set_header If-None-Match "";
+        proxy_hide_header ETag;
+        proxy_hide_header Last-Modified;
+        add_header Cache-Control "no-cache" always;
+      '')
+      // {
+        proxyPass = "http://127.0.0.1:7000/sw.js";
+      };
     "^~ /tv/" = (mkProxyLocation 7000 "proxy_read_timeout 86400s;") // {
       proxyPass = "http://127.0.0.1:7000/";
     };
