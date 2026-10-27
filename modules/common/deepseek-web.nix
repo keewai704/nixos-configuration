@@ -1,9 +1,15 @@
-{ config, ... }:
+{ config, lib, ... }:
 let
-  tailnetHostname = "${config.networking.hostName}.tail1e65cd.ts.net";
+  tailnetHostname = config.services.deepseek-web.publicHost;
 in
 {
-  services.nginx.virtualHosts.${tailnetHostname}.locations = {
+  options.services.deepseek-web.publicHost = lib.mkOption {
+    type = lib.types.str;
+    default = "${config.networking.hostName}.tail1e65cd.ts.net";
+    description = "Canonical Tailscale DNS name used to publish DeepSeek Harness.";
+  };
+
+  config.services.nginx.virtualHosts.${tailnetHostname}.locations = {
     "= /dsh".return = "308 https://${tailnetHostname}/dsh/";
     "^~ /dsh/" = {
       proxyPass = "http://127.0.0.1:3080/";

@@ -6,7 +6,7 @@
   ...
 }:
 let
-  tailnetHostname = "${osConfig.networking.hostName}.tail1e65cd.ts.net";
+  tailnetHostname = osConfig.services.deepseek-web.publicHost;
   package = pkgs.local.deepseek-harness;
   pluginRoot = "${package}/lib/deepseek-harness/node_modules";
   claudeExecutable = lib.getExe config.programs.claude-code.finalPackage;

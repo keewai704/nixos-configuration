@@ -276,7 +276,7 @@ Claude Code と Codex は全ホストで Home Manager が導入し、どのシ�
   Nix の Node.js では `--expose-internals` で同じ内部ローダーを取得し、ネイティブアドオンの実行形式への依存を避けます。
 - [dsh-mobile-maxxing](https://github.com/kuraneko1/dsh-mobile-maxxing) が PWA・通知・モバイル操作を提供します。
   両ホストとも Tailscale Serve HTTPS → ループバック nginx → `127.0.0.1:3080` で公開します。
-  入口は `https://orange.tail1e65cd.ts.net/dsh/` と `https://citrus.tail1e65cd.ts.net/dsh/` です。
+  入口は `https://orange.tail1e65cd.ts.net/dsh/` と `https://citrus-1.tail1e65cd.ts.net/dsh/` です。
   `dsh-open` が開く認証付き URL を使います。認証トークンはログに含まれるため共有しないでください。
 - 同じ配布元の [dsh-locale-ja](https://github.com/kuraneko1/dsh-mobile-maxxing/tree/main/packages/dsh-locale-ja) が言語選択に **日本語** を追加します。
   DSH の bundle 登録定義と現在のランタイムに対する依存宣言を Nix 側で補い、選択中の表示言語は保持します。

@@ -1,9 +1,15 @@
-{ pkgs, ... }:
+{ config, pkgs, ... }:
 {
+  services.deepseek-web.publicHost = "citrus-1.tail1e65cd.ts.net";
+
   services.nginx = {
     enable = true;
-    virtualHosts."citrus.tail1e65cd.ts.net" = {
+    virtualHosts.${config.services.deepseek-web.publicHost} = {
       default = true;
+      locations."/" = {
+        proxyPass = "http://127.0.0.1:3773";
+        proxyWebsockets = true;
+      };
       listen = [
         {
           addr = "127.0.0.1";
