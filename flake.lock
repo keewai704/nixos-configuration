@@ -207,7 +207,7 @@
     "dsh-codex-native-releases": {
       "flake": false,
       "locked": {
-        "narHash": "sha256-a/GFb6CgMrwe/zDDYxgrq9HlMq9gTaJT4vzv5N4SygA=",
+        "narHash": "sha256-A+kbZRIunWWivoMG24ZwcH1NcIK5RAZ8k+Xy6tTG3jc=",
         "type": "file",
         "url": "https://api.github.com/repos/Tests4gptplay/dsh-codex-native/releases?per_page=20"
       },
@@ -1053,7 +1053,7 @@
     "t3code-releases": {
       "flake": false,
       "locked": {
-        "narHash": "sha256-yW0HY289QQTLgRzHksoR8oaaCWkUIkuvIZTF+3X+/TE=",
+        "narHash": "sha256-/I8v1N+uORKDvsycr6uOclIkjfJbLQxr/DurnNQe8F0=",
         "type": "file",
         "url": "https://api.github.com/repos/pingdotgg/t3code/releases?per_page=100"
       },
