@@ -470,7 +470,7 @@
     "meltype-release": {
       "flake": false,
       "locked": {
-        "narHash": "sha256-PIg4TA5B5OT4Zdh4jkFEGnED8RYDQxht//YCOiFzeuk=",
+        "narHash": "sha256-4VsSHrF4aHGVwHBvAqwfBlWcW2THDodcJdl3GNa5+0Q=",
         "type": "file",
         "url": "https://api.github.com/repos/yksr-melt/Meltype/releases/latest"
       },
@@ -1053,7 +1053,7 @@
     "t3code-releases": {
       "flake": false,
       "locked": {
-        "narHash": "sha256-Nc2W8ieztdroit0+Do9wS1BilseQMKpO1yvlPX13RFY=",
+        "narHash": "sha256-bsZa1+UQUWB61L/gBhyFRM468WCQxowb48L/OlUUp5M=",
         "type": "file",
         "url": "https://api.github.com/repos/pingdotgg/t3code/releases?per_page=100"
       },
