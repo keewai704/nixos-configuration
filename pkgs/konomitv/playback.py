@@ -48,7 +48,7 @@ replace(controller,
         "if (is_hevc_10bit_playback === true && quality_name !== '240p') {")
 
 pattern = re.compile(
-    r'(?P<start>[\w$]+=(?P<quality>[\w$]+)=>\{let (?P<api>[\w$]+)=)'
+    r'(?P<start>,[\w$]+=(?P<quality>[\w$]+)=>\{let (?P<api>[\w$]+)=)'
     r'`\$\{(?P=quality)}\$\{(?P<suffix>[\w$]+)}`;return '
     r'(?P<tenbit>[\w$]+)===!0&&\((?P=api)\+="-10bit"\)'
 )
