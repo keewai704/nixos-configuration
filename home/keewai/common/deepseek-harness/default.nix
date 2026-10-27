@@ -2,9 +2,11 @@
   config,
   lib,
   pkgs,
+  osConfig,
   ...
 }:
 let
+  tailnetHostname = "${osConfig.networking.hostName}.tail1e65cd.ts.net";
   package = pkgs.local.deepseek-harness;
   pluginRoot = "${package}/lib/deepseek-harness/node_modules";
   claudeExecutable = lib.getExe config.programs.claude-code.finalPackage;
@@ -102,7 +104,7 @@ in
       After = [ "network.target" ];
     };
     Service = {
-      ExecStart = "${lib.getExe package} web --host 127.0.0.1 --port 3080 --no-open";
+      ExecStart = "${lib.getExe package} web --host 127.0.0.1 --port 3080 --no-open --public-url https://${tailnetHostname}/dsh/ --trusted-host ${tailnetHostname}";
       WorkingDirectory = config.home.homeDirectory;
       Environment = [
         "DSH_HOME=${config.home.homeDirectory}/.dsh"

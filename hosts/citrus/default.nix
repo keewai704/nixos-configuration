@@ -12,6 +12,7 @@
     ./kernel.nix
     ./nvidia.nix
     ./sunshine.nix
+    ./web.nix
     ./webhid.nix
   ];
 

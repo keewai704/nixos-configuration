@@ -275,7 +275,9 @@ Claude Code と Codex は全ホストで Home Manager が導入し、どのシ�
   会話・ツール結果の変換には [dsh-claude-bridge](https://github.com/shaneconner/dsh-claude-bridge) をライブラリとして使い、DSH のメッセージ形式と SDK の推論レベルに対応するパッチを同梱します。
   Nix の Node.js では `--expose-internals` で同じ内部ローダーを取得し、ネイティブアドオンの実行形式への依存を避けます。
 - [dsh-mobile-maxxing](https://github.com/kuraneko1/dsh-mobile-maxxing) が PWA・通知・モバイル操作を提供します。
-  iPhone など別端末からの利用には HTTPS の入口が必要です。この設定ではループバックだけで待ち受けます。
+  両ホストとも Tailscale Serve HTTPS → ループバック nginx → `127.0.0.1:3080` で公開します。
+  入口は `https://orange.tail1e65cd.ts.net/dsh/` と `https://citrus.tail1e65cd.ts.net/dsh/` です。
+  `dsh-open` が開く認証付き URL を使います。認証トークンはログに含まれるため共有しないでください。
 - 同じ配布元の [dsh-locale-ja](https://github.com/kuraneko1/dsh-mobile-maxxing/tree/main/packages/dsh-locale-ja) が言語選択に **日本語** を追加します。
   DSH の bundle 登録定義と現在のランタイムに対する依存宣言を Nix 側で補い、選択中の表示言語は保持します。
 - 独自の [dsh-chatgpt-subscription](pkgs/deepseek-harness/plugins/chatgpt/) が **ChatGPT (subscription)** を追加します。
