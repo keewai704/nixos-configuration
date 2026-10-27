@@ -1,0 +1,104 @@
+#include <algorithm>
+#include <cstdint>
+#include <iostream>
+#include <memory>
+#include <stdexcept>
+#include <vector>
+
+enum RGY_ERR { RGY_ERR_NONE, RGY_ERR_INVALID_BINARY };
+enum class RGYTSStreamType : uint8_t { H262_VIDEO = 2, TYPE_D = 13 };
+enum class RGYTSDescriptor : uint8_t { StreamIdentifier = 0x52 };
+struct RGYTS_PSI { int section_length = 0, version_number = 0; uint8_t data[4096] = {}; };
+struct RGYTSDemuxResult { std::unique_ptr<RGYTS_PSI> psi; };
+struct RGYTSPacket { std::vector<uint8_t> packet; };
+struct Program { int pmt_pid = 496; };
+struct Demuxer { Program program; const Program *selectServiceID() { return &program; } };
+struct Video { uint8_t getVideoStreamType() { return 0x24; } };
+uint32_t calc_crc32(const uint8_t *data, int length) {
+    uint32_t crc = 0xffffffffu;
+    for (int i = 0; i < length; i++) {
+        crc ^= static_cast<uint32_t>(data[i]) << 24;
+        for (int bit = 0; bit < 8; bit++)
+            crc = crc & 0x80000000u ? (crc << 1) ^ 0x04c11db7u : crc << 1;
+    }
+    return crc;
+}
+struct TSReplace {
+    int m_pcrPIDReplace = 0, m_vidPIDReplace = 256;
+    bool m_removeTypeD = false;
+    std::unique_ptr<Demuxer> m_demuxer = std::make_unique<Demuxer>();
+    std::unique_ptr<Video> m_videoReplace = std::make_unique<Video>();
+    std::vector<uint8_t> m_lastPmt;
+    uint8_t m_pmtCounter = 0;
+    std::vector<std::vector<uint8_t>> packets;
+    void writePacket(const RGYTSPacket *packet) { packets.push_back(packet->packet); }
+    RGY_ERR writeReplacedPMT(const RGYTSDemuxResult& result);
+};
+
+@implementation@
+
+void require(bool condition, const char *message) {
+    if (!condition) throw std::runtime_error(message);
+}
+void append_crc(std::vector<uint8_t>& data) {
+    const auto crc = calc_crc32(data.data(), static_cast<int>(data.size()));
+    for (int shift : {24, 16, 8, 0}) data.push_back(crc >> shift);
+}
+RGYTSDemuxResult table(bool large) {
+    std::vector<uint8_t> data = {2, 0xb0, 0, 0xa0, 0, 0xc1, 0, 0, 0xe1, 0xff, 0xf0, 0,
+        2, 0xe1, 0, 0xf0, 3, 0x52, 1, 0, 15, 0xe1, 0x10, 0xf0, 0};
+    if (large) {
+        data.insert(data.end(), {13, 0xe3, 0, 0xf0, 200, 0x80, 198});
+        data.insert(data.end(), 198, 0xab);
+    }
+    const auto length = data.size() + 1;
+    data[1] |= length >> 8;
+    data[2] = length & 0xff;
+    append_crc(data);
+    RGYTSDemuxResult result;
+    result.psi = std::make_unique<RGYTS_PSI>();
+    std::copy(data.begin(), data.end(), result.psi->data);
+    result.psi->section_length = static_cast<int>(data.size()) - 3;
+    result.psi->version_number = 0x20;
+    return result;
+}
+void complete_table(bool large) {
+    auto input = table(large);
+    TSReplace writer;
+    require(writer.writeReplacedPMT(input) == RGY_ERR_NONE, "Complete PMT was rejected");
+    require(writer.packets.size() == (large ? 2u : 1u), "Unexpected PMT packet count");
+    std::vector<uint8_t> output;
+    for (size_t i = 0; i < writer.packets.size(); i++) {
+        const auto& packet = writer.packets[i];
+        require(packet.size() == 188 && packet[0] == 0x47, "Invalid transport packet");
+        require(static_cast<bool>(packet[1] & 0x40) == (i == 0), "Invalid section start flag");
+        output.insert(output.end(), packet.begin() + (i == 0 ? 5 : 4), packet.end());
+    }
+    const auto length = 3u + ((output[1] & 15u) << 8) + output[2];
+    require(length <= output.size(), "Truncated PMT section");
+    output.resize(length);
+    require(calc_crc32(output.data(), output.size()) == 0, "Invalid PMT CRC");
+    std::vector<uint8_t> expected(input.psi->data, input.psi->data + input.psi->section_length - 1);
+    expected[12] = 0x24;
+    append_crc(expected);
+    require(output == expected, "Non-video descriptors were changed");
+}
+int main() {
+    try {
+        auto incomplete = table(true);
+        const auto changed = table(false);
+        std::copy(changed.psi->data, changed.psi->data + 24, incomplete.psi->data);
+        incomplete.psi->version_number = 0;
+        TSReplace writer;
+        require(writer.writeReplacedPMT(incomplete) == RGY_ERR_NONE, "Incomplete PMT should wait for completion");
+        require(writer.packets.empty(), "An incomplete PMT was emitted");
+        complete_table(false);
+        complete_table(true);
+        RGYTSDemuxResult absent;
+        require(writer.writeReplacedPMT(absent) == RGY_ERR_NONE && writer.packets.empty(), "Absent PMT was emitted");
+        std::cout << "PMT completeness, single/multi-packet CRC and descriptor preservation passed\n";
+    } catch (const std::exception& error) {
+        std::cerr << error.what() << '\n';
+        return 1;
+    }
+}

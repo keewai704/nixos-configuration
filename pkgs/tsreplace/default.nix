@@ -4,6 +4,7 @@
   meson,
   ninja,
   pkg-config,
+  python3,
   ffmpeg,
   upstream,
 }:
@@ -11,10 +12,12 @@ stdenv.mkDerivation {
   pname = "tsreplace";
   version = "0-unstable-${upstream.shortRev}";
   src = upstream;
+  patches = [ ./pmt-completeness.patch ];
   nativeBuildInputs = [
     meson
     ninja
     pkg-config
+    python3
   ];
   buildInputs = [ ffmpeg.dev ];
   postPatch = ''
@@ -26,6 +29,9 @@ stdenv.mkDerivation {
     "-Dstatic_runtime=false"
   ];
   doCheck = true;
+  postCheck = ''
+    python ${./test-pmt.py} "$NIX_BUILD_TOP/$sourceRoot" ${./test-pmt.cpp.in}
+  '';
   meta = {
     description = "Replace only the video in MPEG-TS while preserving broadcast data";
     homepage = "https://github.com/rigaya/tsreplace";
