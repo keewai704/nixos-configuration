@@ -171,7 +171,7 @@
     "dsh-codex-native-releases": {
       "flake": false,
       "locked": {
-        "narHash": "sha256-4f34VYSLhmnt3OQ2JJPNLfHzSO1pcM+bFP9L4pgISMw=",
+        "narHash": "sha256-gu1/wqGAOWpoAUA+TgAg/+wtEEZVKwZDivZu3eS7Z/o=",
         "type": "file",
         "url": "https://api.github.com/repos/Tests4gptplay/dsh-codex-native/releases?per_page=20"
       },
@@ -183,11 +183,11 @@
     "dsh-mobile-maxxing": {
       "flake": false,
       "locked": {
-        "lastModified": 1793050904,
-        "narHash": "sha256-QoUOYDMKrrwAcuIlMlATBY2Il+YbQ7M5B7kX7IfwJwU=",
+        "lastModified": 1793073465,
+        "narHash": "sha256-pE8Sh5LtoEdpe4zUniknwrLap2Y2stENtMAH+D1/tr4=",
         "owner": "kuraneko1",
         "repo": "dsh-mobile-maxxing",
-        "rev": "070e137b8cd5eb13bfae8eeb33e120b941115f62",
+        "rev": "b0caec2f13e5f501d73575259d82fc9bf721d0bd",
         "type": "github"
       },
       "original": {
@@ -388,7 +388,7 @@
     "meltype-release": {
       "flake": false,
       "locked": {
-        "narHash": "sha256-mDyVxxGMAt6MkGtlOn4KU0/Z+6wfa7oW3Vxfysmyhso=",
+        "narHash": "sha256-TJxJk5facEoGdO1x0Fv7pZbiMOud1Wutf0R5WbngCRs=",
         "type": "file",
         "url": "https://api.github.com/repos/yksr-melt/Meltype/releases/latest"
       },
@@ -862,7 +862,7 @@
     "t3code-releases": {
       "flake": false,
       "locked": {
-        "narHash": "sha256-iaXW7p9Ernp0CG8cWVIafs9z9cQpMGl+qmZN5+3yOkw=",
+        "narHash": "sha256-x7jiW1tbJYfE7qFhOvK0wmukXINXiXZfAHbzmMTQ42g=",
         "type": "file",
         "url": "https://api.github.com/repos/pingdotgg/t3code/releases?per_page=100"
       },
