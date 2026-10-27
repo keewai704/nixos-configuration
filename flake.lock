@@ -127,7 +127,7 @@
     "claude-agent-sdk-release": {
       "flake": false,
       "locked": {
-        "narHash": "sha256-nHeobpt//PYr9khxYAGjV3bkT3qsEgQat7NoTLhPzWY=",
+        "narHash": "sha256-KzD0/tbnfEGoPxNKmuoXVN7iyxLd1hrdKiKSMbHWwbs=",
         "type": "file",
         "url": "https://registry.npmjs.org/@anthropic-ai/claude-agent-sdk/latest"
       },
@@ -144,11 +144,11 @@
         "systems": "systems"
       },
       "locked": {
-        "lastModified": 1793052132,
-        "narHash": "sha256-Gk2MXKG8bMenapVoLP6gyB6HJqFWBl+2YWn4qHg7PZM=",
+        "lastModified": 1793134901,
+        "narHash": "sha256-thSjW2BhZFECtNX152v67/dbR0vKYnCfFRTQq4JINCo=",
         "owner": "sadjow",
         "repo": "claude-code-nix",
-        "rev": "9f13dbabe8a0f786e3b95a2231bdeeb8d363932b",
+        "rev": "1ce054c09e8a10c4480c281178ff7e2a737aec17",
         "type": "github"
       },
       "original": {
@@ -166,11 +166,11 @@
         ]
       },
       "locked": {
-        "lastModified": 1792732484,
-        "narHash": "sha256-sXAt43h6NSVmPLkr+VTkrfykZHzVX04LT589vGpZYfw=",
+        "lastModified": 1793135373,
+        "narHash": "sha256-Fq36+839LyeQ9hWYKlyrX7qDF5ITK9OHfoFbIGQjreo=",
         "owner": "sadjow",
         "repo": "codex-cli-nix",
-        "rev": "9cc2ad979387e317b7a2319ed4a1de6200abd21c",
+        "rev": "05d1514c424dc4b03b183662a8b3a244019e5d1b",
         "type": "github"
       },
       "original": {
@@ -207,7 +207,7 @@
     "dsh-codex-native-releases": {
       "flake": false,
       "locked": {
-        "narHash": "sha256-rsooWKkEKD1K5znNji7obsdCTerB+0nCZJtNJICzUS8=",
+        "narHash": "sha256-K+smV1SbwqTD9ViTRrN6EP1NoQmhbUpDrCPFesi71pU=",
         "type": "file",
         "url": "https://api.github.com/repos/Tests4gptplay/dsh-codex-native/releases?per_page=20"
       },
@@ -219,11 +219,11 @@
     "dsh-mobile-maxxing": {
       "flake": false,
       "locked": {
-        "lastModified": 1793121287,
-        "narHash": "sha256-gAlzp+JGEXBClTRM7Ov5W6y7nR2hvodpXatzNvF3AhU=",
+        "lastModified": 1793135604,
+        "narHash": "sha256-qacevQGEoIEWA1vEtGDANcrbxJSagJPGZfOFc8BvxJI=",
         "owner": "kuraneko1",
         "repo": "dsh-mobile-maxxing",
-        "rev": "03c91ca7c1ec0e5dcc4c8a4761ea0e0f552e0a39",
+        "rev": "e6ef8745b4a3f82770253ca42e8bbe0a8296b13b",
         "type": "github"
       },
       "original": {
@@ -381,11 +381,11 @@
         ]
       },
       "locked": {
-        "lastModified": 1793033486,
-        "narHash": "sha256-fXVURa0+CSCgaxLt8tmPNJq2U+fGYOwbk5j2YUe7kSc=",
+        "lastModified": 1793124281,
+        "narHash": "sha256-KdGTOgYXgMDA/ymTV10yLMt9tOjz9EmTgnTvaD+bhe4=",
         "owner": "nix-community",
         "repo": "home-manager",
-        "rev": "7db163b2aee7e410e396b48aed02f646d742b9b8",
+        "rev": "1e3ebeb683d055d1675d3f64e6d2b186cb2ee504",
         "type": "github"
       },
       "original": {
@@ -470,7 +470,7 @@
     "meltype-release": {
       "flake": false,
       "locked": {
-        "narHash": "sha256-9bnVc3k1n8ZfiaxqqpdbLFSFLr910QIC30/6tYwRzf0=",
+        "narHash": "sha256-Sx+620tSDALgicdsCExRgnwnemLlHrZWc3b8rMtvBGc=",
         "type": "file",
         "url": "https://api.github.com/repos/yksr-melt/Meltype/releases/latest"
       },
@@ -631,11 +631,11 @@
         "treefmt-nix": "treefmt-nix"
       },
       "locked": {
-        "lastModified": 1793111772,
-        "narHash": "sha256-POB6aWq2iqYIMhwHRgh8PhQKDaTCuETj5NINRJMyEmE=",
+        "lastModified": 1793128806,
+        "narHash": "sha256-r9uWeVuXfF8BKwfJfvUwV5wwb+KWh7ja06kpgb8caOM=",
         "owner": "4evy",
         "repo": "nixcord",
-        "rev": "9738e8723f8c23ae826316e01a95bce64b8b68c1",
+        "rev": "38d48251e50ea2c0a07e04fffb9578fbc0c9e8b5",
         "type": "github"
       },
       "original": {
@@ -790,11 +790,11 @@
         "nixpkgs": "nixpkgs_5"
       },
       "locked": {
-        "lastModified": 1793110080,
-        "narHash": "sha256-swEYZ+i0X7RPzcmWKEvANZz2Dt6pRUqc5oDvBwQuaGU=",
+        "lastModified": 1793134762,
+        "narHash": "sha256-lTLL/W/BJ5pjN+Bn3Gu+ECQx1Ljf7vHTGAGD1DMAJlc=",
         "owner": "noctalia-dev",
         "repo": "noctalia",
-        "rev": "8c6c31e1ee89b5f300f5df847bd1ac8de40d9d5f",
+        "rev": "0bf4b8d137a02e1eae77460dc371ea943a0c79fe",
         "type": "github"
       },
       "original": {
@@ -1053,7 +1053,7 @@
     "t3code-releases": {
       "flake": false,
       "locked": {
-        "narHash": "sha256-5OpcaISzY9o+lyvIJBoAZ5k3nICt047v67N0x/Yn0pw=",
+        "narHash": "sha256-8q3XCbeLbZYXrG6g0TtMa7zav4aXe4vfHBvftqrxjTg=",
         "type": "file",
         "url": "https://api.github.com/repos/pingdotgg/t3code/releases?per_page=100"
       },
