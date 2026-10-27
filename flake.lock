@@ -173,6 +173,23 @@
         "url": "https://github.com/Till0196/coax"
       }
     },
+    "coax-go-text": {
+      "flake": false,
+      "locked": {
+        "lastModified": 1792599976,
+        "narHash": "sha256-WxiMFrO4VV48w/ytV9aDe4GzeCmDK5qX2fYdAfZHyEs=",
+        "ref": "master",
+        "rev": "972f2683e8864ae75860c0da80ef7c4c5a7cdee8",
+        "revCount": 794,
+        "type": "git",
+        "url": "https://github.com/golang/text"
+      },
+      "original": {
+        "ref": "master",
+        "type": "git",
+        "url": "https://github.com/golang/text"
+      }
+    },
     "coax-rs": {
       "flake": false,
       "locked": {
@@ -923,6 +940,7 @@
         "claude-agent-sdk-release": "claude-agent-sdk-release",
         "claude-code": "claude-code",
         "coax": "coax",
+        "coax-go-text": "coax-go-text",
         "coax-rs": "coax-rs",
         "codex": "codex",
         "deepseek-harness-release": "deepseek-harness-release",
@@ -1034,7 +1052,7 @@
     "t3code-releases": {
       "flake": false,
       "locked": {
-        "narHash": "sha256-LPThzxcpX/js8dI2SOPYLZnD97XLXrWSpfnAFKTW8/s=",
+        "narHash": "sha256-B1+9JYHJ0CNkE8qwXzsqftLcReHhffkfxkDbKBRLeTg=",
         "type": "file",
         "url": "https://api.github.com/repos/pingdotgg/t3code/releases?per_page=100"
       },

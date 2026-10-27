@@ -32,6 +32,11 @@
       flake = false;
     };
 
+    coax-go-text = {
+      url = "git+https://github.com/golang/text?ref=master";
+      flake = false;
+    };
+
     bondriver-coax = {
       url = "git+https://github.com/Till0196/BonDriver_coax?ref=main";
       flake = false;

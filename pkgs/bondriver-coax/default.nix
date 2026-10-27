@@ -4,6 +4,25 @@
   upstream,
   coaxRs,
 }:
+let
+  sharedPackages = (builtins.fromTOML (builtins.readFile (coaxRs + "/Cargo.lock"))).package;
+  sharedNames = map (package: package.name) sharedPackages;
+  driverPackages = (builtins.fromTOML (builtins.readFile (upstream + "/Cargo.lock"))).package;
+  packages =
+    sharedPackages
+    ++ builtins.filter (package: !(builtins.elem package.name sharedNames)) driverPackages;
+  lockFile = builtins.toFile "bondriver-coax-Cargo.lock" (
+    "version = 4\n"
+    + lib.concatMapStringsSep "\n" (
+      package:
+      "[[package]]\n"
+      + lib.concatMapStringsSep "\n" (name: "${name} = ${builtins.toJSON package.${name}}") (
+        builtins.attrNames package
+      )
+      + "\n"
+    ) packages
+  );
+in
 rustPlatform.buildRustPackage {
   pname = "bondriver-coax";
   version = "0-unstable-${upstream.shortRev}";
@@ -15,8 +34,9 @@ rustPlatform.buildRustPackage {
       --replace-fail 'isdb = { path = "${coaxRs}/coax" }' 'isdb = { path = "${coaxRs}/isdb" }' \
       --replace-fail 'mmttlv = { path = "${coaxRs}/coax" }' 'mmttlv = { path = "${coaxRs}/mmttlv" }' \
       --replace-fail 'mpegts = { path = "${coaxRs}/coax" }' 'mpegts = { path = "${coaxRs}/mpegts" }'
+    cp ${lockFile} Cargo.lock
   '';
-  cargoHash = "sha256-wMFmquOgSCIQZI+jQRDXCmV/2O1oj444V3mYAoe+cjA=";
+  cargoLock = { inherit lockFile; };
   cargoBuildFlags = [
     "-p"
     "bondriver_coax"

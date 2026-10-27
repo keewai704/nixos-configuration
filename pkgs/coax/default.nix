@@ -2,12 +2,17 @@
   lib,
   buildGo126Module,
   upstream,
+  goText,
 }:
 buildGo126Module {
   pname = "coax";
   version = "0-unstable-${upstream.shortRev}";
   src = upstream;
-  vendorHash = "sha256-zs0zADoen3Q447YPiX7s2X67iBReI9oB5xZ9gkM1Ui4=";
+  vendorHash = null;
+  postConfigure = ''
+    GOFLAGS= go mod edit -replace=golang.org/x/text=${goText}
+    GOFLAGS= go mod vendor
+  '';
   subPackages = [
     "cmd/coax"
     "cmd/coaxd"
