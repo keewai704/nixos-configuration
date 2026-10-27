@@ -7,16 +7,16 @@ stdenv.mkDerivation {
   pname = "bondriver-linuxmirakc";
   version = "0-unstable-${upstream.shortRev}";
   src = upstream;
-  postPatch = ''
-    substituteInPlace include/type_compat.h \
-      --replace-fail 'typedef bool BOOL;' 'typedef int BOOL;'
-    substituteInPlace src/GrabTsData.hpp \
-      --replace-fail 'pthread_mutexattr_t attr;' 'pthread_mutexattr_t attr;
-        ::pthread_mutexattr_init(&attr);' \
-      --replace-fail '::pthread_mutex_init( &m_pRingMutex, &attr );' '::pthread_mutex_init( &m_pRingMutex, &attr );
-        ::pthread_mutexattr_destroy(&attr);'
-  '';
+  patches = [ ./receiver.patch ];
   enableParallelBuilding = true;
+  doCheck = true;
+  checkPhase = ''
+    runHook preCheck
+    $CXX -std=c++17 -UNDEBUG -pthread -Iinclude -Isrc \
+      ${./stream-buffer-test.cpp} src/GrabTsData.cpp -o stream-buffer-test
+    timeout 20 ./stream-buffer-test
+    runHook postCheck
+  '';
   installPhase = ''
     runHook preInstall
     install -Dm755 BonDriver_LinuxMirakc.so $out/lib/BonDriver_LinuxMirakc.so

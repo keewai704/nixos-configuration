@@ -1,0 +1,122 @@
+--- a/include/type_compat.h
++++ b/include/type_compat.h
+@@ -6,7 +6,7 @@
+ #include <stdbool.h>
+ #include <stdint.h>
+ 
+-typedef bool BOOL;
++typedef int BOOL;
+ typedef uint8_t BYTE;
+ typedef uint32_t DWORD;
+ typedef uint16_t WCHAR;
+--- a/src/GrabTsData.hpp
++++ b/src/GrabTsData.hpp
+@@ -33,6 +33,7 @@
+ //		m_phOnStreamEvent = phOnStreamEvent;
+ 		m_nAccumData = 0;
+ 		m_bPurge = FALSE;
++		m_stopped = false;
+ 		m_nPush = 0;
+ 		m_nPull = 0;
+ 		m_pDst = (BYTE *)malloc(DATA_BUF_SIZE);
+@@ -43,8 +44,10 @@
+ //		::pthread_mutex_init( &m_pRingMutex, NULL );
+ 
+ 		pthread_mutexattr_t attr;
++		::pthread_mutexattr_init(&attr);
+ 		::pthread_mutexattr_settype(&attr, PTHREAD_MUTEX_RECURSIVE);
+ 		::pthread_mutex_init( &m_pRingMutex, &attr );
++		::pthread_mutexattr_destroy(&attr);
+ 		
+ 	}
+ 	// Destructor
+@@ -58,6 +61,7 @@
+ 		}
+ 	}
+ 	// Interfaces
++	void stop_TsStream();
+ 	BOOL put_TsStream(BYTE *pSrc, DWORD dwSize);
+ 	BOOL get_TsStream(BYTE **ppDst, DWORD *pdwSize, DWORD *pdwRemain);
+ 	BOOL purge_TsStream(void);
+@@ -86,6 +90,7 @@
+ 	long m_nAccumData;
+ 	// Purge flag
+ 	bool m_bPurge;
++	bool m_stopped;
+ 	// TS data buffer (simple ring buffer)
+ 	unsigned long m_nPush;
+ 	unsigned long m_nPull;
+--- a/src/GrabTsData.cpp
++++ b/src/GrabTsData.cpp
+@@ -36,6 +36,10 @@
+ 		m_nAccumData += dwSize;
+ 
+ 		for(;;) {
++			if (m_stopped) {
++				::pthread_mutex_unlock(&m_pRingMutex);
++				return FALSE;
++			}
+ 
+ 			nPush = m_nPush;
+ 			nPull = m_nPull;
+@@ -168,6 +172,7 @@
+ 	::pthread_mutex_lock( &m_pRingMutex );
+ 	{
+ 		m_bPurge = TRUE;
++		m_stopped = false;
+ 	}
+ 	::pthread_mutex_unlock( &m_pRingMutex );
+ 
+@@ -264,3 +269,11 @@
+ 	return ret;
+ }
+ 
++
++void GrabTsData::stop_TsStream()
++{
++	::pthread_mutex_lock(&m_pRingMutex);
++	m_stopped = true;
++	::pthread_cond_broadcast(&m_phOnStreamGetEvent);
++	::pthread_mutex_unlock(&m_pRingMutex);
++}
+--- a/src/BonDriver_LinuxMirakc.cpp
++++ b/src/BonDriver_LinuxMirakc.cpp
+@@ -200,6 +200,7 @@
+ 	// スレッド終了
+ 	if (m_hRecvThread) {
+ 		conn->shutdown();
++		m_pGrabTsData->stop_TsStream();
+ 		pthread_join(m_hRecvThread, NULL);
+ 		m_hRecvThread = 0;
+ 	}
+@@ -622,7 +623,10 @@
+ 			break;
+ 		}
+ 		
+-		pThis->m_pGrabTsData->put_TsStream( (BYTE *)buf, ret );
++		if (!pThis->m_pGrabTsData->put_TsStream((BYTE *)buf, ret)) {
++			pThis->conn->disconnect();
++			break;
++		}
+ 
+ 	}
+ 	
+@@ -634,6 +638,7 @@
+ void CBonTuner::waitForRecvThreadFinish(void)
+ {
+ 	if( m_hRecvThread > 0 ) {
++		m_pGrabTsData->stop_TsStream();
+ 		pthread_join(m_hRecvThread, NULL); // todo
+ 		m_hRecvThread = 0;
+ 	}
+--- a/src/http_proc.hpp
++++ b/src/http_proc.hpp
+@@ -148,7 +148,7 @@
+ void MirakcConnectBase::shutdown()
+ {
+ 	if( s >= 0 ) {
+-		::shutdown(s, SHUT_WR);
++		::shutdown(s, SHUT_RDWR);
+ 	}
+ 
+ }
