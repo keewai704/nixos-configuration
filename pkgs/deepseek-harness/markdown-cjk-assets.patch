@@ -1,14 +1,26 @@
 --- a/markdown-cjk-runtime.js
 +++ b/markdown-cjk-runtime.js
-@@ -109,7 +109,10 @@
+@@ -100,7 +100,9 @@
  	// table, so anchor on the import clause itself rather than the file name.
  	const clause = `from"./vendor-${vendorAsset.replace(/^vendor-/, "")}"`;
  	if (source.split(clause).length - 1 !== 1) return null;
 -	return source.replace(clause, `from"${MARKDOWN_FIX_PATH}/${vendorAsset}"`);
 +	return source
-+		.replace(clause, `from"${MARKDOWN_FIX_PATH}/${vendorAsset}"`)
-+		.replaceAll('"./langs/', '"/assets/langs/')
-+		.replace(/"\.\/(vendor-[\w-]+\.css)"/g, '"/assets/$1"');
++		.replaceAll('"./langs/', '"../../assets/langs/')
++		.replace(/"\.\/(vendor-[\w-]+\.css)"/g, '"../../assets/$1"');
  }
  
  /**
+@@ -121,8 +123,8 @@
+ 	// replacing the longer form first keeps the shorter rule from matching the
+ 	// text it just inserted.
+ 	return html
+-		.replaceAll(`./assets/${indexAsset}`, `${MARKDOWN_FIX_PATH}/${indexAsset}`)
+-		.replaceAll(`/assets/${indexAsset}`, `${MARKDOWN_FIX_PATH}/${indexAsset}`)
+-		.replaceAll(`./assets/${vendorAsset}`, `${MARKDOWN_FIX_PATH}/${vendorAsset}`)
+-		.replaceAll(`/assets/${vendorAsset}`, `${MARKDOWN_FIX_PATH}/${vendorAsset}`);
++		.replaceAll(`./assets/${indexAsset}`, `.${MARKDOWN_FIX_PATH}/${indexAsset}`)
++		.replaceAll(`/assets/${indexAsset}`, `.${MARKDOWN_FIX_PATH}/${indexAsset}`)
++		.replaceAll(`./assets/${vendorAsset}`, `.${MARKDOWN_FIX_PATH}/${vendorAsset}`)
++		.replaceAll(`/assets/${vendorAsset}`, `.${MARKDOWN_FIX_PATH}/${vendorAsset}`);
+ }
