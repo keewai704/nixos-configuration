@@ -219,11 +219,11 @@
     "dsh-mobile-maxxing": {
       "flake": false,
       "locked": {
-        "lastModified": 1793097546,
-        "narHash": "sha256-uCexRytgMRIAfgDe7K4AraSK6EZMb69NKxvNnL502jw=",
+        "lastModified": 1793121287,
+        "narHash": "sha256-gAlzp+JGEXBClTRM7Ov5W6y7nR2hvodpXatzNvF3AhU=",
         "owner": "kuraneko1",
         "repo": "dsh-mobile-maxxing",
-        "rev": "9703b24e7196175683c4db96263d78cbf160d880",
+        "rev": "03c91ca7c1ec0e5dcc4c8a4761ea0e0f552e0a39",
         "type": "github"
       },
       "original": {
@@ -1053,7 +1053,7 @@
     "t3code-releases": {
       "flake": false,
       "locked": {
-        "narHash": "sha256-UMiMH0azGbJOely9U/kiY3G2ipILSuUdZf08+fbC9zg=",
+        "narHash": "sha256-5OpcaISzY9o+lyvIJBoAZ5k3nICt047v67N0x/Yn0pw=",
         "type": "file",
         "url": "https://api.github.com/repos/pingdotgg/t3code/releases?per_page=100"
       },
