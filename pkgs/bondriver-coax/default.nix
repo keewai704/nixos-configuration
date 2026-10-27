@@ -31,11 +31,8 @@ rustPlatform.buildRustPackage {
     "-p"
     "bondriver_probe"
   ];
-  installPhase = ''
-    runHook preInstall
-    install -Dm755 target/release/libBonDriver_coax.so $out/lib/BonDriver_coax.so
-    install -Dm755 target/release/bondriver-probe $out/bin/bondriver-probe
-    runHook postInstall
+  postInstall = ''
+    mv "$out/lib/libBonDriver_coax.so" "$out/lib/BonDriver_coax.so"
   '';
   meta = {
     description = "BonDriver for the coax tuner daemon";
