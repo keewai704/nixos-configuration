@@ -29,6 +29,9 @@ stdenv.mkDerivation {
     which
   ];
   postPatch = ''
+    patchShebangs vendor
+    substituteInPlace vendor/tsduck-arib/Makefile.common vendor/tsduck-arib/build/Makefile \
+      --replace-fail /bin/bash ${runtimeShell}
     substituteInPlace CMakeLists.txt \
       --replace-fail 'git checkout -f && ' "" \
       --replace-fail 'ProcessorCount(NPROC)' 'set(NPROC $ENV{NIX_BUILD_CORES})'
