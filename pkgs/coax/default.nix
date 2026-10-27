@@ -8,6 +8,7 @@ buildGo126Module {
   pname = "coax";
   version = "0-unstable-${upstream.shortRev}";
   src = upstream;
+  patches = [ ./acquired-parameters.patch ];
   vendorHash = null;
   postConfigure = ''
     GOFLAGS= go mod edit -replace=golang.org/x/text=${goText}
@@ -18,6 +19,12 @@ buildGo126Module {
     "cmd/coaxd"
   ];
   env.CGO_ENABLED = 0;
+  doCheck = true;
+  checkPhase = ''
+    runHook preCheck
+    go test ./internal/coaxd/demod/dib8096
+    runHook postCheck
+  '';
   ldflags = [
     "-s"
     "-w"

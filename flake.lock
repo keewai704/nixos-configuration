@@ -256,7 +256,7 @@
     "dsh-codex-native-releases": {
       "flake": false,
       "locked": {
-        "narHash": "sha256-dwJSBNPtCT4X3JgQomBMmkvj6RlUyTC5RNzHL/iWU9U=",
+        "narHash": "sha256-pDikmilcQMDHpMDJ7Oca6SXGmbjtP7YJWkYwuwWH4DY=",
         "type": "file",
         "url": "https://api.github.com/repos/Tests4gptplay/dsh-codex-native/releases?per_page=20"
       },
@@ -268,11 +268,11 @@
     "dsh-mobile-maxxing": {
       "flake": false,
       "locked": {
-        "lastModified": 1793080634,
-        "narHash": "sha256-R7fKOE+ervaHnJGweeO68Suqz+u83BsVw0gcCReuTdw=",
+        "lastModified": 1793084212,
+        "narHash": "sha256-6LuEnoWNHvo9XAlHuNUb3itv9qLyXlMAIK8F95rA364=",
         "owner": "kuraneko1",
         "repo": "dsh-mobile-maxxing",
-        "rev": "741fe1393458c55cefb74075931438b967222628",
+        "rev": "773e6bde76d6b923de8ffce044ea04c65e51487f",
         "type": "github"
       },
       "original": {
@@ -519,7 +519,7 @@
     "meltype-release": {
       "flake": false,
       "locked": {
-        "narHash": "sha256-zrFgSglTXBTFp4JEPvP0Y3/HZM6Zg1H85UwpyWi+C7c=",
+        "narHash": "sha256-oTesQe6/P2G01nHAcFYhSF2M/liYwbAXDEv1NrBoBjo=",
         "type": "file",
         "url": "https://api.github.com/repos/yksr-melt/Meltype/releases/latest"
       },
@@ -632,11 +632,11 @@
         "treefmt-nix": "treefmt-nix"
       },
       "locked": {
-        "lastModified": 1793063492,
-        "narHash": "sha256-TiLeEX5/S4dcPXWqfZX642czExtuumu887yrHWiAqP4=",
+        "lastModified": 1793085625,
+        "narHash": "sha256-5+hNtkxiGOEbMwk7UHV/29D1mBfmVg0ALOL+/LPTz8w=",
         "owner": "4evy",
         "repo": "nixcord",
-        "rev": "49acb7853886c57b99ec61b0f235291f67e3f425",
+        "rev": "1ac06ba3050f5e24f9132a647338bbe5b9b57182",
         "type": "github"
       },
       "original": {
@@ -966,6 +966,7 @@
         "pyproject-nix": "pyproject-nix",
         "stylix": "stylix",
         "t3code-releases": "t3code-releases",
+        "tsreplace": "tsreplace",
         "umbriel": "umbriel",
         "uv2nix": "uv2nix"
       }
@@ -1052,7 +1053,7 @@
     "t3code-releases": {
       "flake": false,
       "locked": {
-        "narHash": "sha256-rNcWEPfn57uq7vyvxFKm9xcfxvl/AWrwzqH7tsIG40M=",
+        "narHash": "sha256-7u5HtKQeczY+sdV3KQGr4w2HdaYU2vLJhRa+o5/MBkM=",
         "type": "file",
         "url": "https://api.github.com/repos/pingdotgg/t3code/releases?per_page=100"
       },
@@ -1144,6 +1145,23 @@
         "owner": "numtide",
         "repo": "treefmt-nix",
         "type": "github"
+      }
+    },
+    "tsreplace": {
+      "flake": false,
+      "locked": {
+        "lastModified": 1791586572,
+        "narHash": "sha256-41cRez194xFFOd0f1QN2NaGnNrPIPn3calzXQL8uGDU=",
+        "ref": "master",
+        "rev": "b932123db1900ccaad4eafe188d8e276f67238ba",
+        "revCount": 209,
+        "type": "git",
+        "url": "https://github.com/rigaya/tsreplace"
+      },
+      "original": {
+        "ref": "master",
+        "type": "git",
+        "url": "https://github.com/rigaya/tsreplace"
       }
     },
     "umbriel": {

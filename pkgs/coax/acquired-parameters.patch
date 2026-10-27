@@ -1,0 +1,180 @@
+--- a/internal/coaxd/demod/dib8096/board.go
++++ b/internal/coaxd/demod/dib8096/board.go
+@@ -248,11 +248,12 @@
+ // Demod is a DiB8096 reached over an I2C bus. Not safe for concurrent use: a
+ // caller sharing one between goroutines must serialise.
+ type Demod struct {
+-	failure failure
+-	channel channel
+-	demod   *dib8000
+-	tuner   *tuner
+-	asleep  bool
++	failure  failure
++	channel  channel
++	demod    *dib8000
++	tuner    *tuner
++	asleep   bool
++	acquired map[uint32]channel
+ }
+ 
+ // New addresses a DiB8096 at Address on the given bus. Nothing is sent until
+@@ -333,6 +334,7 @@
+ func (board *Demod) Initialize() (err error) {
+ 	defer board.flush(&err)
+ 	board.failure.err = nil
++	board.acquired = nil
+ 
+ 	// dib8000_init
+ 	if err := board.demod.initialize(); err != nil {
+@@ -384,7 +386,12 @@
+ // locked or given up; Status tells which. Up to 170MHz (CBAND, VHF 1-3) the
+ // gain is first found by the tuner's software AGC, see setParamOverride.
+ func (board *Demod) Tune(frequencyHz uint32) (err error) {
+-	defer board.flush(&err)
++	defer func() {
++		board.flush(&err)
++		if err != nil {
++			delete(board.acquired, frequencyHz)
++		}
++	}()
+ 	board.failure.err = nil
+ 
+ 	if frequencyHz < minimumFrequencyHz || frequencyHz > maximumFrequencyHz {
+@@ -396,12 +403,52 @@
+ 		board.asleep = false
+ 	}
+ 
+-	// A DVBv5 tune from a frequency alone starts from a cleared cache.
+-	board.channel.clear()
++	parameters, cached := board.acquired[frequencyHz]
++	if cached {
++		board.channel = parameters
++	} else {
++		board.channel.clear()
++	}
+ 	board.channel.frequency = frequencyHz
+-
+-	if err := board.demod.setFrontend(); err != nil {
+-		return err
++	run := func() (bool, error) {
++		if tuneErr := board.demod.setFrontend(); tuneErr != nil {
++			return false, tuneErr
++		}
++		if board.failure.err != nil {
++			return false, board.failure.err
++		}
++		const wanted = feHasSync | feHasLock
++		locked := board.demod.status == statusDataLocked && board.demod.readStatus()&wanted == wanted
++		return locked, board.failure.err
++	}
++	locked, tuneErr := run()
++	if cached && !locked && board.failure.err == nil {
++		delete(board.acquired, frequencyHz)
++		board.channel.clear()
++		board.channel.frequency = frequencyHz
++		locked, tuneErr = run()
++	}
++	if tuneErr != nil {
++		return tuneErr
++	}
++	if board.failure.err != nil {
++		return board.failure.err
++	}
++	if locked {
++		board.demod.getFrontend()
++		if board.failure.err != nil {
++			return board.failure.err
++		}
++		const wanted = feHasSync | feHasLock
++		if board.demod.readStatus()&wanted == wanted {
++			parameters := board.channel
++			if isManualMode(&parameters) {
++				if board.acquired == nil {
++					board.acquired = make(map[uint32]channel)
++				}
++				board.acquired[frequencyHz] = parameters
++			}
++		}
+ 	}
+ 	return board.failure.err
+ }
+--- a/internal/coaxd/demod/dib8096/dib8096_test.go
++++ b/internal/coaxd/demod/dib8096/dib8096_test.go
+@@ -501,3 +501,77 @@
+ 		}
+ 	}
+ }
++
++func TestAcquiredParametersAvoidRepeatedSearch(t *testing.T) {
++	chip := lockedChip()
++	demod, _ := newTestDemod(chip)
++	if err := demod.Initialize(); err != nil {
++		t.Fatal(err)
++	}
++	for _, frequency := range []uint32{473142857, 479142857} {
++		chip.queues[1284] = []uint16{1, 0, 2}
++		if err := demod.Tune(frequency); err != nil {
++			t.Fatal(err)
++		}
++	}
++	if len(demod.acquired) != 2 {
++		t.Fatalf("acquired %d frequencies", len(demod.acquired))
++	}
++	chip.queues[1284] = []uint16{0}
++	before := len(chip.writes)
++	if err := demod.Tune(473142857); err != nil {
++		t.Fatal(err)
++	}
++	if demod.demod.status != statusDataLocked {
++		t.Fatal("cached tune did not lock")
++	}
++	for _, write := range chip.writes[before:] {
++		if write.register == 357 && write.value == 0x111 {
++			t.Fatal("cached tune repeated FFT search")
++		}
++	}
++	if err := demod.Initialize(); err != nil {
++		t.Fatal(err)
++	}
++	if len(demod.acquired) != 0 {
++		t.Fatal("reset retained acquired parameters")
++	}
++}
++
++func TestIncompleteLockIsNotAcquired(t *testing.T) {
++	for _, missing := range []uint16{1 << 1, 1 << 12} {
++		chip := lockedChip()
++		chip.registers[568] &^= missing
++		demod, _ := newTestDemod(chip)
++		if err := demod.Initialize(); err != nil {
++			t.Fatal(err)
++		}
++		_ = demod.Tune(473142857)
++		if len(demod.acquired) != 0 {
++			t.Fatalf("cached incomplete lock without %#x", missing)
++		}
++	}
++}
++
++func TestStaleAcquiredParametersFallBack(t *testing.T) {
++	chip := lockedChip()
++	demod, _ := newTestDemod(chip)
++	if err := demod.Initialize(); err != nil {
++		t.Fatal(err)
++	}
++	if err := demod.Tune(473142857); err != nil {
++		t.Fatal(err)
++	}
++	chip.queues[568] = []uint16{0, 0x3ffe}
++	chip.queues[1284] = []uint16{1, 0, 2}
++	chip.registers[570] = 3<<4 | 3
++	if err := demod.Tune(473142857); err != nil {
++		t.Fatal(err)
++	}
++	if demod.demod.status != statusDataLocked {
++		t.Fatal("fallback did not lock")
++	}
++	if demod.acquired[473142857].guardInterval != guard1_4 {
++		t.Fatal("fallback did not refresh parameters")
++	}
++}

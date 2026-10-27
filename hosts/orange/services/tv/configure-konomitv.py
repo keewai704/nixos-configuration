@@ -3,10 +3,12 @@ from pathlib import Path
 
 from ruamel.yaml import YAML
 
-path = Path(sys.argv[1])
 yaml = YAML()
+managed = yaml.load(Path(sys.argv[1]))
+path = Path(sys.argv[2])
 config = yaml.load(path)
-config.setdefault('tv', {})['max_alive_time'] = int(sys.argv[2])
+for section in ('tv', 'video', 'capture'):
+    config.setdefault(section, {}).update(managed[section])
 temporary = path.with_suffix('.yaml.tmp')
 with temporary.open('w') as stream:
     yaml.dump(config, stream)

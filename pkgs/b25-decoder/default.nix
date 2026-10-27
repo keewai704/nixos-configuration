@@ -13,6 +13,14 @@ stdenv.mkDerivation {
   nativeBuildInputs = [ pkg-config ];
   buildInputs = [ pcsclite ];
 
+  postPatch = ''
+    substituteInPlace B25Decoder/BonProject/TsDescrambler.cpp \
+      --replace-fail 'if(!pHalDevice->GetTotalDeviceNum())throw __LINE__;' '#ifdef _WIN32
+        if(!pHalDevice->GetTotalDeviceNum())throw __LINE__;' \
+      --replace-fail 'if(pHalDevice->GetActiveDeviceNum() >= pHalDevice->GetTotalDeviceNum())throw __LINE__;' 'if(pHalDevice->GetActiveDeviceNum() >= pHalDevice->GetTotalDeviceNum())throw __LINE__;
+    #endif'
+  '';
+
   enableParallelBuilding = true;
   makeFlags = [
     "-C"

@@ -350,13 +350,21 @@ T3 は複数の接続先・アカウントもプールします。このプラ�
 
 Sony CECH-ZD1 J の地デジ1チューナーを、coaxd → BonDriver_coax → xtne6f 版 EDCB（Linux ネイティブ）→
 KonomiTV の順に接続します。内蔵 B-CAS スロットは `coax pcsc` と B25Decoder で利用し、映像は Intel QSV で変換します。
-録画は `/srv/storage/TV/Recordings`、キャプチャは `/srv/storage/TV/Captures`、設定・番組表は
+8TB HDD 上の録画専用ディレクトリは `/srv/storage/KonomiTV/Recordings`、キャプチャは `/srv/storage/KonomiTV/Captures`、設定・番組表は
 `/var/lib/edcb` と `/var/lib/konomitv` に保存します。
 
 再視聴を速くするため、視聴終了後も配信を最大120秒保持します。
 携帯回線の低遅延モードは初回適用時に有効化し、その後の手動変更は維持します。
+チューナーは受信に成功した周波数のパラメーターを再利用し、ロックできなければ自動探索へ戻します。
+NHK総合の京都・神戸とサンテレビ2は、EDCB の表示・EPG取得・検索を無効にし、KonomiTV の一覧にも反映します。
 
-coax・BonDriver・EDCB・B25Decoder・KonomiTV と配布バイナリは [flake.nix](flake.nix) の入力で管理します。
+今後の録画は EDCB の `PostRecEnd.lua` からキューへ登録し、`tv-recording-encode` が `tsreplace` と QSVEncC で映像だけを H.265 に置換します。
+音声・字幕・番組情報・データ放送などの非映像パケットを PID ごとの件数と SHA256 で比較し、PMT の非映像情報、映像の全体デコードとフレーム時刻も検証します。
+インターレース映像は QSV の bob で約59.94fpsのプログレッシブ映像に変換します。
+映像の符号化方式を示す PMT と、必要な場合の PCR 配置は更新します。検証成功後に同じファイル名へ置換し、元 TS を削除します。
+失敗時は元 TS を残し、ジョブを `/var/lib/tv-recording/failed`、ログを `/var/log/tv-recording` に保存します。既存録画の一括変換は行いません。
+
+coax・BonDriver・EDCB・B25Decoder・tsreplace・KonomiTV と配布バイナリは [flake.nix](flake.nix) の入力で管理します。
 KonomiTV は `master`、対応するバイナリは上流の nightly 配布を追います。
 更新は `nix flake update` と通常の Orange への適用で行い、ソースの revision と配布物の hash は `flake.lock` に残します。
 Rust と Python の依存は取得元のロックから、coax の Go 依存は専用の flake 入力から構築します。

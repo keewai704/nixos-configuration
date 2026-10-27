@@ -52,6 +52,11 @@
       flake = false;
     };
 
+    tsreplace = {
+      url = "git+https://github.com/rigaya/tsreplace?ref=master";
+      flake = false;
+    };
+
     pyproject-nix = {
       url = "git+https://github.com/pyproject-nix/pyproject.nix?ref=master";
       inputs.nixpkgs.follows = "nixpkgs";

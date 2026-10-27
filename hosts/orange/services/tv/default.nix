@@ -11,9 +11,30 @@ let
     tailnetHostname
     tailnetOrigin
     ;
-  recordings = "${storageRoot}/TV/Recordings";
-  captures = "${storageRoot}/TV/Captures";
+  televisionRoot = "${storageRoot}/KonomiTV";
+  recordings = "${televisionRoot}/Recordings";
+  captures = "${televisionRoot}/Captures";
   keepAliveSeconds = 120;
+  queueRoot = "/var/lib/tv-recording/queue";
+  recordingHook = pkgs.replaceVars ./PostRecEnd.lua {
+    inherit recordings;
+    queue = queueRoot;
+  };
+  disabledChannels = pkgs.writeText "tv-disabled-channels.json" (
+    builtins.toJSON {
+      networks = [
+        32080
+        32096
+      ];
+      services = [
+        [
+          32086
+          32086
+          43057
+        ]
+      ];
+    }
+  );
   ini = pkgs.formats.ini { };
   edcbSettings = {
     "Common.ini" = ini.generate "Common.ini" {
@@ -33,6 +54,12 @@ let
         EnableHttpSrv = 0;
         SaveDebugLog = 1;
         CompatFlags = 4095;
+        Caption = 1;
+        Data = 1;
+      };
+      REC_DEF = {
+        RecMode = 1;
+        ServiceMode = 49;
       };
       "BonDriver_coax.so" = {
         Count = 1;
@@ -53,6 +80,8 @@ let
     "EpgDataCap_Bon.ini" = ini.generate "EpgDataCap_Bon.ini" {
       SET = {
         OpenWait = 0;
+        Caption = 1;
+        Data = 1;
         SaveLogo = 1;
         SaveLogoTypeFlags = 63;
         TraceBonDriverLevel = 2;
@@ -129,7 +158,7 @@ in
         ReadWritePaths = [ storageRoot ];
         ExecStart = "${pkgs.coreutils}/bin/install --directory --mode=0770 --owner=tv --group=tv ${
           lib.escapeShellArgs [
-            "${storageRoot}/TV"
+            televisionRoot
             recordings
             captures
           ]
@@ -182,11 +211,13 @@ in
         "coaxd.service"
         "coax-pcsc.service"
         "tv-storage-prepare.service"
+        "tv-recording-encode.service"
       ];
       after = [
         "coaxd.service"
         "coax-pcsc.service"
         "tv-storage-prepare.service"
+        "tv-recording-encode.service"
       ];
       environment = tvEnvironment;
       path = [
@@ -210,6 +241,7 @@ in
         install -d -m 0770 /var/lib/edcb/Setting /var/lib/edcb/lib
         ln -sfn ${pkgs.local.bondriver-coax}/lib/BonDriver_coax.so /var/lib/edcb/lib/BonDriver_coax.so
         ln -sfn ${bonDriverConfig} /var/lib/edcb/lib/BonDriver_coax.ini
+        ln -sfn ${recordingHook} /var/lib/edcb/PostRecEnd.lua
         for plugin in ${pkgs.local.edcb}/lib/edcb/*.so ${pkgs.local.b25-decoder}/lib/edcb/*.so; do
           ln -sfn "$plugin" "/var/lib/edcb/lib/$(basename "$plugin")"
         done
@@ -227,6 +259,7 @@ in
           test -s /var/lib/edcb/Setting/ChSet5.txt
           test -n "$(find /var/lib/edcb/Setting -name 'BonDriver_coax*.ChSet4.txt' -size +0c -print -quit)"
         fi
+        ${pkgs.python3}/bin/python ${./configure-channels.py} /var/lib/edcb/Setting ${disabledChannels}
         if ! test -e /var/lib/edcb/.initial-epg-complete; then
           EpgDataCap_Bon -d BonDriver_coax.so -epgcap
           test -n "$(find /var/lib/edcb/Setting/EpgData -name '*_epg.dat' -size +0c -print -quit)"
@@ -259,9 +292,56 @@ in
       serviceConfig = serviceDefaults // {
         StateDirectory = "edcb";
         WorkingDirectory = "/var/lib/edcb";
-        ReadWritePaths = [ recordings ];
+        ReadWritePaths = [
+          recordings
+          queueRoot
+        ];
         ExecStart = "${pkgs.local.edcb}/bin/EpgTimerSrv";
         TimeoutStopSec = "50s";
+      };
+    };
+
+    tv-recording-encode = {
+      description = "Verify and replace completed recording video with HEVC while preserving TS data";
+      wantedBy = [ "multi-user.target" ];
+      requires = [ "tv-storage-prepare.service" ];
+      after = [ "tv-storage-prepare.service" ];
+      environment = {
+        LIBVA_DRIVER_NAME = "iHD";
+        XDG_CACHE_HOME = "/var/cache/tv-recording";
+      };
+      preStart = ''
+        install -d -m 0770 /var/lib/tv-recording/{queue,failed,completed}
+      '';
+      serviceConfig = serviceDefaults // {
+        StateDirectory = "tv-recording";
+        StateDirectoryMode = "0750";
+        LogsDirectory = "tv-recording";
+        CacheDirectory = "tv-recording";
+        ReadWritePaths = [ recordings ];
+        Nice = 10;
+        IOSchedulingClass = "idle";
+        CPUQuota = "200%";
+        MemoryMax = "2G";
+        ExecStart = lib.escapeShellArgs [
+          "${pkgs.python3}/bin/python"
+          "${./recording-encode.py}"
+          "--queue"
+          queueRoot
+          "--recordings"
+          recordings
+          "--logs"
+          "/var/log/tv-recording"
+          "--tsreplace"
+          "${pkgs.local.tsreplace}/bin/tsreplace"
+          "--encoder"
+          "${pkgs.local.konomitv.binaries}/QSVEncC/QSVEncC.elf"
+          "--ffmpeg"
+          "${pkgs.local.konomitv.binaries}/FFmpeg/ffmpeg.elf"
+          "--ffprobe"
+          "${pkgs.local.konomitv.binaries}/FFmpeg/ffprobe.elf"
+        ];
+        TimeoutStopSec = "30s";
       };
     };
 
@@ -292,7 +372,7 @@ in
       preStart = ''
         install -d -m 0770 /var/lib/konomitv/data/{account-icons,thumbnails,twitter-debug-screenshots}
         test -e /var/lib/konomitv/config.yaml || install -m 0660 ${konomitvConfig} /var/lib/konomitv/config.yaml
-        ${pkgs.local.konomitv.pythonEnv}/bin/python ${./configure-konomitv.py} /var/lib/konomitv/config.yaml ${toString keepAliveSeconds}
+        ${pkgs.local.konomitv.pythonEnv}/bin/python ${./configure-konomitv.py} ${konomitvConfig} /var/lib/konomitv/config.yaml
       '';
     };
   };

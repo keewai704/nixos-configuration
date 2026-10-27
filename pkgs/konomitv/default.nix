@@ -88,6 +88,7 @@ stdenvNoCC.mkDerivation {
     makeWrapper
   ];
   postPatch = ''
+    python ${./edcb.py} .
     python ${./performance.py} .
     python ${./subpath.py} .
     substituteInPlace server/app/constants.py \
