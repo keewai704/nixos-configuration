@@ -17,6 +17,7 @@ in
     ./services/smart-tests.nix
     ./services/storage.nix
     ./services/tailscale-exit-node.nix
+    ./services/tv
     ./services/vaultwarden.nix
     ./services/web.nix
   ];

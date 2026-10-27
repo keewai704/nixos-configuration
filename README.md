@@ -77,6 +77,7 @@ flake.nix
 | 共通フォント・初期パレット | [themes/tokyo-night-black](themes/tokyo-night-black/default.nix) |
 | citrus のハードウェア | [hosts/citrus/](hosts/citrus/) |
 | orange のサービス・ポート・保存先 | [hosts/orange/services/](hosts/orange/services/)、[settings.nix](hosts/orange/settings.nix) |
+| orange の USB チューナー・EDCB・KonomiTV | [tv/](hosts/orange/services/tv/)、[pkgs/](pkgs/) |
 
 迷ったときは次の基準で置き場所を決めます。
 
@@ -331,6 +332,7 @@ T3 は複数の接続先・アカウントもプールします。このプラ�
 | Vaultwarden | `https://orange.tail1e65cd.ts.net/vault/` | [vaultwarden.nix](hosts/orange/services/vaultwarden.nix) |
 | Obsidian LiveSync | `https://orange.tail1e65cd.ts.net/couchdb/` | [obsidian-livesync.nix](hosts/orange/services/obsidian-livesync.nix) |
 | T3 Code | `https://orange.tail1e65cd.ts.net/t3/` | [t3code.nix](modules/common/t3code.nix) |
+| KonomiTV | `https://orange.tail1e65cd.ts.net/tv/` | [tv/](hosts/orange/services/tv/) |
 | Samba | HDD の共有 | [samba.nix](hosts/orange/services/samba.nix) |
 | Minecraft | Fabric サーバー | [minecraft.nix](hosts/orange/services/minecraft.nix) |
 | Tailscale 出口ノード | 出口ノード | [tailscale-exit-node.nix](hosts/orange/services/tailscale-exit-node.nix) |
@@ -343,6 +345,17 @@ T3 は複数の接続先・アカウントもプールします。このプラ�
   [maintenance](hosts/orange/services/maintenance.nix) がログの掃除・TRIM・Nix ストアの保守を受け持ちます。
 - 長いシェル処理は `.sh` のテンプレートに書き、`@名前@` を `fillTemplate`（[default.nix](hosts/orange/default.nix)）で
   置き換えて使います。テンプレートを直接実行しないでください。
+
+### テレビ
+
+Sony CECH-ZD1 J の地デジ1チューナーを、coaxd → BonDriver_coax → xtne6f 版 EDCB（Linux ネイティブ）→
+KonomiTV の順に接続します。内蔵 B-CAS スロットは `coax pcsc` と B25Decoder で利用し、映像は Intel QSV で変換します。
+録画は `/srv/storage/TV/Recordings`、キャプチャは `/srv/storage/TV/Captures`、設定・番組表は
+`/var/lib/edcb` と `/var/lib/konomitv` に保存します。
+
+coax・BonDriver・EDCB・B25Decoder・KonomiTV と配布バイナリは [flake.nix](flake.nix) の入力で管理します。
+更新は `nix flake update` と通常の Orange への適用で行い、ソースの revision と配布物の hash は `flake.lock` に残します。
+Rust と Python の依存は取得元のロックから、coax の Go 依存は専用の flake 入力から構築します。
 
 ## パッケージと入力の方針
 

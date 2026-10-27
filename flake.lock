@@ -20,6 +20,23 @@
         "type": "github"
       }
     },
+    "b25-decoder": {
+      "flake": false,
+      "locked": {
+        "lastModified": 1746537779,
+        "narHash": "sha256-jQyf9fjVo2crYqoRXN7TQUp/7Tg9xWWIIPnmc/pfPEs=",
+        "ref": "master",
+        "rev": "ccc80cdb59b370057cecf3e1a965027fc2fb549b",
+        "revCount": 22,
+        "type": "git",
+        "url": "https://github.com/tsukumijima/Multi2Dec"
+      },
+      "original": {
+        "ref": "master",
+        "type": "git",
+        "url": "https://github.com/tsukumijima/Multi2Dec"
+      }
+    },
     "base16": {
       "inputs": {
         "fromYaml": "fromYaml"
@@ -88,6 +105,23 @@
         "type": "github"
       }
     },
+    "bondriver-coax": {
+      "flake": false,
+      "locked": {
+        "lastModified": 1792592860,
+        "narHash": "sha256-RogvxkGBzh4hsb4S8jrh2mScci8SpCpCVjpr49sgFDg=",
+        "ref": "main",
+        "rev": "ce82552dc645146402c332d22650eaefdafc147d",
+        "revCount": 5,
+        "type": "git",
+        "url": "https://github.com/Till0196/BonDriver_coax"
+      },
+      "original": {
+        "ref": "main",
+        "type": "git",
+        "url": "https://github.com/Till0196/BonDriver_coax"
+      }
+    },
     "claude-agent-sdk-release": {
       "flake": false,
       "locked": {
@@ -120,6 +154,57 @@
         "ref": "main",
         "repo": "claude-code-nix",
         "type": "github"
+      }
+    },
+    "coax": {
+      "flake": false,
+      "locked": {
+        "lastModified": 1792494337,
+        "narHash": "sha256-6r4qf6/JnXopStYrhmBItNzpgJ+kD9XOykHFUR41rgI=",
+        "ref": "main",
+        "rev": "2d9f2c263a3b080ecef3a8ede1eb86c6afa48405",
+        "revCount": 5,
+        "type": "git",
+        "url": "https://github.com/Till0196/coax"
+      },
+      "original": {
+        "ref": "main",
+        "type": "git",
+        "url": "https://github.com/Till0196/coax"
+      }
+    },
+    "coax-go-text": {
+      "flake": false,
+      "locked": {
+        "lastModified": 1792599976,
+        "narHash": "sha256-WxiMFrO4VV48w/ytV9aDe4GzeCmDK5qX2fYdAfZHyEs=",
+        "ref": "master",
+        "rev": "972f2683e8864ae75860c0da80ef7c4c5a7cdee8",
+        "revCount": 794,
+        "type": "git",
+        "url": "https://github.com/golang/text"
+      },
+      "original": {
+        "ref": "master",
+        "type": "git",
+        "url": "https://github.com/golang/text"
+      }
+    },
+    "coax-rs": {
+      "flake": false,
+      "locked": {
+        "lastModified": 1792492707,
+        "narHash": "sha256-KPhJXfPkLpnCfwMmphiSIRzXnNo+4KX1/7twZkDDG0E=",
+        "ref": "main",
+        "rev": "5d3dad3ce60a6223b665e9dac8beed88ebdc7e9e",
+        "revCount": 6,
+        "type": "git",
+        "url": "https://github.com/Till0196/coax-rs"
+      },
+      "original": {
+        "ref": "main",
+        "type": "git",
+        "url": "https://github.com/Till0196/coax-rs"
       }
     },
     "codex": {
@@ -195,6 +280,23 @@
         "ref": "main",
         "repo": "dsh-mobile-maxxing",
         "type": "github"
+      }
+    },
+    "edcb": {
+      "flake": false,
+      "locked": {
+        "lastModified": 1792282353,
+        "narHash": "sha256-U60tOnBxNY/pF7jq6hQzHYVZ7ozAaxoG+kicl5mzbNw=",
+        "ref": "work-plus-s",
+        "rev": "e6e3c614d0a8b287b0072e084f509494cd203e7e",
+        "revCount": 1925,
+        "type": "git",
+        "url": "https://github.com/xtne6f/EDCB"
+      },
+      "original": {
+        "ref": "work-plus-s",
+        "type": "git",
+        "url": "https://github.com/xtne6f/EDCB"
       }
     },
     "firefox-gnome-theme": {
@@ -385,10 +487,39 @@
         "url": "https://github.com/keewai704/iphone-control"
       }
     },
+    "konomitv": {
+      "flake": false,
+      "locked": {
+        "lastModified": 1793000310,
+        "narHash": "sha256-Y+aIp4FzoCDyuqMX79Q68njLfU9AbGIH76UFaBMl2hc=",
+        "ref": "master",
+        "rev": "6b48bb48fad42333a4b22a308c970e61ebfd43be",
+        "revCount": 3962,
+        "type": "git",
+        "url": "https://github.com/tsukumijima/KonomiTV"
+      },
+      "original": {
+        "ref": "master",
+        "type": "git",
+        "url": "https://github.com/tsukumijima/KonomiTV"
+      }
+    },
+    "konomitv-thirdparty": {
+      "flake": false,
+      "locked": {
+        "narHash": "sha256-sMKQtCVgb3tubnCFqcvV8SBHMyTOnObeyFILkXBU2VI=",
+        "type": "file",
+        "url": "https://github.com/tsukumijima/KonomiTV/releases/latest/download/thirdparty-linux.tar.xz"
+      },
+      "original": {
+        "type": "file",
+        "url": "https://github.com/tsukumijima/KonomiTV/releases/latest/download/thirdparty-linux.tar.xz"
+      }
+    },
     "meltype-release": {
       "flake": false,
       "locked": {
-        "narHash": "sha256-PNzmqX7CBiNBTRjL4uH5ECghVtQztTESVArAEFEWaks=",
+        "narHash": "sha256-XoebZ7N7j7aGX87xbOmTLn7F2FuVMzRHdAMRgkqEQ0M=",
         "type": "file",
         "url": "https://api.github.com/repos/yksr-melt/Meltype/releases/latest"
       },
@@ -660,11 +791,11 @@
         "nixpkgs": "nixpkgs_5"
       },
       "locked": {
-        "lastModified": 1793074348,
-        "narHash": "sha256-yQ4t5MCpHVptK4mOHjwmvKUhDizSnDSI8SoJkKGC4mg=",
+        "lastModified": 1793076550,
+        "narHash": "sha256-t+bLsze33OVl+jMJODjOxi4krrxKEpr74XxC0AivVXQ=",
         "owner": "noctalia-dev",
         "repo": "noctalia",
-        "rev": "cd17035eae09a590f6f5549d26bb07f1e9328892",
+        "rev": "d8d6616cf53cd04378abe2f911a6144bd7a9cc6f",
         "type": "github"
       },
       "original": {
@@ -753,18 +884,74 @@
         "url": "https://aur.archlinux.org/proton-wineland-bin.git"
       }
     },
+    "pyproject-build-systems": {
+      "inputs": {
+        "nixpkgs": [
+          "nixpkgs"
+        ],
+        "pyproject-nix": [
+          "pyproject-nix"
+        ],
+        "uv2nix": [
+          "uv2nix"
+        ]
+      },
+      "locked": {
+        "lastModified": 1792499785,
+        "narHash": "sha256-mGOkvueuMGSRiD75ccxFzfEvSlIU9ztjFluHMKOtogY=",
+        "ref": "master",
+        "rev": "a17819c85163988e063806ffc4f6d2716bc8ead8",
+        "revCount": 90,
+        "type": "git",
+        "url": "https://github.com/pyproject-nix/build-system-pkgs"
+      },
+      "original": {
+        "ref": "master",
+        "type": "git",
+        "url": "https://github.com/pyproject-nix/build-system-pkgs"
+      }
+    },
+    "pyproject-nix": {
+      "inputs": {
+        "nixpkgs": [
+          "nixpkgs"
+        ]
+      },
+      "locked": {
+        "lastModified": 1791657700,
+        "narHash": "sha256-vcCAvhtA7hG+/gOge29hYHy7I/dLkIsr5nLx4sFEQic=",
+        "ref": "master",
+        "rev": "ddc400a6883b042646d0940e65971bb7f7e96107",
+        "revCount": 573,
+        "type": "git",
+        "url": "https://github.com/pyproject-nix/pyproject.nix"
+      },
+      "original": {
+        "ref": "master",
+        "type": "git",
+        "url": "https://github.com/pyproject-nix/pyproject.nix"
+      }
+    },
     "root": {
       "inputs": {
         "agenix": "agenix",
+        "b25-decoder": "b25-decoder",
+        "bondriver-coax": "bondriver-coax",
         "claude-agent-sdk-release": "claude-agent-sdk-release",
         "claude-code": "claude-code",
+        "coax": "coax",
+        "coax-go-text": "coax-go-text",
+        "coax-rs": "coax-rs",
         "codex": "codex",
         "deepseek-harness-release": "deepseek-harness-release",
         "dsh-claude-bridge-release": "dsh-claude-bridge-release",
         "dsh-codex-native-releases": "dsh-codex-native-releases",
         "dsh-mobile-maxxing": "dsh-mobile-maxxing",
+        "edcb": "edcb",
         "home-manager": "home-manager",
         "iphone-control": "iphone-control",
+        "konomitv": "konomitv",
+        "konomitv-thirdparty": "konomitv-thirdparty",
         "meltype-release": "meltype-release",
         "meltype-tags": "meltype-tags",
         "millennium": "millennium",
@@ -775,9 +962,12 @@
         "noctalia-templates": "noctalia-templates",
         "owly": "owly",
         "proton-wineland-release": "proton-wineland-release",
+        "pyproject-build-systems": "pyproject-build-systems",
+        "pyproject-nix": "pyproject-nix",
         "stylix": "stylix",
         "t3code-releases": "t3code-releases",
-        "umbriel": "umbriel"
+        "umbriel": "umbriel",
+        "uv2nix": "uv2nix"
       }
     },
     "stylix": {
@@ -862,7 +1052,7 @@
     "t3code-releases": {
       "flake": false,
       "locked": {
-        "narHash": "sha256-YSN6MkNZtg7IgxhnBwJBSQ+t37qZpGJONWAu1PYgMXI=",
+        "narHash": "sha256-wHn/KciFr92iCblT6kNUIIpU59dV7UeCsH4KEikf3NU=",
         "type": "file",
         "url": "https://api.github.com/repos/pingdotgg/t3code/releases?per_page=100"
       },
@@ -974,6 +1164,30 @@
         "ref": "cachix",
         "repo": "umbriel",
         "type": "github"
+      }
+    },
+    "uv2nix": {
+      "inputs": {
+        "nixpkgs": [
+          "nixpkgs"
+        ],
+        "pyproject-nix": [
+          "pyproject-nix"
+        ]
+      },
+      "locked": {
+        "lastModified": 1792666911,
+        "narHash": "sha256-UWo7wDPi00YXOI1Io7g4vGKuCSPJ863kHJVDzsgqtoM=",
+        "ref": "master",
+        "rev": "0fdaa03ea3c3c16dbb1fe4d69108f07227a4b42d",
+        "revCount": 511,
+        "type": "git",
+        "url": "https://github.com/pyproject-nix/uv2nix"
+      },
+      "original": {
+        "ref": "master",
+        "type": "git",
+        "url": "https://github.com/pyproject-nix/uv2nix"
       }
     },
     "xdg-desktop-portal-umbriel": {
