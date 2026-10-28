@@ -1,7 +1,6 @@
 { inputs, ... }:
 {
   imports = [
-    ./deepseek-web.nix
     ./home-manager.nix
     ./network.nix
     ./t3code.nix

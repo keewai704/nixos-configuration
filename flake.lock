@@ -124,18 +124,6 @@
         "url": "https://github.com/matching/BonDriver_LinuxMirakc"
       }
     },
-    "claude-agent-sdk-release": {
-      "flake": false,
-      "locked": {
-        "narHash": "sha256-KzD0/tbnfEGoPxNKmuoXVN7iyxLd1hrdKiKSMbHWwbs=",
-        "type": "file",
-        "url": "https://registry.npmjs.org/@anthropic-ai/claude-agent-sdk/latest"
-      },
-      "original": {
-        "type": "file",
-        "url": "https://registry.npmjs.org/@anthropic-ai/claude-agent-sdk/latest"
-      }
-    },
     "claude-code": {
       "inputs": {
         "nixpkgs": [
@@ -177,59 +165,6 @@
         "owner": "sadjow",
         "ref": "main",
         "repo": "codex-cli-nix",
-        "type": "github"
-      }
-    },
-    "deepseek-harness-release": {
-      "flake": false,
-      "locked": {
-        "narHash": "sha256-RPvdpEwA5M/ngggHPwbsGQ6+u1hVZCq5vQzC2gwmy9U=",
-        "type": "file",
-        "url": "https://registry.npmjs.org/@deepseek-ai/dsh/next"
-      },
-      "original": {
-        "type": "file",
-        "url": "https://registry.npmjs.org/@deepseek-ai/dsh/next"
-      }
-    },
-    "dsh-claude-bridge-release": {
-      "flake": false,
-      "locked": {
-        "narHash": "sha256-twfMQ47yUACD6c5P404SVDqd+NFycHIx4W8Oki7GHEc=",
-        "type": "file",
-        "url": "https://registry.npmjs.org/dsh-claude-bridge/latest"
-      },
-      "original": {
-        "type": "file",
-        "url": "https://registry.npmjs.org/dsh-claude-bridge/latest"
-      }
-    },
-    "dsh-codex-native-releases": {
-      "flake": false,
-      "locked": {
-        "narHash": "sha256-+5BVBGdl8tLOfnWPzzhCrG6t0JDeAZ3frgC4EYlzWrY=",
-        "type": "file",
-        "url": "https://api.github.com/repos/Tests4gptplay/dsh-codex-native/releases?per_page=20"
-      },
-      "original": {
-        "type": "file",
-        "url": "https://api.github.com/repos/Tests4gptplay/dsh-codex-native/releases?per_page=20"
-      }
-    },
-    "dsh-mobile-maxxing": {
-      "flake": false,
-      "locked": {
-        "lastModified": 1793172820,
-        "narHash": "sha256-a8Xk9uD5cQZaOD0di+yppfE1eIpayf5Ii1KBQk5Vs/I=",
-        "owner": "kuraneko1",
-        "repo": "dsh-mobile-maxxing",
-        "rev": "e6fe703b426a6d85c704fb8824f8934ec4eaa3c6",
-        "type": "github"
-      },
-      "original": {
-        "owner": "kuraneko1",
-        "ref": "main",
-        "repo": "dsh-mobile-maxxing",
         "type": "github"
       }
     },
@@ -936,13 +871,8 @@
         "agenix": "agenix",
         "b25-decoder": "b25-decoder",
         "bondriver-linuxmirakc": "bondriver-linuxmirakc",
-        "claude-agent-sdk-release": "claude-agent-sdk-release",
         "claude-code": "claude-code",
         "codex": "codex",
-        "deepseek-harness-release": "deepseek-harness-release",
-        "dsh-claude-bridge-release": "dsh-claude-bridge-release",
-        "dsh-codex-native-releases": "dsh-codex-native-releases",
-        "dsh-mobile-maxxing": "dsh-mobile-maxxing",
         "edcb": "edcb",
         "home-manager": "home-manager",
         "iphone-control": "iphone-control",

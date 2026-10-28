@@ -62,7 +62,6 @@ flake.nix
 | Git / GitHub CLI | [git.nix](home/keewai/common/git.nix) |
 | Claude Code・Codex・スキル・MCP サーバー | [coding-agents/](home/keewai/common/coding-agents/default.nix)、[skills/](skills/) |
 | T3 Code（nightly サーバー） | [t3code.nix](home/keewai/common/t3code.nix)、[pkgs/t3code](pkgs/t3code/) |
-| DeepSeek Harness・Claude/ChatGPT 接続・日本語 | [deepseek-harness](home/keewai/common/deepseek-harness/)、[pkgs/deepseek-harness](pkgs/deepseek-harness/) |
 | 設定のいらない GUI アプリを追加 | [home/keewai/desktop/packages.nix](home/keewai/desktop/packages.nix) |
 | ウィンドウ操作・キー割り当て | [umbriel.nix](home/keewai/desktop/umbriel.nix) |
 | モニター・解像度 | [hosts/citrus/display.nix](hosts/citrus/display.nix) |
@@ -266,60 +265,6 @@ Claude Code と Codex は全ホストで Home Manager が導入し、どのシ�
   **Settings → Source Control → Rescan** を選びます。トークンを Nix にコピーすることはありません。
 - T3 Code は利用者の権限でコマンドを実行できます。
   tailnet 内だけの公開でも、隔離された環境になるわけではありません。
-
-### DeepSeek Harness pre-release
-
-[DeepSeek Harness](https://github.com/deepseek-ai/deepseek-harness) の npm `next` チャンネルを両ホストに導入します。
-`dsh-web` ユーザーサービスが `http://127.0.0.1:3080` で Web UI を起動します。
-ランチャーの **DeepSeek Harness** または `dsh-open` が認証付き URL をブラウザーで開きます。
-ワークスペースを追加すると、既定の Claude Opus で会話できます。サービスの操作は
-`systemctl --user restart dsh-web`、ログは `journalctl --user -u dsh-web` です。
-
-- 独自の [dsh-claude-agent](pkgs/deepseek-harness/plugins/claude/) が公式 Claude Agent SDK を使います。
-  Home Manager の Claude Code と通常の `claude auth login` の認証を使い、`supportedModels()` が返すモデル名・ID・推論レベルを表示します。
-  既定の `claude-bridge` / `opus` を保持し、エイリアスが指す現行モデルも SDK に従います。
-  会話・ツール結果の変換には [dsh-claude-bridge](https://github.com/shaneconner/dsh-claude-bridge) をライブラリとして使い、DSH のメッセージ形式と SDK の推論レベルに対応するパッチを同梱します。
-  Nix の Node.js では `--expose-internals` で同じ内部ローダーを取得し、ネイティブアドオンの実行形式への依存を避けます。
-- [dsh-mobile-maxxing](https://github.com/kuraneko1/dsh-mobile-maxxing) が PWA・通知・モバイル操作を提供します。
-  両ホストとも Tailscale Serve HTTPS → ループバック nginx → `127.0.0.1:3080` で公開します。
-  入口は `https://orange.tail1e65cd.ts.net/dsh/` と `https://citrus.tail1e65cd.ts.net/dsh/` です。
-  `dsh-open` が開く認証付き URL を使います。認証トークンはログに含まれるため共有しないでください。
-- 同じ配布元の [dsh-locale-ja](https://github.com/kuraneko1/dsh-mobile-maxxing/tree/main/packages/dsh-locale-ja) が言語選択に **日本語** を追加します。
-  DSH の bundle 登録定義と現在のランタイムに対する依存宣言を Nix 側で補い、選択中の表示言語は保持します。
-- 独自の [dsh-chatgpt-subscription](pkgs/deepseek-harness/plugins/chatgpt/) が **ChatGPT (subscription)** を追加します。
-  Home Manager が導入する公式 Codex CLI の App Server を起動し、通常の `codex login` の認証と ChatGPT 契約に含まれる Codex / ChatGPT Work の利用枠を使います。
-  `model/list` の全ページからモデル・推論レベルを取得し、モデル名を固定しません。会話と DSH ツールの変換には [dsh-codex-native](https://github.com/Tests4gptplay/dsh-codex-native) をライブラリとして使います。
-  両接続のモデル一覧は30秒キャッシュし、5分ごとに再取得して変更を Web UI に通知します。旧接続プラグインの bundle は適用時に置き換えます。
-- 独自の [dsh-subscription-usage](pkgs/deepseek-harness/plugins/usage/) がサイドバーに **使用状況** を追加します。
-  **コスト・トークン・契約残量** を切り替え、過去24時間・7日・30日・90日とプロバイダー・モデルで絞り込めます。
-  グラフ、モデル別内訳、キャッシュヒット率、API料金換算、単価の上書きに対応します。
-  集計は別ワーカーで行い、会話本文をブラウザーへ返さず、ローカルの利用記録から統計値を作ります。
-- 同じ配布元の CJK 修正コードを `rdsh-markdown-cjk` として登録し、PC・モバイル両方の Markdown 表示を修正します。
-  URL 直後の日本語の括弧や太字の終端をリンクに巻き込まず、URL 内の日本語パスは保持します。
-  修正版の配信パスでもコードの色付け用ファイルと CSS を取得できるよう、相対参照を補正します。
-- 取得元は flake 入力、npm の依存関係はパッケージ内のロックで管理します。
-  更新は `nix flake update` のあと、リポジトリのルートで
-  `nix run --no-write-lock-file .#deepseek-harness.updateScript` を実行し、生成された変更もコミットします。
-  適用時は指定のプラグインと Claude 実行パスを設定し、利用者が追加したプラグインやモデル選択を保持します。
-
-### 使用状況の集計規則
-
-実装時に調査した T3 Code `0.1.3-nightly.20261026.3717`（`1316d48`）の
-[利用ガイド](https://github.com/pingdotgg/t3code/blob/1316d48b0c68151afd8b47eb0c11a114cf0b4daa/docs/user/usage.md)、
-[トークン契約](https://github.com/pingdotgg/t3code/blob/1316d48b0c68151afd8b47eb0c11a114cf0b4daa/packages/contracts/src/usage.ts)、
-[集計](https://github.com/pingdotgg/t3code/blob/1316d48b0c68151afd8b47eb0c11a114cf0b4daa/apps/server/src/usage/usageAggregation.ts)、
-[料金計算](https://github.com/pingdotgg/t3code/blob/1316d48b0c68151afd8b47eb0c11a114cf0b4daa/apps/server/src/usage/usagePricing.ts)を確認し、次の規則を採用しています。
-
-- 処理トークンは未キャッシュ入力・キャッシュ読取・キャッシュ書込・出力の合計です。推論トークンは出力の内数として表示し、合計と料金に二重加算しません。キャッシュヒット率の分母は入力3種の合計です。
-- Claude は `projects/**/*.jsonl` のモデル・usage を読み、message ID と request ID による重複を除外します。SDK の呼び出しもこの履歴に残るため、DSH 側の同じ呼び出しは加算しません。
-- Codex は `sessions` と `archived_sessions` を読み、累積カウンターの再送、再開、分岐でコピーされた履歴を区別します。DSH の ChatGPT 接続は ephemeral なため、こちらは DSH の圧縮セッション履歴から加算し、message ID で重複を除外します。不正・未完の記録は集計元の状態に表示します。
-- 料金は T3 と同じ LiteLLM の料金表を24時間キャッシュし、手動更新は最短1分間隔です。キャッシュ単価・速度別単価・提供元の参考額を区別します。単価不明は未換算と表示し、明示した単価 `0` は無料として扱います。表示額は API 単価に換算した参考額です。
-- 古い Codex 履歴に速度モードがない場合は、T3 の `statev2.sqlite` を読み取り専用で開き、[T3 と同じリクエスト開始時の選択](https://github.com/pingdotgg/t3code/blob/1316d48b0c68151afd8b47eb0c11a114cf0b4daa/apps/server/src/usage/CodexUsageHistory.ts)から補完します。新しい DSH 接続では Codex 設定の速度を記録します。互換処理の MIT ライセンスをパッケージ内に同梱しています。
-- 日別の境界はブラウザーの IANA タイムゾーンを使い、過去24時間は時間別に表示します。
-- 契約残量は T3 と同じ Claude SDK の usage コントロールと Codex `account/rateLimits/read` から取得します。5分キャッシュと手動更新に対応し、取得失敗を残量0として表示しません。全体の週間枠が尽きた場合はセッションの利用可能残量も0として表示します。
-
-T3 は複数の接続先・アカウントもプールします。このプラグインは実行ホストの履歴と現在ログインしている Claude・ChatGPT を対象にします。
-履歴のホームはプラグイン設定の `claudeHome` / `codexHome`、T3 の履歴 DB は `t3Database`（空文字で無効）、単価の上書きは使用状況の **モデル単価** で変更できます。
 
 ## orange（サーバー）
 

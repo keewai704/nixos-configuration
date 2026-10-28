@@ -1,10 +1,10 @@
 { config, pkgs, ... }:
 {
-  services.deepseek-web.publicHost = "citrus.tail1e65cd.ts.net";
+  services.t3code.publicHost = "citrus.tail1e65cd.ts.net";
 
   services.nginx = {
     enable = true;
-    virtualHosts.${config.services.deepseek-web.publicHost} = {
+    virtualHosts.${config.services.t3code.publicHost} = {
       default = true;
       locations."/" = {
         proxyPass = "http://127.0.0.1:3773";
