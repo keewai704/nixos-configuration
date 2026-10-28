@@ -5,12 +5,12 @@
 #undef LOG
 #include "driver/torne_dib.c"
 
-enum fault { NONE, SHORT_REPLY, WRONG_COUNT, BUS_ERROR, TIMEOUT, STALE, SHORT_WRITE };
+enum fault { NONE, SHORT_REPLY, WRONG_COUNT, BUS_ERROR, TIMEOUT, STALE, SHORT_WRITE, CONFIG_ERROR };
 
 struct device {
     u16 registers[2048];
     u8 reply[64];
-    unsigned int sends, receives, controls, reads;
+    unsigned int sends, receives, controls, reads, waited;
     u64 now;
     enum fault fault;
     bool stale_sent;
@@ -40,6 +40,7 @@ static int usb_bulk(void *priv, u8 endpoint, void *data, int length, unsigned in
         unsigned int words = be32(bytes + 4) & 0xff;
         assert(words <= 125);
         unsigned int count = 0;
+        bool failed = false;
         memset(device->reply, 0, sizeof(device->reply));
         put_be32(device->reply, be32(bytes));
         for (unsigned int i = 0; i < words; i++) {
@@ -53,6 +54,8 @@ static int usb_bulk(void *priv, u8 endpoint, void *data, int length, unsigned in
             } else if (word & 0x40000000u) {
                 assert(count < 14);
                 put_be32(device->reply + 8 + count++ * 4, device->registers[reg]);
+                if (reg == 299 && device->fault == CONFIG_ERROR)
+                    failed = true;
             } else {
                 assert(!(word & 0x38000000u));
                 device->registers[reg] = word;
@@ -60,7 +63,7 @@ static int usb_bulk(void *priv, u8 endpoint, void *data, int length, unsigned in
         }
         device->sends++;
         device->reads = count;
-        put_be32(device->reply + 4, count);
+        put_be32(device->reply + 4, count | (failed ? 2 << 16 : 0));
         if (count == 14 && device->fault == SHORT_WRITE)
             return length - 1;
         return length;
@@ -102,7 +105,9 @@ static u64 clock_ms(void *priv)
 
 static void sleep_ms(void *priv, unsigned int ms)
 {
-    ((struct device *)priv)->now += ms;
+    struct device *device = priv;
+    device->now += ms;
+    device->waited += ms;
 }
 
 static void reset(struct fixture *fixture)
@@ -207,6 +212,34 @@ int main(void)
         assert(torne_bridge_flush(&fixture.bridge) == expected);
         assert(fixture.device.sends == sends);
     }
-    puts("USB command batching, modify ordering, packet boundaries and failure checks passed");
+    for (unsigned int state = 0; state < 5; state++) {
+        reset(&fixture);
+        fixture.demod.revision = 0x8002;
+        fixture.demod.c.frequency = 539143000;
+        fixture.demod.c.isdbt_layer_enabled = 3;
+        fixture.demod.c.layer[0].segment_count = 1;
+        fixture.demod.c.layer[1].segment_count = 12;
+        fixture.demod.status = state == 2 ? STATUS_TUNE_FAILED : STATUS_DATA_LOCKED;
+        fixture.demod.asleep = state == 3;
+        fixture.demod.diversity_onoff = state == 4 ? 1 : 0;
+        fixture.demod.acquired[0] = fixture.demod.c;
+        fixture.demod.acquired[0].frequency = 479143000;
+        fixture.device.registers[270] = 1;
+        fixture.device.registers[568] = state == 1 ? 0x105c : 0x105e;
+        fixture.device.fault = CONFIG_ERROR;
+        assert(torne_dib_tune(&fixture.demod, 479143000) == -EIO);
+        assert(fixture.device.registers[270] == (state == 0 ? 1 : 6));
+        assert(fixture.device.waited == (state == 0 ? 0 : 30));
+    }
+
+    reset(&fixture);
+    fixture.demod.revision = 0x8002;
+    fixture.demod.tune_state = DEMOD_STEP4;
+    fixture.demod.differential_constellation = 1;
+    fixture.demod.symbol_duration = 1;
+    assert(dib_tune(&fixture.demod) > 0);
+    assert(fixture.device.registers[270] == 1 && fixture.device.registers[271] == 0);
+    assert(fixture.device.registers[272] == 0 && fixture.device.waited == 30);
+    puts("USB batching, failure handling and warm acquisition guard checks passed");
     return 0;
 }

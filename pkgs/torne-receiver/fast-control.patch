@@ -495,7 +495,36 @@
  		msleep_(d, ret);
  		if (d->t_tune_state == TUNER_STOP)
  			break;
-@@ -3403,7 +3435,7 @@
+@@ -3362,7 +3394,7 @@
+ 
+ /* dib8000_set_frontend for a single frontend: tune the tuner, start the AGC, then run the demodulator's state
+  * machine to the end, waiting between its steps as MIN_TUNE_STEP_MS says */
+-static int dib_set_frontend(struct torne_dib *d)
++static int dib_set_frontend(struct torne_dib *d, bool warm)
+ {
+ 	struct dib_channel *c = &d->c;
+ 	u64 give_up;
+@@ -3380,7 +3412,8 @@
+ 	c->delivery_system = SYSTEM_ISDBT;
+ 
+ 	/* set output mode and diversity input */
+-	set_diversity_in(d, 1);
++	if (!warm)
++		set_diversity_in(d, 1);
+ 	rc = dib_set_output_mode(d, OUTMODE_HIGH_Z);
+ 	if (rc)
+ 		return rc;
+@@ -3393,7 +3426,8 @@
+ 	d->tune_state = AGC_START;
+ 
+ 	/* turn off the diversity of the last chip */
+-	set_diversity_in(d, 0);
++	if (!warm)
++		set_diversity_in(d, 0);
+ 
+ 	/* start up the AGC */
+ 	for (;;) {
+@@ -3403,7 +3437,7 @@
  			break;
  
  		/* agc_startup counts in 0.1ms, but Linux sleeps in whole jiffies; round up to 10ms steps */
@@ -504,7 +533,7 @@
  		msleep_(d, wait);
  		if (d->tune_state == AGC_STOP)
  			break;
-@@ -3547,7 +3579,7 @@
+@@ -3547,7 +3581,7 @@
  	return d->err;
  }
  
@@ -513,10 +542,14 @@
  {
  	d->err = 0;
  
-@@ -3581,6 +3613,52 @@
- 	return dib_set_frontend(d) ?: d->err;
- }
+@@ -3578,7 +3612,57 @@
+ 	}
+ 	d->c.frequency = frequency_hz;
  
+-	return dib_set_frontend(d) ?: d->err;
++	return dib_set_frontend(d, false) ?: d->err;
++}
++
 +static int finish_tune(struct torne_dib *d, int result)
 +{
 +    u64 deadline = now_ms(d) + 1000;
@@ -545,8 +578,12 @@
 +    for (i = 0; i < 50; i++) {
 +        if (d->acquired[i].frequency != frequency_hz)
 +            continue;
++        bool warm = !d->asleep && d->status == STATUS_DATA_LOCKED &&
++            d->diversity_onoff == 0 && fullseg_locked(d, read_lock(d));
++        if (d->err)
++            return d->err;
 +        d->c = d->acquired[i];
-+        result = finish_tune(d, dib_set_frontend(d));
++        result = finish_tune(d, dib_set_frontend(d, warm));
 +        if (!result) {
 +            LOG(d, TORNE_LOG_INFO, "DiB8096 cached TMCC lock at %u Hz", frequency_hz);
 +            return 0;
@@ -561,8 +598,6 @@
 +    if (!result && d->status == STATUS_DATA_LOCKED && is_manual_mode(&d->c))
 +        d->acquired[d->acquired_next++ % 50] = d->c;
 +    return result;
-+}
-+
+ }
+ 
  /* linear interpolation in a descending table (interpolate_value) */
- static u32 interpolate_value(u32 value, const struct linear_segment *segments, int length)
- {
