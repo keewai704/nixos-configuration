@@ -10,13 +10,7 @@
 #include "torne_ioctl.h"
 
 #define TORNE_CARD_POWER_UP _IOR('T', 0x13, struct torne_card_atr)
-#define TORNE_CARD_SOCKET "/run/torne/card.sock"
-#define TORNE_CAPTURE_SOCKET "/run/torne/capture.sock"
-
-struct torne_capture_request {
-    uint32_t channel;
-    uint32_t tsid;
-};
+#define TORNE_CARD_SOCKET "/run/torne-0/card.sock"
 
 struct torne_card_message {
     uint32_t command;
@@ -25,7 +19,7 @@ struct torne_card_message {
     unsigned char data[sizeof(struct torne_card_apdu)];
 };
 
-static int torne_socket_connect(const char *path, int type)
+static inline int torne_socket_connect(const char *path, int type)
 {
     struct sockaddr_un address = { .sun_family = AF_UNIX };
     if (strlen(path) >= sizeof(address.sun_path)) {

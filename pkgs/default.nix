@@ -21,6 +21,7 @@ in
     };
     torne-receiver = final.callPackage ./torne-receiver {
       upstream = inputs.torne-driver;
+      bonDriverHeaders = inputs.edcb + "/BonCtrl";
     };
     mirakc-arib = final.callPackage ./mirakc-arib { upstream = inputs.mirakc-arib; };
     mirakc = final.callPackage ./mirakc {

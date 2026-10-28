@@ -1,5 +1,6 @@
 #define _GNU_SOURCE
 #include <libusb-1.0/libusb.h>
+#include <getopt.h>
 #include <poll.h>
 #include <pthread.h>
 #include <signal.h>
@@ -13,6 +14,8 @@
 #include "torne_dib.h"
 #include "torne_card.h"
 #include "card-socket.h"
+#include "receiver-client.h"
+#include "stream.h"
 
 struct receiver {
     libusb_context *context;
@@ -22,15 +25,17 @@ struct receiver {
     struct torne_card card;
     pthread_mutex_t lock;
     int card_listener;
+    struct torne_stream *stream;
+    unsigned int channel;
 };
 
 static volatile sig_atomic_t stopping;
 
-static bool disconnected(int fd)
+static bool peer_closed(int fd)
 {
-    struct pollfd client = { .fd = fd, .events = POLLIN | POLLRDHUP };
+    struct pollfd client = { .fd = fd, .events = POLLRDHUP };
     return poll(&client, 1, 0) > 0 &&
-        (client.revents & (POLLIN | POLLHUP | POLLRDHUP | POLLERR | POLLNVAL));
+        (client.revents & (POLLHUP | POLLRDHUP | POLLERR | POLLNVAL));
 }
 
 static void stop(int signal_number)
@@ -111,21 +116,6 @@ static int listen_socket(const char *path, int type)
         return -1;
     }
     return fd;
-}
-
-static int send_all(int fd, const void *buffer, size_t length)
-{
-    const unsigned char *position = buffer;
-    while (length && !stopping) {
-        ssize_t sent = send(fd, position, length, MSG_NOSIGNAL);
-        if (sent < 0 && errno == EINTR)
-            continue;
-        if (sent <= 0)
-            return -1;
-        position += sent;
-        length -= sent;
-    }
-    return length ? -1 : 0;
 }
 
 static int card_request(struct receiver *receiver, struct torne_card_message *message)
@@ -211,50 +201,37 @@ static void *serve_card(void *private)
     return NULL;
 }
 
-static unsigned int pat_tsid(const unsigned char *packet)
+static void stop_capture(struct receiver *receiver)
 {
-    if ((packet[1] & 0x9f) || packet[2] || !(packet[1] & 0x40) || (packet[3] & 0xc0))
-        return 0;
-    unsigned int control = (packet[3] >> 4) & 3;
-    if (control != 1 && control != 3)
-        return 0;
-    unsigned int offset = 4 + (control == 3 ? packet[4] + 1 : 0);
-    if (offset >= 188)
-        return 0;
-    offset += 1 + packet[offset];
-    if (offset + 8 > 188 || packet[offset] != 0)
-        return 0;
-    unsigned int length = 3 + (((unsigned int)packet[offset + 1] & 15) << 8 | packet[offset + 2]);
-    if (!(packet[offset + 1] & 0x80) || !(packet[offset + 5] & 1) ||
-        length < 12 || length > 188 - offset)
-        return 0;
-    uint32_t crc = 0xffffffffu;
-    for (unsigned int i = 0; i < length; i++) {
-        crc ^= (uint32_t)packet[offset + i] << 24;
-        for (unsigned int bit = 0; bit < 8; bit++)
-            crc = crc & 0x80000000u ? (crc << 1) ^ 0x04c11db7u : crc << 1;
+    if (!receiver->stream)
+        return;
+    torne_stream_stop(receiver->stream);
+    receiver->stream = NULL;
+    receiver->channel = 0;
+    pthread_mutex_lock(&receiver->lock);
+    torne_bridge_stop_stream(&receiver->bridge);
+    torne_dib_set_output(&receiver->dib, TORNE_OUT_HIGHZ);
+    torne_bridge_flush(&receiver->bridge);
+    if (receiver->bridge.err) {
+        fputs("USB stream shutdown failed; restarting receiver\n", stderr);
+        exit(1);
     }
-    if (crc)
-        return 0;
-    return (unsigned int)packet[offset + 3] << 8 | packet[offset + 4];
+    pthread_mutex_unlock(&receiver->lock);
 }
 
-static int capture(struct receiver *receiver, int fd, uint32_t channel, uint32_t expected_tsid)
+static int start_capture(struct receiver *receiver, int owner, uint32_t channel, uint32_t tsid, int *output)
 {
-    if (channel < 13 || channel > 62 || !expected_tsid || expected_tsid > 65535)
+    if (channel < 13 || channel > 62 || tsid > 65535)
         return -EINVAL;
-    if (disconnected(fd))
+    if (peer_closed(owner))
         return -ECANCELED;
+    stop_capture(receiver);
     uint64_t started = now_ms(NULL);
     pthread_mutex_lock(&receiver->lock);
-    if (disconnected(fd)) {
-        pthread_mutex_unlock(&receiver->lock);
-        return -ECANCELED;
-    }
-    int result = torne_bridge_prepare_stream(&receiver->bridge);
+    int result = peer_closed(owner) ? -ECANCELED : torne_bridge_prepare_stream(&receiver->bridge);
     if (!result)
         result = torne_dib_tune(&receiver->dib, (473143u + (channel - 13) * 6000u) * 1000u);
-    if (!result && (stopping || disconnected(fd)))
+    if (!result && (stopping || peer_closed(owner)))
         result = -ECANCELED;
     if (!result)
         result = torne_dib_set_output(&receiver->dib, TORNE_OUT_PARALLEL_GATED);
@@ -278,77 +255,104 @@ static int capture(struct receiver *receiver, int fd, uint32_t channel, uint32_t
         fputs("USB control failed; restarting receiver\n", stderr);
         exit(1);
     }
-    pthread_mutex_unlock(&receiver->lock);
-    int32_t status = result;
-    if (send_all(fd, &status, sizeof(status)) || result)
-        goto done;
-    fprintf(stderr, "RF%u ready in %llu ms\n", channel, (unsigned long long)(now_ms(NULL) - started));
-    unsigned char raw[61440], output[61440];
-    struct torne_framer framer;
-    torne_framer_reset(&framer);
-    bool verified = false, wrong_tsid = false;
-    uint64_t pat_deadline = now_ms(NULL) + 2000;
-    while (!stopping) {
-        if (disconnected(fd))
-            break;
-        int length = bulk(receiver, 0x81, raw, sizeof(raw), 100);
-        if (now_ms(NULL) > pat_deadline && !verified) {
-            if (wrong_tsid) {
-                fputs("Unexpected transport stream; reinitializing USB frontend\n", stderr);
-                exit(1);
-            }
-            result = -EAGAIN;
-            break;
+    if (!result) {
+        int sockets[2];
+        if (socketpair(AF_UNIX, SOCK_STREAM | SOCK_CLOEXEC, 0, sockets)) {
+            result = -errno;
+        } else {
+            result = torne_stream_start(&receiver->stream, receiver->context, receiver->usb, sockets[0], tsid);
+            if (result)
+                close(sockets[1]);
+            else
+                *output = sockets[1];
         }
-        if (length == -ETIMEDOUT || length == -EINTR)
-            continue;
-        if (length < 0) {
-            result = length;
-            break;
-        }
-        size_t written = torne_framer_feed(&framer, raw, length, output);
-        size_t offset = 0;
-        if (!verified) {
-            for (; offset < written; offset += 188) {
-                unsigned int tsid = pat_tsid(output + offset);
-                if (!tsid)
-                    continue;
-                if (tsid == expected_tsid) {
-                    verified = true;
-                    break;
-                }
-                wrong_tsid = true;
-            }
-        }
-        if (written > offset && send_all(fd, output + offset, written - offset))
-            break;
     }
-done:
-    pthread_mutex_lock(&receiver->lock);
-    if (receiver->bridge.err) {
-        fputs("USB control failed; restarting receiver\n", stderr);
-        exit(1);
-    }
-    torne_bridge_stop_stream(&receiver->bridge);
-    torne_dib_set_output(&receiver->dib, TORNE_OUT_HIGHZ);
-    torne_bridge_flush(&receiver->bridge);
-    if (receiver->bridge.err) {
-        fputs("USB stream shutdown failed; restarting receiver\n", stderr);
-        exit(1);
+    if (result) {
+        torne_bridge_stop_stream(&receiver->bridge);
+        torne_dib_set_output(&receiver->dib, TORNE_OUT_HIGHZ);
+        torne_bridge_flush(&receiver->bridge);
+    } else {
+        receiver->channel = channel;
+        fprintf(stderr, "RF%u ready in %llu ms\n", channel, (unsigned long long)(now_ms(NULL) - started));
     }
     pthread_mutex_unlock(&receiver->lock);
     return result;
 }
 
-static int daemon_main(void)
+static int receiver_status(struct receiver *receiver, struct torne_reply *reply)
+{
+    if (!receiver->channel)
+        return 0;
+    struct torne_dib_status status;
+    pthread_mutex_lock(&receiver->lock);
+    int result = torne_dib_status(&receiver->dib, &status);
+    torne_bridge_flush(&receiver->bridge);
+    if (receiver->bridge.err) {
+        fputs("USB status failed; restarting receiver\n", stderr);
+        exit(1);
+    }
+    pthread_mutex_unlock(&receiver->lock);
+    if (result)
+        return result;
+    reply->locked = status.locked;
+    reply->cnr_x100 = status.has_cnr ? status.cnr_x100 : 0;
+    reply->strength_dbm_x1000 = status.has_strength ? status.strength_dbm_x1000 : 0;
+    return 0;
+}
+
+static int usb_path(libusb_device *device, char *path, size_t capacity)
+{
+    uint8_t ports[8];
+    int count = libusb_get_port_numbers(device, ports, sizeof(ports));
+    if (count <= 0)
+        return -1;
+    int written = snprintf(path, capacity, "%u-", libusb_get_bus_number(device));
+    for (int i = 0; i < count; i++) {
+        if (written < 0 || (size_t)written >= capacity)
+            return -1;
+        int size = snprintf(path + written, capacity - written, "%s%u", i ? "." : "", ports[i]);
+        if (size < 0)
+            return -1;
+        written += size;
+    }
+    return (size_t)written < capacity ? 0 : -1;
+}
+
+static int find_devices(libusb_context *context, const char *selected, libusb_device_handle **usb)
+{
+    libusb_device **devices;
+    ssize_t count = libusb_get_device_list(context, &devices);
+    if (count < 0)
+        return -EIO;
+    int result = selected ? -ENODEV : 0;
+    for (ssize_t i = 0; i < count; i++) {
+        struct libusb_device_descriptor descriptor;
+        char path[64];
+        if (libusb_get_device_descriptor(devices[i], &descriptor) ||
+            descriptor.idVendor != TORNE_USB_VENDOR || descriptor.idProduct != TORNE_USB_PRODUCT ||
+            usb_path(devices[i], path, sizeof(path)))
+            continue;
+        if (!selected) {
+            printf("%s Sony CECH-ZD1 J\n", path);
+        } else if (!strcmp(path, selected)) {
+            int opened = libusb_open(devices[i], usb);
+            result = opened ? usb_error(opened) : 0;
+            break;
+        }
+    }
+    libusb_free_device_list(devices, 1);
+    return result;
+}
+
+static int daemon_main(const char *device, const char *directory)
 {
     struct receiver receiver = { .lock = PTHREAD_MUTEX_INITIALIZER };
     int result = libusb_init(&receiver.context);
     if (result)
         return 1;
-    receiver.usb = libusb_open_device_with_vid_pid(receiver.context, TORNE_USB_VENDOR, TORNE_USB_PRODUCT);
-    if (!receiver.usb) {
-        fputs("Sony CECH-ZD1 J is unavailable\n", stderr);
+    result = find_devices(receiver.context, device, &receiver.usb);
+    if (result) {
+        fprintf(stderr, "Sony CECH-ZD1 J at %s is unavailable: %d\n", device, result);
         return 1;
     }
     result = libusb_claim_interface(receiver.usb, 0);
@@ -373,75 +377,134 @@ static int daemon_main(void)
         return 1;
     }
     torne_card_setup(&receiver.card, &receiver.bridge);
-    receiver.card_listener = listen_socket(TORNE_CARD_SOCKET, SOCK_SEQPACKET);
-    int listener = listen_socket(TORNE_CAPTURE_SOCKET, SOCK_STREAM);
+    char card_path[108], control_path[108];
+    if (snprintf(card_path, sizeof(card_path), "%s/card.sock", directory) >= (int)sizeof(card_path) ||
+        snprintf(control_path, sizeof(control_path), "%s/control.sock", directory) >= (int)sizeof(control_path))
+        return 1;
+    receiver.card_listener = listen_socket(card_path, SOCK_SEQPACKET);
+    int listener = listen_socket(control_path, SOCK_SEQPACKET);
     if (receiver.card_listener < 0 || listener < 0)
         return 1;
     pthread_t card_thread;
     if (pthread_create(&card_thread, NULL, serve_card, &receiver))
         return 1;
-    fputs("Direct USB receiver ready\n", stderr);
+    fprintf(stderr, "Direct USB receiver ready at %s (%s)\n", device, control_path);
+    int owner = -1;
     while (!stopping) {
-        struct pollfd incoming = { .fd = listener, .events = POLLIN };
-        if (poll(&incoming, 1, 250) <= 0)
-            continue;
-        int fd = accept4(listener, NULL, NULL, SOCK_CLOEXEC);
-        if (fd < 0)
-            continue;
-        struct timeval timeout = { .tv_sec = 2 };
-        setsockopt(fd, SOL_SOCKET, SO_RCVTIMEO, &timeout, sizeof(timeout));
-        setsockopt(fd, SOL_SOCKET, SO_SNDTIMEO, &timeout, sizeof(timeout));
-        struct torne_capture_request request;
-        if (recv(fd, &request, sizeof(request), MSG_WAITALL) == sizeof(request)) {
-            result = capture(&receiver, fd, request.channel, request.tsid);
-            if (result && result != -ECANCELED)
-                fprintf(stderr, "RF%u capture failed: %d\n", request.channel, result);
+        int error = torne_stream_error(receiver.stream);
+        if (error) {
+            fprintf(stderr, "RF%u stream failed: %d\n", receiver.channel, error);
+            stop_capture(&receiver);
+            if (owner >= 0)
+                close(owner);
+            owner = -1;
+            if (error == -ENODEV || error == -EIO || error == -ESTALE)
+                exit(1);
         }
-        close(fd);
-        if (result == -ENODEV || result == -EIO || result == -EPIPE)
-            return 1;
+        struct pollfd incoming[2] = {
+            { .fd = owner, .events = POLLIN | POLLRDHUP },
+            { .fd = listener, .events = POLLIN },
+        };
+        if (poll(incoming, 2, 100) <= 0)
+            continue;
+        if (owner >= 0 && incoming[0].revents) {
+            struct torne_request request;
+            ssize_t length = recv(owner, &request, sizeof(request), MSG_TRUNC);
+            if (length <= 0) {
+                stop_capture(&receiver);
+                close(owner);
+                owner = -1;
+            } else {
+                struct torne_reply reply = { 0 };
+                int stream = -1;
+                if (length != sizeof(request) || request.version != TORNE_PROTOCOL_VERSION) {
+                    reply.result = -EPROTO;
+                } else if (request.command == TORNE_COMMAND_TUNE) {
+                    reply.result = start_capture(&receiver, owner, request.channel, request.tsid, &stream);
+                } else if (request.command == TORNE_COMMAND_STATUS) {
+                    reply.result = receiver_status(&receiver, &reply);
+                } else if (request.command == TORNE_COMMAND_STOP) {
+                    stop_capture(&receiver);
+                } else {
+                    reply.result = -EINVAL;
+                }
+                int sent = torne_send_reply(owner, &reply, stream);
+                if (stream >= 0)
+                    close(stream);
+                if (sent) {
+                    stop_capture(&receiver);
+                    close(owner);
+                    owner = -1;
+                }
+            }
+        }
+        if (incoming[1].revents & POLLIN) {
+            int fd = accept4(listener, NULL, NULL, SOCK_CLOEXEC);
+            if (fd < 0)
+                continue;
+            struct timeval timeout = { 2, 0 };
+            setsockopt(fd, SOL_SOCKET, SO_SNDTIMEO, &timeout, sizeof(timeout));
+            struct torne_reply reply = { .result = owner >= 0 ? -EBUSY : 0 };
+            if (torne_send_reply(fd, &reply, -1) || owner >= 0)
+                close(fd);
+            else
+                owner = fd;
+        }
     }
+    stop_capture(&receiver);
     exit(0);
 }
 
-static int tune_main(const char *argument, const char *tsid_argument)
+static int tune_main(const char *socket_path, uint32_t channel, uint32_t tsid)
+{
+    int control_fd = torne_client_open(socket_path);
+    if (control_fd < 0) {
+        fprintf(stderr, "Cannot open tuner: %s\n", strerror(errno));
+        return 1;
+    }
+    struct torne_reply reply = { 0 };
+    int stream = -1;
+    if (torne_client_call(control_fd, TORNE_COMMAND_TUNE, channel, tsid, &reply, &stream)) {
+        fprintf(stderr, "Direct USB tuning failed: %s\n", strerror(errno));
+        close(control_fd);
+        return 1;
+    }
+    unsigned char buffer[65536];
+    int result = 0;
+    while (!stopping) {
+        ssize_t length = read(stream, buffer, sizeof(buffer));
+        if (length < 0 && errno == EINTR)
+            continue;
+        if (length <= 0) {
+            result = 1;
+            break;
+        }
+        ssize_t offset = 0;
+        while (offset < length && !stopping) {
+            ssize_t written = write(STDOUT_FILENO, buffer + offset, length - offset);
+            if (written < 0 && errno == EINTR)
+                continue;
+            if (written <= 0) {
+                close(stream);
+                close(control_fd);
+                return errno == EPIPE ? 0 : 1;
+            }
+            offset += written;
+        }
+    }
+    close(stream);
+    close(control_fd);
+    return result;
+}
+
+static int parse_number(const char *argument, uint32_t minimum, uint32_t maximum, uint32_t *number)
 {
     char *end;
     errno = 0;
     unsigned long value = strtoul(argument, &end, 10);
-    if (errno || *end || !*argument || value < 13 || value > 62)
-        return 1;
-    struct torne_capture_request request = { .channel = value };
-    value = strtoul(tsid_argument, &end, 10);
-    if (errno || *end || !*tsid_argument || !value || value > 65535)
-        return 1;
-    request.tsid = value;
-    int fd = torne_socket_connect(TORNE_CAPTURE_SOCKET, SOCK_STREAM);
-    if (fd < 0 || send_all(fd, &request, sizeof(request)))
-        return 1;
-    int32_t status;
-    if (recv(fd, &status, sizeof(status), MSG_WAITALL) != sizeof(status) || status) {
-        fputs("Direct USB tuning failed\n", stderr);
-        return 1;
-    }
-    unsigned char buffer[65536];
-    while (!stopping) {
-        ssize_t length = read(fd, buffer, sizeof(buffer));
-        if (length < 0 && errno == EINTR)
-            continue;
-        if (length <= 0)
-            break;
-        ssize_t offset = 0;
-        while (offset < length) {
-            ssize_t written = write(STDOUT_FILENO, buffer + offset, length - offset);
-            if (written < 0 && errno == EINTR && !stopping)
-                continue;
-            if (written <= 0)
-                return 1;
-            offset += written;
-        }
-    }
-    close(fd);
+    if (errno || *end || !*argument || value < minimum || value > maximum)
+        return -1;
+    *number = value;
     return 0;
 }
 
@@ -452,10 +515,45 @@ int main(int argc, char **argv)
     sigaction(SIGINT, &action, NULL);
     signal(SIGPIPE, SIG_IGN);
     umask(0007);
-    if (argc == 2 && !strcmp(argv[1], "daemon"))
-        return daemon_main();
-    if (argc == 6 && !strcmp(argv[1], "tune") && !strcmp(argv[2], "--ch") && !strcmp(argv[4], "--tsid"))
-        return tune_main(argv[3], argv[5]);
-    fputs("Usage: torne-receiver daemon | tune --ch CHANNEL --tsid TSID\n", stderr);
+    if (argc == 2 && !strcmp(argv[1], "list")) {
+        libusb_context *context;
+        if (libusb_init(&context))
+            return 1;
+        int result = find_devices(context, NULL, NULL);
+        libusb_exit(context);
+        return result ? 1 : 0;
+    }
+    const struct option options[] = {
+        { "device", required_argument, NULL, 'd' },
+        { "socket-dir", required_argument, NULL, 'r' },
+        { "socket", required_argument, NULL, 's' },
+        { "ch", required_argument, NULL, 'c' },
+        { "tsid", required_argument, NULL, 't' },
+        { NULL, 0, NULL, 0 },
+    };
+    const char *device = NULL, *directory = "/run/torne-0", *socket_path = "/run/torne-0/control.sock";
+    uint32_t channel = 0, tsid = 0;
+    optind = 2;
+    int option;
+    if (argc < 2)
+        goto usage;
+    while ((option = getopt_long(argc, argv, "", options, NULL)) != -1) {
+        switch (option) {
+        case 'd': device = optarg; break;
+        case 'r': directory = optarg; break;
+        case 's': socket_path = optarg; break;
+        case 'c': if (parse_number(optarg, 13, 62, &channel)) goto usage; break;
+        case 't': if (parse_number(optarg, 0, 65535, &tsid)) goto usage; break;
+        default: goto usage;
+        }
+    }
+    if (optind != argc)
+        goto usage;
+    if (!strcmp(argv[1], "daemon") && device)
+        return daemon_main(device, directory);
+    if (!strcmp(argv[1], "tune") && channel)
+        return tune_main(socket_path, channel, tsid);
+usage:
+    fputs("Usage: torne-receiver list | daemon --device USB-PORT --socket-dir DIR | tune --socket PATH --ch CHANNEL [--tsid TSID]\n", stderr);
     return 1;
 }

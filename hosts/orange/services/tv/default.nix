@@ -43,6 +43,33 @@ let
     }
   );
   ini = pkgs.formats.ini { };
+  tuners = import ./tuners.nix;
+  tunerCount = builtins.length tuners;
+  nativeChannels = pkgs.writeText "torne-channels.tsv" (
+    lib.concatMapStringsSep "\n" (
+      channel: "${channel.channel}\t${lib.removePrefix "--tsid " channel.extra-args}\t${channel.name}"
+    ) (import ./channels.nix)
+    + "\n"
+  );
+  nativeBonDrivers = pkgs.runCommand "torne-bondrivers" { } (
+    lib.concatMapStringsSep "\n" (
+      tuner:
+      let
+        name = "BonDriver_Torne${tuner.id}.so";
+        settings = ini.generate "${name}.ini" {
+          Torne = {
+            Socket = "/run/torne-${tuner.id}/control.sock";
+            Name = "Sony CECH-ZD1 J ${tuner.id}";
+            Channels = nativeChannels;
+          };
+        };
+      in
+      ''
+        install -Dm555 ${pkgs.local.torne-receiver}/lib/BonDriver_Torne.so $out/${name}
+        ln -s ${settings} $out/${name}.ini
+      ''
+    ) tuners
+  );
   edcbSettings = {
     "Common.ini" = ini.generate "Common.ini" {
       SET = {
@@ -52,43 +79,55 @@ let
         RecExePath = "${pkgs.local.edcb}/bin/EpgDataCap_Bon";
       };
     };
-    "EpgTimerSrv.ini" = ini.generate "EpgTimerSrv.ini" {
-      SET = {
-        EnableTCPSrv = 1;
-        TCPPort = 4510;
-        TCPIPv6 = 0;
-        TCPAccessControlList = "+127.0.0.1";
-        EnableHttpSrv = 0;
-        SaveDebugLog = 1;
-        CompatFlags = 4095;
-        Caption = 1;
-        Data = 1;
-      };
-      REC_DEF = {
-        RecMode = 1;
-        ServiceMode = 49;
-      };
-      "BonDriver_coax.so" = {
-        Count = 0;
-        GetEpg = 0;
-        EPGCount = 0;
-      };
-      "BonDriver_LinuxMirakc.so" = {
-        Count = 1;
-        GetEpg = 1;
-        EPGCount = 1;
-        Priority = 1;
-      };
-      TVTEST = {
-        Num = 1;
-        "0" = "BonDriver_LinuxMirakc.so";
-      };
-      EPG_CAP = {
-        Count = 1;
-        "0" = "04:00";
-        "0Select" = 1;
-      };
-    };
+    "EpgTimerSrv.ini" = ini.generate "EpgTimerSrv.ini" (
+      {
+        SET = {
+          EnableTCPSrv = 1;
+          TCPPort = 4510;
+          TCPIPv6 = 0;
+          TCPAccessControlList = "+127.0.0.1";
+          EnableHttpSrv = 0;
+          SaveDebugLog = 1;
+          CompatFlags = 4095;
+          Caption = 1;
+          Data = 1;
+        };
+        REC_DEF = {
+          RecMode = 1;
+          ServiceMode = 49;
+        };
+        "BonDriver_coax.so" = {
+          Count = 0;
+          GetEpg = 0;
+          EPGCount = 0;
+        };
+        "BonDriver_LinuxMirakc.so" = {
+          Count = tunerCount;
+          GetEpg = 1;
+          EPGCount = tunerCount;
+          Priority = 1;
+        };
+        TVTEST = {
+          Num = 1;
+          "0" = "BonDriver_LinuxMirakc.so";
+        };
+        EPG_CAP = {
+          Count = 1;
+          "0" = "04:00";
+          "0Select" = 1;
+        };
+      }
+      // lib.listToAttrs (
+        map (tuner: {
+          name = "BonDriver_Torne${tuner.id}.so";
+          value = {
+            Count = 0;
+            GetEpg = 0;
+            EPGCount = 0;
+          };
+        }) tuners
+      )
+    );
     "EpgDataCap_Bon.ini" = ini.generate "EpgDataCap_Bon.ini" {
       SET = {
         OpenWait = 0;
@@ -150,6 +189,7 @@ in
   ];
 
   users.groups.tv = { };
+  users.users.keewai.extraGroups = [ "tv" ];
   users.users.tv = {
     isSystemUser = true;
     group = "tv";
@@ -221,6 +261,9 @@ in
         install -d -m 0770 /var/lib/edcb/Setting /var/lib/edcb/lib
         ln -sfn ${pkgs.local.bondriver-linuxmirakc}/lib/BonDriver_LinuxMirakc.so /var/lib/edcb/lib/BonDriver_LinuxMirakc.so
         ln -sfn ${bonDriverConfig} /var/lib/edcb/lib/BonDriver_LinuxMirakc.so.ini
+        for driver in ${nativeBonDrivers}/*; do
+          ln -sfn "$driver" "/var/lib/edcb/lib/$(basename "$driver")"
+        done
         ln -sfn ${recordingHook} /var/lib/edcb/PostRecEnd.lua
         for plugin in ${pkgs.local.edcb}/lib/edcb/*.so ${pkgs.local.b25-decoder}/lib/edcb/*.so; do
           ln -sfn "$plugin" "/var/lib/edcb/lib/$(basename "$plugin")"

@@ -293,10 +293,10 @@ Claude Code と Codex は全ホストで Home Manager が導入し、どのシ�
 
 ### テレビ
 
-Sony CECH-ZD1 J の地デジ1チューナーを 専用の `torne-receiver` → mirakc の順に接続し、KonomiTV のライブ受信と
+Sony CECH-ZD1 J 2台を、機器ごとの `torne-receiver` → mirakc の順に接続し、KonomiTV のライブ受信と
 BonDriver_LinuxMirakc → xtne6f 版 EDCB（Linux ネイティブ）の録画で共有します。
 KonomiTV は EDCB バックエンドの `always_receive_tv_from_mirakurun` を有効にし、番組情報・録画予約は EDCB、放送波は mirakc から取得します。
-mirakc は `127.0.0.1:40772` の内部接続だけで利用します。同じ放送波は共有し、別の放送波で競合した場合は EDCB の録画を優先します。
+mirakc は `127.0.0.1:40772` の内部接続だけで利用します。同じ放送波は共有し、異なる2つの放送波を同時受信できます。チューナー不足の場合は EDCB の録画を優先します。
 内蔵 B-CAS スロットは専用 IFD と標準 pcscd で公開し、ライブは aribb25、EDCB は B25Decoder で復号します。映像は Intel QSV で変換します。
 8TB HDD 上の録画専用ディレクトリは `/srv/storage/KonomiTV/Recordings`、キャプチャは `/srv/storage/KonomiTV/Captures`、設定・番組表は
 `/var/lib/edcb` と `/var/lib/konomitv` に保存します。
@@ -304,7 +304,10 @@ mirakc は `127.0.0.1:40772` の内部接続だけで利用します。同じ放
 再視聴を速くするため、視聴終了後も配信を最大120秒保持します。
 画面で240pを選ぶと、ライブ視聴・録画再生とも H.264 で配信し、端末との互換性を確保します。
 携帯回線の低遅延モードは初回適用時に有効化し、その後の手動変更は維持します。
-専用ドライバーは libusb で直接制御し、初期化と校正を常駐プロセスで保持します。レジスター書き込みは USB コマンドへまとめ、受信に成功した周波数の TMCC を再利用します。フルセグと TMCC のロックに失敗した場合は自動探索へ戻し、PAT の放送局IDを確認してから配信します。連続変更で終了済みの要求は選局せず破棄します。
+専用ドライバーは libusb で直接制御し、初期化と校正を機器ごとの常駐プロセスで保持します。機器とUSB接続位置の対応は [tuners.nix](hosts/orange/services/tv/tuners.nix)、放送局は [channels.nix](hosts/orange/services/tv/channels.nix) で管理します。レジスター書き込みは USB コマンドへまとめ、受信に成功した周波数の TMCC を再利用します。フルセグと TMCC のロックに失敗した場合は自動探索へ戻し、放送局IDを指定した受信では、PAT の整合性とIDを確認してから配信します。受信要求は機器ごとに排他制御し、切断済みの要求は選局せず破棄します。切断時にはUSB転送と待機を解除します。
+[px4_drv本家](https://github.com/nns779/px4_drv) の転送・バッファ設計を参考に、8本の非同期USB転送と受信バッファでUSB受信とアプリへの送信を分離しています。
+直接利用するLinuxネイティブのBonDriver2は `/var/lib/edcb/lib/BonDriver_Torne0.so` と `BonDriver_Torne1.so` です。`CreateBonDriver` と EDCB の `CreateBonStruct` を公開し、選局、信号レベル、TS取得・待機・消去、開閉に対応します。同名の `.so.ini` で制御ソケットと放送局一覧を指定します。設定を省く場合は1台目のソケットとUHF 13〜62chを使います。
+自動録画では `BonDriver_LinuxMirakc.so` の2枠を利用し、KonomiTVとの共有を維持します。直接BonDriverとmirakcは同一機器を同時には占有できません。直接利用するアプリは `tv` グループで実行してください。`keewai` のグループ追加を既存ログインへ反映するには再ログインが必要です。
 NHK総合の京都・神戸とサンテレビ2は、EDCB の表示・EPG取得・検索を無効にし、KonomiTV の一覧にも反映します。
 
 今後の録画は EDCB の `PostRecEnd.lua` からキューへ登録し、`tv-recording-encode` が `tsreplace` と QSVEncC で映像だけを H.265 に置換します。
