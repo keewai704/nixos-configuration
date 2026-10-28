@@ -207,7 +207,7 @@
     "dsh-codex-native-releases": {
       "flake": false,
       "locked": {
-        "narHash": "sha256-4qnh3FCPDjL5xmZeaaEHlUF7l/rRJT4SXydMerUHeJ0=",
+        "narHash": "sha256-Yce1QpsSxk3Th8X5nETtKehThTi6/h6r7Of3V0MgCEI=",
         "type": "file",
         "url": "https://api.github.com/repos/Tests4gptplay/dsh-codex-native/releases?per_page=20"
       },
@@ -441,11 +441,11 @@
     "konomitv": {
       "flake": false,
       "locked": {
-        "lastModified": 1793000310,
-        "narHash": "sha256-Y+aIp4FzoCDyuqMX79Q68njLfU9AbGIH76UFaBMl2hc=",
+        "lastModified": 1793147429,
+        "narHash": "sha256-hW0ZA3ambdaSH7pcWYhznTfES5Z8d+DUnzpi4ry5R10=",
         "ref": "master",
-        "rev": "6b48bb48fad42333a4b22a308c970e61ebfd43be",
-        "revCount": 3962,
+        "rev": "90ca46fa760dd78f072a0bdd5a62bb64b5250520",
+        "revCount": 4118,
         "type": "git",
         "url": "https://github.com/tsukumijima/KonomiTV"
       },
@@ -470,7 +470,7 @@
     "meltype-release": {
       "flake": false,
       "locked": {
-        "narHash": "sha256-QQ4cwNJkQ1aaB6AyLltV2CcQy5+AwijlKgSaJKpvmZU=",
+        "narHash": "sha256-OdczkCWaLQyWboimEwQKAqGI9S4zV3bZQPgBFjHd0jc=",
         "type": "file",
         "url": "https://api.github.com/repos/yksr-melt/Meltype/releases/latest"
       },
@@ -631,11 +631,11 @@
         "treefmt-nix": "treefmt-nix"
       },
       "locked": {
-        "lastModified": 1793128806,
-        "narHash": "sha256-r9uWeVuXfF8BKwfJfvUwV5wwb+KWh7ja06kpgb8caOM=",
+        "lastModified": 1793143897,
+        "narHash": "sha256-cjUgdbBbrNBoHsZZepqOGpNAxmBvNRfKiKvBEGjdveQ=",
         "owner": "4evy",
         "repo": "nixcord",
-        "rev": "38d48251e50ea2c0a07e04fffb9578fbc0c9e8b5",
+        "rev": "3d7b4fcde69ab9638fcb2c2e44198ce58002c1cf",
         "type": "github"
       },
       "original": {
@@ -790,11 +790,11 @@
         "nixpkgs": "nixpkgs_5"
       },
       "locked": {
-        "lastModified": 1793134762,
-        "narHash": "sha256-lTLL/W/BJ5pjN+Bn3Gu+ECQx1Ljf7vHTGAGD1DMAJlc=",
+        "lastModified": 1793140558,
+        "narHash": "sha256-Yzs2k3EPwotXXe5f2dat8Qh5JQGR3YwqlGXIT8rjdfg=",
         "owner": "noctalia-dev",
         "repo": "noctalia",
-        "rev": "0bf4b8d137a02e1eae77460dc371ea943a0c79fe",
+        "rev": "1d091771370e57629a2616501c0b691d9d98607f",
         "type": "github"
       },
       "original": {
@@ -1053,7 +1053,7 @@
     "t3code-releases": {
       "flake": false,
       "locked": {
-        "narHash": "sha256-Nibb19wuH2fw9ucchlFabL2Gb7qM3nysqXPo9LUOC3Y=",
+        "narHash": "sha256-OUDEHpRrJeK6bqnFUXB+qVV5UBsYei2sIzT1yjmQ8uQ=",
         "type": "file",
         "url": "https://api.github.com/repos/pingdotgg/t3code/releases?per_page=100"
       },
@@ -1187,11 +1187,11 @@
         "xdg-desktop-portal-umbriel": "xdg-desktop-portal-umbriel"
       },
       "locked": {
-        "lastModified": 1793137405,
-        "narHash": "sha256-hXhx6pWFxEsswVdYDL2FD1GA7ayIqfFKcV+vP4Rul3s=",
+        "lastModified": 1793147878,
+        "narHash": "sha256-mJAaGQEfIvf1G+3srBG7510dz0D/MMzOWe53NTcGlCw=",
         "owner": "noctalia-dev",
         "repo": "umbriel",
-        "rev": "8c6e5c9d092bc30aa38a4a16d72836e1c3d339bb",
+        "rev": "1d81acbb16ec9a40a3fe6c1f15ffd12cf9840ff7",
         "type": "github"
       },
       "original": {
