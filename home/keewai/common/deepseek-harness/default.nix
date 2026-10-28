@@ -79,7 +79,9 @@ in
       link:${pluginRoot}/rdsh-markdown-cjk \
       link:${pluginRoot}/dsh-locale-ja \
       link:${pluginRoot}/dsh-chatgpt-subscription \
-      link:${pluginRoot}/dsh-subscription-usage
+      link:${pluginRoot}/dsh-subscription-usage \
+      link:${pluginRoot}/dsh-history-window \
+      link:${pluginRoot}/dsh-restart-recovery
     ${lib.hm.generators.mkImpureConfigMerger {
       inherit pkgs;
       format = "yaml";

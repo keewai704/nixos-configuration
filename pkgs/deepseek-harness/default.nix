@@ -102,6 +102,8 @@ buildNpmPackage {
     ln -s ../plugins/claude "$out/lib/deepseek-harness/node_modules/dsh-claude-agent"
     ln -s ../plugins/chatgpt "$out/lib/deepseek-harness/node_modules/dsh-chatgpt-subscription"
     ln -s ../plugins/usage "$out/lib/deepseek-harness/node_modules/dsh-subscription-usage"
+    ln -s ../plugins/history-window "$out/lib/deepseek-harness/node_modules/dsh-history-window"
+    ln -s ../plugins/restart-recovery "$out/lib/deepseek-harness/node_modules/dsh-restart-recovery"
     cp -r ${mobilePlugin} "$out/lib/deepseek-harness/node_modules/dsh-mobile-maxxing"
     localeRoot="$out/lib/deepseek-harness/node_modules/dsh-locale-ja"
     cp -r ${mobilePlugin}/packages/dsh-locale-ja "$localeRoot"
@@ -145,7 +147,10 @@ buildNpmPackage {
     runHook preInstallCheck
     "$out/bin/dsh" --version | grep -Fx '${(lib.importJSON release).version}'
     ${lib.getExe nodejs} --expose-internals ${./test-runtime.mjs} "$out/lib/deepseek-harness/node_modules"
-    ${lib.getExe nodejs} --expose-internals --test "$out/lib/deepseek-harness/plugins/usage/test-usage.mjs"
+    ${lib.getExe nodejs} --expose-internals --test \
+      "$out/lib/deepseek-harness/plugins/usage/test-usage.mjs" \
+      "$out/lib/deepseek-harness/plugins/history-window/test-history.mjs" \
+      "$out/lib/deepseek-harness/plugins/restart-recovery/test-recovery.mjs"
     localeCheck="$TMPDIR/dsh-locale-check"
     cp -r ${mobilePlugin} "$localeCheck"
     chmod -R u+w "$localeCheck"
@@ -164,7 +169,9 @@ buildNpmPackage {
       link:"$out/lib/deepseek-harness/node_modules/rdsh-markdown-cjk" \
       link:"$out/lib/deepseek-harness/node_modules/dsh-locale-ja" \
       link:"$out/lib/deepseek-harness/node_modules/dsh-chatgpt-subscription" \
-      link:"$out/lib/deepseek-harness/node_modules/dsh-subscription-usage"
+      link:"$out/lib/deepseek-harness/node_modules/dsh-subscription-usage" \
+      link:"$out/lib/deepseek-harness/node_modules/dsh-history-window" \
+      link:"$out/lib/deepseek-harness/node_modules/dsh-restart-recovery"
     "$out/bin/dsh" --profile web --dump-config > "$TMPDIR/dsh-composed.yml"
     runHook postInstallCheck
   '';

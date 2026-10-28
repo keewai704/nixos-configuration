@@ -12,6 +12,8 @@ for (const plugin of [
   "dsh-claude-agent",
   "dsh-chatgpt-subscription",
   "dsh-subscription-usage",
+  "dsh-history-window",
+  "dsh-restart-recovery",
 ]) {
   const require = createRequire(join(directory, plugin, "package.json"));
   for (const name of ["@deepseek-ai/cordis", "@deepseek-ai/dsh-llm"]) {
@@ -27,6 +29,8 @@ for (const path of [
   "dsh-claude-agent/index.mjs",
   "dsh-chatgpt-subscription/index.mjs",
   "dsh-subscription-usage/index.mjs",
+  "dsh-history-window/index.mjs",
+  "dsh-restart-recovery/index.mjs",
 ]) {
   const plugin = await import(join(directory, path));
   assert.equal(typeof plugin.apply, "function");

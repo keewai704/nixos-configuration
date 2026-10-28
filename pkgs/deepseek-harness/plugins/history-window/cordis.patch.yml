@@ -1,0 +1,4 @@
+- insert:
+    - id: dsh-history-window
+      name: dsh-history-window
+      config: {}

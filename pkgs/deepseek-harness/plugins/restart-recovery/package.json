@@ -1,0 +1,15 @@
+{
+  "name": "dsh-restart-recovery",
+  "version": "0.1.0",
+  "type": "module",
+  "description": "Resume interrupted root tasks after a DSH service restart without replaying stopped or completed work",
+  "license": "MIT",
+  "exports": {
+    ".": "./index.mjs"
+  },
+  "dsh": {
+    "bundle": {
+      "patch": "./cordis.patch.yml"
+    }
+  }
+}

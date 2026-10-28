@@ -1,0 +1,15 @@
+{
+  "name": "dsh-history-window",
+  "version": "0.1.0",
+  "type": "module",
+  "description": "Bound initial conversation history while preserving backward paging and model context",
+  "license": "MIT",
+  "exports": {
+    ".": "./index.mjs"
+  },
+  "dsh": {
+    "bundle": {
+      "patch": "./cordis.patch.yml"
+    }
+  }
+}
