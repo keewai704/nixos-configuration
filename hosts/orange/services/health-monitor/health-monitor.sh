@@ -114,11 +114,12 @@ check_fresh_file() {
 
 check_units() {
   local unit failed_units
+  local -a user_units=(@monitoredUserUnits@)
   for unit in @monitoredUnits@; do
     check_unit "$unit"
   done
 
-  for unit in @monitoredUserUnits@; do
+  for unit in "${user_units[@]}"; do
     if runuser --user keewai -- env XDG_RUNTIME_DIR="/run/user/$(id -u keewai)" \
       systemctl --user is-active --quiet "$unit"; then
       clear_alert "user-service-${unit%.service}"
