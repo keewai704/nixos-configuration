@@ -335,6 +335,7 @@ T3 は複数の接続先・アカウントもプールします。このプラ�
 | KonomiTV | `https://orange.tail1e65cd.ts.net/tv/` | [tv/](hosts/orange/services/tv/) |
 | Samba | HDD の共有 | [samba.nix](hosts/orange/services/samba.nix) |
 | Minecraft | Fabric サーバー | [minecraft.nix](hosts/orange/services/minecraft.nix) |
+| Pond お試し VM | `https://orange.tail1e65cd.ts.net/pond/` | [pond.nix](hosts/orange/services/pond.nix) |
 | Tailscale 出口ノード | 出口ノード | [tailscale-exit-node.nix](hosts/orange/services/tailscale-exit-node.nix) |
 | 公開の経路 | nginx と Tailscale Serve | [web.nix](hosts/orange/services/web.nix) |
 
@@ -345,6 +346,21 @@ T3 は複数の接続先・アカウントもプールします。このプラ�
   [maintenance](hosts/orange/services/maintenance.nix) がログの掃除・TRIM・Nix ストアの保守を受け持ちます。
 - 長いシェル処理は `.sh` のテンプレートに書き、`@名前@` を `fillTemplate`（[default.nix](hosts/orange/default.nix)）で
   置き換えて使います。テンプレートを直接実行しないでください。
+
+### Pond お試し VM
+
+[Pond](https://www.butterfly.so/pond) は Orange の QEMU/KVM 仮想マシンで試します。
+NixOS のデスクトップや実ディスクのパーティションは置き換えません。
+Tailscale 接続中に [ブラウザーの操作画面](https://orange.tail1e65cd.ts.net/pond/) を開きます。
+初回は公式 ISO のインストーラーが起動します。インストール先は VM 専用の 24 GiB の仮想ディスクです。
+
+- 2 vCPU、メモリー 2 GiB、virtio GPU の描画を使います。ブラウザーの画面転送には音声は含まれません。
+- 仮想ディスクと UEFI 設定は `/var/lib/pond/` に保持します。ホストのホームやストレージは VM に共有しません。
+- 起動・停止は `sudo systemctl start pond-vm` / `sudo systemctl stop pond-vm`、ログは `journalctl -u pond-vm` です。
+  停止時はゲストへ電源ボタンを通知し、最大60秒待ってから終了します。
+- noVNC のファイルと WebSocket は共通の HTTPS 443 から配信します。QEMU の WebSocket はループバックのみ、
+  VNC と管理コンソールは専用 Unix ソケットのみです。画面操作の許可範囲は tailnet のアクセス制御に従います。
+- ISO は `pond-iso` 入力で固定し、`nix flake update` で更新します。ゲスト内のインストール内容はゲスト自身が管理します。
 
 ### テレビ
 

@@ -13,6 +13,7 @@ in
     ./services/maintenance.nix
     ./services/minecraft.nix
     ./services/obsidian-livesync.nix
+    ./services/pond.nix
     ./services/samba.nix
     ./services/smart-tests.nix
     ./services/storage.nix

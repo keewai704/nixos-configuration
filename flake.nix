@@ -27,6 +27,11 @@
   inputs = {
     nixpkgs.url = "github:NixOS/nixpkgs/nixos-unstable";
 
+    pond-iso = {
+      url = "file+https://releases.butterfly.so/iso";
+      flake = false;
+    };
+
     torne-driver = {
       url = "git+https://github.com/mihalinn/torne_drv?ref=main";
       flake = false;
