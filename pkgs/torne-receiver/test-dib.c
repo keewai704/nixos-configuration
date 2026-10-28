@@ -42,6 +42,24 @@ int torne_i2c_write_read(struct torne_bridge *bridge, u8 address, const u8 *data
     return bus->error;
 }
 
+int torne_i2c_modify16(struct torne_bridge *bridge, u8 address, u16 reg, u16 keep, u16 set)
+{
+    return ((struct fake_bus *)bridge->priv)->error;
+}
+
+int torne_i2c_read_words(struct torne_bridge *bridge, u8 address, const u16 *registers, u16 *values,
+                       unsigned int count)
+{
+    for (unsigned int i = 0; i < count; i++) {
+        u8 request[2] = { registers[i] >> 8, registers[i] }, reply[2];
+        int result = torne_i2c_write_read(bridge, address, request, 2, reply, 2);
+        if (result)
+            return result;
+        values[i] = (u16)reply[0] << 8 | reply[1];
+    }
+    return 0;
+}
+
 static struct torne_dib pending(struct torne_bridge *bridge)
 {
     struct torne_dib demod;

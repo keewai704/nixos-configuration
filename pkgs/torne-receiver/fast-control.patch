@@ -19,9 +19,28 @@
  int torne_bridge_reset_demodulator(struct torne_bridge *b);
  /* raw 32-bit chip memory access (the card slot's UART registers); errors are kept in b->err */
  u32 torne_mem_read32(struct torne_bridge *b, u32 address);
+@@ -78,6 +83,8 @@
+ int torne_i2c_read(struct torne_bridge *b, u8 address, u8 *data, unsigned int len);
+ int torne_i2c_write_read(struct torne_bridge *b, u8 address, const u8 *wdata, unsigned int wlen, u8 *rdata,
+ 			 unsigned int rlen);
++int torne_i2c_modify16(struct torne_bridge *b, u8 address, u16 reg, u16 keep, u16 set);
++int torne_i2c_read_words(struct torne_bridge *b, u8 address, const u16 *registers, u16 *values, unsigned int count);
+ /* stream */
+ int torne_bridge_prepare_stream(struct torne_bridge *b);
+ int torne_bridge_start_stream(struct torne_bridge *b);
 --- a/driver/torne_bridge.c
 +++ b/driver/torne_bridge.c
-@@ -178,14 +178,22 @@
+@@ -10,9 +10,6 @@
+  * cores (FR30 CPUs) are started with small programs (I2C master, stream
+  * packetizer), and the TS engine feeds the demodulator's parallel output into
+  * an SDRAM ring that core 0 sends to bulk endpoint 0x81 in 192-byte units.
+- *
+- * Not ported (performance only): the register ring and the bulk command
+- * channel of codec core 1. Every I2C access goes through the mailbox.
+  */
+ #include "torne_core.h"
+ #include "torne_regs.h"
+@@ -178,14 +175,22 @@
  	}
  }
  
@@ -45,14 +64,12 @@
  }
  
  /* 16-bit registers sit in the high half of their word */
-@@ -224,6 +232,125 @@
- 			put_be32(buf + i * 4, words[off + i]);
- 		write_block(b, address + off * 4, buf, n * 4);
+@@ -226,6 +231,126 @@
  	}
-+}
+ }
+ 
 +
-+
-+static int command_send(struct torne_bridge *b, bool answer, u32 *value)
++static int command_send(struct torne_bridge *b, bool answer, u32 *values, unsigned int count)
 +{
 +    u8 packet[512] = { 0 }, reply[64];
 +    u32 sequence = b->command_sequence, status;
@@ -101,19 +118,20 @@
 +    }
 +    status = be32(reply + 4);
 +    i = status & 0xff;
-+    if (i > 14 || 8 + i * 4 > (unsigned int)length || (value && i != 1))
++    if (i > 14 || 8 + i * 4 > (unsigned int)length || i != count)
 +        keep_err(b, -EPROTO);
 +    if ((status >> 16) & 0xff)
 +        keep_err(b, -EIO);
-+    if (value && !b->err)
-+        *value = be32(reply + 8);
++    if (!b->err)
++        for (i = 0; i < count; i++)
++            values[i] = be32(reply + 8 + i * 4);
 +    return b->err;
 +}
 +
 +static int command_push(struct torne_bridge *b, u32 word)
 +{
 +    if (b->command_count == 125)
-+        command_send(b, false, NULL);
++        command_send(b, false, NULL, 0);
 +    if (!b->err)
 +        b->command_words[b->command_count++] = word;
 +    return b->err;
@@ -122,7 +140,7 @@
 +int torne_bridge_flush(struct torne_bridge *b)
 +{
 +    if (b->command_enabled && b->command_count)
-+        command_send(b, true, NULL);
++        command_send(b, true, NULL, 0);
 +    return b->err;
 +}
 +
@@ -130,17 +148,17 @@
 +{
 +    u32 value = 0;
 +    if (b->command_count + 2 > 125)
-+        command_send(b, false, NULL);
++        command_send(b, false, NULL, 0);
 +    command_push(b, 0x48000000u);
 +    command_push(b, address);
-+    command_send(b, true, &value);
++    command_send(b, true, &value, 1);
 +    return value;
 +}
 +
 +static void command_memory_write(struct torne_bridge *b, u32 address, u32 value)
 +{
 +    if (b->command_count + 3 > 125)
-+        command_send(b, false, NULL);
++        command_send(b, false, NULL, 0);
 +    command_push(b, 0x08000000u);
 +    command_push(b, address);
 +    command_push(b, value);
@@ -164,14 +182,16 @@
 +        if (b->ops->bulk(b->priv, 0x83, stale, sizeof(stale), 5) <= 0)
 +            break;
 +    b->command_enabled = true;
-+    if (command_send(b, true, NULL))
++    if (command_send(b, true, NULL, 0))
 +        return b->err;
 +    LOG(b, TORNE_LOG_INFO, "MB86H47A bulk register commands enabled");
 +    return 0;
- }
- 
++}
++
  /* ---- widening of the memory request ---- */
-@@ -464,6 +591,9 @@
+ 
+ static bool jump_target(u32 word, u32 *target)
+@@ -464,6 +589,9 @@
  	write32(b, CORE1_BASE + RING_ANSWER, (u32)(RING_SLOTS - 1) << 24);
  	write32(b, CORE1_BASE, 0xfffcffff);
  	b->sequence = 0;
@@ -181,7 +201,7 @@
  	before = read32(b, CORE1_BASE + MAILBOX + MAILBOX_ALIVE);
  	b->ops->msleep(b->priv, 1);
  	after = read32(b, CORE1_BASE + MAILBOX + MAILBOX_ALIVE);
-@@ -498,7 +628,8 @@
+@@ -498,7 +626,8 @@
  	i2c_init(b);
  	if (b->err)
  		return b->err;
@@ -191,7 +211,7 @@
  }
  
  int torne_bridge_reset_demodulator(struct torne_bridge *b)
-@@ -547,6 +678,8 @@
+@@ -547,6 +676,8 @@
  	u64 deadline;
  	int err;
  
@@ -200,7 +220,7 @@
  	if (wlen > I2C_MAX_TRANSFER || rlen > I2C_MAX_TRANSFER) {
  		LOG(b, TORNE_LOG_ERR, "MB86H47A I2C transfer of %u+%u bytes is longer than %d", wlen, rlen,
  		    I2C_MAX_TRANSFER);
-@@ -585,7 +718,13 @@
+@@ -585,7 +716,13 @@
  
  int torne_i2c_write(struct torne_bridge *b, u8 address, const u8 *data, unsigned int len)
  {
@@ -215,7 +235,7 @@
  }
  
  int torne_i2c_read(struct torne_bridge *b, u8 address, u8 *data, unsigned int len)
-@@ -596,7 +735,26 @@
+@@ -596,7 +733,77 @@
  int torne_i2c_write_read(struct torne_bridge *b, u8 address, const u8 *wdata, unsigned int wlen, u8 *rdata,
  			 unsigned int rlen)
  {
@@ -232,7 +252,7 @@
 +        }
 +        if (supported) {
 +            command_push(b, word | 0x40000000u);
-+            if (command_send(b, true, &value))
++            if (command_send(b, true, &value, 1))
 +                return b->err;
 +            rdata[0] = value >> 8;
 +            rdata[1] = value;
@@ -240,10 +260,61 @@
 +        }
 +    }
 +    return i2c_transfer(b, address, wdata, wlen, rdata, rlen);
++}
++
++int torne_i2c_modify16(struct torne_bridge *b, u8 address, u16 reg, u16 keep, u16 set)
++{
++    if (b->command_enabled && address == 0x12 && reg <= 0x7ff) {
++        if (b->command_count + 2 > 125)
++            command_send(b, false, NULL, 0);
++        command_push(b, 0x10000000u | (u32)reg << 16 | set);
++        return command_push(b, 0x18000000u | keep);
++    }
++    u8 data[4] = { reg >> 8, reg }, reply[2];
++    int result = torne_i2c_write_read(b, address, data, 2, reply, 2);
++    if (result)
++        return result;
++    u16 value = (((u16)reply[0] << 8 | reply[1]) & keep) | set;
++    data[2] = value >> 8;
++    data[3] = value;
++    return torne_i2c_write(b, address, data, sizeof(data));
++}
++
++int torne_i2c_read_words(struct torne_bridge *b, u8 address, const u16 *registers, u16 *values, unsigned int count)
++{
++    unsigned int i;
++    bool supported = b->command_enabled && address == 0x12;
++    if (count > 14)
++        return -EINVAL;
++    if (!count)
++        return b->err;
++    for (i = 0; i < count; i++)
++        if (registers[i] > 0x7ff)
++            supported = false;
++    if (supported) {
++        u32 reply[14];
++        if (b->command_count + count > 125)
++            command_send(b, false, NULL, 0);
++        for (i = 0; i < count; i++)
++            command_push(b, 0x40000000u | (u32)registers[i] << 16);
++        if (command_send(b, true, reply, count))
++            return b->err;
++        for (i = 0; i < count; i++)
++            values[i] = reply[i];
++        return 0;
++    }
++    for (i = 0; i < count; i++) {
++        u8 data[2] = { registers[i] >> 8, registers[i] }, reply[2];
++        int result = torne_i2c_write_read(b, address, data, 2, reply, 2);
++        if (result)
++            return result;
++        values[i] = (u16)reply[0] << 8 | reply[1];
++    }
++    return 0;
  }
  
  /* ---- stream ---- */
-@@ -658,8 +816,10 @@
+@@ -658,8 +865,10 @@
  	write32(b, TORNE_REG_USB_DMA1_CONFIG, 0xb09f2000);
  	write32(b, TORNE_REG_USB_DMA1_CONTROL, 2);
  	/* channel DMA[8] would take what arrives on endpoint 0x02; it stays held */
@@ -256,7 +327,7 @@
  	/* USB-core registers take whole words */
  	write32(b, TORNE_REG_USB_EP1_CONTROL, 0x00ff6001); /* EP1 reset */
  	for (i = 0; i < 100 && !b->err && (read32(b, TORNE_REG_USB_EP1_CONTROL) & 1); i++)
-@@ -670,6 +830,8 @@
+@@ -670,6 +879,8 @@
  
  int torne_bridge_prepare_stream(struct torne_bridge *b)
  {
@@ -265,7 +336,7 @@
  	b->err = 0;
  	stream_setup(b);
  	return b->err;
-@@ -678,6 +840,8 @@
+@@ -678,6 +889,8 @@
  /* lets the demodulator's output in: the input, its timestamp clock and the ring writer */
  int torne_bridge_start_stream(struct torne_bridge *b)
  {
@@ -274,7 +345,7 @@
  	b->err = 0;
  	write32(b, 0xd01020, 0);
  	write32(b, 0xd01040, 0x03000000); /* input on */
-@@ -694,6 +858,8 @@
+@@ -694,6 +907,8 @@
  /* holds core 0 and the engine's input, so nothing more reaches the endpoint */
  int torne_bridge_stop_stream(struct torne_bridge *b)
  {
@@ -304,7 +375,19 @@
  	d->br->ops->msleep(d->br->priv, ms);
  }
  
-@@ -1597,6 +1598,22 @@
+@@ -255,7 +256,10 @@
+ {
+ 	if (d->err)
+ 		return;
+-	dib_write_word(d, reg, (u16)((dib_read_word(d, reg) & keep) | set));
++	int rc = torne_i2c_modify16(d->br, TORNE_DIB_I2C_ADDRESS, reg, keep, set);
++	if (rc)
++		LOG(d, TORNE_LOG_ERR, "modify DiB8000 register %u: %d", reg, rc);
++	record(d, rc);
+ }
+ 
+ static u32 dib_read32(struct torne_dib *d, u16 reg)
+@@ -1597,6 +1601,22 @@
  	return dib_read_word(d, 568);
  }
  
@@ -327,7 +410,7 @@
  /* whether every parameter is known, so the autosearch can be skipped; with only a frequency known it never is */
  static bool is_manual_mode(struct dib_channel *c)
  {
-@@ -1837,7 +1854,7 @@
+@@ -1837,7 +1857,7 @@
  
  	case DEMOD_STEP10: /* 40 */
  		locks = read_lock(d);
@@ -336,7 +419,74 @@
  			d->status = STATUS_DATA_LOCKED;
  			d->tune_state = DEMOD_STOP;
  		} else if (now > d->timeout_ms) {
-@@ -3231,7 +3248,7 @@
+@@ -1890,18 +1910,30 @@
+ static void get_frontend(struct torne_dib *d)
+ {
+ 	struct dib_channel *c = &d->c;
++	static const u16 registers[14] = {
++		570, 505, 493, 499, 481, 487, 494, 500, 482, 488, 495, 501, 483, 489,
++	};
++	u16 values[14];
+ 	u16 val;
+ 	u16 i;
+ 
+ 	c->bandwidth_hz = 6000000;
+ 
+ 	/* called too early, this makes the tune either not lock or not sync; so do nothing until the frontend has TMCC sync */
+-	if (!(read_status_bits(d) & FE_HAS_SYNC))
++	if ((read_lock(d) & 0x1e) != 0x1e)
+ 		return;
+ 
+ 	dib_read_word(d, 508); /* ISDB-Tsb mode: read and dropped */
++	if (d->err)
++		return;
++	int rc = torne_i2c_read_words(d->br, TORNE_DIB_I2C_ADDRESS, registers, values, 14);
++	if (rc)
++		LOG(d, TORNE_LOG_ERR, "read DiB8000 TMCC: %d", rc);
++	record(d, rc);
++	if (d->err)
++		return;
+ 
+-	val = dib_read_word(d, 570);
++	val = values[0];
+ 	c->inversion = (val & 0x40) >> 6;
+ 	switch ((val & 0x30) >> 4) {
+ 	case 1:
+@@ -1930,20 +1962,20 @@
+ 		break;
+ 	}
+ 
+-	val = dib_read_word(d, 505);
++	val = values[1];
+ 	c->isdbt_partial_reception = val & 1;
+ 
+ 	for (i = 0; i < 3; i++) {
+-		val = dib_read_word(d, 493 + i) & 0x0f;
++		val = values[2 + i * 4] & 0x0f;
+ 		c->layer[i].segment_count = (u8)val;
+ 
+-		val = dib_read_word(d, 499 + i) & 0x3;
++		val = values[3 + i * 4] & 0x3;
+ 		/* interleaving can be 0, 1, 2 or 4 */
+ 		if (val == 3)
+ 			val = 4;
+ 		c->layer[i].interleaving = (u8)val;
+ 
+-		val = dib_read_word(d, 481 + i);
++		val = values[4 + i * 4];
+ 		switch (val & 0x7) {
+ 		case 1:
+ 			c->layer[i].fec = FEC_1_2;
+@@ -1962,7 +1994,7 @@
+ 			break;
+ 		}
+ 
+-		val = dib_read_word(d, 487 + i);
++		val = values[5 + i * 4];
+ 		switch (val & 0x3) {
+ 		case 0:
+ 			c->layer[i].modulation = MODULATION_DQPSK;
+@@ -3231,7 +3263,7 @@
  
  		/* dib0090_tune counts in 0.1ms, but Linux sleeps in whole jiffies and found that anything below 10ms can keep
  		 * the tuner from locking; so it rounds up to 10ms steps */
@@ -345,7 +495,7 @@
  		msleep_(d, ret);
  		if (d->t_tune_state == TUNER_STOP)
  			break;
-@@ -3403,7 +3420,7 @@
+@@ -3403,7 +3435,7 @@
  			break;
  
  		/* agc_startup counts in 0.1ms, but Linux sleeps in whole jiffies; round up to 10ms steps */
@@ -354,7 +504,7 @@
  		msleep_(d, wait);
  		if (d->tune_state == AGC_STOP)
  			break;
-@@ -3547,7 +3564,7 @@
+@@ -3547,7 +3579,7 @@
  	return d->err;
  }
  
@@ -363,12 +513,10 @@
  {
  	d->err = 0;
  
-@@ -3579,6 +3596,52 @@
- 	d->c.frequency = frequency_hz;
- 
+@@ -3581,6 +3613,52 @@
  	return dib_set_frontend(d) ?: d->err;
-+}
-+
+ }
+ 
 +static int finish_tune(struct torne_dib *d, int result)
 +{
 +    u64 deadline = now_ms(d) + 1000;
@@ -413,6 +561,8 @@
 +    if (!result && d->status == STATUS_DATA_LOCKED && is_manual_mode(&d->c))
 +        d->acquired[d->acquired_next++ % 50] = d->c;
 +    return result;
- }
- 
++}
++
  /* linear interpolation in a descending table (interpolate_value) */
+ static u32 interpolate_value(u32 value, const struct linear_segment *segments, int length)
+ {
