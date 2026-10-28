@@ -866,18 +866,6 @@
         "url": "https://github.com/t4t5/owly"
       }
     },
-    "pond-iso": {
-      "flake": false,
-      "locked": {
-        "narHash": "sha256-8N8rai9KdRn84aWIVhTTzVsQjstIFsd2+wTdJDtKgos=",
-        "type": "file",
-        "url": "https://releases.butterfly.so/iso"
-      },
-      "original": {
-        "type": "file",
-        "url": "https://releases.butterfly.so/iso"
-      }
-    },
     "proton-wineland-release": {
       "flake": false,
       "locked": {
@@ -972,7 +960,6 @@
         "noctalia": "noctalia",
         "noctalia-templates": "noctalia-templates",
         "owly": "owly",
-        "pond-iso": "pond-iso",
         "proton-wineland-release": "proton-wineland-release",
         "pyproject-build-systems": "pyproject-build-systems",
         "pyproject-nix": "pyproject-nix",
