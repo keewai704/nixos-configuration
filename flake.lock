@@ -304,11 +304,11 @@
         ]
       },
       "locked": {
-        "lastModified": 1791657700,
-        "narHash": "sha256-vcCAvhtA7hG+/gOge29hYHy7I/dLkIsr5nLx4sFEQic=",
+        "lastModified": 1793200762,
+        "narHash": "sha256-oZ055iZrhdr6BemnmU825xz3AlGIoYHdPJgPKFaKXo0=",
         "ref": "master",
-        "rev": "ddc400a6883b042646d0940e65971bb7f7e96107",
-        "revCount": 573,
+        "rev": "489adad94b0360044ae9b16f5265925f73d439f0",
+        "revCount": 574,
         "type": "git",
         "url": "https://github.com/pyproject-nix/pyproject.nix"
       },
@@ -375,7 +375,7 @@
     "t3code-releases": {
       "flake": false,
       "locked": {
-        "narHash": "sha256-MMa+A5814QYBlslzYzNkoT0qTNtOwFo+9tpA9TKPC8Y=",
+        "narHash": "sha256-uXWEr0Qvu2l2/S/gpNC/eSOQBYP2GyYrJ6TEbYZ+hKk=",
         "type": "file",
         "url": "https://api.github.com/repos/pingdotgg/t3code/releases?per_page=100"
       },
