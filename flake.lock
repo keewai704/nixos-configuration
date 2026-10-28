@@ -207,7 +207,7 @@
     "dsh-codex-native-releases": {
       "flake": false,
       "locked": {
-        "narHash": "sha256-h8OEvaORWmk8rhUBa8JIt82bW7ZkXfFJ3y2PpuY4hAo=",
+        "narHash": "sha256-slO9i5KHFAlI0zlyUV7g/aUEde4NaJeshlf3VibK2cM=",
         "type": "file",
         "url": "https://api.github.com/repos/Tests4gptplay/dsh-codex-native/releases?per_page=20"
       },
@@ -219,11 +219,11 @@
     "dsh-mobile-maxxing": {
       "flake": false,
       "locked": {
-        "lastModified": 1793166736,
-        "narHash": "sha256-83ONL97X6ljNs0mA9gfSJT3AmGKiiKX4dNhJHItfToE=",
+        "lastModified": 1793170036,
+        "narHash": "sha256-uMoizYP05gMUngS+YiJsaUUUltpO6Oa4qClTK4Ud0Qc=",
         "owner": "kuraneko1",
         "repo": "dsh-mobile-maxxing",
-        "rev": "463676b3fbf415968ab98991f415ddbe67d44d40",
+        "rev": "c0867ecb9dcc7d6abd04648997c3487430121a8c",
         "type": "github"
       },
       "original": {
@@ -441,11 +441,11 @@
     "konomitv": {
       "flake": false,
       "locked": {
-        "lastModified": 1793164386,
-        "narHash": "sha256-9AFNu65yXQLllamT6xjpBtxCyXwFBMTIYPI1IJAU3Tk=",
+        "lastModified": 1793168008,
+        "narHash": "sha256-rdMSjz203R8pwY0y0VsrN47axCsIRWeNdEBgiqeXQjg=",
         "ref": "master",
-        "rev": "dd70757575740e0c5362101241d3ab2631957c13",
-        "revCount": 4158,
+        "rev": "8cf7f0fd3110a61c70c24a467eaaa265a16e2711",
+        "revCount": 4159,
         "type": "git",
         "url": "https://github.com/tsukumijima/KonomiTV"
       },
@@ -470,7 +470,7 @@
     "meltype-release": {
       "flake": false,
       "locked": {
-        "narHash": "sha256-2I7nury9hJOFX3+7uuXquL4DL8nLCJP+gMqGpULWfTo=",
+        "narHash": "sha256-t+3XDk89vIBcNPj6sqMQkQg0LHm1Quydpu5z90Tm6iU=",
         "type": "file",
         "url": "https://api.github.com/repos/yksr-melt/Meltype/releases/latest"
       },
@@ -1066,7 +1066,7 @@
     "t3code-releases": {
       "flake": false,
       "locked": {
-        "narHash": "sha256-IcpWHPuSTHFUofZu4e/OsvP2tgftfKIg+8TDg3LjGkE=",
+        "narHash": "sha256-ERgn/fdKcvSZ2swn7Rko9OvNun6Iee9OBgfnLGF5W8k=",
         "type": "file",
         "url": "https://api.github.com/repos/pingdotgg/t3code/releases?per_page=100"
       },
