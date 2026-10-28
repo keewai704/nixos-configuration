@@ -1,16 +1,15 @@
 # nixos-configuration
 
-2台の NixOS マシンの設定です。どちらも `x86_64-linux` です。
+自宅サーバー `orange`（`x86_64-linux`）の NixOS 設定です。
 
 | ホスト | 役割 |
 | --- | --- |
-| `citrus` | デスクトップ（Umbriel、Noctalia v5、NVIDIA、Steam、Sunshine 配信） |
 | `orange` | 自宅サーバー（Immich、Vaultwarden、Samba、Minecraft、バックアップ） |
 
 OS・ハードウェア・システムサービスは **NixOS**、個人のアプリや設定は **Home Manager** で管理します。
 作業ルール（検証・コミット・適用の手順）は [AGENTS.md](AGENTS.md) にあります。
 
-両ホストの Tailscale SSH は、[Tailworm の報告](https://tailworm.com/)への暫定対策として
+orange の Tailscale SSH は、[Tailworm の報告](https://tailworm.com/)への暫定対策として
 TCP・Unix ソケットのローカル／リモート転送を禁止しています。SSH ログインは利用できます。
 `tailscaled` のメモリは 1 GiB、スワップは 0 に制限し、メモリ枯渇時の影響を抑えます。
 設定は [modules/common/network.nix](modules/common/network.nix) で管理します。
@@ -19,39 +18,29 @@ TCP・Unix ソケットのローカル／リモート転送を禁止していま
 
 ```text
 .
-├── flake.nix            入力（依存リポジトリ）、ホスト一覧、開発用シェル
-├── hosts/               マシンごとの設定
-│   ├── citrus/          ハードウェア、起動、カーネル、音声、Sunshine など
-│   └── orange/          ハードウェア、起動、settings.nix、services/ にサーバー機能
-├── modules/             NixOS 側の共通設定
-│   ├── common/          全ホスト共通（Nix、ネットワーク、ユーザー、Home Manager の接続）
-│   └── desktop/         デスクトップの OS 側（Umbriel、Steam、Stylix、CPU スケジューラーなど）
-├── home/keewai/         個人設定（Home Manager）
-│   ├── common/          全ホスト共通（シェル、Git、コーディングエージェント、T3 Code）
-│   └── desktop/         デスクトップ用アプリ（ブラウザー、端末、入力、Noctalia など）
+├── flake.nix            入力（依存リポジトリ）、orange の構成、開発用シェル
+├── hosts/orange/        ハードウェア、起動、settings.nix、services/ にサーバー機能
+├── modules/common/     Nix、ネットワーク、ユーザー、Home Manager の接続
+├── home/keewai/common/  個人設定（シェル、Git、コーディングエージェント、T3 Code）
 ├── pkgs/                自作・改造パッケージとパッチ
-├── skills/              Claude Code に配る個人スキル
-├── themes/              共通テーマ（色・フォント・壁紙）
+├── skills/              Claude Code・Codex に配る個人スキル
 └── secrets/             agenix で暗号化した秘密情報
 ```
 
 1つの機能が複数のファイルを使う場合は、ディレクトリにまとめて `default.nix` を入口にします
-（例：`home/keewai/desktop/noctalia/`、`apple-sharing/`）。シェルスクリプトや画像などの素材も、
+（例：`home/keewai/common/shell/`、`hosts/orange/services/tv/`）。シェルスクリプトなどの素材も、
 使う側の `.nix` と同じ場所に置きます。
 
 ### 読み込みの流れ
 
 ```text
 flake.nix
-└── nixosConfigurations.<host>
-    ├── modules/common            全ホスト
+└── nixosConfigurations.orange
+    ├── modules/common
     │   └── home-manager.nix  →  home/keewai/common
-    └── hosts/<host>
-        └── (citrus のみ) modules/desktop  →  home/keewai/desktop
+    └── hosts/orange
+        └── services/        サーバー機能
 ```
-
-ホストを増やすときは `hosts/<名前>/default.nix` を作り、`flake.nix` のホスト一覧に名前を加えます。
-デスクトップにする場合は、その imports に `../../modules/desktop` を加えます。
 
 ## やりたいこと別の編集先
 
@@ -62,19 +51,7 @@ flake.nix
 | Git / GitHub CLI | [git.nix](home/keewai/common/git.nix) |
 | Claude Code・Codex・スキル・MCP サーバー | [coding-agents/](home/keewai/common/coding-agents/default.nix)、[skills/](skills/) |
 | T3 Code（nightly サーバー） | [t3code.nix](home/keewai/common/t3code.nix)、[pkgs/t3code](pkgs/t3code/) |
-| 設定のいらない GUI アプリを追加 | [home/keewai/desktop/packages.nix](home/keewai/desktop/packages.nix) |
-| ウィンドウ操作・キー割り当て | [umbriel.nix](home/keewai/desktop/umbriel.nix) |
-| モニター・解像度 | [hosts/citrus/display.nix](hosts/citrus/display.nix) |
-| Umbriel 本体・ログイン画面 | [modules/desktop/umbriel.nix](modules/desktop/umbriel.nix) |
-| パネル・ランチャー・通知・壁紙 | [noctalia/](home/keewai/desktop/noctalia/default.nix) |
-| アプリの配色テンプレート | [noctalia/templates/](home/keewai/desktop/noctalia/templates/default.nix) |
-| 日本語入力 | [input-method.nix](home/keewai/desktop/input-method.nix)、[modules/desktop/input-method.nix](modules/desktop/input-method.nix) |
-| 端末・ブラウザー・ファイル管理 | [kitty.nix](home/keewai/desktop/kitty.nix)、[browser.nix](home/keewai/desktop/browser.nix)、[file-manager.nix](home/keewai/desktop/file-manager.nix) |
-| Discord | [legcord.nix](home/keewai/desktop/legcord.nix) |
-| Steam | [modules/desktop/steam.nix](modules/desktop/steam.nix)、[scskiller/](home/keewai/desktop/scskiller/default.nix) |
-| AirDrop・AirPlay | [apple-sharing/](home/keewai/desktop/apple-sharing/default.nix)、[hosts/citrus/apple-sharing.nix](hosts/citrus/apple-sharing.nix) |
-| 共通フォント・初期パレット | [themes/tokyo-night-black](themes/tokyo-night-black/default.nix) |
-| citrus のハードウェア | [hosts/citrus/](hosts/citrus/) |
+| orange のハードウェア・起動 | [hosts/orange/](hosts/orange/) |
 | orange のサービス・ポート・保存先 | [hosts/orange/services/](hosts/orange/services/)、[settings.nix](hosts/orange/settings.nix) |
 | orange の USB チューナー・EDCB・KonomiTV | [tv/](hosts/orange/services/tv/)、[pkgs/](pkgs/) |
 
@@ -88,8 +65,8 @@ flake.nix
 
 ```sh
 nix flake update                                                  # 入力をまとめて更新（適用の前に毎回実行してコミット）
-sudo nixos-rebuild test --accept-flake-config --flake .#citrus    # 一時的に適用して動作確認（再起動で戻る）
-sudo nixos-rebuild switch --accept-flake-config --flake .#citrus  # 本適用（起動時の既定にもなる）
+sudo nixos-rebuild test --accept-flake-config --flake .#orange    # 一時的に適用して動作確認（再起動で戻る）
+sudo nixos-rebuild switch --accept-flake-config --flake .#orange  # 本適用（起動時の既定にもなる）
 nix fmt                                                           # Nix ファイルを整形
 nix develop                                                       # 言語サーバーや整形ツール入りのシェル
 nix build --accept-flake-config .#<パッケージ名>                   # pkgs/ のパッケージを単体でビルド
@@ -104,107 +81,23 @@ nix build --accept-flake-config .#<パッケージ名>                   # pkgs/
 
 ## バイナリキャッシュ
 
-`flake.nix` の `nixConfig` には、`modules/common/nix.nix`、`hosts/citrus/kernel.nix`、
-`hosts/citrus/nvidia.nix` と同じキャッシュの URL と署名鍵を書いています。
-`nixConfig` には import や計算式が使えないため、両方を手で同じ内容に保ちます。
+`flake.nix` の `nixConfig` と `modules/common/nix.nix` に、Claude Code・Codex・nix-community の
+キャッシュの URL と署名鍵を書いています。`nixConfig` には import や計算式が使えないため、
+共通の URL と鍵は両方を手で同じ内容に保ちます。CUDA パッケージの単体ビルド向けに、
+`flake.nix` には `cache.nixos-cuda.org` も残しています。
 
 - 新しい設定を適用する前の最初のビルドでもキャッシュを使えるよう、`nixos-rebuild` と `nix build` には
   `--accept-flake-config` を付けます。初回の適用前に単体ビルドするときは
   `sudo nix build --accept-flake-config --no-link .#<パッケージ>` を使います
   （信頼されていない利用者は、flake を受け入れても新しいキャッシュや鍵を追加できないため）。
 - `accept-flake-config` を全体で有効にはしません。中身を確かめた flake のキャッシュ設定だけを受け入れます。
-- CUDA と CachyOS カーネル用のキャッシュは、インストール後の設定では citrus だけが使います。
-  `cache.nixos.org` はそのまま使います。
-- Flox の公開キャッシュは優先度 50 で、`cache.nixos.org` より後に使います。
-  今のロックで使う CUDA 対応 Sunshine のビルド済みバイナリを得るためのものです。
-  信頼したキャッシュは Sunshine に限らずどのパッケージにも署名できます。
-- キャッシュに載るのは、まったく同じストアパスのものだけです。自前のパッチ、CUDA の上書き、
-  独自カーネルとそのモジュールなどは手元でビルドされます。署名の検証は無効にしません。
-
-## citrus（デスクトップ）
-
-- **画面**：Umbriel と Noctalia v5。`start-umbriel` がセッションを管理し、Noctalia は
-  `umbriel-session.target` と一緒に起動します。`Super+Space` でランチャー、`Super+,` で設定、
-  `Super+V` でクリップボード、`Super+Tab` でワークスペース一覧です。音量・マイク・再生・明るさの
-  メディアキーと、`Print` のスクリーンショットも使えます。
-- **ワークスペース**：実モニターと `SUNSHINE` の画面にそれぞれ 10 個あります。
-  `Super+1`〜`Super+0` で切り替え、`Shift` を足すとウィンドウを移動します。
-  設定していない追加の画面は Umbriel の既定どおり動的に増減します。
-- **配色**：Noctalia で選んだパレットをアプリ全体に反映します。公式テンプレートで Umbriel・GTK 3/4・
-  Qt 5/6・KDE・Kitty・btop を、[コミュニティテンプレート](https://github.com/noctalia-dev/community-templates)で
-  Legcord（System24）・Fcitx5・bat・FZF・Starship・Helium・Claude Code・Codex CLI をそろえます。
-  Steam は既存スキン用の CSS を同じパレットから作ります。GTK・Qt・Helium などは再起動で反映されます。
-- **テーマの管理**：[noctalia/templates/](home/keewai/desktop/noctalia/templates/default.nix) にまとめています。
-  コミュニティのテンプレートは flake 入力で固定し、`nix flake update` で更新します。
-  設定とフォントは Home Manager が、生成される配色ファイルは Noctalia が管理します。
-- **フォントと初期設定**：Stylix が共通のフォント・アイコン・カーソルとコンソールの配色を受け持ちます。
-  初期パレットの [Tokyo Night Black](themes/tokyo-night-black/default.nix) は端末の ANSI 色も含めて1か所で定義し、
-  ログイン後は Noctalia の選択に従います。初期の壁紙は Surface Laptop Ultra Dark（5120×2160）です。
-- **更新とキャッシュ**：Umbriel と Noctalia は公式の `cachix` ブランチを追い、その署名付きキャッシュを使います。
-  キャッシュと一致させるため、各入力の nixpkgs は上書きしません。
-- **日本語入力**：Fcitx5 と Meltype。keyd で `` Alt+` `` を変換キーに割り当てます（Logitech 製キーボードは除外）。
-- **ブラウザー**：既定は [Helium](https://github.com/imputnet/helium-linux)（[pkgs/helium](pkgs/helium/)）。
-  nixpkgs の Widevine CDM を読み込むので DRM 付きの動画も再生できます。TwinStar・OpenMouse の
-  WebHID 設定アプリも Helium のアプリモードで開きます。
-- **Bitwarden**：デスクトップアプリと SSH エージェント。
-- **Apple Music**：[keewai704/siora](https://github.com/keewai704/siora) の最新リリースの AppImage。
-  Home Manager の適用時に `gh` の認証で `~/.local/share/siora/` へ取得・更新します（手動では `siora-update`）。
-
-### カーネル
-
-xddxdd の `nix-cachyos-kernel`（`master` ブランチ）の入力と、その入力が固定する nixpkgs を使います。
-最新リリースの ThinLTO 版を選び、RC の元になるリリースのほうが新しければ RC 版を選びます。
-カーネル・NVIDIA ドライバー・CachyOS の ZFS モジュールのバージョンは、この入力に任せます。
-
-[kernel-config.nix](hosts/citrus/kernel-config.nix) は Ryzen 7 9800X3D 向けに CachyOS の設定を絞り込みます。
-`znver5` 向けの最適化、Clang ThinLTO、CPU 数の上限 32 を指定し、使わない PCI イーサネット、
-古いストレージコントローラー、Intel・旧 Radeon・Nouveau のグラフィックス、テレビ・ラジオ関連、
-仮想マシンのゲスト用機能などを外します。I226-V、MT7925、AMD 内蔵グラフィックス、NVIDIA、NVMe/AHCI、
-USB、HID、音声、KVM、コンテナー、ZFS、sched_ext/BPF/BTF は残します。
-新しい PCI 機器を挿したときは、外した項目を見直す必要があります。
-
-この独自カーネルに合わせて NVIDIA・ZFS・BEITONG の xpad モジュールも手元でビルドされます。
-ビルドや適用が成功しても、新しいカーネルで起動できるかは再起動するまでわかりません。
-上流の事件（`xddxdd/nix-cachyos-kernel#110`）を受けて、旧 Lantian キャッシュは信頼しません。
-代わりに上流の README と issue #89 で紹介されている `https://cache.xinux.uz` を使います。
-
-### CPU スケジューラーの自動切り替え
-
-[scheduler.nix](modules/desktop/scheduler.nix) が `scx_loader --auto` を `scx-auto.service` として動かします。
-論理 CPU の使用率が 90% を超える状態が 5 秒続くと LAVD に切り替え、低い状態が 30 秒続くと
-カーネル標準の EEVDF に戻します。ゲームの検出ではなく、負荷による切り替えです。
-
-`scxctl` では操作できません。状態は `systemctl status scx-auto`、`journalctl -u scx-auto`、
-`/sys/kernel/sched_ext/state` で確かめます。`sudo systemctl stop scx-auto` で EEVDF に戻り、
-`start` で自動制御を再開します。ほかの sched_ext デーモンと同時に動かさないでください。
-
-### Sunshine 配信
-
-Umbriel 上に `SUNSHINE` という仮想画面を作り、NVENC で Moonlight に配信します。
-管理画面は citrus 上の `https://localhost:47990` だけで開けます。
-
-| Moonlight のアプリ | 動作 |
-| --- | --- |
-| `Extend Display` | 既存の画面の右に仮想画面を追加 |
-| `Steam Big Picture` | 仮想画面だけにして Steam Big Picture を起動 |
-| `Client Only` | 仮想画面だけを表示 |
-
-低遅延の例：
-
-```sh
-moonlight stream citrus "Extend Display" --1080 --fps 120 --bitrate 40000 --video-codec H.264 --video-decoder hardware --no-vsync --no-frame-pacing --no-hdr
-```
-
-- 切断しただけではアプリは動き続けます。元の画面構成に戻すには、Moonlight で「アプリを終了」します。
-- 戻すときは、各画面で開いていたワークスペースと選択中のウィンドウ、最後に選んでいた画面を元に戻します。
-  開いていなかったワークスペースは訪れません（空のワークスペースが消えて並びが変わるのを防ぐため）。
-- 配信のため、Noctalia のアイドル時のロック・消灯・サスペンドは無効にしています。
-- Proton の Wayland ドライバーで配信画面を選ぶ必要があるゲームには、起動オプション
-  `WAYLANDDRV_PRIMARY_MONITOR=SUNSHINE %command%` を個別に指定します。
+- `cache.nixos.org` はそのまま使います。
+- キャッシュに載るのは、まったく同じストアパスのものだけです。自前のパッチや CUDA の上書きなどは
+  手元でビルドされます。署名の検証は無効にしません。
 
 ## コーディングエージェント
 
-Claude Code と Codex は全ホストで Home Manager が導入し、どのシェルからでも使えます。
+Claude Code と Codex は orange で Home Manager が導入し、どのシェルからでも使えます。
 `~/.claude` の設定やログイン情報は基本的に Nix で管理しません。例外として
 [coding-agents/](home/keewai/common/coding-agents/default.nix) が次のものを配ります。
 
@@ -213,16 +106,15 @@ Claude Code と Codex は全ホストで Home Manager が導入し、どのシ�
   で取得元を固定して配ります。
 - **MCP サーバー**：`codingAgents.mcpServers.<名前> = { command; args; env; }` を、適用時に `~/.claude.json` へ書き込みます。
   Nix から外したサーバーだけを消し、手で追加したサーバーはそのまま残します。
-- **Claude Code の共通指示**：全ホストで [共通の UI・開発方針](home/keewai/common/coding-agents/shared-instructions.md)を
-  `~/.claude/CLAUDE.md` に置きます。citrus では [CLAUDE.md](home/keewai/common/coding-agents/CLAUDE.md) の
-  日本語応答・Git 操作の方針も追加します（`codingAgents.globalInstructions`）。
+- **Claude Code の共通指示**：[共通の UI・開発方針](home/keewai/common/coding-agents/shared-instructions.md)を
+  `~/.claude/CLAUDE.md` に置きます。
 - **Codex の共通指示**：[codex-instructions.md](home/keewai/common/coding-agents/codex-instructions.md) と共通の UI・開発方針を
-  両ホストの `~/.codex/config.toml` の `developer_instructions` に設定します。
+  orange の `~/.codex/config.toml` の `developer_instructions` に設定します。
   [OpenCode の方針](https://github.com/anomalyco/opencode/blob/dev/AGENTS.md)を参考にした実装・検証の指示が、
   全プロジェクトの新しい Codex セッションで組み込み指示に追加されます。
   プロジェクト固有の `AGENTS.md` の規約を尊重し、手動の設定やログイン情報は保持します。
-- UI デザインには [Penpot](https://design.penpot.app/) を使います。デスクトップ用 MCP は
-  [penpot-mcp.nix](home/keewai/desktop/penpot-mcp.nix)、手順は [penpot-apple-design](skills/penpot-apple-design/SKILL.md) にあります。
+- UI デザインの手順は [penpot-apple-design](skills/penpot-apple-design/SKILL.md) にあります。
+  [Penpot MCP パッケージ](pkgs/penpot-mcp/)は単体でビルドできますが、orange には接続用サービスを構成していません。
 
 | スキル | 用途 |
 | --- | --- |
@@ -242,21 +134,20 @@ Claude Code と Codex は全ホストで Home Manager が導入し、どのシ�
 
 ### T3 Code nightly
 
-[T3 Code](https://github.com/pingdotgg/t3code) は、両ホストとも Home Manager の常駐サーバーとして動きます。
+[T3 Code](https://github.com/pingdotgg/t3code) は、orange で Home Manager の常駐サーバーとして動きます。
 共通設定は [t3code.nix](modules/common/t3code.nix)、ユーザーサービスは [t3code.nix](home/keewai/common/t3code.nix) が管理します。
 公式の nightly AppImage に含まれる CLI を `t3 serve` で実行し、グラフィカルセッションには依存しません。
 リリース情報は `t3code-releases` 入力で固定し、更新は `nix flake update` と通常の適用手順で行います。
 アプリ内の自動更新は無効です。
 
-- Web 画面は `https://orange.tail1e65cd.ts.net/t3/` と `https://citrus.tail1e65cd.ts.net/t3/` です。
+- Web 画面は `https://orange.tail1e65cd.ts.net/t3/` です。
   Tailscale Serve HTTPS 443 → `127.0.0.1:8000` の nginx → `127.0.0.1:3773` のサーバーで配信し、API と WebSocket も同じ HTTPS 入口を通ります。
   `/t3/` 用に Web 画面のルーター、静的ファイル参照、PWA manifest をパッケージ内で補正します。
-  orange のルートは Immich、citrus のルートは `/t3/` への転送です。
+  ルートは Immich です。
 - 起動時にサービスが始まり、既存の `~/.t3` のペアリング、プロジェクト、会話履歴を使います。
   同じ `~/.t3` に対してデスクトップ版や別の `t3 serve` を同時起動しないでください。
 - 端末のペアリングは **Settings → Sharing & access** または
   `t3 auth pairing create --base-url https://orange.tail1e65cd.ts.net` を使います。
-  citrus では URL を `https://citrus.tail1e65cd.ts.net` に置き換えます。
   `t3 pair --tailscale` は共通の Serve 設定を変更するため使いません。
   ペアリングのリンクは認証情報なので、ほかの人に見せないでください。
 - Claude は Home Manager の実行ファイルと通常の `~/.claude` のログインを使います。必要なら
@@ -327,8 +218,7 @@ Rust と Python の依存は取得元のロックから構築します。専用�
 - [pkgs/default.nix](pkgs/default.nix) に並べたパッケージは、設定から `pkgs.local.<名前>` で参照でき、
   `nix build .#<名前>` で単体ビルドもできます。パッチは対象パッケージのディレクトリに置きます。
 - 更新の入口は `nix flake update` にそろえます。再現性のための revision と hash は `flake.lock` に残します。
-- Umbriel と Noctalia は `cachix`、xddxdd のカーネルは `master` を追います。バージョン番号の固定タグは使いません。
-- まだ `nix flake update` だけでは更新できないものがあります。Helium、xpad、Penpot MCP、LiveSync の各パッケージ、
+- まだ `nix flake update` だけでは更新できないものがあります。Penpot MCP、LiveSync の各パッケージ、
   shadcn スキルの取得元、orange の Minecraft とその MOD は、バージョンやハッシュを手で管理しています。
 - 非自由パッケージは全体で許可しています（`allowUnfree = true`）。
 - `system.stateVersion` と `home.stateVersion` は互換性の基準なので、アップデートに合わせて変えません。

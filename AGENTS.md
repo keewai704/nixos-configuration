@@ -51,16 +51,14 @@ import. A feature spanning several files gets its own directory with
 `default.nix` as the entry point, keeping its scripts and assets beside it.
 `hosts/<host>/` holds that machine's hardware, boot, and services, with
 `default.nix` limited to imports and small host-wide settings. `modules/common/`
-is only for settings used by every host; `modules/desktop/` is the system side of
-the desktop profile. Scope moves and caller updates to the request, and explain
-non-obvious placement choices.
+is only for shared system settings. Scope moves and caller updates to the request,
+and explain non-obvious placement choices.
 
 Personal applications, CLI tools, shell settings, user services, and files belong
-in `home/<user>/common/` or `home/<user>/desktop/`. Prefer suitable
-`programs.*`/`services.*` modules, then `home.packages`. Every host loads the common
-profile; importing `modules/desktop` adds the desktop profile, with hardware
-differences expressed by capability. `modules/common/home-manager.nix` owns the
-NixOS connection. `useUserPackages = true` puts packages in
+in `home/<user>/common/`. Prefer suitable `programs.*`/`services.*` modules, then
+`home.packages`. Orange loads this common profile through
+`modules/common/home-manager.nix`, which owns the NixOS connection.
+`useUserPackages = true` puts packages in
 `/etc/profiles/per-user/<user>`; deployment still uses NixOS activation.
 
 For ownership changes, inspect pinned modules and upstream requirements. Keep
@@ -128,13 +126,6 @@ For GitHub packages owned by `keewai704`, explicitly select `main` with
 Before each local activation, run `nix flake update` and commit resulting lock
 changes. This is standing authorization to refresh the declared inputs. Use
 upstream binary-cache branches when available rather than fixed release tags.
-On citrus, follow xddxdd's CachyOS kernel input's `master` branch for mainline
-sources and its own pinned package set, including the matching NVIDIA driver and
-CachyOS ZFS module. Keep the host-specific configuration and reproducible Zen 5
-compiler target in `hosts/citrus/kernel.nix` and `kernel-config.nix`. Do not
-override that input's nixpkgs or individually replace kernel/module source
-versions. Preserve boot storage, networking, USB/HID, sched_ext, BPF, and BTF
-support when narrowing build targets; do not infer removals solely from `lsmod`.
 
 Outside the repository root, use `git -C` and absolute flake references to the
 actual checkout, normally `/home/keewai/nixos-configuration` and

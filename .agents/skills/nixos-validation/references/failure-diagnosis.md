@@ -4,7 +4,7 @@ Start with the failing command and logs. Compare evaluations only when a
 configuration-value change could explain the failure. Select the same small,
 JSON-serializable attribute in the recorded commit and current checkout; never
 serialize the entire configuration. For example,
-`nixosConfigurations.citrus.config.services.openssh.settings` is suitable only
+`nixosConfigurations.orange.config.services.openssh.settings` is suitable only
 when that host and attribute explain the failure.
 
 Set `repo` to the actual checkout's absolute path, `before` to the recorded

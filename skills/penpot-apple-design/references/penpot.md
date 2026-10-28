@@ -1,13 +1,14 @@
 # Penpot workflow
 
-## Connect the existing environment
+## Connect the environment
 
-The desktop configuration uses [Penpot Cloud](https://design.penpot.app/) and
-the local `penpot-mcp` and `penpot-mcp-plugin` user services. Their source is
-[penpot-mcp.nix](/home/keewai/nixos-configuration/home/keewai/desktop/penpot-mcp.nix);
-the package is [pkgs/penpot-mcp](/home/keewai/nixos-configuration/pkgs/penpot-mcp/default.nix).
-Read those sources if the deployed endpoints differ from the values below.
-Other hosts may have this skill without the desktop services.
+Use [Penpot Cloud](https://design.penpot.app/) with a reachable Penpot MCP server
+and browser plugin. The standalone
+[pkgs/penpot-mcp](/home/keewai/nixos-configuration/pkgs/penpot-mcp/default.nix)
+package provides `penpot-mcp-server` and `penpot-mcp-plugin`, but orange does not
+configure their services or register a `penpot` MCP connection. This skill alone
+does not provide a connected editor. Inspect the available MCP tools and the
+environment's service configuration before assuming these local endpoints:
 
 | Connection | Local endpoint |
 | --- | --- |
@@ -15,14 +16,15 @@ Other hosts may have this skill without the desktop services.
 | Agent MCP transport | `http://localhost:4401/mcp` |
 | Plugin WebSocket | `ws://localhost:4402` |
 
-The configured `penpot` MCP already bridges stdio to the HTTP transport. Do not
-start a second server or install an npm copy to use it. With a signed-in Penpot
-session, open the intended design file, install the manifest URL through the
-Plugin Manager when absent, launch the MCP plugin, and connect it. Keep that
+When a `penpot` MCP connection is configured, reuse its transport. Do not start
+a second server or install an npm copy to use it. With a signed-in Penpot
+session, open the intended design file, install the environment's manifest URL
+through the Plugin Manager when absent, launch the MCP plugin, and connect it. Keep that
 plugin open in the target file. Installing the plugin alone does not connect the
 editor. See [plugin installation](https://help.penpot.app/user-guide/plugins-integrations/).
 
-For a failed connection, inspect the user services and manifest response first:
+For a failed connection in an environment using these user service names,
+inspect the services and manifest response first:
 
 ```sh
 systemctl --user status penpot-mcp.service penpot-mcp-plugin.service

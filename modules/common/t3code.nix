@@ -95,9 +95,6 @@ in
         '';
         "~ ^/api/assets/[A-Za-z0-9_-]+[.][A-Za-z0-9_-]+/" = proxy;
         "= /pair".return = "302 https://${tailnetHostname}/t3/pair$is_args$args";
-        "= /" = lib.mkIf (config.networking.hostName != "orange") {
-          return = "302 https://${tailnetHostname}/t3/";
-        };
         "= /t3".return = "308 https://${tailnetHostname}/t3/";
         "^~ /t3/" = (mkProxyLocation t3codePort "") // {
           proxyPass = "http://127.0.0.1:${toString t3codePort}/";

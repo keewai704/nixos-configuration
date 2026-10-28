@@ -56,8 +56,6 @@ in
       default = { };
       description = "Stdio MCP servers registered in Claude Code user configuration.";
     };
-
-    globalInstructions = lib.mkEnableOption "additional Claude Code language and Git instructions";
   };
 
   config = {
@@ -84,9 +82,7 @@ in
     );
 
     home.file = skillLinks // {
-      ".claude/CLAUDE.md".text =
-        lib.optionalString cfg.globalInstructions (builtins.readFile ./CLAUDE.md + "\n")
-        + sharedInstructions;
+      ".claude/CLAUDE.md".text = sharedInstructions;
     };
 
     home.activation.codingAgentConfig = lib.hm.dag.entryAfter [ "writeBoundary" ] ''
