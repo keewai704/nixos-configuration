@@ -96,7 +96,7 @@ stdenvNoCC.mkDerivation {
       --replace-fail "DATA_DIR = BASE_DIR / 'data'" "DATA_DIR = Path('/var/lib/konomitv/data')" \
       --replace-fail "LOGS_DIR = BASE_DIR / 'logs'" "LOGS_DIR = Path('/var/log/konomitv')"
     substituteInPlace server/app/config.py \
-      --replace-fail "_CONFIG_YAML_PATH = BASE_DIR.parent / 'config.yaml'" "_CONFIG_YAML_PATH = Path('/var/lib/konomitv/config.yaml')"
+      --replace-fail "_CONFIG_YAML_PATH = BASE_DIR.parent /" "_CONFIG_YAML_PATH = Path('/var/lib/konomitv') /"
   '';
   doCheck = true;
   checkPhase = ''
