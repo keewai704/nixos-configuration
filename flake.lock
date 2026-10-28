@@ -405,7 +405,7 @@
     "meltype-release": {
       "flake": false,
       "locked": {
-        "narHash": "sha256-xzwqZpBrF1J8x6Y20kxB6P5eKa0d5cCn3ycF8drF9QA=",
+        "narHash": "sha256-f+pi1TTF/lx4/rAsjGR5BatDNCEE4bG0oewpjdhDwc0=",
         "type": "file",
         "url": "https://api.github.com/repos/yksr-melt/Meltype/releases/latest"
       },
@@ -566,11 +566,11 @@
         "treefmt-nix": "treefmt-nix"
       },
       "locked": {
-        "lastModified": 1793160151,
-        "narHash": "sha256-Roh0gTP2V1nUiVbi1vzE2Tt0OGPizn4InZxAOihVYHo=",
+        "lastModified": 1793185232,
+        "narHash": "sha256-aXO7eXeG/guEQHyBo64cyjvoUzE6DW4nyF0qSQl0b58=",
         "owner": "4evy",
         "repo": "nixcord",
-        "rev": "b7dc284e7198863f2df20f5e730cc9c74290b004",
+        "rev": "e6606b12959cd571b18ceb050b74990d8ce99a42",
         "type": "github"
       },
       "original": {
@@ -983,7 +983,7 @@
     "t3code-releases": {
       "flake": false,
       "locked": {
-        "narHash": "sha256-68D3sjiZgSBdQnma8yeXeLPRbRNjJhd7gr8mE7gCyQk=",
+        "narHash": "sha256-dNsPfofueRcO/NAEKU7YKNiYC4Nb6GBZnJ6cdgcNTOI=",
         "type": "file",
         "url": "https://api.github.com/repos/pingdotgg/t3code/releases?per_page=100"
       },
