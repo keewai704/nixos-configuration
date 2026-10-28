@@ -209,11 +209,11 @@
     "mirakc": {
       "flake": false,
       "locked": {
-        "lastModified": 1792999847,
-        "narHash": "sha256-dk63AX6pvECHX1QSSCvHtWn88hUx9jDTqocWljLMYCU=",
+        "lastModified": 1793221591,
+        "narHash": "sha256-PjxDAaLbBymotZPORu/Ve6IdBI5eCd+BHqZl4enyKU4=",
         "ref": "release",
-        "rev": "4daf797febfedcc653776a30482403487ae423ea",
-        "revCount": 3623,
+        "rev": "70fdd9752063fffb462dd5f7183fd8f7f45b4b8c",
+        "revCount": 3624,
         "type": "git",
         "url": "https://github.com/mirakc/mirakc"
       },
@@ -375,7 +375,7 @@
     "t3code-releases": {
       "flake": false,
       "locked": {
-        "narHash": "sha256-Lx7cUjxgwHYkxyvGaB9Vdy8udlQPWJ5TnmxlcXTT5Vg=",
+        "narHash": "sha256-2yTXgdVidN/rXuRO2hXHVDlWoP9cbVIcVCe9/f3cFis=",
         "type": "file",
         "url": "https://api.github.com/repos/pingdotgg/t3code/releases?per_page=100"
       },
