@@ -99,16 +99,16 @@ test("recovery consumes the real SessionController inspection contract", async (
   assert.equal(messages.length, 1);
 });
 
-test("cold interrupted work receives one non-human continuation with retry-safety instructions", async (t) => {
+test("interrupted work without a goal receives exactly Continue. as a user prompt once", async (t) => {
   const { ctx, file, agent, messages } = fixture(t);
   persist(file);
   agent.status = "idle";
   const recovery = new Recovery(ctx, file);
   await Promise.all([recovery.recover(), recovery.recover()]);
   assert.equal(messages.length, 1);
-  assert.equal(messages[0].source.kind, "restart-recovery");
-  assert.match(messages[0].content[0].text, /side effects/);
-  assert.match(messages[0].content[0].text, /authorization/);
+  assert.equal(messages[0].role, "user");
+  assert.deepEqual(messages[0].source, { kind: "user" });
+  assert.deepEqual(messages[0].content, [{ type: "text", text: "Continue." }]);
 });
 
 test("completed, canceled and subagent sessions are not driven", async (t) => {
@@ -136,7 +136,36 @@ test("an armed goal is rearmed with its persisted identity and budget", async (t
   agent.events.push(end("completed"));
   await new Recovery(ctx, file).recover();
   assert.equal(ctx.rearms, 1);
-  assert.equal(messages.length, 1);
+  assert.equal(messages.length, 0);
+});
+
+test("a live active goal takes precedence over a marker without goal metadata", async (t) => {
+  const { ctx, file, agent, messages } = fixture(t, { ...armed, activation: "disarmed" });
+  persist(file);
+  agent.status = "idle";
+  await new Recovery(ctx, file).recover();
+  assert.equal(ctx.rearms, 1);
+  assert.equal(messages.length, 0);
+});
+
+test("a stopped current goal never receives Continue. even without saved goal metadata", async (t) => {
+  for (const goal of [{ ...armed, phase: "paused" }, { ...armed, phase: "complete" }, { ...armed, roundsStarted: 10 }]) {
+    const { ctx, file, agent, messages } = fixture(t, goal);
+    persist(file);
+    agent.status = "idle";
+    await new Recovery(ctx, file).recover();
+    assert.equal(messages.length, 0);
+    assert.equal(ctx.rearms, 0);
+  }
+});
+
+test("a cleared saved goal does not fall back to a user continuation", async (t) => {
+  const { ctx, file, agent, messages } = fixture(t);
+  persist(file, { id: "session", goalId: "goal", armed: true });
+  agent.status = "idle";
+  await new Recovery(ctx, file).recover();
+  assert.equal(messages.length, 0);
+  assert.equal(ctx.rearms, 0);
 });
 
 test("paused, blocked, completed, replaced, disarmed or exhausted goals stay stopped", async (t) => {

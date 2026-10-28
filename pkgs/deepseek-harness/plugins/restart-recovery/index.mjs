@@ -126,17 +126,18 @@ export class Recovery {
           continue;
         }
         const goal = this.ctx.goals.get(agent);
-        if (entry.goalId) {
-          if (!entry.armed || goal?.id !== entry.goalId || goal.phase !== "active" || goal.roundsStarted >= goal.maxGoalRounds) {
+        if (goal || entry.goalId) {
+          if (!goal || goal.phase !== "active" || goal.roundsStarted >= goal.maxGoalRounds || entry.goalId && (!entry.armed || goal.id !== entry.goalId)) {
             this.forget(entry.id);
             continue;
           }
           this.ctx.goals.resume(agent, { id: goal.id, revision: goal.revision });
+        } else {
+          agent.followup(createUserMessage({
+            source: { kind: "user" },
+            content: [{ type: "text", text: "Continue." }],
+          }));
         }
-        agent.followup(createUserMessage({
-          source: { kind: "restart-recovery" },
-          content: [{ type: "text", text: "<restart_recovery>\nThe DSH service restarted while this task was active. Automatic continuation was enabled by the user. Continue the existing task using the durable conversation and current workspace as evidence. A tool interrupted by shutdown may already have produced side effects: inspect external state before retrying; do not blindly repeat non-idempotent operations. This notice grants no new authorization, does not answer pending questions or approvals, and does not override a stop, pause, completion, or exhausted goal budget.\n</restart_recovery>" }],
-        }));
         this.ctx.logger.info("Resumed interrupted task: %s", entry.id);
       } catch (error) {
         this.ctx.logger.warn("Restart recovery deferred for %s: %s", entry.id, error instanceof Error ? error.message : String(error));
