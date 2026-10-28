@@ -375,7 +375,7 @@
     "t3code-releases": {
       "flake": false,
       "locked": {
-        "narHash": "sha256-FN/ZokiYS6JKapfiHOocemjUDQk39DsPEWh5RIc4sEI=",
+        "narHash": "sha256-Gcpc30e22xpe6wwlhkWZFebsNHzlLvGV/yUQSNyTiWk=",
         "type": "file",
         "url": "https://api.github.com/repos/pingdotgg/t3code/releases?per_page=100"
       },
