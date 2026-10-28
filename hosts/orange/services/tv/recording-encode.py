@@ -138,6 +138,8 @@ def psi_sections(path, pid):
                         raise ValueError('Invalid PSI pointer')
                     if buffer:
                         buffer.extend(payload[1:1 + pointer])
+                        if len(buffer) < 3:
+                            raise ValueError('Incomplete PMT section')
                         length = 3 + ((buffer[1] & 15) << 8) + buffer[2]
                         if len(buffer) < length:
                             raise ValueError('Incomplete PMT section')
@@ -145,9 +147,11 @@ def psi_sections(path, pid):
                     buffer = bytearray(payload[1 + pointer:])
                 elif buffer:
                     buffer.extend(payload)
-                while len(buffer) >= 3:
+                while buffer:
                     if buffer[0] == 0xff:
                         buffer.clear()
+                        break
+                    if len(buffer) < 3:
                         break
                     length = 3 + ((buffer[1] & 15) << 8) + buffer[2]
                     if length > 4096:

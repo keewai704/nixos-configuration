@@ -20,6 +20,13 @@ let
     inherit recordings;
     queue = queueRoot;
   };
+  recordingEncoder =
+    pkgs.runCommand "recording-encode.py" { nativeBuildInputs = [ pkgs.python3 ]; }
+      ''
+        export PYTHONDONTWRITEBYTECODE=1
+        python ${./test-recording-encode.py} ${./recording-encode.py}
+        install -m444 ${./recording-encode.py} "$out"
+      '';
   disabledChannels = pkgs.writeText "tv-disabled-channels.json" (
     builtins.toJSON {
       networks = [
@@ -298,7 +305,7 @@ in
         MemoryMax = "2G";
         ExecStart = lib.escapeShellArgs [
           "${pkgs.python3}/bin/python"
-          "${./recording-encode.py}"
+          "${recordingEncoder}"
           "--queue"
           queueRoot
           "--recordings"
