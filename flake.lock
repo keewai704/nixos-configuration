@@ -207,7 +207,7 @@
     "dsh-codex-native-releases": {
       "flake": false,
       "locked": {
-        "narHash": "sha256-n2Ckgt3ZniwQ15zvck93Wo6YZB42Ng7ruc3gVN65TLw=",
+        "narHash": "sha256-h8OEvaORWmk8rhUBa8JIt82bW7ZkXfFJ3y2PpuY4hAo=",
         "type": "file",
         "url": "https://api.github.com/repos/Tests4gptplay/dsh-codex-native/releases?per_page=20"
       },
@@ -219,11 +219,11 @@
     "dsh-mobile-maxxing": {
       "flake": false,
       "locked": {
-        "lastModified": 1793135604,
-        "narHash": "sha256-qacevQGEoIEWA1vEtGDANcrbxJSagJPGZfOFc8BvxJI=",
+        "lastModified": 1793166736,
+        "narHash": "sha256-83ONL97X6ljNs0mA9gfSJT3AmGKiiKX4dNhJHItfToE=",
         "owner": "kuraneko1",
         "repo": "dsh-mobile-maxxing",
-        "rev": "e6ef8745b4a3f82770253ca42e8bbe0a8296b13b",
+        "rev": "463676b3fbf415968ab98991f415ddbe67d44d40",
         "type": "github"
       },
       "original": {
@@ -441,11 +441,11 @@
     "konomitv": {
       "flake": false,
       "locked": {
-        "lastModified": 1793151778,
-        "narHash": "sha256-6CyCc86ygDzM1NB4CtPACgmKE1690dq9VtOdVzxzXXM=",
+        "lastModified": 1793164386,
+        "narHash": "sha256-9AFNu65yXQLllamT6xjpBtxCyXwFBMTIYPI1IJAU3Tk=",
         "ref": "master",
-        "rev": "ef4edcab5ecddf37f383baefc80f0f3ab0ec444a",
-        "revCount": 4121,
+        "rev": "dd70757575740e0c5362101241d3ab2631957c13",
+        "revCount": 4158,
         "type": "git",
         "url": "https://github.com/tsukumijima/KonomiTV"
       },
@@ -470,7 +470,7 @@
     "meltype-release": {
       "flake": false,
       "locked": {
-        "narHash": "sha256-w38xCTkIkEtH+FyuB5jLEnE436ZoX6TvEkwQcf32JJ0=",
+        "narHash": "sha256-5ZsHIzEWZwoEbzlXYUVjXZy+NZN/SdY51G214W7CRWs=",
         "type": "file",
         "url": "https://api.github.com/repos/yksr-melt/Meltype/releases/latest"
       },
@@ -631,11 +631,11 @@
         "treefmt-nix": "treefmt-nix"
       },
       "locked": {
-        "lastModified": 1793143897,
-        "narHash": "sha256-cjUgdbBbrNBoHsZZepqOGpNAxmBvNRfKiKvBEGjdveQ=",
+        "lastModified": 1793160151,
+        "narHash": "sha256-Roh0gTP2V1nUiVbi1vzE2Tt0OGPizn4InZxAOihVYHo=",
         "owner": "4evy",
         "repo": "nixcord",
-        "rev": "3d7b4fcde69ab9638fcb2c2e44198ce58002c1cf",
+        "rev": "b7dc284e7198863f2df20f5e730cc9c74290b004",
         "type": "github"
       },
       "original": {
@@ -790,11 +790,11 @@
         "nixpkgs": "nixpkgs_5"
       },
       "locked": {
-        "lastModified": 1793151713,
-        "narHash": "sha256-ALfNEL2BHZ9jDPjEDy0nGI+NEhqujMP6nYJyLVYTvko=",
+        "lastModified": 1793158243,
+        "narHash": "sha256-krvMCWdwTEw0eMHm+YJajLSvlha4tDdieEZBumxBoZ8=",
         "owner": "noctalia-dev",
         "repo": "noctalia",
-        "rev": "e734b50510386d1836e714a3d53d380fe54f998c",
+        "rev": "490d327d7ecc2dc350649b78dca2143e93209f3d",
         "type": "github"
       },
       "original": {
@@ -1053,7 +1053,7 @@
     "t3code-releases": {
       "flake": false,
       "locked": {
-        "narHash": "sha256-Vl4WonUmgP8FgMF3qSASelJB8zLmMk+4ot/9VgPHcLk=",
+        "narHash": "sha256-V3TUmInE9TDD6viSBP+RSe/Icdh5rdnU9yHGY7YfMuA=",
         "type": "file",
         "url": "https://api.github.com/repos/pingdotgg/t3code/releases?per_page=100"
       },
