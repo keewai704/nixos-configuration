@@ -232,7 +232,10 @@ def test(library):
         assert not duplicate.call(0)
         assert second.call(0)
         assert first.call(14, 0, 0)
-        assert second.call(2, 1)
+        assert second.call(2, 24)
+        assert second.call(16) == 1
+        assert not second.call(2, 1)
+        assert second.call(16) == 1
         assert first.call(15) == 0 and first.call(16) == 0
         assert not first.call(14, 1, 0)
         assert not first.call(14, 0, 99)

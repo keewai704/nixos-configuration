@@ -271,7 +271,13 @@ public:
         }
     }
 
-    const BOOL SetChannel(const BYTE channel) override { return SetChannel(0, channel); }
+    const BOOL SetChannel(const BYTE physical) override
+    {
+        const auto channel = std::find_if(channels.begin(), channels.end(), [physical](const Channel &candidate) {
+            return candidate.physical == physical;
+        });
+        return channel != channels.end() && SetChannel(0, static_cast<DWORD>(channel - channels.begin()));
+    }
 
     const BOOL SetChannel(const DWORD space, const DWORD channel) override
     {
