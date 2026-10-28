@@ -441,11 +441,11 @@
     "konomitv": {
       "flake": false,
       "locked": {
-        "lastModified": 1793147429,
-        "narHash": "sha256-hW0ZA3ambdaSH7pcWYhznTfES5Z8d+DUnzpi4ry5R10=",
+        "lastModified": 1793150707,
+        "narHash": "sha256-nquc9b4rfrZyTVB3KLLNwGRIR3p2NR/AiOpg9a06N4A=",
         "ref": "master",
-        "rev": "90ca46fa760dd78f072a0bdd5a62bb64b5250520",
-        "revCount": 4118,
+        "rev": "3bfcaf78259abf925056179d95922e1136207cb1",
+        "revCount": 4120,
         "type": "git",
         "url": "https://github.com/tsukumijima/KonomiTV"
       },
@@ -470,7 +470,7 @@
     "meltype-release": {
       "flake": false,
       "locked": {
-        "narHash": "sha256-OdczkCWaLQyWboimEwQKAqGI9S4zV3bZQPgBFjHd0jc=",
+        "narHash": "sha256-OrCA0OnVfhZg81tOYQhBjhnUm4cgFiDa8iHI3Gvf4sw=",
         "type": "file",
         "url": "https://api.github.com/repos/yksr-melt/Meltype/releases/latest"
       },
@@ -1053,7 +1053,7 @@
     "t3code-releases": {
       "flake": false,
       "locked": {
-        "narHash": "sha256-OUDEHpRrJeK6bqnFUXB+qVV5UBsYei2sIzT1yjmQ8uQ=",
+        "narHash": "sha256-eaxeaHG/5u45Ccz0w7SlFdjEFdYRou2fwP9pZa6eVXs=",
         "type": "file",
         "url": "https://api.github.com/repos/pingdotgg/t3code/releases?per_page=100"
       },
