@@ -321,7 +321,6 @@ check_web_services() {
   check_http "vaultwarden" "@tailnetOrigin@/vault/" 200
   check_http "t3code" "@tailnetOrigin@/t3/" 200
   check_http "konomitv" "@tailnetOrigin@/tv/" 200
-  check_http "couchdb" "@tailnetOrigin@/couchdb/" 401
 }
 
 check_tcp_services() {

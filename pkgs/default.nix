@@ -25,8 +25,6 @@ in
     bondriver-linuxmirakc = final.callPackage ./bondriver-linuxmirakc {
       upstream = inputs.bondriver-linuxmirakc;
     };
-    livesync-bridge = final.callPackage ./livesync-bridge { };
-    penpot-mcp = final.callPackage ./penpot-mcp { };
     t3code = final.callPackage ./t3code {
       releases = inputs.t3code-releases;
       inherit claude-code;

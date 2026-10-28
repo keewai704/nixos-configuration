@@ -98,8 +98,6 @@ Claude Code と Codex は orange で Home Manager が導入し、どのシェル
 [coding-agents/](home/keewai/common/coding-agents/default.nix) が次のものを配ります。
 
 - **スキル**：[skills/](skills/) の全ディレクトリを `~/.claude/skills/` と `~/.agents/skills/` にリンクします。
-  [shadcn/ui の公式スキル](https://ui.shadcn.com/docs/skills)は [shadcn.nix](home/keewai/common/coding-agents/shadcn.nix)
-  で取得元を固定して配ります。
 - **MCP サーバー**：`codingAgents.mcpServers.<名前> = { command; args; env; }` を、適用時に `~/.claude.json` へ書き込みます。
   Nix から外したサーバーだけを消し、手で追加したサーバーはそのまま残します。
 - **Claude Code の共通指示**：[共通の UI・開発方針](home/keewai/common/coding-agents/shared-instructions.md)を
@@ -109,8 +107,6 @@ Claude Code と Codex は orange で Home Manager が導入し、どのシェル
   [OpenCode の方針](https://github.com/anomalyco/opencode/blob/dev/AGENTS.md)を参考にした実装・検証の指示が、
   全プロジェクトの新しい Codex セッションで組み込み指示に追加されます。
   プロジェクト固有の `AGENTS.md` の規約を尊重し、手動の設定やログイン情報は保持します。
-- UI デザインの手順は [penpot-apple-design](skills/penpot-apple-design/SKILL.md) にあります。
-  [Penpot MCP パッケージ](pkgs/penpot-mcp/)は単体でビルドできますが、orange には接続用サービスを構成していません。
 
 | スキル | 用途 |
 | --- | --- |
@@ -118,9 +114,7 @@ Claude Code と Codex は orange で Home Manager が導入し、どのシェル
 | `superpowers` | 設計・計画・デバッグ・レビューなど大きめの作業の進め方 |
 | `add-nix-skill` | このリポジトリでスキルを追加・修正するとき |
 | `apple-device-usb` | USB や Wi-Fi 経由で iPhone・iPad を操作 |
-| `penpot-apple-design` | Penpot の操作と、Apple 系 UI 向けアセットの選定 |
 | `faster-whisper` | 音声・動画の文字起こし |
-| `shadcn` | shadcn/ui の部品の導入・調整 |
 
 端末操作 GUI と `apple-device-usb` の実装は
 [iphone-control](https://github.com/keewai704/iphone-control) で管理します。
@@ -162,7 +156,6 @@ Claude Code と Codex は orange で Home Manager が導入し、どのシェル
 | --- | --- | --- |
 | Immich | `https://orange.tail1e65cd.ts.net/` | [immich/](hosts/orange/services/immich/) |
 | Vaultwarden | `https://orange.tail1e65cd.ts.net/vault/` | [vaultwarden/](hosts/orange/services/vaultwarden/) |
-| Obsidian LiveSync | `https://orange.tail1e65cd.ts.net/couchdb/` | [obsidian-livesync.nix](hosts/orange/services/obsidian-livesync.nix) |
 | T3 Code | `https://orange.tail1e65cd.ts.net/t3/` | [t3code.nix](hosts/orange/services/t3code.nix) |
 | KonomiTV | `https://orange.tail1e65cd.ts.net/tv/` | [tv/](hosts/orange/services/tv/) |
 | Samba | HDD の共有 | [samba.nix](hosts/orange/services/samba.nix) |
@@ -181,7 +174,7 @@ Claude Code と Codex は orange で Home Manager が導入し、どのシェル
   [maintenance](hosts/orange/services/maintenance.nix) がログの掃除・TRIM・Nix ストアの保守を受け持ちます。
 - 各サービスが `orange.healthMonitor.units` と `loopbackPorts` に監視対象を追加します。
   T3 Code は `userUnits` で `keewai` のユーザーサービスとして、PC/SC は `pcscd.socket` の待受として確認します。
-  Web 監視は Immich、Vaultwarden、T3 Code、KonomiTV の応答と CouchDB の認証要求を確認します。
+  Web 監視は Immich、Vaultwarden、T3 Code、KonomiTV の応答を確認します。
 - 長いシェル処理は機能ディレクトリ内の `.sh` テンプレートに書き、`@名前@` を `fillTemplate`（[services/default.nix](hosts/orange/services/default.nix)）で
   置き換えて使います。テンプレートを直接実行しないでください。
 
@@ -226,7 +219,7 @@ Rust と Python の依存は取得元のロックから構築します。専用�
 - [pkgs/default.nix](pkgs/default.nix) に並べたパッケージは、設定から `pkgs.local.<名前>` で参照でき、
   `nix build .#<名前>` で単体ビルドもできます。パッチは対象パッケージのディレクトリに置きます。
 - 更新の入口は `nix flake update` にそろえます。再現性のための revision と hash は `flake.lock` に残します。
-- まだ `nix flake update` だけでは更新できないものがあります。Penpot MCP、LiveSync の各パッケージ、
-  shadcn スキルの取得元、orange の Minecraft とその MOD は、バージョンやハッシュを手で管理しています。
+- orange の Minecraft とその MOD は、バージョンやハッシュを手で管理しているため、
+  `nix flake update` だけでは更新できません。
 - 非自由パッケージは全体で許可しています（`allowUnfree = true`）。
 - `system.stateVersion` と `home.stateVersion` は互換性の基準なので、アップデートに合わせて変えません。

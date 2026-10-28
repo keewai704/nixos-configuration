@@ -6,7 +6,6 @@
     ./local-backup
     ./maintenance.nix
     ./minecraft.nix
-    ./obsidian-livesync.nix
     ./samba.nix
     ./smart-tests.nix
     ./storage.nix
