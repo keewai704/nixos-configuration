@@ -3,6 +3,8 @@ let
   storageDependencies = [ storageMountUnit ];
 in
 {
+  orange.healthMonitor.units = [ "samba-smbd.service" ];
+
   networking.firewall.interfaces = {
     ${lanInterface} = {
       allowedTCPPorts = [

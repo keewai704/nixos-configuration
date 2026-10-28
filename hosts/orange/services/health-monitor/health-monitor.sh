@@ -61,22 +61,23 @@ finish_and_notify() {
   exit "$status"
 }
 
-check_service() {
-  local service="$1"
-  if systemctl is-active --quiet "$service.service"; then
-    clear_alert "service-$service"
+check_unit() {
+  local unit="$1" key="service-${1%.service}"
+  if systemctl is-active --quiet "$unit"; then
+    clear_alert "$key"
   else
-    queue_alert "service-$service" "systemd service is not active: $service.service"
+    queue_alert "$key" "systemd unit is not active: $unit"
   fi
 }
 
 check_http() {
-  local key="$1" url="$2"
-  shift 2
-  if curl --fail --silent --show-error --location --max-time 20 "$@" "$url" >/dev/null; then
+  local key="$1" url="$2" expected_status="$3" status
+  shift 3
+  if status=$(curl --silent --show-error --location --max-time 20 --output /dev/null --write-out '%{http_code}' "$@" "$url") &&
+    [[ "$status" == "$expected_status" ]]; then
     clear_alert "http-$key"
   else
-    queue_alert "http-$key" "HTTP health check failed: $url"
+    queue_alert "http-$key" "HTTP health check failed: $url (expected $expected_status, got ${status:-000})"
   fi
 }
 
@@ -111,10 +112,19 @@ check_fresh_file() {
   fi
 }
 
-check_services() {
-  local service failed_units
-  for service in @monitoredServices@; do
-    check_service "$service"
+check_units() {
+  local unit failed_units
+  for unit in @monitoredUnits@; do
+    check_unit "$unit"
+  done
+
+  for unit in @monitoredUserUnits@; do
+    if runuser --user keewai -- env XDG_RUNTIME_DIR="/run/user/$(id -u keewai)" \
+      systemctl --user is-active --quiet "$unit"; then
+      clear_alert "user-service-${unit%.service}"
+    else
+      queue_alert "user-service-${unit%.service}" "user systemd unit is not active: $unit"
+    fi
   done
 
   failed_units=$(systemctl --failed --no-legend --plain 2>/dev/null |
@@ -305,9 +315,12 @@ check_tailnet() {
 }
 
 check_web_services() {
-  check_http "nginx" "http://127.0.0.1:@nginxPort@/" --header 'Host: @tailnetHostname@'
-  check_http "immich" "@tailnetOrigin@/"
-  check_http "vaultwarden" "@tailnetOrigin@/vault/"
+  check_http "nginx" "http://127.0.0.1:@nginxPort@/" 200 --header 'Host: @tailnetHostname@'
+  check_http "immich" "@tailnetOrigin@/" 200
+  check_http "vaultwarden" "@tailnetOrigin@/vault/" 200
+  check_http "t3code" "@tailnetOrigin@/t3/" 200
+  check_http "konomitv" "@tailnetOrigin@/tv/" 200
+  check_http "couchdb" "@tailnetOrigin@/couchdb/" 401
 }
 
 check_tcp_services() {
@@ -364,7 +377,7 @@ check_kernel() {
 }
 
 main() {
-  check_services
+  check_units
   check_storage_mount
   check_filesystem_space
   check_drives

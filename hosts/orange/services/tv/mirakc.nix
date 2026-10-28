@@ -1,12 +1,16 @@
 { lib, pkgs, ... }:
 let
   channels = import ./channels.nix;
-  tuners = import ./tuners.nix;
-  receiverUnits = map (tuner: "torne-receiver-${tuner.id}.service") tuners;
+  inherit (import ./settings.nix)
+    mirakcPort
+    receiverUnits
+    tuners
+    tvEnvironment
+    ;
   configuration = (pkgs.formats.yaml { }).generate "mirakc.yaml" {
     inherit channels;
     epg.cache-dir = "/var/lib/mirakc/epg";
-    server.addrs = [ { http = "127.0.0.1:40772"; } ];
+    server.addrs = [ { http = "127.0.0.1:${toString mirakcPort}"; } ];
     tuners = map (tuner: {
       name = "Sony CECH-ZD1 J ${tuner.id}";
       types = [ "GR" ];
@@ -23,21 +27,25 @@ let
   expectedChannels = pkgs.writeText "mirakc-channels.json" (builtins.toJSON channels);
 in
 {
+  orange.healthMonitor = {
+    units = [ "mirakc.service" ];
+    loopbackPorts = [ mirakcPort ];
+  };
+
   systemd.services.mirakc = {
     description = "Shared broadcast receiver for KonomiTV and native EDCB";
     wantedBy = [ "multi-user.target" ];
     requires = receiverUnits ++ [ "pcscd.service" ];
     after = receiverUnits ++ [ "pcscd.service" ];
     path = [ pkgs.local.mirakc-arib ];
-    environment = {
-      PCSCLITE_CSOCK_NAME = "/run/pcscd/pcscd.comm";
+    environment = tvEnvironment // {
       RUST_LOG = "info";
     };
     preStart = ''
       install -d -m 0750 /var/lib/mirakc/epg
     '';
     postStart = ''
-      ${pkgs.python3}/bin/python ${./wait-mirakc.py} ${expectedChannels}
+      ${pkgs.python3}/bin/python ${./wait-mirakc.py} ${expectedChannels} http://127.0.0.1:${toString mirakcPort}
     '';
     serviceConfig = {
       User = "tv";

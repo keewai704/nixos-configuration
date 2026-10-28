@@ -128,19 +128,15 @@
         inherit system;
         config.allowUnfree = true;
       };
-
-      mkHost =
-        name:
-        nixpkgs.lib.nixosSystem {
-          specialArgs = { inherit inputs; };
-          modules = [
-            ./modules/common
-            ./hosts/${name}
-          ];
-        };
     in
     {
-      nixosConfigurations = nixpkgs.lib.genAttrs [ "orange" ] mkHost;
+      nixosConfigurations.orange = nixpkgs.lib.nixosSystem {
+        specialArgs = { inherit inputs; };
+        modules = [
+          ./modules/common
+          ./hosts/orange
+        ];
+      };
 
       packages.${system} = (pkgs.extend (import ./pkgs { inherit inputs; })).local;
 

@@ -1,9 +1,10 @@
 { lib, pkgs, ... }:
 let
-  tuners = import ./tuners.nix;
-  receiverUnits = map (tuner: "torne-receiver-${tuner.id}.service") tuners;
+  inherit (import ./settings.nix) tuners receiverUnits;
 in
 {
+  orange.healthMonitor.units = [ "pcscd.socket" ] ++ receiverUnits;
+
   services.pcscd = {
     enable = true;
     package = pkgs.pcsclite;

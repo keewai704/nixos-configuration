@@ -10,7 +10,7 @@ expected = {(channel['channel'], sid) for channel in channels for sid in channel
 missing = expected
 for attempt in range(300):
     try:
-        with urllib.request.urlopen('http://127.0.0.1:40772/api/services', timeout=1) as response:
+        with urllib.request.urlopen(f'{sys.argv[2]}/api/services', timeout=1) as response:
             services = json.load(response)
     except (urllib.error.URLError, TimeoutError):
         time.sleep(1)

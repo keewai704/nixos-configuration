@@ -78,6 +78,8 @@ let
   ];
 in
 {
+  orange.healthMonitor.units = [ "minecraft.service" ];
+
   users = {
     groups.minecraft = { };
     users.minecraft = {

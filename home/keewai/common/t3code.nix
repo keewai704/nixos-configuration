@@ -19,11 +19,7 @@ let
 in
 {
   options.services.t3code = {
-    mode = lib.mkOption {
-      type = lib.types.nullOr (lib.types.enum [ "server" ]);
-      default = null;
-      description = "Run T3 Code nightly as a headless loopback server.";
-    };
+    enable = lib.mkEnableOption "T3 Code nightly as a headless loopback server";
     port = lib.mkOption {
       type = lib.types.port;
       default = 3773;
@@ -31,31 +27,26 @@ in
     };
   };
 
-  config = lib.mkMerge [
-    (lib.mkIf (cfg.mode != null) {
-      home.packages = [ package ];
-    })
+  config = lib.mkIf cfg.enable {
+    home.packages = [ package ];
+    home.extraDependencies = [ inputs.t3code-releases.outPath ];
 
-    (lib.mkIf (cfg.mode == "server") {
-      home.extraDependencies = [ inputs.t3code-releases.outPath ];
-
-      systemd.user.services.t3code = {
-        Unit = {
-          Description = "T3 Code nightly server";
-          After = [ "network.target" ];
-        };
-        Service = {
-          ExecStart = "${package}/bin/t3 serve --mode web --host 127.0.0.1 --port ${toString cfg.port}";
-          WorkingDirectory = config.home.homeDirectory;
-          UMask = "0077";
-          Environment = environment ++ [ "T3CODE_HOME=${config.home.homeDirectory}/.t3" ];
-          KillMode = "mixed";
-          Restart = "on-failure";
-          RestartSec = 5;
-          TimeoutStopSec = 60;
-        };
-        Install.WantedBy = [ "default.target" ];
+    systemd.user.services.t3code = {
+      Unit = {
+        Description = "T3 Code nightly server";
+        After = [ "network.target" ];
       };
-    })
-  ];
+      Service = {
+        ExecStart = "${package}/bin/t3 serve --mode web --host 127.0.0.1 --port ${toString cfg.port}";
+        WorkingDirectory = config.home.homeDirectory;
+        UMask = "0077";
+        Environment = environment ++ [ "T3CODE_HOME=${config.home.homeDirectory}/.t3" ];
+        KillMode = "mixed";
+        Restart = "on-failure";
+        RestartSec = 5;
+        TimeoutStopSec = 60;
+      };
+      Install.WantedBy = [ "default.target" ];
+    };
+  };
 }

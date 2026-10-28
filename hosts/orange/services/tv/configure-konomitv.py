@@ -7,7 +7,7 @@ yaml = YAML()
 managed = yaml.load(Path(sys.argv[1]))
 path = Path(sys.argv[2])
 config = yaml.load(path)
-for section in ('general', 'tv', 'video', 'capture'):
+for section in ('general', 'server', 'tv', 'video', 'capture'):
     config.setdefault(section, {}).update(managed[section])
 temporary = path.with_suffix('.yaml.tmp')
 with temporary.open('w') as stream:

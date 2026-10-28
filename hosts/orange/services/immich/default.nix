@@ -6,13 +6,15 @@
 }:
 
 let
-  inherit (import ../settings.nix)
+  inherit (import ../../settings.nix)
     immichBackupRoot
     immichMediaRoot
     immichPort
     storageMountUnit
+    tailnetHostname
     tailnetOrigin
     ;
+  mkProxyLocation = import ../web/proxy.nix;
   postgresqlPackage = pkgs.postgresql_17;
   importDependencies = [
     "media-storage-prepare.service"
@@ -43,6 +45,15 @@ let
   };
 in
 {
+  orange.healthMonitor = {
+    units = [
+      "immich-server.service"
+      "postgresql.service"
+      "redis-immich.service"
+    ];
+    loopbackPorts = [ immichPort ];
+  };
+
   users = {
     groups.immich-media.gid = 1000;
     users = {
@@ -52,14 +63,6 @@ in
       ];
       keewai.extraGroups = [ "immich-media" ];
     };
-  };
-
-  hardware.graphics = {
-    enable = true;
-    extraPackages = [
-      pkgs.intel-media-driver
-      pkgs.vpl-gpu-rt
-    ];
   };
 
   services = {
@@ -110,6 +113,10 @@ in
     group = lib.mkForce "immich-media";
     mode = lib.mkForce "0770";
   };
+
+  services.nginx.virtualHosts.${tailnetHostname}.locations."/" = mkProxyLocation immichPort ''
+    proxy_request_buffering off;
+  '';
 
   systemd.services = {
     immich-import-existing-database = {

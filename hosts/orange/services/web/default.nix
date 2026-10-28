@@ -1,30 +1,15 @@
 { pkgs, ... }:
 let
-  inherit (import ../settings.nix)
-    immichPort
-    nginxPort
-    tailnetHostname
-    tailnetOrigin
-    vaultwardenPort
-    ;
-  mkProxyLocation = port: extraConfig: {
-    proxyPass = "http://127.0.0.1:${toString port}";
-    proxyWebsockets = true;
-    recommendedProxySettings = false;
-    extraConfig = ''
-      ${extraConfig}
-      proxy_buffering off;
-      proxy_set_header Host $host;
-      proxy_set_header X-Real-IP $tailscale_client_ip;
-      proxy_set_header X-Forwarded-For $tailscale_client_ip;
-      proxy_set_header X-Forwarded-Proto https;
-      proxy_set_header X-Forwarded-Host $host;
-      proxy_set_header X-Forwarded-Server $hostname;
-    '';
-  };
+  inherit (import ../../settings.nix) nginxPort tailnetHostname;
 in
 {
-  _module.args = { inherit mkProxyLocation; };
+  orange.healthMonitor = {
+    units = [
+      "nginx.service"
+      "tailscale-serve-nginx.service"
+    ];
+    loopbackPorts = [ nginxPort ];
+  };
 
   services.nginx = {
     enable = true;
@@ -53,15 +38,6 @@ in
         client_body_buffer_size 1024k;
         send_timeout 600s;
       '';
-      locations = {
-        "= /vault".return = "308 ${tailnetOrigin}/vault/";
-
-        "^~ /vault/" = mkProxyLocation vaultwardenPort "";
-
-        "/" = mkProxyLocation immichPort ''
-          proxy_request_buffering off;
-        '';
-      };
     };
   };
 

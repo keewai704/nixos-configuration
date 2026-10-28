@@ -6,13 +6,15 @@
 }:
 
 let
-  inherit (import ../settings.nix)
+  inherit (import ../../settings.nix)
     storageMountUnit
     storageRoot
+    tailnetHostname
     tailnetOrigin
     vaultwardenBackupRoot
     vaultwardenPort
     ;
+  mkProxyLocation = import ../web/proxy.nix;
   legacyVaultwardenRoot = "${storageRoot}/server/vaultwarden";
   storagePreparationDependencies = [
     "media-storage-prepare.service"
@@ -42,6 +44,11 @@ let
   };
 in
 {
+  orange.healthMonitor = {
+    units = [ "vaultwarden.service" ];
+    loopbackPorts = [ vaultwardenPort ];
+  };
+
   services.vaultwarden = {
     enable = true;
     dbBackend = "sqlite";
@@ -53,6 +60,11 @@ in
       ROCKET_PORT = vaultwardenPort;
       SIGNUPS_ALLOWED = false;
     };
+  };
+
+  services.nginx.virtualHosts.${tailnetHostname}.locations = {
+    "= /vault".return = "308 ${tailnetOrigin}/vault/";
+    "^~ /vault/" = mkProxyLocation vaultwardenPort "";
   };
 
   systemd = {

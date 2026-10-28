@@ -2,10 +2,6 @@
 
 自宅サーバー `orange`（`x86_64-linux`）の NixOS 設定です。
 
-| ホスト | 役割 |
-| --- | --- |
-| `orange` | 自宅サーバー（Immich、Vaultwarden、Samba、Minecraft、バックアップ） |
-
 OS・ハードウェア・システムサービスは **NixOS**、個人のアプリや設定は **Home Manager** で管理します。
 作業ルール（検証・コミット・適用の手順）は [AGENTS.md](AGENTS.md) にあります。
 
@@ -19,7 +15,7 @@ TCP・Unix ソケットのローカル／リモート転送を禁止していま
 ```text
 .
 ├── flake.nix            入力（依存リポジトリ）、orange の構成、開発用シェル
-├── hosts/orange/        ハードウェア、起動、settings.nix、services/ にサーバー機能
+├── hosts/orange/        ハードウェア、GPU、起動、settings.nix、services/ にサーバー機能
 ├── modules/common/     Nix、ネットワーク、ユーザー、Home Manager の接続
 ├── home/keewai/common/  個人設定（シェル、Git、コーディングエージェント、T3 Code）
 ├── pkgs/                自作・改造パッケージとパッチ
@@ -39,7 +35,7 @@ flake.nix
     ├── modules/common
     │   └── home-manager.nix  →  home/keewai/common
     └── hosts/orange
-        └── services/        サーバー機能
+        └── services/        default.nix がサーバー機能を明示的に読み込む
 ```
 
 ## やりたいこと別の編集先
@@ -51,7 +47,7 @@ flake.nix
 | Git / GitHub CLI | [git.nix](home/keewai/common/git.nix) |
 | Claude Code・Codex・スキル・MCP サーバー | [coding-agents/](home/keewai/common/coding-agents/default.nix)、[skills/](skills/) |
 | T3 Code（nightly サーバー） | [t3code.nix](home/keewai/common/t3code.nix)、[pkgs/t3code](pkgs/t3code/) |
-| orange のハードウェア・起動 | [hosts/orange/](hosts/orange/) |
+| orange のハードウェア・GPU・起動 | [hosts/orange/](hosts/orange/)、[graphics.nix](hosts/orange/graphics.nix) |
 | orange のサービス・ポート・保存先 | [hosts/orange/services/](hosts/orange/services/)、[settings.nix](hosts/orange/settings.nix) |
 | orange の USB チューナー・EDCB・KonomiTV | [tv/](hosts/orange/services/tv/)、[pkgs/](pkgs/) |
 
@@ -135,7 +131,7 @@ Claude Code と Codex は orange で Home Manager が導入し、どのシェル
 ### T3 Code nightly
 
 [T3 Code](https://github.com/pingdotgg/t3code) は、orange で Home Manager の常駐サーバーとして動きます。
-共通設定は [t3code.nix](modules/common/t3code.nix)、ユーザーサービスは [t3code.nix](home/keewai/common/t3code.nix) が管理します。
+公開経路と接続先は [t3code.nix](hosts/orange/services/t3code.nix)、ユーザーサービスは [t3code.nix](home/keewai/common/t3code.nix) が管理します。
 公式の nightly AppImage に含まれる CLI を `t3 serve` で実行し、グラフィカルセッションには依存しません。
 リリース情報は `t3code-releases` 入力で固定し、更新は `nix flake update` と通常の適用手順で行います。
 アプリ内の自動更新は無効です。
@@ -164,30 +160,42 @@ Claude Code と Codex は orange で Home Manager が導入し、どのシェル
 
 | サービス | URL・用途 | 設定 |
 | --- | --- | --- |
-| Immich | `https://orange.tail1e65cd.ts.net/` | [immich.nix](hosts/orange/services/immich.nix) |
-| Vaultwarden | `https://orange.tail1e65cd.ts.net/vault/` | [vaultwarden.nix](hosts/orange/services/vaultwarden.nix) |
+| Immich | `https://orange.tail1e65cd.ts.net/` | [immich/](hosts/orange/services/immich/) |
+| Vaultwarden | `https://orange.tail1e65cd.ts.net/vault/` | [vaultwarden/](hosts/orange/services/vaultwarden/) |
 | Obsidian LiveSync | `https://orange.tail1e65cd.ts.net/couchdb/` | [obsidian-livesync.nix](hosts/orange/services/obsidian-livesync.nix) |
-| T3 Code | `https://orange.tail1e65cd.ts.net/t3/` | [t3code.nix](modules/common/t3code.nix) |
+| T3 Code | `https://orange.tail1e65cd.ts.net/t3/` | [t3code.nix](hosts/orange/services/t3code.nix) |
 | KonomiTV | `https://orange.tail1e65cd.ts.net/tv/` | [tv/](hosts/orange/services/tv/) |
 | Samba | HDD の共有 | [samba.nix](hosts/orange/services/samba.nix) |
 | Minecraft | Fabric サーバー | [minecraft.nix](hosts/orange/services/minecraft.nix) |
 | Tailscale 出口ノード | 出口ノード | [tailscale-exit-node.nix](hosts/orange/services/tailscale-exit-node.nix) |
-| 公開の経路 | nginx と Tailscale Serve | [web.nix](hosts/orange/services/web.nix) |
+| 公開の経路 | nginx と Tailscale Serve | [web/](hosts/orange/services/web/) |
 
-- ポート・パス・URL は [settings.nix](hosts/orange/settings.nix) にまとめています。
+- 複数の機能で共有するポート・パス・URL は [settings.nix](hosts/orange/settings.nix) にまとめています。
+  テレビ内部の接続先と保存先は [tv/settings.nix](hosts/orange/services/tv/settings.nix) で管理します。
+- サービスの追加は [services/default.nix](hosts/orange/services/default.nix) に明示し、公開ルートは各サービスの設定に置きます。
+  プロキシは [web/proxy.nix](hosts/orange/services/web/proxy.nix) を使い、ホスト・HTTPS・クライアントIPの転送を揃えます。
+- Intel GPU と QSV のドライバーは [graphics.nix](hosts/orange/graphics.nix) が管理し、Immich とテレビから利用します。
 - 起動の順番は「HDD のマウント → 共有ディレクトリの準備 → 既存データの取り込み → アプリ」です（[storage.nix](hosts/orange/services/storage.nix)）。
-- [local-backup](hosts/orange/services/local-backup.nix) がバックアップ、[health-monitor](hosts/orange/services/health-monitor.nix) が
+- [local-backup](hosts/orange/services/local-backup/) がバックアップ、[health-monitor](hosts/orange/services/health-monitor/) が
   15 分ごとに異常を Discord へ通知、[smart-tests](hosts/orange/services/smart-tests.nix) がディスクの診断、
   [maintenance](hosts/orange/services/maintenance.nix) がログの掃除・TRIM・Nix ストアの保守を受け持ちます。
-- 長いシェル処理は `.sh` のテンプレートに書き、`@名前@` を `fillTemplate`（[default.nix](hosts/orange/default.nix)）で
+- 各サービスが `orange.healthMonitor.units` と `loopbackPorts` に監視対象を追加します。
+  T3 Code は `userUnits` で `keewai` のユーザーサービスとして、PC/SC は `pcscd.socket` の待受として確認します。
+  Web 監視は Immich、Vaultwarden、T3 Code、KonomiTV の応答と CouchDB の認証要求を確認します。
+- 長いシェル処理は機能ディレクトリ内の `.sh` テンプレートに書き、`@名前@` を `fillTemplate`（[services/default.nix](hosts/orange/services/default.nix)）で
   置き換えて使います。テンプレートを直接実行しないでください。
 
 ### テレビ
 
+構成の入口は [tv/default.nix](hosts/orange/services/tv/default.nix) です。
+[edcb.nix](hosts/orange/services/tv/edcb.nix) が番組表と録画予約、
+[recording.nix](hosts/orange/services/tv/recording.nix) が録画後の変換、
+[konomitv.nix](hosts/orange/services/tv/konomitv.nix) が視聴画面と公開経路を管理します。
+
 Sony CECH-ZD1 J 2台を、機器ごとの `torne-receiver` → mirakc の順に接続し、KonomiTV のライブ受信と
 BonDriver_LinuxMirakc → xtne6f 版 EDCB（Linux ネイティブ）の録画で共有します。
 KonomiTV は EDCB バックエンドの `always_receive_tv_from_mirakurun` を有効にし、番組情報・録画予約は EDCB、放送波は mirakc から取得します。
-mirakc は `127.0.0.1:40772` の内部接続だけで利用します。同じ放送波は共有し、異なる2つの放送波を同時受信できます。チューナー不足の場合は EDCB の録画を優先します。
+mirakc は [settings.nix](hosts/orange/services/tv/settings.nix) で指定したループバックポートの内部接続だけで利用します。同じ放送波は共有し、異なる2つの放送波を同時受信できます。チューナー不足の場合は EDCB の録画を優先します。
 内蔵 B-CAS スロットは専用 IFD と標準 pcscd で公開し、ライブは aribb25、EDCB は B25Decoder で復号します。映像は Intel QSV で変換します。
 8TB HDD 上の録画専用ディレクトリは `/srv/storage/KonomiTV/Recordings`、キャプチャは `/srv/storage/KonomiTV/Captures`、設定・番組表は
 `/var/lib/edcb` と `/var/lib/konomitv` に保存します。

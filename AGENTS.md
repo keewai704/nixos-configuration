@@ -90,14 +90,15 @@ reduce its privileges.
    remain uncommitted.
 4. If the commit affects the runtime host's evaluated configuration, deployed
    files, or services, record its expected system store path and relevant runtime
-   baseline. Run `sudo nixos-rebuild test --flake .#<runtime-host>` on that
+   baseline. Run
+   `sudo nixos-rebuild test --accept-flake-config --flake .#<runtime-host>` on that
    committed state, using its evaluation/build rather than prebuilding the same
    output. Distributed `skills/` affect every host.
 5. After `test`, check network connectivity, failed system/user units, and every
    affected service's behavior. New failures or regressions block `switch`.
 6. Only after those gates pass, run
-   `sudo nixos-rebuild switch --flake .#<runtime-host>`. Repeat the network,
-   failed-unit, and affected-service checks. Confirm `/run/current-system` and
+   `sudo nixos-rebuild switch --accept-flake-config --flake .#<runtime-host>`.
+   Repeat the network, failed-unit, and affected-service checks. Confirm `/run/current-system` and
    `/nix/var/nix/profiles/system` both match the tested store path.
 
 These activation and post-activation gates are distinct; earlier passing checks

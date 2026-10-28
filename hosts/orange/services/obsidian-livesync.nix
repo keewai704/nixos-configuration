@@ -1,5 +1,6 @@
 { lib, pkgs, ... }:
 let
+  mkProxyLocation = import ./web/proxy.nix;
   inherit (import ../settings.nix)
     couchdbPort
     obsidianVault
@@ -40,6 +41,14 @@ let
   );
 in
 {
+  orange.healthMonitor = {
+    units = [
+      "couchdb.service"
+      "livesync-bridge.service"
+    ];
+    loopbackPorts = [ couchdbPort ];
+  };
+
   services.couchdb = {
     enable = true;
     bindAddress = "127.0.0.1";
@@ -153,19 +162,9 @@ in
 
   services.nginx.virtualHosts.${tailnetHostname}.locations = {
     "= /couchdb".return = "308 ${tailnetOrigin}/couchdb/";
-    "^~ /couchdb/" = {
+    "^~ /couchdb/" = (mkProxyLocation couchdbPort "proxy_request_buffering off;") // {
       proxyPass = "${couchdbUrl}/";
-      recommendedProxySettings = false;
-      extraConfig = ''
-        proxy_buffering off;
-        proxy_request_buffering off;
-        proxy_set_header Host $host;
-        proxy_set_header X-Real-IP $tailscale_client_ip;
-        proxy_set_header X-Forwarded-For $tailscale_client_ip;
-        proxy_set_header X-Forwarded-Proto https;
-        proxy_set_header X-Forwarded-Host $host;
-        proxy_set_header X-Forwarded-Server $hostname;
-      '';
+      proxyWebsockets = false;
     };
   };
 }
