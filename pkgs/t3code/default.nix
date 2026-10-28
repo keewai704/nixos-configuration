@@ -125,9 +125,6 @@ stdenv.mkDerivation {
 
   postPatch = ''
     asar extract resources/app.asar app
-    serverBundles=(app/apps/server/dist/binCli-*.mjs)
-    test "''${#serverBundles[@]}" -eq 1
-    patch --fuzz=0 "''${serverBundles[0]}" ${./codex-session-recovery.patch}
     python3 ${./web-subpath.py} app
     asar pack app resources/app.asar --unpack-dir node_modules
     rm -r app
