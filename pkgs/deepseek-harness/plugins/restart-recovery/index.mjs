@@ -8,7 +8,9 @@ export const name = "dsh-restart-recovery";
 export const inject = ["agents", "goals", "sessionController"];
 
 function interrupted(event, entry = {}) {
-  if (event?.type !== "turn/end" || event.data.reason?.kind !== "aborted") return false;
+  if (event?.type !== "turn/end") return false;
+  if (event.data.reason?.kind === "interrupted") return true;
+  if (event.data.reason?.kind !== "aborted") return false;
   const cause = event.data.reason.reason?.kind;
   return ["disposed", "interrupted"].includes(cause) || cause === "parent" && Boolean(entry.goalId && entry.armed);
 }

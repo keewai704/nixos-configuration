@@ -150,7 +150,8 @@ buildNpmPackage {
     ${lib.getExe nodejs} --expose-internals --test \
       "$out/lib/deepseek-harness/plugins/usage/test-usage.mjs" \
       "$out/lib/deepseek-harness/plugins/history-window/test-history.mjs" \
-      "$out/lib/deepseek-harness/plugins/restart-recovery/test-recovery.mjs"
+      "$out/lib/deepseek-harness/plugins/restart-recovery/test-recovery.mjs" \
+      "$out/lib/deepseek-harness/plugins/restart-recovery/test-process.mjs"
     localeCheck="$TMPDIR/dsh-locale-check"
     cp -r ${mobilePlugin} "$localeCheck"
     chmod -R u+w "$localeCheck"

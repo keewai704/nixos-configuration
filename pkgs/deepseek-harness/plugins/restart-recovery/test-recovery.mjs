@@ -5,6 +5,7 @@ import { join } from "node:path";
 import test from "node:test";
 import { Context } from "@deepseek-ai/cordis";
 import { SessionController } from "@deepseek-ai/dsh-api-session-controller";
+import { interruptedTurnClosers } from "@deepseek-ai/dsh-session";
 import { apply, needsRecovery, Recovery } from "./index.mjs";
 
 const start = { type: "turn/start", data: { turn: 1 } };
@@ -73,6 +74,13 @@ test("only interrupted turns or previously armed active goals are eligible", () 
   assert.equal(needsRecovery([start, end("aborted", "parent")], {}), false);
   assert.equal(needsRecovery([start, end("aborted", "parent")], { goalId: "goal", armed: true }), true);
   assert.equal(needsRecovery([], {}), false);
+});
+
+test("core crash-recovery closers remain eligible for automatic continuation", () => {
+  const events = [{ ...start, seq: 1, time: 1 }];
+  const closers = interruptedTurnClosers(events);
+  assert.equal(closers.at(-1).data.reason.kind, "interrupted");
+  assert.equal(needsRecovery([...events, ...closers], {}), true);
 });
 
 test("running markers survive a crash and disposed shutdown but not a user stop", (t) => {
