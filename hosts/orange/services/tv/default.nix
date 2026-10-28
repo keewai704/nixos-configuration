@@ -51,7 +51,7 @@ let
     ) (import ./channels.nix)
     + "\n"
   );
-  nativeBonDrivers = pkgs.runCommand "torne-bondrivers" { } (
+  nativeBonDrivers = pkgs.runCommand "torne-bondrivers" { nativeBuildInputs = [ pkgs.patchelf ]; } (
     lib.concatMapStringsSep "\n" (
       tuner:
       let
@@ -65,7 +65,8 @@ let
         };
       in
       ''
-        install -Dm555 ${pkgs.local.torne-receiver}/lib/BonDriver_Torne.so $out/${name}
+        install -Dm755 ${pkgs.local.torne-receiver}/lib/BonDriver_Torne.so $out/${name}
+        patchelf --set-soname ${name} $out/${name}
         ln -s ${settings} $out/${name}.ini
       ''
     ) tuners
