@@ -304,24 +304,13 @@
  	d->br->ops->msleep(d->br->priv, ms);
  }
  
-@@ -3547,7 +3548,7 @@
- 	return d->err;
+@@ -1597,6 +1598,22 @@
+ 	return dib_read_word(d, 568);
  }
  
--int torne_dib_tune(struct torne_dib *d, u32 frequency_hz)
-+static int tune_auto(struct torne_dib *d, u32 frequency_hz)
- {
- 	d->err = 0;
- 
-@@ -3579,6 +3580,68 @@
- 	d->c.frequency = frequency_hz;
- 
- 	return dib_set_frontend(d) ?: d->err;
-+}
-+
-+static bool fullseg_locked(struct torne_dib *d)
++static bool fullseg_locked(struct torne_dib *d, u16 lock)
 +{
-+    u16 lock = read_lock(d), mask = 0;
++    u16 mask = 0;
 +    unsigned int segments = 0;
 +    int i;
 +    for (i = 0; i < 3; i++) {
@@ -335,6 +324,51 @@
 +        (lock & 0x101e) == 0x101e && (lock & mask) == mask;
 +}
 +
+ /* whether every parameter is known, so the autosearch can be skipped; with only a frequency known it never is */
+ static bool is_manual_mode(struct dib_channel *c)
+ {
+@@ -1837,7 +1854,7 @@
+ 
+ 	case DEMOD_STEP10: /* 40 */
+ 		locks = read_lock(d);
+-		if (locks & (1 << (7 - d->longest_intl_layer))) { /* mpeg lock: check the longest one */
++		if (fullseg_locked(d, locks) || (locks & (1 << (7 - d->longest_intl_layer)))) { /* mpeg lock: check the longest one */
+ 			d->status = STATUS_DATA_LOCKED;
+ 			d->tune_state = DEMOD_STOP;
+ 		} else if (now > d->timeout_ms) {
+@@ -3231,7 +3248,7 @@
+ 
+ 		/* dib0090_tune counts in 0.1ms, but Linux sleeps in whole jiffies and found that anything below 10ms can keep
+ 		 * the tuner from locking; so it rounds up to 10ms steps */
+-		ret = 10 * (ret + 99) / 100;
++		ret = 10 * ((ret + 99) / 100);
+ 		msleep_(d, ret);
+ 		if (d->t_tune_state == TUNER_STOP)
+ 			break;
+@@ -3403,7 +3420,7 @@
+ 			break;
+ 
+ 		/* agc_startup counts in 0.1ms, but Linux sleeps in whole jiffies; round up to 10ms steps */
+-		wait = 10 * (wait + 99) / 100;
++		wait = 10 * ((wait + 99) / 100);
+ 		msleep_(d, wait);
+ 		if (d->tune_state == AGC_STOP)
+ 			break;
+@@ -3547,7 +3564,7 @@
+ 	return d->err;
+ }
+ 
+-int torne_dib_tune(struct torne_dib *d, u32 frequency_hz)
++static int tune_auto(struct torne_dib *d, u32 frequency_hz)
+ {
+ 	d->err = 0;
+ 
+@@ -3579,6 +3596,52 @@
+ 	d->c.frequency = frequency_hz;
+ 
+ 	return dib_set_frontend(d) ?: d->err;
++}
++
 +static int finish_tune(struct torne_dib *d, int result)
 +{
 +    u64 deadline = now_ms(d) + 1000;
@@ -342,11 +376,11 @@
 +    if (result || d->err)
 +        return d->err ?: result;
 +    get_frontend(d);
-+    while (!fullseg_locked(d) && !d->err && now_ms(d) < deadline)
++    while (!fullseg_locked(d, read_lock(d)) && !d->err && now_ms(d) < deadline)
 +        msleep_(d, 10);
 +    if (d->err)
 +        return d->err;
-+    return fullseg_locked(d) ? 0 : -EAGAIN;
++    return fullseg_locked(d, read_lock(d)) ? 0 : -EAGAIN;
 +}
 +
 +int torne_dib_tune(struct torne_dib *d, u32 frequency_hz)
@@ -356,7 +390,7 @@
 +    if (frequency_hz < MIN_FREQUENCY_HZ || frequency_hz > MAX_FREQUENCY_HZ)
 +        return -EINVAL;
 +    d->err = 0;
-+    if (!d->asleep && d->c.frequency == frequency_hz && fullseg_locked(d))
++    if (!d->asleep && d->c.frequency == frequency_hz && fullseg_locked(d, read_lock(d)))
 +        return 0;
 +    if (d->err)
 +        return d->err;
