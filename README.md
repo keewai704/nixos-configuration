@@ -354,8 +354,8 @@ NixOS のデスクトップや実ディスクのパーティションは置き�
 Tailscale 接続中に [ブラウザーの操作画面](https://orange.tail1e65cd.ts.net/pond/) を開きます。
 初回は公式 ISO のインストーラーが起動します。インストール先は VM 専用の 24 GiB の仮想ディスクです。
 
-- 2 vCPU、メモリー 2 GiB、virtio GPU の描画を使います。ブラウザーの画面転送には音声は含まれません。
-- 仮想ディスクと UEFI 設定は `/var/lib/pond/` に保持します。ホストのホームやストレージは VM に共有しません。
+- 2 vCPU、メモリー 2 GiB、virtio GPU のソフトウェア描画を使います。重い3D用途向けではなく、画面転送に音声は含まれません。
+- 仮想ディスクと UEFI 設定は `/var/lib/pond/` に保持します。ホストのホーム・ストレージ・GPU は VM に共有しません。
 - 起動・停止は `sudo systemctl start pond-vm` / `sudo systemctl stop pond-vm`、ログは `journalctl -u pond-vm` です。
   停止時はゲストへ電源ボタンを通知し、最大60秒待ってから終了します。
 - noVNC のファイルと WebSocket は共通の HTTPS 443 から配信します。QEMU の WebSocket はループバックのみ、

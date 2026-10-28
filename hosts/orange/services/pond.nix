@@ -33,8 +33,8 @@ in
         -drive if=virtio,format=qcow2,file=disk.qcow2,discard=unmap \
         -drive media=cdrom,format=raw,readonly=on,file=${inputs.pond-iso} \
         -boot order=cd,menu=on \
-        -device virtio-vga-gl \
-        -display egl-headless,rendernode=/dev/dri/renderD128 \
+        -device virtio-vga \
+        -display none \
         -vnc unix:/run/pond/vnc.sock,websocket=127.0.0.1:${toString pondPort} \
         -monitor unix:/run/pond/monitor.sock,server=on,wait=off \
         -serial null \
@@ -53,10 +53,7 @@ in
     '';
     serviceConfig = {
       DynamicUser = true;
-      SupplementaryGroups = [
-        "kvm"
-        "render"
-      ];
+      SupplementaryGroups = [ "kvm" ];
       StateDirectory = "pond";
       RuntimeDirectory = "pond";
       WorkingDirectory = "/var/lib/pond";
@@ -76,10 +73,7 @@ in
       ProtectControlGroups = true;
       RestrictSUIDSGID = true;
       DevicePolicy = "closed";
-      DeviceAllow = [
-        "/dev/kvm rw"
-        "/dev/dri/renderD128 rw"
-      ];
+      DeviceAllow = [ "/dev/kvm rw" ];
     };
   };
 
