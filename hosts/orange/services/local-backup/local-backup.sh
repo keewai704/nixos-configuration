@@ -137,4 +137,7 @@ fi
 mv "$minecraft_tmp" "$minecraft_dir/minecraft-$stamp.tar.zst"
 find "$minecraft_dir" -mindepth 1 -maxdepth 1 -type f \
   -name 'minecraft-*.tar.zst' -mtime +13 -delete
+cleanup_backups
+trap - EXIT
+
 exit "$backup_status"
