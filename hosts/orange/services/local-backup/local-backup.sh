@@ -30,7 +30,9 @@ archive_vaultwarden() {
     --file "$vaultwarden_tmp" \
     --directory @vaultwardenBackupRoot@ . &&
     mv "$vaultwarden_tmp" "$vaultwarden_dir/vaultwarden-$stamp.tar.zst"; then
-    return 0
+    find "$vaultwarden_dir" -mindepth 1 -maxdepth 1 -type f \
+      -name 'vaultwarden-*.tar.zst' -mtime +13 -delete
+    return
   fi
   rm -f -- "$vaultwarden_tmp"
   return 1
@@ -124,12 +126,9 @@ else
   exit 1
 fi
 mv "$minecraft_tmp" "$minecraft_dir/minecraft-$stamp.tar.zst"
-cleanup_minecraft
-trap - EXIT
-
 find "$minecraft_dir" -mindepth 1 -maxdepth 1 -type f \
   -name 'minecraft-*.tar.zst' -mtime +13 -delete
-find "$vaultwarden_dir" -mindepth 1 -maxdepth 1 -type f \
-  -name 'vaultwarden-*.tar.zst' -mtime +13 -delete
+cleanup_minecraft
+trap - EXIT
 
 exit "$backup_status"

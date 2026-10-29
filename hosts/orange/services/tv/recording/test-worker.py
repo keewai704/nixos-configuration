@@ -186,6 +186,13 @@ class RecordingWorkspace(unittest.TestCase):
             for index, argument in enumerate(sys.argv):
                 if argument == '--logo':
                     assert Path(sys.argv[index + 1]).read_bytes() == b'complete'
+            source = Path(sys.argv[sys.argv.index('-i') + 1])
+            if source.is_file() and source.read_bytes() == b'no matching logo':
+                auto_detect = (sys.argv[sys.argv.index('--auto-logo-detect') + 1]
+                               if '--auto-logo-detect' in sys.argv else '1')
+                if auto_detect != '0':
+                    logo = Path(sys.argv[sys.argv.index('--logo') + 1])
+                    (logo.parent / 'SID101-auto.lgd').write_bytes(b'partial')
             output = Path(sys.argv[sys.argv.index('-o') + 1])
             output.write_bytes(b'encoded fixture')
             result = Path(sys.argv[sys.argv.index('-j') + 1])
@@ -222,6 +229,16 @@ class RecordingWorkspace(unittest.TestCase):
         self.args.logo_generator = self.tool('unexpected-generator', 'raise SystemExit(1)')
         self.analyze()
         self.assertFalse((self.cache / 'station.lgd').exists())
+
+    def test_unmatched_cached_logo_does_not_publish_partial_redetection(self):
+        cached = self.cache / 'custom.lgd'
+        cached.write_bytes(b'complete')
+        (self.root / 'source.ts').write_bytes(b'no matching logo')
+        self.args.logo_generator = self.tool('unexpected-generator', 'raise SystemExit(1)')
+        output, _, _, _, result = self.analyze()
+        self.assertTrue(output.is_file())
+        self.assertTrue(result['cmanalyze'])
+        self.assertEqual(list(self.cache.iterdir()), [cached])
 
     def test_generated_logo_is_published_across_mount_boundaries(self):
         replace = Path.replace

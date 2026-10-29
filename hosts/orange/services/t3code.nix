@@ -80,6 +80,7 @@ in
       '';
       "~ ^/api/assets/[A-Za-z0-9_-]+[.][A-Za-z0-9_-]+/" = proxy;
       "= /pair".return = "302 ${tailnetOrigin}/t3/pair$is_args$args";
+      "= /connect-agent".return = "302 ${tailnetOrigin}/t3/connect-agent$is_args$args";
       "= /t3".return = "308 ${tailnetOrigin}/t3/";
       "^~ /t3/" = (mkProxyLocation t3codePort "") // {
         proxyPass = "http://127.0.0.1:${toString t3codePort}/";

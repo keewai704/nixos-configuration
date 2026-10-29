@@ -388,7 +388,7 @@ check_backups() {
   check_fresh_file "vaultwarden" "Vaultwarden" @vaultwardenBackupRoot@ 'db.sqlite3' 1800
 
   local_backup_trigger=$(systemctl show orange-local-backup.timer --property LastTriggerUSec --value 2>/dev/null || true)
-  if [[ -n "$local_backup_trigger" && "$local_backup_trigger" != n/a ]]; then
+  if [[ (-n "$local_backup_trigger" && "$local_backup_trigger" != n/a) || -d @localBackupRoot@ ]]; then
     check_fresh_file "minecraft" "Minecraft" @minecraftBackupRoot@ 'minecraft-*.tar.zst' 1800
     check_fresh_file "vaultwarden-versioned" "versioned Vaultwarden" @versionedVaultwardenBackupRoot@ 'vaultwarden-*.tar.zst' 1800
   fi

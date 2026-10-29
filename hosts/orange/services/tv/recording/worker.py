@@ -347,7 +347,7 @@ def analyze_recording(source, sid, video, args, work, log):
                '-eo', options, '--format', 'tsreplace', '-m', args.muxer,
                '--chapter', '--cmoutmask', '1', '--parallel-logo-analysis', '1',
                '--min-output-duration', '1',
-               '--auto-logo-detect-div-x', '4', '--auto-logo-detect-div-y', '4',
+               '--auto-logo-detect', '0',
                '--ignore-no-logo', '-j', str(result_path)]
     for logo in logos:
         command.extend(['--logo', str(logo)])

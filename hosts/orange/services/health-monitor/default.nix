@@ -39,6 +39,7 @@ let
     "@loopbackBackendPortPattern@" = loopbackBackendPortPattern;
     "@immichBackupRoot@" = lib.escapeShellArg immichBackupRoot;
     "@vaultwardenBackupRoot@" = lib.escapeShellArg vaultwardenBackupRoot;
+    "@localBackupRoot@" = lib.escapeShellArg localBackupRoot;
     "@minecraftBackupRoot@" = lib.escapeShellArg "${localBackupRoot}/minecraft";
     "@versionedVaultwardenBackupRoot@" = lib.escapeShellArg "${localBackupRoot}/vaultwarden";
   };
