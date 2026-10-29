@@ -61,8 +61,8 @@ flake.nix
 
 ```sh
 nix flake update                                                  # 入力をまとめて更新（適用の前に毎回実行してコミット）
-sudo systemd-run --scope --slice=nix.slice nixos-rebuild test --accept-flake-config --flake .#orange    # 一時的に適用して動作確認（再起動で戻る）
-sudo systemd-run --scope --slice=nix.slice nixos-rebuild switch --accept-flake-config --flake .#orange  # 本適用（起動時の既定にもなる）
+sudo systemd-run --scope --slice=nix.slice ionice -c 3 nixos-rebuild test --accept-flake-config --flake .#orange    # 一時的に適用して動作確認（再起動で戻る）
+sudo systemd-run --scope --slice=nix.slice ionice -c 3 nixos-rebuild switch --accept-flake-config --flake .#orange  # 本適用（起動時の既定にもなる）
 nix fmt                                                           # Nix ファイルを整形
 nix develop                                                       # 言語サーバーや整形ツール入りのシェル
 nix build --accept-flake-config .#<パッケージ名>                   # pkgs/ のパッケージを単体でビルド
@@ -85,16 +85,17 @@ nix build --accept-flake-config .#<パッケージ名>                   # pkgs/
 
 - 新しい設定を適用する前の最初のビルドでもキャッシュを使えるよう、`nixos-rebuild` と `nix build` には
   `--accept-flake-config` を付けます。初回の適用前に単体ビルドするときは
-  `sudo systemd-run --scope --slice=nix.slice nix build --accept-flake-config --no-link .#<パッケージ>` を使います
+  `sudo systemd-run --scope --slice=nix.slice ionice -c 3 nix build --accept-flake-config --no-link .#<パッケージ>` を使います
   （信頼されていない利用者は、flake を受け入れても新しいキャッシュや鍵を追加できないため）。
 - `accept-flake-config` を全体で有効にはしません。中身を確かめた flake のキャッシュ設定だけを受け入れます。
 - `cache.nixos.org` はそのまま使います。
 - キャッシュに載るのは、まったく同じストアパスのものだけです。自前のパッチを当てたパッケージなどは
   手元でビルドされます。署名の検証は無効にしません。
 
-Nix デーモンと上記の適用コマンドは `nix.slice` にまとめ、CPU・I/O の競合時の優先度を下げ、メモリに2 GiBのソフト上限を設けています。
-root のビルドはデーモンを経由しない場合があるため、`systemd-run` で同じ制御を適用します。
-他の重い root のビルドにも `sudo systemd-run --scope --slice=nix.slice nix build …` を使います。
+Nix デーモンと上記の適用コマンドは `nix.slice` にまとめ、CPU の競合時の優先度を下げ、メモリに2 GiBのソフト上限を設けています。
+I/O はデーモン設定と `ionice -c 3` で idle クラスにし、他の処理を優先します。Nix ストアの GC も同じ制御で動かします。
+root のビルドはデーモンを経由しない場合があるため、`systemd-run` と `ionice` で同じ制御を適用します。
+他の重い root のビルドにも `sudo systemd-run --scope --slice=nix.slice ionice -c 3 nix build …` を使います。
 
 ## コーディングエージェント
 
@@ -141,7 +142,7 @@ GitHub のダウンロード数は更新判定に含めません。
 
 - Web 画面は `https://orange.tail1e65cd.ts.net/t3/` です。
   Tailscale Serve HTTPS 443 → `127.0.0.1:8000` の nginx → `127.0.0.1:3773` のサーバーで配信し、API と WebSocket も同じ HTTPS 入口を通ります。
-  `/t3/` 用に Web 画面のルーター、静的ファイル参照、PWA manifest をパッケージ内で補正します。
+  `/t3/` 用に Web 画面のルーター、ペアリング成功後の遷移、静的ファイル参照、PWA manifest をパッケージ内で補正します。
   ルートは Immich です。
 - 起動時にサービスが始まり、既存の `~/.t3` のペアリング、プロジェクト、会話履歴を使います。
   同じ `~/.t3` に対してデスクトップ版や別の `t3 serve` を同時起動しないでください。

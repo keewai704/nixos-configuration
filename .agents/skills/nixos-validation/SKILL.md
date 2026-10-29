@@ -29,9 +29,11 @@ and deployed-content checks. Do not make a model request merely to validate load
 ## Avoid activation conflicts
 
 Run the native activation commands required by AGENTS.md inside
-`sudo systemd-run --scope --slice=nix.slice nixos-rebuild ...`.
-Root builds can bypass the Nix daemon; the shared slice applies the same CPU,
-I/O, and memory controls to both paths. Use the same scope for heavy root builds.
+`sudo systemd-run --scope --slice=nix.slice ionice -c 3 nixos-rebuild ...`.
+Root builds can bypass the Nix daemon; the shared slice applies CPU and memory
+controls to both paths. The daemon uses the idle I/O class, and `ionice` applies
+that class to the root command and its children. Use the same wrapper for heavy
+root builds.
 
 Before each activation, inspect `systemctl list-jobs` and the relevant backup and
 maintenance units. Let active jobs finish before starting `test` or `switch`.

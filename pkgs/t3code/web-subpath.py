@@ -15,6 +15,7 @@ clients = [
 assert len(clients) == 1, clients
 client = clients[0]
 routers = 0
+pairing_redirects = 0
 for path in (client / "assets").glob("*.js"):
     source = path.read_text()
     source, count = re.subn(
@@ -23,10 +24,19 @@ for path in (client / "assets").glob("*.js"):
         source,
     )
     routers += count
+    source, count = re.subn(
+        r'(?P<prefix>\(\)=>\{(?P<router>[A-Za-z_$][\w$]*)\.history\.replace\()'
+        r'(?P<quote>[`\"\'])/(?P=quote)'
+        r'(?P<suffix>\),(?P=router)\.history\.flush\(\),window\.location\.reload\(\)\})',
+        lambda match: match["prefix"] + '"/t3/"' + match["suffix"],
+        source,
+    )
+    pairing_redirects += count
     source = re.sub(r'([`\"\'])/assets/', r'\1/t3/assets/', source)
     source = re.sub(r'([`\"\'])assets/', r'\1t3/assets/', source)
     path.write_text(source)
 assert routers == 1, routers
+assert pairing_redirects == 1, pairing_redirects
 index = client / "index.html"
 index.write_text(re.sub(r'((?:src|href)=")/(?!/)', r'\1/t3/', index.read_text()))
 for path in (client / "assets").glob("*.css"):

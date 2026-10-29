@@ -169,6 +169,8 @@ stdenv.mkDerivation {
     ELECTRON_RUN_AS_NODE=1 $out/libexec/t3code/t3code -p 'process.versions.electron'
     $out/bin/t3 --version | grep -F '${version}'
     asar extract $out/libexec/t3code/resources/app.asar t3code-install-check
+    ELECTRON_RUN_AS_NODE=1 $out/libexec/t3code/t3code ${./test-web-subpath.mjs} \
+      "$PWD/t3code-install-check"
     ELECTRON_RUN_AS_NODE=1 $out/libexec/t3code/t3code ${./test-codex-recovery.mjs} \
       "$PWD/t3code-install-check/apps/server/dist"
     runHook postInstallCheck

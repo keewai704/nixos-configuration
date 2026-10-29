@@ -1,5 +1,6 @@
 {
   nix = {
+    daemonIOSchedClass = "idle";
     gc = {
       automatic = true;
       dates = "weekly";
@@ -30,9 +31,12 @@
 
   systemd.slices.nix.sliceConfig = {
     CPUWeight = 20;
-    IOWeight = 20;
     MemoryHigh = "2G";
   };
 
   systemd.services.nix-daemon.serviceConfig.Slice = "nix.slice";
+  systemd.services.nix-gc.serviceConfig = {
+    Slice = "nix.slice";
+    IOSchedulingClass = "idle";
+  };
 }
