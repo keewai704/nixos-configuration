@@ -23,7 +23,7 @@
     "amatsukaze-releases": {
       "flake": false,
       "locked": {
-        "narHash": "sha256-lkov4HeEoYxJ326NkvMgqc6rjnvPmc3Lwnx2z2/z4fo=",
+        "narHash": "sha256-nG2Kf/CDDHCrMLUhXAH1NJvQ2bOc5EdawlD13U2gQjw=",
         "type": "file",
         "url": "https://api.github.com/repos/rigaya/Amatsukaze/releases/latest"
       },
@@ -316,11 +316,11 @@
         ]
       },
       "locked": {
-        "lastModified": 1793200762,
-        "narHash": "sha256-oZ055iZrhdr6BemnmU825xz3AlGIoYHdPJgPKFaKXo0=",
+        "lastModified": 1793240426,
+        "narHash": "sha256-NPWgb6H4arnWyTKvYIys5U0xqd5QY74Z+lyTJA+7XGY=",
         "ref": "master",
-        "rev": "489adad94b0360044ae9b16f5265925f73d439f0",
-        "revCount": 574,
+        "rev": "bf7d4b1d6de61db02fd4e748395634f03006e5de",
+        "revCount": 575,
         "type": "git",
         "url": "https://github.com/pyproject-nix/pyproject.nix"
       },
@@ -388,7 +388,7 @@
     "t3code-releases": {
       "flake": false,
       "locked": {
-        "narHash": "sha256-kRM4gCuQyofenyBBa9grfyg24sx1dcHpNbWA5LvBY0Y=",
+        "narHash": "sha256-4gPvts7iGqI+65rrVE4xpG6SS1Hk2HLR5WuvJLRvtNM=",
         "type": "file",
         "url": "https://api.github.com/repos/pingdotgg/t3code/releases?per_page=100"
       },
@@ -441,11 +441,11 @@
         ]
       },
       "locked": {
-        "lastModified": 1792666911,
-        "narHash": "sha256-UWo7wDPi00YXOI1Io7g4vGKuCSPJ863kHJVDzsgqtoM=",
+        "lastModified": 1793240513,
+        "narHash": "sha256-dm7lCdfNVQ/244W65PR0PHIjpAJF9T8sGlFebuovwCg=",
         "ref": "master",
-        "rev": "0fdaa03ea3c3c16dbb1fe4d69108f07227a4b42d",
-        "revCount": 511,
+        "rev": "085c08330492e75dd2a86bcd52144fe1b253defa",
+        "revCount": 512,
         "type": "git",
         "url": "https://github.com/pyproject-nix/uv2nix"
       },
