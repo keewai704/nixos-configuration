@@ -112,10 +112,54 @@ check_fresh_file() {
   fi
 }
 
+minecraft_backup_running() {
+  local state
+  state=$(systemctl show orange-local-backup.service --property ActiveState --value)
+  [[ "$state" == activating ]]
+}
+
+minecraft_starting() {
+  local started_usec uptime_seconds elapsed_seconds
+  systemctl is-active --quiet minecraft.service || return 1
+  started_usec=$(systemctl show minecraft.service --property ActiveEnterTimestampMonotonic --value)
+  [[ "$started_usec" =~ ^[0-9]+$ ]] && ((started_usec > 0)) || return 1
+  read -r uptime_seconds _ </proc/uptime
+  elapsed_seconds=$((${uptime_seconds%.*} - started_usec / 1000000))
+  ((elapsed_seconds >= 0 && elapsed_seconds < 120))
+}
+
+check_failed_units() {
+  local unit failed_units previous_units="$state_dir/failed-units.list"
+  failed_units=$(systemctl --failed --no-legend --plain 2>/dev/null |
+    awk '$1 != "orange-health-monitor.service" { print $1 }')
+
+  if [[ -f "$previous_units" ]]; then
+    while IFS= read -r unit; do
+      if [[ -n "$unit" ]] && ! grep --fixed-strings --line-regexp --quiet -- "$unit" <<<"$failed_units"; then
+        clear_alert "failed-unit-$unit"
+      fi
+    done <"$previous_units"
+  else
+    clear_alert "failed-units"
+  fi
+
+  while IFS= read -r unit; do
+    if [[ -n "$unit" ]]; then
+      queue_alert "failed-unit-$unit" "failed systemd unit: $unit"
+    fi
+  done <<<"$failed_units"
+
+  printf '%s\n' "$failed_units" >"$previous_units.tmp"
+  mv "$previous_units.tmp" "$previous_units"
+}
+
 check_units() {
-  local unit failed_units
+  local unit
   local -a user_units=(@monitoredUserUnits@)
   for unit in @monitoredUnits@; do
+    if [[ "$unit" == minecraft.service ]] && minecraft_backup_running; then
+      continue
+    fi
     check_unit "$unit"
   done
 
@@ -128,14 +172,7 @@ check_units() {
     fi
   done
 
-  failed_units=$(systemctl --failed --no-legend --plain 2>/dev/null |
-    awk '$1 != "orange-health-monitor.service" { print $1 }' |
-    paste -sd ',' -)
-  if [[ -n "$failed_units" ]]; then
-    queue_alert "failed-units" "failed systemd units: $failed_units"
-  else
-    clear_alert "failed-units"
-  fi
+  check_failed_units
 }
 
 check_storage_mount() {
@@ -327,6 +364,9 @@ check_tcp_services() {
   local port_and_name port name
   for port_and_name in '@minecraftPort@ minecraft' '445 samba'; do
     read -r port name <<<"$port_and_name"
+    if [[ "$name" == minecraft ]] && { minecraft_backup_running || minecraft_starting; }; then
+      continue
+    fi
     if nc -z -w 3 127.0.0.1 "$port" >/dev/null 2>&1; then
       clear_alert "tcp-$name"
     else
@@ -365,8 +405,6 @@ check_backups() {
 
 check_kernel() {
   local booted_kernel current_kernel
-  clear_alert "system-generation"
-
   booted_kernel=$(readlink --canonicalize /run/booted-system/kernel 2>/dev/null || true)
   current_kernel=$(readlink --canonicalize /run/current-system/kernel 2>/dev/null || true)
   if [[ -n "$booted_kernel" && "$booted_kernel" == "$current_kernel" ]]; then

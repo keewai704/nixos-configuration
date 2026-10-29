@@ -94,6 +94,7 @@ in
       };
 
       backup-vaultwarden = {
+        environment.SHELLOPTS = "errexit:pipefail";
         wantedBy = lib.mkForce [ ];
         requires = backupDependencies;
         after = backupDependencies;

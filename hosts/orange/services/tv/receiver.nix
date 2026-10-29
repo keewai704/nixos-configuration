@@ -18,6 +18,7 @@ in
 
   systemd.services = {
     pcscd = {
+      wantedBy = receiverUnits;
       requires = receiverUnits;
       after = receiverUnits;
       bindsTo = receiverUnits;

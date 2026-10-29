@@ -124,6 +124,11 @@ hashes in `flake.lock`; do not replace them with impure evaluation-time fetching
 For GitHub packages owned by `keewai704`, explicitly select `main` with
 `?ref=main` rather than relying on the remote default branch.
 
+The existing Minecraft server, Fabric launcher, and MOD declarations in
+`hosts/orange/services/minecraft.nix` are a compatibility exception: their versions
+and hashes are pinned together in that module. Update them explicitly as a
+compatible set; `nix flake update` does not update them.
+
 Before each local activation, run `nix flake update` and commit resulting lock
 changes. This is standing authorization to refresh the declared inputs. Use
 upstream binary-cache branches when available rather than fixed release tags.

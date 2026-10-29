@@ -34,7 +34,10 @@ in
 
   systemd.services.mirakc = {
     description = "Shared broadcast receiver for KonomiTV and native EDCB";
-    wantedBy = [ "multi-user.target" ];
+    wantedBy = [
+      "multi-user.target"
+      "pcscd.service"
+    ];
     requires = receiverUnits ++ [ "pcscd.service" ];
     after = receiverUnits ++ [ "pcscd.service" ];
     path = [ pkgs.local.mirakc-arib ];
