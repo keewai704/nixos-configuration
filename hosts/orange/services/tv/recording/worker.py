@@ -5,10 +5,14 @@ import hashlib
 import json
 import logging
 import os
+import shutil
 import stat
 import statistics
 import subprocess
+import sys
+import tempfile
 import time
+from fractions import Fraction
 from pathlib import Path
 
 
@@ -48,7 +52,7 @@ def writable(path):
 
 
 def probe(binary, path):
-    result = subprocess.run([binary, '-v', 'error', '-show_programs', '-show_format',
+    result = subprocess.run([binary, '-v', 'error', '-show_programs', '-show_streams', '-show_format',
                              '-of', 'json', str(path)], capture_output=True, check=True)
     return json.loads(result.stdout)
 
@@ -210,15 +214,16 @@ def video_timeline(ffprobe, path, video, strict):
     previous_dts = None
     last_raw = None
     wrap = 1 << 33
+    scale = Fraction(video['time_base']) * 90000
     delta = lambda a, b: (a - b + wrap // 2) % wrap - wrap // 2
     with subprocess.Popen(command, stdout=subprocess.PIPE, stderr=subprocess.DEVNULL,
                           text=True) as process:
         for row in csv.reader(process.stdout):
             if not row or row[0] == 'N/A':
                 continue
-            pts = int(row[0])
+            pts = round(int(row[0]) * scale)
             if len(row) > 1 and row[1] != 'N/A':
-                raw = int(row[1])
+                raw = round(int(row[1]) * scale)
                 if previous_dts is None:
                     dts = raw
                 else:
@@ -240,7 +245,7 @@ def video_timeline(ffprobe, path, video, strict):
     return sorted(set(points)), first_keyframe
 
 
-def verify_timeline(before, after, bob):
+def verify_timeline(before, after, adaptive):
     before, first_keyframe = before
     after, _ = after
     wrap = 1 << 33
@@ -250,14 +255,91 @@ def verify_timeline(before, after, bob):
     if step <= 0 or step > 90000:
         raise ValueError('Invalid source frame interval')
     expected = [point for point in before if point >= first_keyframe]
-    tolerance = max(4, step / 10)
-    if abs(expected[-1] - after[-1]) > step / (2 if bob else 1):
+    tolerance = max(4, step if adaptive else step / 10)
+    if abs(expected[0] - after[0]) > tolerance:
+        raise ValueError('Output video starts before or after the original')
+    if abs(expected[-1] - after[-1]) > max(step, 4505 if adaptive else step):
         raise ValueError('Output video ends before or after the original')
     for point in expected:
         index = bisect.bisect_left(after, point)
         neighbors = after[max(0, index - 1):index + 1]
         if not neighbors or min(abs(value - point) for value in neighbors) > tolerance:
             raise ValueError('Output video timestamp coverage differs from the original')
+
+
+def verify_replacement_timeline(filtered, output):
+    filtered, _ = filtered
+    output, _ = output
+    if len(filtered) != len(output):
+        raise ValueError('Filtered video frames were lost during TS replacement')
+    for expected, actual in zip(filtered, output):
+        if abs((expected - filtered[0]) - (actual - output[0])) > 3:
+            raise ValueError('Filtered video timing changed during TS replacement')
+
+
+def mux():
+    parser = argparse.ArgumentParser()
+    parser.add_argument('--tsreplace', required=True)
+    parser.add_argument('--ffprobe', required=True)
+    parser.add_argument('-i', '--input', type=Path, required=True)
+    parser.add_argument('-r', '--replace', type=Path, required=True)
+    parser.add_argument('-o', '--output', type=Path, required=True)
+    parser.add_argument('--replace-format', required=True)
+    args = parser.parse_args(sys.argv[2:])
+    sid = int(os.environ['TV_RECORDING_SERVICE_ID'])
+    report_path = Path(os.environ['TV_RECORDING_REPLACEMENT_REPORT'])
+    videos = [stream for stream in probe(args.ffprobe, args.replace)['streams']
+              if stream.get('codec_type') == 'video']
+    if len(videos) != 1:
+        raise ValueError('Expected one filtered video stream')
+    timeline = video_timeline(args.ffprobe, args.replace, videos[0], True)
+    subprocess.run([args.tsreplace, '-i', str(args.input), '-r', str(args.replace),
+                    '-o', str(args.output), '--replace-format', args.replace_format,
+                    '--service', str(sid), '--preserve-other-services',
+                    '--no-remove-typed', '--copy-filets'], check=True)
+    report_path.write_text(json.dumps({'timeline': timeline}))
+
+
+def analyze_recording(source, sid, video, args, work, log):
+    logo_directory = args.logos / f"{sid}-{video['width']}x{video['height']}"
+    logo_directory.mkdir(parents=True, exist_ok=True)
+    logos = sorted(logo_directory.glob('*.lgd'))
+    if not logos:
+        logo = logo_directory / 'station.lgd'
+        subprocess.run([args.logo_generator, '-i', str(source), '-o', str(logo),
+                        '--auto-logo-detect-threads', '2', '--auto-logo-detect-div-x', '4',
+                        '--auto-logo-detect-div-y', '4'], stdout=log, stderr=log, check=True)
+        logos = [logo]
+    adaptive = video.get('field_order') != 'progressive'
+    replacement_report = work / 'replacement.json'
+    result_path = work / 'result.json'
+    options = '-c hevc --icq 23 --gop-len 120 --quality balanced --disable-opencl'
+    if video.get('color_range') in ('tv', 'pc'):
+        options += ' --colorrange ' + ('limited' if video['color_range'] == 'tv' else 'full')
+    command = [args.amatsukaze, '-i', str(source), '-o', str(work / 'output.ts'),
+               '-s', str(sid), '-w', str(work), '-et', 'QSVEnc', '-e', args.encoder,
+               '-eo', options, '--format', 'tsreplace', '-m', args.muxer,
+               '--chapter', '--cmoutmask', '1', '--parallel-logo-analysis', '1',
+               '--auto-logo-detect-div-x', '4', '--auto-logo-detect-div-y', '4',
+               '--ignore-no-logo', '-j', str(result_path)]
+    for logo in logos:
+        command.extend(['--logo', str(logo)])
+    if adaptive:
+        command.extend(['--filter', str(args.filter)])
+    environment = os.environ | {'TV_RECORDING_SERVICE_ID': str(sid),
+                                'TV_RECORDING_REPLACEMENT_REPORT': str(replacement_report)}
+    subprocess.run(command, cwd=work, env=environment, stdout=log, stderr=log, check=True)
+    result = json.loads(result_path.read_text())
+    if not result['cmanalyze'] or len(result['outfiles']) != 1:
+        raise ValueError('Expected one complete recording with CM analysis')
+    output = Path(result['outfiles'][0]['path'])
+    if not output.is_relative_to(work) or output.suffix != '.ts':
+        raise ValueError('Unexpected Amatsukaze output path')
+    chapter = output.with_suffix('.chapter.txt')
+    if not chapter.is_file() or not chapter.stat().st_size:
+        raise ValueError('Amatsukaze did not produce recording chapters')
+    timeline = json.loads(replacement_report.read_text())['timeline']
+    return output, chapter, timeline, adaptive, result
 
 
 def decode_video(ffmpeg, path, index, log):
@@ -283,11 +365,13 @@ def convert(job, args):
     if time.time() - original.st_mtime < 3 or writable(source):
         raise RecordingBusy()
     backup = source.with_name(f'.{source.name}.{job.stem}.original')
+    chapter_path = source.with_suffix('.chapter.txt')
     if backup.exists():
         if backup.samefile(source):
             backup.unlink()
         else:
             os.replace(backup, source)
+            chapter_path.unlink(missing_ok=True)
         original = source.stat()
     before = identity(source)
     old_info = probe(args.ffprobe, source)
@@ -297,28 +381,24 @@ def convert(job, args):
         return
     if old_video['codec_name'] != 'mpeg2video':
         raise ValueError('Only MPEG-2 broadcast video is eligible')
+    if chapter_path.exists():
+        raise ValueError('Refusing to overwrite an existing chapter file')
     original_packets = packet_digest(source, int(old_video['id'], 0))
     old_bindings = pmt_bindings(source, int(old_program['pmt_pid']), int(old_video['id'], 0), 2)
     old_timeline = video_timeline(args.ffprobe, source, old_video, False)
     partial = source.with_name(f'.{source.name}.{job.stem}.hevc.partial')
+    chapter_partial = source.with_name(f'.{source.name}.{job.stem}.chapter.partial')
     partial.unlink(missing_ok=True)
-    interlace = []
-    field_order = old_video.get('field_order')
-    if field_order in ('tt', 'tb', 'bb', 'bt'):
-        interlace = ['--tff' if field_order in ('tt', 'bt') else '--bff',
-                     '--vpp-deinterlace', 'bob']
-    command = [args.tsreplace, '-i', str(source), '-o', str(partial), '--service', str(sid),
-               '--preserve-other-services', '--no-remove-typed', '--copy-filets',
-               '-e', args.encoder, '--avhw', '-i', '-', '--input-format', 'mpegts',
-               *interlace, '-c', 'hevc', '--icq', '23', '--gop-len', '120',
-               '--colormatrix', 'auto', '--colorprim', 'auto', '--transfer', 'auto',
-               '--colorrange', 'auto',
-               '--quality', 'balanced', '--avsync', 'vfr', '--disable-opencl',
-               '--output-format', 'mpegts', '-o', '-']
+    chapter_partial.unlink(missing_ok=True)
     try:
         log_path = args.logs / f'{rec_id}.log'
-        with log_path.open('ab', buffering=0) as log:
-            subprocess.run(command, stdout=log, stderr=log, check=True)
+        with log_path.open('ab', buffering=0) as log, \
+                tempfile.TemporaryDirectory(prefix=f'{rec_id}-', dir=args.work) as directory:
+            work = Path(directory)
+            output, chapter, filtered, adaptive, analysis = analyze_recording(
+                source, sid, old_video, args, work, log)
+            shutil.copyfile(output, partial)
+            shutil.copyfile(chapter, chapter_partial)
             new_info = probe(args.ffprobe, partial)
             new_program, new_video = program(new_info, sid)
             if new_video['codec_name'] != 'hevc':
@@ -341,21 +421,31 @@ def convert(job, args):
             if old_bindings != pmt_bindings(partial, int(new_program['pmt_pid']),
                                             int(new_video['id'], 0), 0x24):
                 raise ValueError('Non-video PMT descriptors or bindings changed')
-            verify_timeline(old_timeline, video_timeline(args.ffprobe, partial, new_video, True),
-                            bool(interlace))
+            new_timeline = video_timeline(args.ffprobe, partial, new_video, True)
+            verify_timeline(old_timeline, new_timeline, adaptive)
+            verify_replacement_timeline(filtered, new_timeline)
             decode_video(args.ffmpeg, partial, new_video['index'], log)
         if identity(source) != before or writable(source):
             raise RecordingBusy()
         os.chmod(partial, stat.S_IMODE(original.st_mode))
+        os.chmod(chapter_partial, stat.S_IMODE(original.st_mode))
         os.utime(partial, ns=(original.st_atime_ns, original.st_mtime_ns))
         with partial.open('rb') as output:
             os.fsync(output.fileno())
+        with chapter_partial.open('rb') as output:
+            os.fsync(output.fileno())
         report = {'recording_id': rec_id, 'service_id': sid, 'input_bytes': original.st_size,
                   'output_bytes': partial.stat().st_size, 'codec': 'hevc',
-                  'preserved_pids': preserved, 'full_video_decode': True}
+                  'preserved_pids': preserved, 'full_video_decode': True,
+                  'filter': 'kfm-vfr' if adaptive else 'progressive',
+                  'chapter_file': str(chapter_path), 'amatsukaze': analysis}
+        analysis['outfiles'][0]['path'] = str(source)
         os.link(source, backup)
+        chapter_published = False
         try:
             os.replace(partial, source)
+            os.replace(chapter_partial, chapter_path)
+            chapter_published = True
             folder_fd = os.open(source.parent, os.O_RDONLY | os.O_DIRECTORY)
             try:
                 os.fsync(folder_fd)
@@ -369,24 +459,28 @@ def convert(job, args):
         except BaseException:
             if backup.exists():
                 os.replace(backup, source)
+            if chapter_published:
+                chapter_path.unlink()
             raise
         backup.unlink()
         logging.info('Recording %s verified and replaced: %d -> %d bytes, %d preserved PIDs',
                      rec_id, original.st_size, source.stat().st_size, len(preserved))
     finally:
         partial.unlink(missing_ok=True)
+        chapter_partial.unlink(missing_ok=True)
 
 
 def main():
     parser = argparse.ArgumentParser()
-    for name in ('queue', 'recordings', 'logs'):
+    for name in ('queue', 'recordings', 'logs', 'logos', 'work', 'filter'):
         parser.add_argument('--' + name, type=Path, required=True)
-    for name in ('encoder', 'ffmpeg', 'ffprobe', 'tsreplace'):
+    for name in ('encoder', 'ffmpeg', 'ffprobe', 'amatsukaze', 'logo-generator', 'muxer'):
         parser.add_argument('--' + name, required=True)
     parser.add_argument('--once', action='store_true')
     args = parser.parse_args()
     logging.basicConfig(level=logging.INFO, format='%(asctime)s %(levelname)s %(message)s')
-    for directory in [args.queue, args.queue.parent / 'failed', args.queue.parent / 'completed', args.logs]:
+    for directory in [args.queue, args.queue.parent / 'failed', args.queue.parent / 'completed',
+                      args.logs, args.logos, args.work]:
         directory.mkdir(parents=True, exist_ok=True)
     while True:
         for job in sorted(args.queue.glob('*.job'), key=lambda path: path.stat().st_mtime):
@@ -404,4 +498,7 @@ def main():
 
 
 if __name__ == '__main__':
-    main()
+    if sys.argv[1:2] == ['mux']:
+        mux()
+    else:
+        main()

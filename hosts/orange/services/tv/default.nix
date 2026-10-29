@@ -13,7 +13,7 @@ in
     ./receiver.nix
     ./mirakc.nix
     ./edcb.nix
-    ./recording.nix
+    ./recording
     ./konomitv.nix
   ];
 

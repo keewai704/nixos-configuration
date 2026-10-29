@@ -52,6 +52,11 @@
       flake = false;
     };
 
+    amatsukaze-releases = {
+      url = "file+https://api.github.com/repos/rigaya/Amatsukaze/releases/latest";
+      flake = false;
+    };
+
     pyproject-nix = {
       url = "git+https://github.com/pyproject-nix/pyproject.nix?ref=master";
       inputs.nixpkgs.follows = "nixpkgs";
