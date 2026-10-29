@@ -117,6 +117,16 @@ class VideoTimeline(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, 'timestamp coverage'):
             encoder.verify_timeline((source, 0), (source[:3] + source[10:], 0), True)
 
+    def test_amatsukaze_tail_pes_boundary_is_reported(self):
+        source = [index * 3003 for index in range(20)]
+        difference = encoder.verify_timeline((source, 0), (source[:-2], 0), True)
+        self.assertAlmostEqual(difference, 66.733, places=3)
+
+    def test_long_tail_trim_is_rejected(self):
+        source = [index * 3003 for index in range(20)]
+        with self.assertRaisesRegex(ValueError, 'ends before or after'):
+            encoder.verify_timeline((source, 0), (source[:-5], 0), True)
+
     def test_source_pts_wrap_does_not_look_like_a_cut(self):
         source = [(1 << 33) + index * 3003 for index in range(5)]
         output = [index * 3003 for index in range(5)]

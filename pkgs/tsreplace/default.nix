@@ -12,7 +12,10 @@ stdenv.mkDerivation {
   pname = "tsreplace";
   version = "0-unstable-${upstream.shortRev}";
   src = upstream;
-  patches = [ ./pmt-completeness.patch ];
+  patches = [
+    ./pmt-completeness.patch
+    ./eof-video.patch
+  ];
   nativeBuildInputs = [
     meson
     ninja
@@ -31,6 +34,7 @@ stdenv.mkDerivation {
   doCheck = true;
   postCheck = ''
     python ${./test-pmt.py} "$NIX_BUILD_TOP/$sourceRoot" ${./test-pmt.cpp.in}
+    python ${./test-vfr.py} ./tsreplace ${ffmpeg}/bin/ffmpeg ${ffmpeg}/bin/ffprobe
   '';
   meta = {
     description = "Replace only the video in MPEG-TS while preserving broadcast data";

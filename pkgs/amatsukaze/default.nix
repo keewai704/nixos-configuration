@@ -41,7 +41,8 @@ stdenv.mkDerivation {
     install -m755 exe_files/libAmatsukaze.so "$target/exe_files/"
     chmod -R u+w "$target"
     makeWrapper "$target/exe_files/AmatsukazeCLI" "$out/bin/AmatsukazeCLI" \
-      --prefix PATH : "$target/exe_files"
+      --prefix PATH : "$target/exe_files" \
+      --prefix LD_LIBRARY_PATH : "$target/exe_files/lib"
     makeWrapper "$target/exe_files/AmatsukazeGenLogo" "$out/bin/AmatsukazeGenLogo"
     runHook postInstall
   '';
@@ -57,6 +58,10 @@ stdenv.mkDerivation {
     test "$status" = 1
     grep -F 'Automated MPEG2-TS Transcoder ${version}' cli-help.txt
     grep -F -- '--chapter' cli-help.txt
+    printf '%s\n' 'BlankClip(length=30, width=64, height=64, fps=30, pixel_type="YV12", audio_rate=48000, channels=2, sample_type="16bit")' > blank.avs
+    LD_LIBRARY_PATH="$out/libexec/amatsukaze/exe_files/lib" \
+      $out/libexec/amatsukaze/exe_files/chapter_exe -v "$PWD/blank.avs" -o "$PWD/blank.chapter.txt"
+    test -s blank.chapter.txt
     runHook postInstallCheck
   '';
   meta = {

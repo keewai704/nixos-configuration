@@ -258,13 +258,17 @@ def verify_timeline(before, after, adaptive):
     tolerance = max(4, step if adaptive else step / 10)
     if abs(expected[0] - after[0]) > tolerance:
         raise ValueError('Output video starts before or after the original')
-    if abs(expected[-1] - after[-1]) > max(step, 4505 if adaptive else step):
+    tail_difference = expected[-1] - after[-1]
+    if abs(tail_difference) > max(step * 3, 4505 if adaptive else step):
         raise ValueError('Output video ends before or after the original')
     for point in expected:
+        if point > after[-1]:
+            break
         index = bisect.bisect_left(after, point)
         neighbors = after[max(0, index - 1):index + 1]
         if not neighbors or min(abs(value - point) for value in neighbors) > tolerance:
             raise ValueError('Output video timestamp coverage differs from the original')
+    return round(tail_difference / 90, 3)
 
 
 def verify_replacement_timeline(filtered, output):
@@ -422,7 +426,7 @@ def convert(job, args):
                                             int(new_video['id'], 0), 0x24):
                 raise ValueError('Non-video PMT descriptors or bindings changed')
             new_timeline = video_timeline(args.ffprobe, partial, new_video, True)
-            verify_timeline(old_timeline, new_timeline, adaptive)
+            tail_difference = verify_timeline(old_timeline, new_timeline, adaptive)
             verify_replacement_timeline(filtered, new_timeline)
             decode_video(args.ffmpeg, partial, new_video['index'], log)
         if identity(source) != before or writable(source):
@@ -438,6 +442,7 @@ def convert(job, args):
                   'output_bytes': partial.stat().st_size, 'codec': 'hevc',
                   'preserved_pids': preserved, 'full_video_decode': True,
                   'filter': 'kfm-vfr' if adaptive else 'progressive',
+                  'source_tail_difference_ms': tail_difference,
                   'chapter_file': str(chapter_path), 'amatsukaze': analysis}
         analysis['outfiles'][0]['path'] = str(source)
         os.link(source, backup)
