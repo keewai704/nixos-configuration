@@ -1,7 +1,7 @@
 ---
 name: faster-whisper
-description: Transcribe local audio/video with CUDA Whisper large-v3 to text or subtitles, including Japanese. Not text-to-speech.
-compatibility: Requires the Nix-managed CUDA-enabled whisper-ctranslate2 command and a supported NVIDIA GPU/driver. Internet access and several GB of disk space are needed for the initial model download.
+description: Transcribe local audio/video with Whisper large-v3 on CPU to text or subtitles, including Japanese. Not text-to-speech.
+compatibility: Requires the Nix-managed whisper-ctranslate2 command. Internet access and several GB of disk space are needed for the initial model download.
 ---
 
 # Local transcription with faster-whisper
@@ -18,17 +18,12 @@ Check `command -v whisper-ctranslate2` and `whisper-ctranslate2 --version`.
 If missing, report that the Nix-managed environment needs activation; do not
 install packages with pip or modify generated skill files.
 
-Use **`--device cuda --compute_type float16`**. The Home Manager module selects
-the CUDA-enabled package when the host declares the NVIDIA driver; other hosts
-retain the CPU-only CLI, which does not satisfy this CUDA workflow. Check
-`nvidia-smi --query-gpu=name,memory.free,driver_version --format=csv,noheader`
-before inference. A working driver alone does not prove that the CLI was built
-with CUDA support: verify the actual transcription succeeds on CUDA.
+Use **`--device cpu --compute_type int8`** with the CPU package installed on
+orange. Do not select `cuda` or `auto`.
 
-If CUDA is unavailable, the build lacks CUDA support, a library cannot load,
-or GPU memory is insufficient, report the blocker. Do not silently change to
-`--device cpu`, `--device auto`, or another model. Do not install drivers, change
-CUDA libraries, or terminate another GPU workload as part of transcription.
+If the command or model cannot load, or memory is insufficient, report the
+blocker. Do not silently change the device or model. Do not install packages
+or terminate another workload as part of transcription.
 Allow the running command to finish rather than launching duplicates.
 PyAV handles supported audio/video decoding without a separate FFmpeg command.
 
@@ -79,7 +74,7 @@ output_dir=$(mktemp -d ./transcription.XXXXXX) &&
 whisper-ctranslate2 "/absolute/path/to/audio.m4a" \
   --model large-v3 \
   --model_dir "${XDG_CACHE_HOME:-$HOME/.cache}/faster-whisper" \
-  --device cuda --compute_type float16 \
+  --device cpu --compute_type int8 \
   --task transcribe --language ja \
   --vad_filter True --verbose False \
   --output_format txt --output_dir "$output_dir"
@@ -104,5 +99,5 @@ is not interchangeable with a converted CTranslate2 model.
 
 For unexpectedly missing speech, inspect the source before retrying with
 `--vad_filter False`, writing to a new directory. Do not enable speaker
-diarization, live recording, batching, a daemon, or GPU configuration changes
+diarization, live recording, batching, a daemon, or system configuration changes
 as part of ordinary file transcription.

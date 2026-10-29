@@ -79,8 +79,7 @@ nix build --accept-flake-config .#<パッケージ名>                   # pkgs/
 
 `flake.nix` の `nixConfig` と `modules/common/nix.nix` に、Claude Code・Codex・nix-community の
 キャッシュの URL と署名鍵を書いています。`nixConfig` には import や計算式が使えないため、
-共通の URL と鍵は両方を手で同じ内容に保ちます。CUDA パッケージの単体ビルド向けに、
-`flake.nix` には `cache.nixos-cuda.org` も残しています。
+共通の URL と鍵は両方を手で同じ内容に保ちます。
 
 - 新しい設定を適用する前の最初のビルドでもキャッシュを使えるよう、`nixos-rebuild` と `nix build` には
   `--accept-flake-config` を付けます。初回の適用前に単体ビルドするときは
@@ -88,7 +87,7 @@ nix build --accept-flake-config .#<パッケージ名>                   # pkgs/
   （信頼されていない利用者は、flake を受け入れても新しいキャッシュや鍵を追加できないため）。
 - `accept-flake-config` を全体で有効にはしません。中身を確かめた flake のキャッシュ設定だけを受け入れます。
 - `cache.nixos.org` はそのまま使います。
-- キャッシュに載るのは、まったく同じストアパスのものだけです。自前のパッチや CUDA の上書きなどは
+- キャッシュに載るのは、まったく同じストアパスのものだけです。自前のパッチを当てたパッケージなどは
   手元でビルドされます。署名の検証は無効にしません。
 
 ## コーディングエージェント
