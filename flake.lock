@@ -23,7 +23,7 @@
     "amatsukaze-releases": {
       "flake": false,
       "locked": {
-        "narHash": "sha256-nG2Kf/CDDHCrMLUhXAH1NJvQ2bOc5EdawlD13U2gQjw=",
+        "narHash": "sha256-RlgaKj7NjfjXFFRoDhPngQqqqIfs4evR7TWPkD3yIQM=",
         "type": "file",
         "url": "https://api.github.com/repos/rigaya/Amatsukaze/releases/latest"
       },
@@ -388,7 +388,7 @@
     "t3code-releases": {
       "flake": false,
       "locked": {
-        "narHash": "sha256-4gPvts7iGqI+65rrVE4xpG6SS1Hk2HLR5WuvJLRvtNM=",
+        "narHash": "sha256-Tz1KrngpYcieUW91oRxgodptV0RrP7fDcJkWDTJDNuk=",
         "type": "file",
         "url": "https://api.github.com/repos/pingdotgg/t3code/releases?per_page=100"
       },
