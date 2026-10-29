@@ -56,8 +56,8 @@ if systemctl is-active --quiet minecraft.service; then
   done
 
   unzip -tqq "$minecraft_zip"
-  unzip -p "$minecraft_zip" justenoughbackups-status.json |
-    jq --exit-status '.completed == true and (.brokenFiles | length == 0)' >/dev/null
+  unzip -p "$minecraft_zip" justenoughbackups.data |
+    jq --exit-status '.manifest.type == "FULL" and .status.completed == true and (.status.brokenFiles | length == 0)' >/dev/null
   minecraft_world=$(basename "$(dirname "$minecraft_zip")")
   minecraft_staging=$(mktemp -d "$minecraft_dir/.minecraft-$stamp.XXXXXX")
   tar --create --acls --xattrs --numeric-owner --file - --directory / \
@@ -67,7 +67,7 @@ if systemctl is-active --quiet minecraft.service; then
   minecraft_world_snapshot="$minecraft_staging/$minecraft_archive_path/$minecraft_world"
   install -d "$minecraft_world_snapshot"
   unzip -q "$minecraft_zip" -d "$minecraft_world_snapshot" \
-    -x justenoughbackups.data manifest.json justenoughbackups-status.json summary.txt
+    -x justenoughbackups.data
   chown --recursive --reference="/$minecraft_archive_path/$minecraft_world" "$minecraft_world_snapshot"
   chmod --reference="/$minecraft_archive_path/$minecraft_world" "$minecraft_world_snapshot"
   tar --create --zstd --acls --xattrs --numeric-owner \
