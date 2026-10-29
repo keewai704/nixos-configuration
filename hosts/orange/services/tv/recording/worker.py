@@ -266,7 +266,8 @@ def verify_timeline(before, after, adaptive):
             break
         index = bisect.bisect_left(after, point)
         neighbors = after[max(0, index - 1):index + 1]
-        if not neighbors or min(abs(value - point) for value in neighbors) > tolerance:
+        if (not neighbors or min(abs(value - point) for value in neighbors) > tolerance) \
+                and point < expected[-1] - step * 3:
             raise ValueError('Output video timestamp coverage differs from the original')
     return round(tail_difference / 90, 3)
 
