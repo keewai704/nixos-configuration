@@ -1,8 +1,12 @@
 import importlib.util
+import subprocess
 import sys
 import tempfile
+import textwrap
 import unittest
 from pathlib import Path
+from types import SimpleNamespace
+from unittest.mock import patch
 
 source = Path(sys.argv.pop(1))
 spec = importlib.util.spec_from_file_location('recording_encode', source)
@@ -151,6 +155,116 @@ class VideoTimeline(unittest.TestCase):
         flattened = [index * 3003 for index in range(5)]
         with self.assertRaisesRegex(ValueError, 'timing changed'):
             encoder.verify_replacement_timeline((frames, 0), (flattened, 0))
+
+
+class RecordingWorkspace(unittest.TestCase):
+    def setUp(self):
+        directory = tempfile.TemporaryDirectory()
+        self.addCleanup(directory.cleanup)
+        self.root = Path(directory.name)
+        self.work = self.root / 'work'
+        self.work.mkdir()
+        self.args = SimpleNamespace(
+            queue=self.root / 'state/queue', recordings=self.root / 'recordings',
+            logs=self.root / 'logs', logos=self.root / 'logos', work=self.work,
+            filter=self.root / 'filter.avs', encoder='unused', muxer='unused',
+            ffmpeg='unused', ffprobe='unused')
+        self.args.logo_generator = self.tool('logo-generator', '''
+            import sys
+            from pathlib import Path
+            logo = Path(sys.argv[sys.argv.index('-o') + 1])
+            logo.with_name('station.genlogo.123.tmp.lgd').write_bytes(b'partial')
+            logo.write_bytes(b'complete')
+        ''')
+        self.args.amatsukaze = self.tool('amatsukaze', '''
+            import json
+            import os
+            import sys
+            from pathlib import Path
+            for index, argument in enumerate(sys.argv):
+                if argument == '--logo':
+                    assert Path(sys.argv[index + 1]).read_bytes() == b'complete'
+            output = Path(sys.argv[sys.argv.index('-o') + 1])
+            output.write_bytes(b'encoded fixture')
+            result = Path(sys.argv[sys.argv.index('-j') + 1])
+            result.write_text(json.dumps({'cmanalyze': True, 'outfiles': [{'path': str(output)}]}))
+            Path(os.environ['TV_RECORDING_REPLACEMENT_REPORT']).write_text(
+                json.dumps({'timeline': [[0, 3003, 6006], 0]}))
+        ''')
+        self.cache = self.args.logos / '101-64x64'
+        self.cache.mkdir(parents=True)
+
+    def tool(self, name, body):
+        path = self.root / name
+        path.write_text(f'#!{sys.executable}\n' + textwrap.dedent(body))
+        path.chmod(0o755)
+        return str(path)
+
+    def analyze(self):
+        with (self.root / 'analysis.log').open('ab') as log:
+            return encoder.analyze_recording(
+                self.root / 'source.ts', 101,
+                {'width': 64, 'height': 64, 'field_order': 'progressive'},
+                self.args, self.work, log)
+
+    def test_interrupted_logo_is_not_reused_as_a_completed_cache(self):
+        (self.cache / 'station.genlogo.99.tmp.lgd').write_bytes(b'partial')
+        self.analyze()
+        self.assertEqual((self.cache / 'station.lgd').read_bytes(), b'complete')
+        self.assertTrue((self.work / 'station.genlogo.123.tmp.lgd').exists())
+        self.assertFalse((self.cache / 'station.genlogo.123.tmp.lgd').exists())
+
+    def test_completed_custom_logo_is_reused_without_temporary_logos(self):
+        (self.cache / 'custom.lgd').write_bytes(b'complete')
+        (self.cache / 'station.genlogo.99.tmp.lgd').write_bytes(b'partial')
+        self.args.logo_generator = self.tool('unexpected-generator', 'raise SystemExit(1)')
+        self.analyze()
+        self.assertFalse((self.cache / 'station.lgd').exists())
+
+    def test_failed_generation_does_not_publish_an_incomplete_logo(self):
+        self.args.logo_generator = self.tool('failing-generator', '''
+            import sys
+            from pathlib import Path
+            logo = Path(sys.argv[sys.argv.index('-o') + 1])
+            logo.with_name('station.genlogo.123.tmp.lgd').write_bytes(b'partial')
+            raise SystemExit(1)
+        ''')
+        with self.assertRaises(subprocess.CalledProcessError):
+            self.analyze()
+        self.assertEqual(list(self.cache.iterdir()), [])
+
+    def test_empty_generated_logo_is_not_cached(self):
+        self.args.logo_generator = self.tool('empty-generator', '''
+            import sys
+            from pathlib import Path
+            Path(sys.argv[sys.argv.index('-o') + 1]).touch()
+        ''')
+        with self.assertRaisesRegex(ValueError, 'empty logo'):
+            self.analyze()
+        self.assertEqual(list(self.cache.iterdir()), [])
+
+    def test_startup_removes_abandoned_job_work_and_preserves_other_paths(self):
+        abandoned = [Path(tempfile.mkdtemp(prefix=f'{number}-', dir=self.work))
+                     for number in (1, 2)]
+        for directory in abandoned:
+            (directory / 'partial.ts').write_bytes(b'unfinished work')
+        unrelated = self.work / 'notes'
+        unrelated.mkdir()
+        target = self.root / 'untouched'
+        target.mkdir()
+        (target / 'source.ts').write_bytes(b'original')
+        link = self.work / '3-abcdefgh'
+        link.symlink_to(target, target_is_directory=True)
+        arguments = [str(source), '--once']
+        for name in ('queue', 'recordings', 'logs', 'logos', 'work', 'filter',
+                     'encoder', 'ffmpeg', 'ffprobe', 'amatsukaze', 'logo-generator', 'muxer'):
+            arguments.extend(['--' + name, str(getattr(self.args, name.replace('-', '_')))])
+        with patch.object(sys, 'argv', arguments):
+            encoder.main()
+        self.assertFalse(any(directory.exists() for directory in abandoned))
+        self.assertTrue(unrelated.is_dir())
+        self.assertTrue(link.is_symlink())
+        self.assertEqual((target / 'source.ts').read_bytes(), b'original')
 
 
 unittest.main()

@@ -5,6 +5,7 @@ import hashlib
 import json
 import logging
 import os
+import re
 import shutil
 import stat
 import statistics
@@ -308,13 +309,18 @@ def mux():
 def analyze_recording(source, sid, video, args, work, log):
     logo_directory = args.logos / f"{sid}-{video['width']}x{video['height']}"
     logo_directory.mkdir(parents=True, exist_ok=True)
-    logos = sorted(logo_directory.glob('*.lgd'))
+    logos = sorted(path for path in logo_directory.glob('*.lgd')
+                   if not path.name.endswith('.tmp.lgd'))
     if not logos:
-        logo = logo_directory / 'station.lgd'
+        logo = work / 'station.lgd'
         subprocess.run([args.logo_generator, '-i', str(source), '-o', str(logo),
                         '--auto-logo-detect-threads', '2', '--auto-logo-detect-div-x', '4',
                         '--auto-logo-detect-div-y', '4'], stdout=log, stderr=log, check=True)
-        logos = [logo]
+        if not logo.stat().st_size:
+            raise ValueError('Logo generator produced an empty logo')
+        cached_logo = logo_directory / 'station.lgd'
+        logo.replace(cached_logo)
+        logos = [cached_logo]
     adaptive = video.get('field_order') != 'progressive'
     replacement_report = work / 'replacement.json'
     result_path = work / 'result.json'
@@ -489,6 +495,10 @@ def main():
     for directory in [args.queue, args.queue.parent / 'failed', args.queue.parent / 'completed',
                       args.logs, args.logos, args.work]:
         directory.mkdir(parents=True, exist_ok=True)
+    for directory in args.work.iterdir():
+        if re.fullmatch(r'[0-9]+-[a-z0-9_]{8}', directory.name) \
+                and not directory.is_symlink() and directory.is_dir():
+            shutil.rmtree(directory)
     while True:
         for job in sorted(args.queue.glob('*.job'), key=lambda path: path.stat().st_mtime):
             try:

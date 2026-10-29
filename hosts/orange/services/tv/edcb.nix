@@ -151,11 +151,11 @@ in
     edcb-setup = {
       description = "Prepare native EDCB and scan the terrestrial tuner on first start";
       wantedBy = [ "mirakc.service" ];
+      wants = [ "tv-recording-encode.service" ];
       requires = [
         "mirakc.service"
         "pcscd.service"
         "tv-storage-prepare.service"
-        "tv-recording-encode.service"
       ];
       after = [
         "mirakc.service"

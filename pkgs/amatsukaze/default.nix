@@ -8,14 +8,24 @@
   artifacts,
 }:
 let
-  artifact = lib.findFirst (
+  candidates = lib.filter (
     artifact:
     !artifact.expired
     && artifact.workflow_run.head_branch == "master"
     && artifact.workflow_run.head_repository_id == artifact.workflow_run.repository_id
     && builtins.match "Amatsukaze_linux_r[0-9]+" artifact.name != null
     && artifact.digest != null
-  ) (throw "No current Amatsukaze Linux master build found") (lib.importJSON artifacts).artifacts;
+  ) (lib.importJSON artifacts).artifacts;
+  revision = artifact: lib.toInt (lib.removePrefix "Amatsukaze_linux_r" artifact.name);
+  artifact =
+    if candidates == [ ] then
+      throw "No current Amatsukaze Linux master build found"
+    else
+      lib.head (
+        lib.sort (
+          a: b: if revision a == revision b then a.id > b.id else revision a > revision b
+        ) candidates
+      );
   version = lib.removePrefix "Amatsukaze_linux_" artifact.name;
 in
 stdenv.mkDerivation {

@@ -26,10 +26,14 @@ archive_vaultwarden() {
     return 1
   fi
   vaultwarden_tmp="$vaultwarden_dir/.vaultwarden-$stamp.tar.zst.tmp"
-  tar --create --zstd --acls --xattrs --numeric-owner \
+  if tar --create --zstd --acls --xattrs --numeric-owner \
     --file "$vaultwarden_tmp" \
     --directory @vaultwardenBackupRoot@ . &&
-    mv "$vaultwarden_tmp" "$vaultwarden_dir/vaultwarden-$stamp.tar.zst"
+    mv "$vaultwarden_tmp" "$vaultwarden_dir/vaultwarden-$stamp.tar.zst"; then
+    return 0
+  fi
+  rm -f -- "$vaultwarden_tmp"
+  return 1
 }
 
 if ! archive_vaultwarden; then

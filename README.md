@@ -68,7 +68,9 @@ nix develop                                                       # 言語サー
 nix build --accept-flake-config .#<パッケージ名>                   # pkgs/ のパッケージを単体でビルド
 ```
 
-`nixos-rebuild` には、必ず実行中のマシン自身の名前（`hostname` の結果）を指定します。
+適用前に `hostnamectl --static` と `/etc/hostname` の一致を確認し、
+`nixos-rebuild` には確認した実行中のホスト名を指定します。
+`hostnamectl` が使えない場合は `hostname` を代わりに使います。
 
 `nix` は、`gh auth login --hostname github.com` で認証済みなら、実行時に GitHub CLI から
 トークンを取得して GitHub 入力と GitHub API への直接アクセスに使います。認証情報がなければ
@@ -118,8 +120,8 @@ Claude Code と Codex は orange で Home Manager が導入し、どのシェル
 端末操作 GUI と `apple-device-usb` の実装は
 [iphone-control](https://github.com/keewai704/iphone-control) で管理します。
 このリポジトリには flake 入力、導入設定、スキルの手順を置きます。
-USB 通信に必要な usbmuxd と udev の権限設定は
-[apple-device-usb.nix](hosts/orange/services/apple-device-usb.nix) がシステム側で有効化します。
+[apple-device-usb.nix](hosts/orange/services/apple-device-usb.nix) がシステム側で usbmuxd を有効にし、
+nixpkgs の usbmuxd モジュールを通じて udev の権限設定も導入します。
 
 リポジトリ専用の検証手順は [.agents/skills/nixos-validation](.agents/skills/nixos-validation/SKILL.md) にあります。
 
@@ -212,7 +214,9 @@ NHK総合の京都・神戸とサンテレビ2は、EDCB の表示・EPG取得�
 インターレース映像は CPU 版 KFM で24p・30p・60pの区間を判別し、逆テレシネとインターレース解除を切り替えた可変フレームレートで出力します。プログレッシブ映像はインターレース解除を省きます。変換後の各フレームの時刻が TS への置換で変わっていないことも確認します。
 Amatsukaze の入力解析では末尾 PES の境界で数フレームの差が出るため、末尾3入力フレーム分の区間は PES 解析差を許容し、終了時刻の差を完了 JSON の `source_tail_difference_ms` に記録します。それより前の時刻欠落と、変換済み映像の TS 置換時のフレーム欠落は拒否します。
 初回に局ロゴを自動検出・生成し、サービスIDと解像度ごとに `/var/lib/tv-recording/logos` へ保存します。以後はそのロゴを利用して CM解析とロゴ消しを行います。ロゴを生成できない初回録画は元 TS を残して失敗扱いにします。登録済みロゴが表示されない区間はロゴを消さずに処理を続けます。
+ロゴは作業ディレクトリ内で生成し、正常終了した完成ファイルだけをキャッシュへ移します。
 CM は残し、解析結果を録画と同じ場所の `<録画名>.chapter.txt` に保存します。解析で区切りが見つからない場合も、先頭に「本編」チャプターを作成します。映像や音声の形式変更により複数ファイルへ分割される場合は、元 TS を残します。一時データは `/var/cache/tv-recording/work` に置きます。
+中断で残った変換用の作業ディレクトリは、ワーカーの次回起動時に回収します。
 映像の符号化方式を示す PMT と、必要な場合の PCR 配置は更新します。検証成功後に同じファイル名へ置換し、元 TS を削除します。
 失敗時は元 TS を残し、ジョブを `/var/lib/tv-recording/failed`、ログを `/var/log/tv-recording` に保存します。既存録画の一括変換は行いません。
 

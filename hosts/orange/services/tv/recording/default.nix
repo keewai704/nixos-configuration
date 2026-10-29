@@ -25,6 +25,10 @@ in
     pkgs.local.amatsukaze.src
   ];
   orange.healthMonitor.units = [ "tv-recording-encode.service" ];
+  systemd.tmpfiles.rules = [
+    "d /var/lib/tv-recording 0750 tv tv -"
+    "d ${queueRoot} 0770 tv tv -"
+  ];
 
   systemd.services = {
     tv-recording-encode = {
