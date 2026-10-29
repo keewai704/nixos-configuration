@@ -52,8 +52,8 @@
       flake = false;
     };
 
-    amatsukaze-releases = {
-      url = "file+https://api.github.com/repos/rigaya/Amatsukaze/releases/latest";
+    amatsukaze-artifacts = {
+      url = "file+https://api.github.com/repos/rigaya/Amatsukaze/actions/artifacts?per_page=100";
       flake = false;
     };
 
@@ -110,8 +110,8 @@
       inputs.nixpkgs.follows = "nixpkgs";
     };
 
-    t3code-releases = {
-      url = "file+https://api.github.com/repos/pingdotgg/t3code/releases?per_page=100";
+    t3code-nightly = {
+      url = "git+https://aur.archlinux.org/t3code-nightly-bin.git?ref=master";
       flake = false;
     };
 

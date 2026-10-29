@@ -20,7 +20,10 @@ let
   '';
 in
 {
-  system.extraDependencies = [ inputs.amatsukaze-releases.outPath ];
+  system.extraDependencies = [
+    inputs.amatsukaze-artifacts.outPath
+    pkgs.local.amatsukaze.src
+  ];
   orange.healthMonitor.units = [ "tv-recording-encode.service" ];
 
   systemd.services = {

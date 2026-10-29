@@ -128,9 +128,9 @@ USB 通信に必要な usbmuxd と udev の権限設定は
 [T3 Code](https://github.com/pingdotgg/t3code) は、orange で Home Manager の常駐サーバーとして動きます。
 公開経路と接続先は [t3code.nix](hosts/orange/services/t3code.nix)、ユーザーサービスは [t3code.nix](home/keewai/common/t3code.nix) が管理します。
 公式の nightly AppImage に含まれる CLI を `t3 serve` で実行し、グラフィカルセッションには依存しません。
-リリース情報は `t3code-releases` 入力で固定し、更新は `nix flake update` と通常の適用手順で行います。
-リリース一覧 JSON は Home Manager の世代で保持し、GC 後も同じロックを評価できるようにします。
-一覧だけの変更では T3 Code 本体を再ビルドしません。
+リリース情報は、上流が更新する AUR の `.SRCINFO` を `t3code-nightly` 入力で固定します。
+バージョンと AppImage の SHA256 を読み取り、更新は `nix flake update` と通常の適用手順で行います。
+GitHub のダウンロード数は更新判定に含めません。
 アプリ内の自動更新は無効です。
 
 - Web 画面は `https://orange.tail1e65cd.ts.net/t3/` です。
@@ -219,7 +219,8 @@ CM は残し、解析結果を録画と同じ場所の `<録画名>.chapter.txt`
 torne_drv・mirakc・mirakc-arib・BonDriver・EDCB・B25Decoder・tsreplace・Amatsukaze・KonomiTV と配布バイナリは [flake.nix](flake.nix) の入力で管理します。
 mirakc は上流の `release` ブランチを追います。
 KonomiTV は `master`、対応するバイナリは上流の nightly 配布を追います。
-Amatsukaze のリリース一覧 JSON はシステム世代で保持し、GC 後の再評価に備えます。
+Amatsukaze は公式 CI の master ビルドを `amatsukaze-artifacts` 入力から選びます。
+配布物の情報と取得したアーカイブはシステム世代で保持し、GC や CI の保存期限後の再評価に備えます。
 更新は `nix flake update` と通常の Orange への適用で行い、ソースの revision と配布物の hash は `flake.lock` に残します。
 Rust と Python の依存は取得元のロックから構築します。専用ドライバーは GPL-2.0 の torne_drv の中核を基に C で実装し、coax の実行・ビルド依存はありません。
 

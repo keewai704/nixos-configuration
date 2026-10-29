@@ -40,25 +40,30 @@
   systemd,
   vulkan-loader,
   zlib,
-  releases,
+  upstream,
   claude-code,
   gh,
   git,
   tailscale,
 }:
 let
-  release = lib.findFirst (
-    release: !release.draft && lib.hasInfix "-nightly." release.tag_name
-  ) (throw "No T3 Code nightly release found") (lib.importJSON releases);
+  sourceInfo = map lib.trim (lib.splitString "\n" (builtins.readFile (upstream + "/.SRCINFO")));
+  sourceValue =
+    key:
+    lib.removePrefix "${key} = " (
+      lib.findFirst (lib.hasPrefix "${key} = ") (throw "T3 Code nightly metadata has no ${key}")
+        sourceInfo
+    );
   pname = "t3code";
-  version = lib.removePrefix "v" release.tag_name;
-  asset = lib.findFirst (
-    asset: asset.name == "T3-Code-${version}-x86_64.AppImage"
-  ) (throw "T3 Code ${version} has no x86_64 AppImage") release.assets;
-  src = fetchurl {
-    url = asset.browser_download_url;
-    sha256 = lib.removePrefix "sha256:" asset.digest;
-  };
+  version = lib.replaceStrings [ "_" ] [ "-" ] (sourceValue "pkgver");
+  appImageName = "T3-Code-${version}-x86_64.AppImage";
+  appImageUrl = "https://github.com/pingdotgg/t3code/releases/download/v${version}/${appImageName}";
+  src =
+    assert sourceValue "source" == "${appImageName}::${appImageUrl}";
+    fetchurl {
+      url = appImageUrl;
+      sha256 = sourceValue "sha256sums";
+    };
   contents = appimageTools.extract { inherit pname version src; };
 in
 stdenv.mkDerivation {
@@ -172,7 +177,7 @@ stdenv.mkDerivation {
   meta = {
     description = "T3 Code nightly headless server and CLI for coding agents";
     homepage = "https://github.com/pingdotgg/t3code";
-    changelog = release.html_url;
+    changelog = "https://github.com/pingdotgg/t3code/releases/tag/v${version}";
     license = lib.licenses.mit;
     mainProgram = "t3";
     platforms = [ "x86_64-linux" ];

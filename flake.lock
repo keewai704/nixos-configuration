@@ -20,16 +20,16 @@
         "type": "github"
       }
     },
-    "amatsukaze-releases": {
+    "amatsukaze-artifacts": {
       "flake": false,
       "locked": {
-        "narHash": "sha256-RlgaKj7NjfjXFFRoDhPngQqqqIfs4evR7TWPkD3yIQM=",
+        "narHash": "sha256-CiyN92Rw+fL6iVGDul2hVsesKoOyCpTxz24eBlDtjo4=",
         "type": "file",
-        "url": "https://api.github.com/repos/rigaya/Amatsukaze/releases/latest"
+        "url": "https://api.github.com/repos/rigaya/Amatsukaze/actions/artifacts?per_page=100"
       },
       "original": {
         "type": "file",
-        "url": "https://api.github.com/repos/rigaya/Amatsukaze/releases/latest"
+        "url": "https://api.github.com/repos/rigaya/Amatsukaze/actions/artifacts?per_page=100"
       }
     },
     "b25-decoder": {
@@ -333,7 +333,7 @@
     "root": {
       "inputs": {
         "agenix": "agenix",
-        "amatsukaze-releases": "amatsukaze-releases",
+        "amatsukaze-artifacts": "amatsukaze-artifacts",
         "b25-decoder": "b25-decoder",
         "bondriver-linuxmirakc": "bondriver-linuxmirakc",
         "claude-code": "claude-code",
@@ -349,7 +349,7 @@
         "nixpkgs": "nixpkgs",
         "pyproject-build-systems": "pyproject-build-systems",
         "pyproject-nix": "pyproject-nix",
-        "t3code-releases": "t3code-releases",
+        "t3code-nightly": "t3code-nightly",
         "torne-driver": "torne-driver",
         "tsreplace": "tsreplace",
         "uv2nix": "uv2nix"
@@ -385,16 +385,21 @@
         "type": "github"
       }
     },
-    "t3code-releases": {
+    "t3code-nightly": {
       "flake": false,
       "locked": {
-        "narHash": "sha256-PmewBgbDWWU9qtjRwlmBMoWtA/9T1PgmpD843VPmWEQ=",
-        "type": "file",
-        "url": "https://api.github.com/repos/pingdotgg/t3code/releases?per_page=100"
+        "lastModified": 1793241096,
+        "narHash": "sha256-UzJBNgumfkU4eUbehyS3OCEduCS6MJJOy2xGzhUueLE=",
+        "ref": "master",
+        "rev": "b77a2ee862b98ddb7a0386b0504ea497f98d2ce7",
+        "revCount": 469,
+        "type": "git",
+        "url": "https://aur.archlinux.org/t3code-nightly-bin.git"
       },
       "original": {
-        "type": "file",
-        "url": "https://api.github.com/repos/pingdotgg/t3code/releases?per_page=100"
+        "ref": "master",
+        "type": "git",
+        "url": "https://aur.archlinux.org/t3code-nightly-bin.git"
       }
     },
     "torne-driver": {

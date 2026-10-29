@@ -1,6 +1,5 @@
 {
   config,
-  inputs,
   lib,
   pkgs,
   ...
@@ -28,7 +27,6 @@ in
   };
 
   config = lib.mkIf cfg.enable {
-    home.extraDependencies = [ inputs.t3code-releases.outPath ];
     home.packages = [ package ];
 
     systemd.user.services.t3code = {

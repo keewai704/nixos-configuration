@@ -4,28 +4,40 @@
   fetchurl,
   autoPatchelfHook,
   makeWrapper,
-  releases,
+  unzip,
+  artifacts,
 }:
 let
-  release = lib.importJSON releases;
-  version = release.tag_name;
-  asset = lib.findFirst (
-    asset: asset.name == "Amatsukaze_linux_${version}_x64.tar.xz"
-  ) (throw "Amatsukaze ${version} has no Linux x64 archive") release.assets;
+  artifact = lib.findFirst (
+    artifact:
+    !artifact.expired
+    && artifact.workflow_run.head_branch == "master"
+    && artifact.workflow_run.head_repository_id == artifact.workflow_run.repository_id
+    && builtins.match "Amatsukaze_linux_r[0-9]+" artifact.name != null
+    && artifact.digest != null
+  ) (throw "No current Amatsukaze Linux master build found") (lib.importJSON artifacts).artifacts;
+  version = lib.removePrefix "Amatsukaze_linux_" artifact.name;
 in
 stdenv.mkDerivation {
   pname = "amatsukaze";
   inherit version;
   src = fetchurl {
-    url = asset.browser_download_url;
-    sha256 = lib.removePrefix "sha256:" asset.digest;
+    name = "Amatsukaze_linux_${version}_x64.tar.xz.zip";
+    url = "https://nightly.link/rigaya/Amatsukaze/actions/artifacts/${toString artifact.id}.zip";
+    sha256 = lib.removePrefix "sha256:" artifact.digest;
   };
   sourceRoot = ".";
   nativeBuildInputs = [
     autoPatchelfHook
     makeWrapper
+    unzip
   ];
   buildInputs = [ stdenv.cc.cc.lib ];
+  unpackPhase = ''
+    runHook preUnpack
+    unzip -p "$src" 'Amatsukaze_linux_${version}_x64.tar.xz' | tar --extract --xz
+    runHook postUnpack
+  '';
   dontBuild = true;
   dontStrip = true;
   installPhase = ''
@@ -56,7 +68,7 @@ stdenv.mkDerivation {
     status=0
     $out/bin/AmatsukazeCLI >cli-help.txt 2>&1 || status=$?
     test "$status" = 1
-    grep -F 'Automated MPEG2-TS Transcoder ${version}' cli-help.txt
+    grep -F 'Automated MPEG2-TS Transcoder' cli-help.txt
     grep -F -- '--chapter' cli-help.txt
     printf '%s\n' 'BlankClip(length=30, width=64, height=64, fps=30, pixel_type="YV12", audio_rate=48000, channels=2, sample_type="16bit")' > blank.avs
     LD_LIBRARY_PATH="$out/libexec/amatsukaze/exe_files/lib" \
@@ -67,7 +79,7 @@ stdenv.mkDerivation {
   meta = {
     description = "Amatsukaze CLI with automatic logo generation and AviSynth filters";
     homepage = "https://github.com/rigaya/Amatsukaze";
-    changelog = release.html_url;
+    changelog = "https://github.com/rigaya/Amatsukaze/commit/${artifact.workflow_run.head_sha}";
     license = lib.licenses.mit;
     mainProgram = "AmatsukazeCLI";
     platforms = [ "x86_64-linux" ];
