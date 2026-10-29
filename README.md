@@ -118,6 +118,8 @@ Claude Code と Codex は orange で Home Manager が導入し、どのシェル
 端末操作 GUI と `apple-device-usb` の実装は
 [iphone-control](https://github.com/keewai704/iphone-control) で管理します。
 このリポジトリには flake 入力、導入設定、スキルの手順を置きます。
+USB 通信に必要な usbmuxd と udev の権限設定は
+[apple-device-usb.nix](hosts/orange/services/apple-device-usb.nix) がシステム側で有効化します。
 
 リポジトリ専用の検証手順は [.agents/skills/nixos-validation](.agents/skills/nixos-validation/SKILL.md) にあります。
 
@@ -127,6 +129,8 @@ Claude Code と Codex は orange で Home Manager が導入し、どのシェル
 公開経路と接続先は [t3code.nix](hosts/orange/services/t3code.nix)、ユーザーサービスは [t3code.nix](home/keewai/common/t3code.nix) が管理します。
 公式の nightly AppImage に含まれる CLI を `t3 serve` で実行し、グラフィカルセッションには依存しません。
 リリース情報は `t3code-releases` 入力で固定し、更新は `nix flake update` と通常の適用手順で行います。
+リリース一覧 JSON は Home Manager の世代で保持し、GC 後も同じロックを評価できるようにします。
+一覧だけの変更では T3 Code 本体を再ビルドしません。
 アプリ内の自動更新は無効です。
 
 - Web 画面は `https://orange.tail1e65cd.ts.net/t3/` です。

@@ -150,6 +150,7 @@ in
   systemd.services = {
     edcb-setup = {
       description = "Prepare native EDCB and scan the terrestrial tuner on first start";
+      wantedBy = [ "mirakc.service" ];
       requires = [
         "mirakc.service"
         "pcscd.service"
@@ -217,7 +218,10 @@ in
     edcb = {
       description = "Native xtne6f EDCB recording and EPG server";
       restartTriggers = lib.attrValues edcbSettings;
-      wantedBy = [ "multi-user.target" ];
+      wantedBy = [
+        "multi-user.target"
+        "edcb-setup.service"
+      ];
       requires = [ "edcb-setup.service" ];
       after = [ "edcb-setup.service" ];
       environment = tvEnvironment;

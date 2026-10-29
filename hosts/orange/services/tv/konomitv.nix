@@ -35,7 +35,10 @@ in
   systemd.services = {
     konomitv = {
       description = "KonomiTV television and recording frontend";
-      wantedBy = [ "multi-user.target" ];
+      wantedBy = [
+        "multi-user.target"
+        "edcb.service"
+      ];
       requires = [
         "edcb.service"
         "mirakc.service"

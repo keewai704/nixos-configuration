@@ -39,6 +39,7 @@ in
       description = "Create versioned local backups of orange service state";
       startAt = "*-*-* 06:15:00";
       requires = [ storageMountUnit ];
+      wants = [ "backup-vaultwarden.service" ];
       after = [
         "backup-vaultwarden.service"
         storageMountUnit

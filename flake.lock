@@ -20,18 +20,6 @@
         "type": "github"
       }
     },
-    "amatsukaze-releases": {
-      "flake": false,
-      "locked": {
-        "narHash": "sha256-5T1vE7WwsQ6GzChUrnMyz+Ln1SWqXp/9LWxTZRuuG38=",
-        "type": "file",
-        "url": "https://api.github.com/repos/rigaya/Amatsukaze/releases/latest"
-      },
-      "original": {
-        "type": "file",
-        "url": "https://api.github.com/repos/rigaya/Amatsukaze/releases/latest"
-      }
-    },
     "b25-decoder": {
       "flake": false,
       "locked": {
@@ -333,7 +321,6 @@
     "root": {
       "inputs": {
         "agenix": "agenix",
-        "amatsukaze-releases": "amatsukaze-releases",
         "b25-decoder": "b25-decoder",
         "bondriver-linuxmirakc": "bondriver-linuxmirakc",
         "claude-code": "claude-code",
@@ -352,7 +339,8 @@
         "t3code-releases": "t3code-releases",
         "torne-driver": "torne-driver",
         "tsreplace": "tsreplace",
-        "uv2nix": "uv2nix"
+        "uv2nix": "uv2nix",
+        "amatsukaze-releases": "amatsukaze-releases"
       }
     },
     "systems": {
@@ -388,7 +376,7 @@
     "t3code-releases": {
       "flake": false,
       "locked": {
-        "narHash": "sha256-/DHTqZ5MDUGtao59NFok+bpKE/W5hdYKrNzFdPEfRUY=",
+        "narHash": "sha256-hGxoQ4duSFRboUCTX2LB7X/s5IHIWZElhbXmVjpL5rc=",
         "type": "file",
         "url": "https://api.github.com/repos/pingdotgg/t3code/releases?per_page=100"
       },
@@ -453,6 +441,18 @@
         "ref": "master",
         "type": "git",
         "url": "https://github.com/pyproject-nix/uv2nix"
+      }
+    },
+    "amatsukaze-releases": {
+      "flake": false,
+      "locked": {
+        "narHash": "sha256-5T1vE7WwsQ6GzChUrnMyz+Ln1SWqXp/9LWxTZRuuG38=",
+        "type": "file",
+        "url": "https://api.github.com/repos/rigaya/Amatsukaze/releases/latest"
+      },
+      "original": {
+        "type": "file",
+        "url": "https://api.github.com/repos/rigaya/Amatsukaze/releases/latest"
       }
     }
   },

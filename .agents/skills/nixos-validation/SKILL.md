@@ -26,6 +26,19 @@ the changed behavior and its imports:
 Personal skill authoring also uses `add-nix-skill` for loader, scenario, publication,
 and deployed-content checks. Do not make a model request merely to validate loading.
 
+## Avoid activation conflicts
+
+Before each activation, inspect `systemctl list-jobs` and the relevant backup and
+maintenance units. Let active jobs finish before starting `test` or `switch`.
+Keep the local-backup timer stopped during activation if it was active, then
+restore it even when activation fails. Do not interrupt an active backup or leave
+its timer disabled.
+
+When TV units or packages change, check EDCB's current recording status before
+activation. Let recordings finish before restarting their tuner, mirakc, EDCB,
+or storage dependencies. Use disposable units to test failure recovery without
+disrupting the physical tuners or recordings.
+
 ## Evidence and completion
 
 Keep syntax/dependency checks and tests included in upstream builds. Do not add

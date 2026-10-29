@@ -1,6 +1,7 @@
 { lib, ... }:
 {
   imports = [
+    ./apple-device-usb.nix
     ./health-monitor
     ./immich
     ./local-backup
