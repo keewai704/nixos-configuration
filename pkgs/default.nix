@@ -8,6 +8,7 @@ in
     edcb = final.callPackage ./edcb { upstream = inputs.edcb; };
     b25-decoder = final.callPackage ./b25-decoder { upstream = inputs.b25-decoder; };
     tsreplace = final.callPackage ./tsreplace { upstream = inputs.tsreplace; };
+    amatsukaze = final.callPackage ./amatsukaze { releases = inputs.amatsukaze-releases; };
     konomitv = final.callPackage ./konomitv {
       upstream = inputs.konomitv;
       thirdparty = inputs.konomitv-thirdparty;

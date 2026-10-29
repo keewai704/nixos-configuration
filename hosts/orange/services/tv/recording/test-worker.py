@@ -103,4 +103,40 @@ class PSISections(unittest.TestCase):
             self.scan([packet(b'\0\x02\xbf\xff')])
 
 
+class VideoTimeline(unittest.TestCase):
+    def test_adaptive_24p_30p_60p_timing_keeps_source_coverage(self):
+        source = [index * 3003 for index in range(21)]
+        filtered = [0, 3003, 7508, 10511, 15015, 18018, 21021, 24024,
+                    27027, 30030, 31532, 33033, 34535, 36036, 37538,
+                    39039, 40541, 42042, 43544, 45045, 46547, 48048,
+                    49550, 51051, 52553, 54054, 55556, 57057, 58559, 60060]
+        encoder.verify_timeline((source, 0), (filtered, 0), True)
+
+    def test_missing_middle_of_recording_is_rejected(self):
+        source = [index * 3003 for index in range(20)]
+        with self.assertRaisesRegex(ValueError, 'timestamp coverage'):
+            encoder.verify_timeline((source, 0), (source[:3] + source[10:], 0), True)
+
+    def test_source_pts_wrap_does_not_look_like_a_cut(self):
+        source = [(1 << 33) + index * 3003 for index in range(5)]
+        output = [index * 3003 for index in range(5)]
+        encoder.verify_timeline((source, source[0]), (output, 0), False)
+
+    def test_replacement_preserves_every_filtered_frame_with_offset(self):
+        frames = [0, 3003, 7508, 10511, 15015]
+        shifted = [value + 900000 for value in frames]
+        encoder.verify_replacement_timeline((frames, 0), (shifted, shifted[0]))
+
+    def test_replacement_cannot_drop_a_filtered_frame(self):
+        frames = [0, 3003, 7508, 10511, 15015]
+        with self.assertRaisesRegex(ValueError, 'frames were lost'):
+            encoder.verify_replacement_timeline((frames, 0), (frames[:2] + frames[3:], 0))
+
+    def test_replacement_cannot_flatten_variable_frame_times(self):
+        frames = [0, 3003, 7508, 10511, 15015]
+        flattened = [index * 3003 for index in range(5)]
+        with self.assertRaisesRegex(ValueError, 'timing changed'):
+            encoder.verify_replacement_timeline((frames, 0), (flattened, 0))
+
+
 unittest.main()
