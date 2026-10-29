@@ -127,6 +127,10 @@ class VideoTimeline(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, 'ends before or after'):
             encoder.verify_timeline((source, 0), (source[:-5], 0), True)
 
+    def test_tail_pes_reordering_keeps_the_final_frame(self):
+        source = [index * 3003 for index in range(20)]
+        encoder.verify_timeline((source, 0), (source[:-2] + source[-1:], 0), False)
+
     def test_source_pts_wrap_does_not_look_like_a_cut(self):
         source = [(1 << 33) + index * 3003 for index in range(5)]
         output = [index * 3003 for index in range(5)]
