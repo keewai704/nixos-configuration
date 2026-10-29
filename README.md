@@ -93,7 +93,9 @@ nix build --accept-flake-config .#<パッケージ名>                   # pkgs/
   手元でビルドされます。署名の検証は無効にしません。
 
 Nix デーモンと上記の適用コマンドは `nix.slice` にまとめ、CPU の競合時の優先度を下げ、メモリに2 GiBのソフト上限を設けています。
-I/O はデーモン設定と `ionice -c 3` で idle クラスにし、他の処理を優先します。Nix ストアの GC も同じ制御で動かします。
+I/O はデーモン設定と `ionice -c 3` で idle クラスにし、読み取りと同期・直接書き込みの優先度を下げます。
+バッファー経由の非同期書き戻しは、この優先度設定の対象外です（[Linux の仕様](https://man7.org/linux/man-pages/man2/ioprio_set.2.html)）。
+Nix ストアの GC も同じ制御で動かします。
 root のビルドはデーモンを経由しない場合があるため、`systemd-run` と `ionice` で同じ制御を適用します。
 他の重い root のビルドにも `sudo systemd-run --scope --slice=nix.slice ionice -c 3 nix build …` を使います。
 
@@ -108,6 +110,7 @@ Claude Code と Codex は orange で Home Manager が導入し、どのシェル
   Nix から外したサーバーだけを消し、手で追加したサーバーはそのまま残します。
 - **Claude Code の共通指示**：[共通の UI・開発方針](home/keewai/common/coding-agents/shared-instructions.md)を
   `~/.claude/CLAUDE.md` に置きます。
+- **Claude Code の共通設定**：`autoCompactWindow = 400000` と `env.CLAUDE_CODE_SIMPLE_SYSTEM_PROMPT = "1"` を適用時に設定します。
 - **Codex の共通指示**：[codex-instructions.md](home/keewai/common/coding-agents/codex-instructions.md) と共通の UI・開発方針を
   orange の `~/.codex/config.toml` の `developer_instructions` に設定します。
   [OpenCode の方針](https://github.com/anomalyco/opencode/blob/dev/AGENTS.md)を参考にした実装・検証の指示が、
@@ -141,9 +144,10 @@ GitHub のダウンロード数は更新判定に含めません。
 アプリ内の自動更新は無効です。
 
 - Web 画面は `https://orange.tail1e65cd.ts.net/t3/` です。
-  Tailscale Serve HTTPS 443 → `127.0.0.1:8000` の nginx → `127.0.0.1:3773` のサーバーで配信し、API と WebSocket も同じ HTTPS 入口を通ります。
+  Tailscale Serve HTTPS 443 → `127.0.0.1:8000` の nginx → `127.0.0.1:3773` のサーバーで配信し、管理画面用の API と WebSocket も同じ HTTPS 入口を通ります。
   `/t3/` 用に Web 画面のルーター、ペアリング成功後の遷移、静的ファイル参照、PWA manifest をパッケージ内で補正します。
   ルートは Immich です。
+  ゲスト共有リンクは、上流の T3 Connect の専用ホストを使います。
 - 起動時にサービスが始まり、既存の `~/.t3` のペアリング、プロジェクト、会話履歴を使います。
   同じ `~/.t3` に対してデスクトップ版や別の `t3 serve` を同時起動しないでください。
 - 端末のペアリングは **Settings → Sharing & access** または
@@ -185,6 +189,7 @@ GitHub のダウンロード数は更新判定に含めません。
   Minecraft は JustEnoughBackups のスナップショットから、サーバーを停止せずに保存します。
   Minecraft と Vaultwarden は、片方のバックアップに失敗しても、もう片方の保存を試みます。
   新しい世代を保存できた対象だけ、14日以上前の世代を削除します。保存に失敗した対象の履歴は保持します。
+  一時アーカイブは終了時に削除し、強制終了で残った一時アーカイブと作業ディレクトリは次回実行時に回収します。
 - 各サービスが `orange.healthMonitor.units` と `loopbackPorts` に監視対象を追加します。
   T3 Code は `userUnits` で `keewai` のユーザーサービスとして、PC/SC は `pcscd.socket` の待受として確認します。
   Web 監視は Immich、Vaultwarden、T3 Code、KonomiTV の応答を確認します。

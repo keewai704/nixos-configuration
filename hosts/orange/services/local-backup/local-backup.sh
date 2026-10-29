@@ -7,11 +7,29 @@ minecraft_archive_path=@minecraftArchivePath@
 minecraft_live_root=@minecraftLiveBackupRoot@
 minecraft_staging=
 minecraft_tmp="$minecraft_dir/.minecraft-$stamp.tar.zst.tmp"
+vaultwarden_tmp="$vaultwarden_dir/.vaultwarden-$stamp.tar.zst.tmp"
 
 install -d -m 0700 "$backup_root" "$minecraft_dir" "$vaultwarden_dir"
 
+cleanup_backups() {
+  rm -f -- "$vaultwarden_tmp" "$minecraft_tmp"
+  if [[ -n "$minecraft_staging" ]]; then
+    rm -rf -- "$minecraft_staging"
+  fi
+}
+trap cleanup_backups EXIT
+trap 'exit 143' TERM
+trap 'exit 130' INT
+
+find "$vaultwarden_dir" -regextype posix-extended -mindepth 1 -maxdepth 1 -type f \
+  -regex '.*/[.]vaultwarden-[0-9]{8}T[0-9]{6}[.]tar[.]zst[.]tmp' -delete
+find "$minecraft_dir" -regextype posix-extended -mindepth 1 -maxdepth 1 \
+  \( \( -type f -regex '.*/[.]minecraft-[0-9]{8}T[0-9]{6}[.]tar[.]zst[.]tmp' \) \
+  -o \( -type d -regex '.*/[.]minecraft-[0-9]{8}T[0-9]{6}[.][A-Za-z0-9]{6}' \) \) \
+  -exec rm -rf -- {} +
+
 archive_vaultwarden() {
-  local vaultwarden_backup_age vaultwarden_tmp
+  local vaultwarden_backup_age
   if [[ $(systemctl show backup-vaultwarden.service --property Result --value) != success ]]; then
     echo 'The current Vaultwarden backup failed' >&2
     return 1
@@ -25,7 +43,6 @@ archive_vaultwarden() {
     echo 'The current Vaultwarden backup is more than one hour old' >&2
     return 1
   fi
-  vaultwarden_tmp="$vaultwarden_dir/.vaultwarden-$stamp.tar.zst.tmp"
   if tar --create --zstd --acls --xattrs --numeric-owner \
     --file "$vaultwarden_tmp" \
     --directory @vaultwardenBackupRoot@ . &&
@@ -41,14 +58,6 @@ archive_vaultwarden() {
 if ! archive_vaultwarden; then
   backup_status=1
 fi
-
-cleanup_minecraft() {
-  rm -f -- "$minecraft_tmp"
-  if [[ -n "$minecraft_staging" ]]; then
-    rm -rf -- "$minecraft_staging"
-  fi
-}
-trap cleanup_minecraft EXIT
 
 read_minecraft_status() {
   local properties property value
@@ -128,7 +137,4 @@ fi
 mv "$minecraft_tmp" "$minecraft_dir/minecraft-$stamp.tar.zst"
 find "$minecraft_dir" -mindepth 1 -maxdepth 1 -type f \
   -name 'minecraft-*.tar.zst' -mtime +13 -delete
-cleanup_minecraft
-trap - EXIT
-
 exit "$backup_status"

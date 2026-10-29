@@ -23,7 +23,7 @@
     "amatsukaze-artifacts": {
       "flake": false,
       "locked": {
-        "narHash": "sha256-CiyN92Rw+fL6iVGDul2hVsesKoOyCpTxz24eBlDtjo4=",
+        "narHash": "sha256-7yckesDGisrykbcuhMxosNTPsL7jeINAHb0rHjebVH8=",
         "type": "file",
         "url": "https://api.github.com/repos/rigaya/Amatsukaze/actions/artifacts?per_page=100"
       },
@@ -98,11 +98,11 @@
         ]
       },
       "locked": {
-        "lastModified": 1793135373,
-        "narHash": "sha256-Fq36+839LyeQ9hWYKlyrX7qDF5ITK9OHfoFbIGQjreo=",
+        "lastModified": 1793304696,
+        "narHash": "sha256-ImVFhc6smSmZ7cC8+83Vya6xgcFz42gsMd9nfZICNwU=",
         "owner": "sadjow",
         "repo": "codex-cli-nix",
-        "rev": "05d1514c424dc4b03b183662a8b3a244019e5d1b",
+        "rev": "f9eefb1b70318cf8f4a5925d1fd5ceb2dddb0f51",
         "type": "github"
       },
       "original": {
@@ -192,11 +192,11 @@
     "konomitv": {
       "flake": false,
       "locked": {
-        "lastModified": 1793168008,
-        "narHash": "sha256-rdMSjz203R8pwY0y0VsrN47axCsIRWeNdEBgiqeXQjg=",
+        "lastModified": 1793314352,
+        "narHash": "sha256-VnPNrOrtA8wncl9u4EusQmBo1hrvUdSzODk544RJVIo=",
         "ref": "master",
-        "rev": "8cf7f0fd3110a61c70c24a467eaaa265a16e2711",
-        "revCount": 4159,
+        "rev": "9a48e789a7dcd23c0aa45b28e7e220306c774d5c",
+        "revCount": 4187,
         "type": "git",
         "url": "https://github.com/tsukumijima/KonomiTV"
       },
@@ -295,11 +295,11 @@
         ]
       },
       "locked": {
-        "lastModified": 1792499785,
-        "narHash": "sha256-mGOkvueuMGSRiD75ccxFzfEvSlIU9ztjFluHMKOtogY=",
+        "lastModified": 1793303843,
+        "narHash": "sha256-wLiau0yOPONjWSoQNC++uirtJqx2D4hGAWSKU0TfKGc=",
         "ref": "master",
-        "rev": "a17819c85163988e063806ffc4f6d2716bc8ead8",
-        "revCount": 90,
+        "rev": "6171a3484937e14cdf2316ed9a60f1c27b6cb71e",
+        "revCount": 92,
         "type": "git",
         "url": "https://github.com/pyproject-nix/build-system-pkgs"
       },
@@ -388,11 +388,11 @@
     "t3code-nightly": {
       "flake": false,
       "locked": {
-        "lastModified": 1793263813,
-        "narHash": "sha256-gWgom96u11ele/xyq3zc0tc1n3GxCUBmncBOFBX9SQw=",
+        "lastModified": 1793299875,
+        "narHash": "sha256-QPCNEyBI4S7FciABfnVWqMsKyhm3Xux1fWKfwSiItOI=",
         "ref": "master",
-        "rev": "75795e9acc76197169def709ada6d3b66f0c35b1",
-        "revCount": 470,
+        "rev": "c876efc1ff2117a34291888bde28eeb113d43f8b",
+        "revCount": 473,
         "type": "git",
         "url": "https://aur.archlinux.org/t3code-nightly-bin.git"
       },
@@ -446,11 +446,11 @@
         ]
       },
       "locked": {
-        "lastModified": 1793240513,
-        "narHash": "sha256-dm7lCdfNVQ/244W65PR0PHIjpAJF9T8sGlFebuovwCg=",
+        "lastModified": 1793272761,
+        "narHash": "sha256-3CE1CEwprYlHRlRVkXDkhqec0jjF9Cti7tdk8vVDsCM=",
         "ref": "master",
-        "rev": "085c08330492e75dd2a86bcd52144fe1b253defa",
-        "revCount": 512,
+        "rev": "c361746c7d630d98b972378290547c8d35542a7a",
+        "revCount": 513,
         "type": "git",
         "url": "https://github.com/pyproject-nix/uv2nix"
       },
