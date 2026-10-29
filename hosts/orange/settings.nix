@@ -31,4 +31,5 @@ in
 
   minecraftPort = 25565;
   minecraftDataDir = "/var/lib/minecraft";
+  minecraftLiveBackupRoot = "${storageRoot}/server/backups/minecraft-live";
 }
