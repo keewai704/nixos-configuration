@@ -187,7 +187,7 @@ USB 通信に必要な usbmuxd と udev の権限設定は
 
 構成の入口は [tv/default.nix](hosts/orange/services/tv/default.nix) です。
 [edcb.nix](hosts/orange/services/tv/edcb.nix) が番組表と録画予約、
-[recording.nix](hosts/orange/services/tv/recording.nix) が録画後の変換、
+[recording/](hosts/orange/services/tv/recording/default.nix) が録画後の変換、
 [konomitv.nix](hosts/orange/services/tv/konomitv.nix) が視聴画面と公開経路を管理します。
 
 Sony CECH-ZD1 J 2台を、機器ごとの `torne-receiver` → mirakc の順に接続し、KonomiTV のライブ受信と
@@ -207,15 +207,19 @@ mirakc は [settings.nix](hosts/orange/services/tv/settings.nix) で指定した
 自動録画では `BonDriver_LinuxMirakc.so` の2枠を利用し、KonomiTVとの共有を維持します。直接BonDriverとmirakcは同一機器を同時には占有できません。直接利用するアプリは `tv` グループで実行してください。`keewai` のグループ追加を既存ログインへ反映するには再ログインが必要です。
 NHK総合の京都・神戸とサンテレビ2は、EDCB の表示・EPG取得・検索を無効にし、KonomiTV の一覧にも反映します。
 
-今後の録画は EDCB の `PostRecEnd.lua` からキューへ登録し、`tv-recording-encode` が `tsreplace` と QSVEncC で映像だけを H.265 に置換します。
+今後の録画は EDCB の `PostRecEnd.lua` からキューへ登録し、[録画処理](hosts/orange/services/tv/recording/default.nix)が AmatsukazeCLI と QSVEncC で映像を H.265 に変換し、tsreplace で元 TS の映像だけを置換します。
 音声・字幕・番組情報・データ放送などの非映像パケットを PID ごとの件数と SHA256 で比較し、PMT の非映像情報、映像の全体デコードとフレーム時刻も検証します。
-インターレース映像は QSV の bob で約59.94fpsのプログレッシブ映像に変換します。
+インターレース映像は CPU 版 KFM で24p・30p・60pの区間を判別し、逆テレシネとインターレース解除を切り替えた可変フレームレートで出力します。プログレッシブ映像はインターレース解除を省きます。変換後の各フレームの時刻が TS への置換で変わっていないことも確認します。
+Amatsukaze の入力解析では末尾 PES の境界で数フレームの差が出るため、末尾3入力フレーム分の区間は PES 解析差を許容し、終了時刻の差を完了 JSON の `source_tail_difference_ms` に記録します。それより前の時刻欠落と、変換済み映像の TS 置換時のフレーム欠落は拒否します。
+初回に局ロゴを自動検出・生成し、サービスIDと解像度ごとに `/var/lib/tv-recording/logos` へ保存します。以後はそのロゴを利用して CM解析とロゴ消しを行います。ロゴを生成できない初回録画は元 TS を残して失敗扱いにします。登録済みロゴが表示されない区間はロゴを消さずに処理を続けます。
+CM は残し、解析結果を録画と同じ場所の `<録画名>.chapter.txt` に保存します。解析で区切りが見つからない場合も、先頭に「本編」チャプターを作成します。映像や音声の形式変更により複数ファイルへ分割される場合は、元 TS を残します。一時データは `/var/cache/tv-recording/work` に置きます。
 映像の符号化方式を示す PMT と、必要な場合の PCR 配置は更新します。検証成功後に同じファイル名へ置換し、元 TS を削除します。
 失敗時は元 TS を残し、ジョブを `/var/lib/tv-recording/failed`、ログを `/var/log/tv-recording` に保存します。既存録画の一括変換は行いません。
 
-torne_drv・mirakc・mirakc-arib・BonDriver・EDCB・B25Decoder・tsreplace・KonomiTV と配布バイナリは [flake.nix](flake.nix) の入力で管理します。
+torne_drv・mirakc・mirakc-arib・BonDriver・EDCB・B25Decoder・tsreplace・Amatsukaze・KonomiTV と配布バイナリは [flake.nix](flake.nix) の入力で管理します。
 mirakc は上流の `release` ブランチを追います。
 KonomiTV は `master`、対応するバイナリは上流の nightly 配布を追います。
+Amatsukaze のリリース一覧 JSON はシステム世代で保持し、GC 後の再評価に備えます。
 更新は `nix flake update` と通常の Orange への適用で行い、ソースの revision と配布物の hash は `flake.lock` に残します。
 Rust と Python の依存は取得元のロックから構築します。専用ドライバーは GPL-2.0 の torne_drv の中核を基に C で実装し、coax の実行・ビルド依存はありません。
 

@@ -1,20 +1,31 @@
-{ lib, pkgs, ... }:
+{
+  inputs,
+  lib,
+  pkgs,
+  ...
+}:
 let
-  inherit (import ./settings.nix) recordings queueRoot serviceDefaults;
+  inherit (import ../settings.nix) recordings queueRoot serviceDefaults;
   recordingEncoder =
     pkgs.runCommand "recording-encode.py" { nativeBuildInputs = [ pkgs.python3 ]; }
       ''
         export PYTHONDONTWRITEBYTECODE=1
-        python ${./test-recording-encode.py} ${./recording-encode.py}
-        install -m444 ${./recording-encode.py} "$out"
+        python ${./test-worker.py} ${./worker.py}
+        install -m444 ${./worker.py} "$out"
       '';
+  preservingMuxer = pkgs.writeShellScript "recording-tsreplace" ''
+    exec ${pkgs.python3}/bin/python ${recordingEncoder} mux \
+      --tsreplace ${pkgs.local.tsreplace}/bin/tsreplace \
+      --ffprobe ${pkgs.local.konomitv.binaries}/FFmpeg/ffprobe.elf "$@"
+  '';
 in
 {
+  system.extraDependencies = [ inputs.amatsukaze-releases.outPath ];
   orange.healthMonitor.units = [ "tv-recording-encode.service" ];
 
   systemd.services = {
     tv-recording-encode = {
-      description = "Verify and replace completed recording video with HEVC while preserving TS data";
+      description = "Analyze recordings, remove station logos, and verify adaptive HEVC replacement";
       wantedBy = [ "multi-user.target" ];
       requires = [ "tv-storage-prepare.service" ];
       after = [ "tv-storage-prepare.service" ];
@@ -23,7 +34,7 @@ in
         XDG_CACHE_HOME = "/var/cache/tv-recording";
       };
       preStart = ''
-        install -d -m 0770 /var/lib/tv-recording/{queue,failed,completed}
+        install -d -m 0770 /var/lib/tv-recording/{queue,failed,completed,logos} /var/cache/tv-recording/work
       '';
       serviceConfig = serviceDefaults // {
         StateDirectory = "tv-recording";
@@ -34,7 +45,7 @@ in
         Nice = 10;
         IOSchedulingClass = "idle";
         CPUQuota = "200%";
-        MemoryMax = "2G";
+        MemoryMax = "4G";
         ExecStart = lib.escapeShellArgs [
           "${pkgs.python3}/bin/python"
           "${recordingEncoder}"
@@ -44,8 +55,18 @@ in
           recordings
           "--logs"
           "/var/log/tv-recording"
-          "--tsreplace"
-          "${pkgs.local.tsreplace}/bin/tsreplace"
+          "--amatsukaze"
+          "${pkgs.local.amatsukaze}/bin/AmatsukazeCLI"
+          "--logo-generator"
+          "${pkgs.local.amatsukaze}/bin/AmatsukazeGenLogo"
+          "--muxer"
+          "${preservingMuxer}"
+          "--filter"
+          "${./adaptive.avs}"
+          "--work"
+          "/var/cache/tv-recording/work"
+          "--logos"
+          "/var/lib/tv-recording/logos"
           "--encoder"
           "${pkgs.local.konomitv.binaries}/QSVEncC/QSVEncC.elf"
           "--ffmpeg"

@@ -20,6 +20,18 @@
         "type": "github"
       }
     },
+    "amatsukaze-releases": {
+      "flake": false,
+      "locked": {
+        "narHash": "sha256-lkov4HeEoYxJ326NkvMgqc6rjnvPmc3Lwnx2z2/z4fo=",
+        "type": "file",
+        "url": "https://api.github.com/repos/rigaya/Amatsukaze/releases/latest"
+      },
+      "original": {
+        "type": "file",
+        "url": "https://api.github.com/repos/rigaya/Amatsukaze/releases/latest"
+      }
+    },
     "b25-decoder": {
       "flake": false,
       "locked": {
@@ -321,6 +333,7 @@
     "root": {
       "inputs": {
         "agenix": "agenix",
+        "amatsukaze-releases": "amatsukaze-releases",
         "b25-decoder": "b25-decoder",
         "bondriver-linuxmirakc": "bondriver-linuxmirakc",
         "claude-code": "claude-code",
@@ -375,7 +388,7 @@
     "t3code-releases": {
       "flake": false,
       "locked": {
-        "narHash": "sha256-uWGARPaHR0x5M+3kIBo6qYvxW5U6Xh+BU+5KnPDeRDI=",
+        "narHash": "sha256-kRM4gCuQyofenyBBa9grfyg24sx1dcHpNbWA5LvBY0Y=",
         "type": "file",
         "url": "https://api.github.com/repos/pingdotgg/t3code/releases?per_page=100"
       },
