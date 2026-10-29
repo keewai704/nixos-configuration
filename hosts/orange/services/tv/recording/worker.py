@@ -324,6 +324,7 @@ def analyze_recording(source, sid, video, args, work, log):
                '-s', str(sid), '-w', str(work), '-et', 'QSVEnc', '-e', args.encoder,
                '-eo', options, '--format', 'tsreplace', '-m', args.muxer,
                '--chapter', '--cmoutmask', '1', '--parallel-logo-analysis', '1',
+               '--min-output-duration', '1',
                '--auto-logo-detect-div-x', '4', '--auto-logo-detect-div-y', '4',
                '--ignore-no-logo', '-j', str(result_path)]
     for logo in logos:
@@ -341,7 +342,7 @@ def analyze_recording(source, sid, video, args, work, log):
         raise ValueError('Unexpected Amatsukaze output path')
     chapter = output.with_suffix('.chapter.txt')
     if not chapter.is_file() or not chapter.stat().st_size:
-        raise ValueError('Amatsukaze did not produce recording chapters')
+        chapter.write_text('CHAPTER01=00:00:00.000\nCHAPTER01NAME=本編\n', encoding='utf-8')
     timeline = json.loads(replacement_report.read_text())['timeline']
     return output, chapter, timeline, adaptive, result
 
