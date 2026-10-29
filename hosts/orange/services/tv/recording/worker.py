@@ -306,6 +306,21 @@ def mux():
     report_path.write_text(json.dumps({'timeline': timeline}))
 
 
+def publish_logo(logo, destination):
+    with tempfile.NamedTemporaryFile(prefix='.logo-', suffix='.partial',
+                                     dir=destination.parent, delete=False) as output:
+        temporary = Path(output.name)
+        try:
+            with logo.open('rb') as source:
+                shutil.copyfileobj(source, output)
+            shutil.copymode(logo, temporary)
+            output.flush()
+            os.fsync(output.fileno())
+            temporary.replace(destination)
+        finally:
+            temporary.unlink(missing_ok=True)
+
+
 def analyze_recording(source, sid, video, args, work, log):
     logo_directory = args.logos / f"{sid}-{video['width']}x{video['height']}"
     logo_directory.mkdir(parents=True, exist_ok=True)
@@ -319,7 +334,7 @@ def analyze_recording(source, sid, video, args, work, log):
         if not logo.stat().st_size:
             raise ValueError('Logo generator produced an empty logo')
         cached_logo = logo_directory / 'station.lgd'
-        logo.replace(cached_logo)
+        publish_logo(logo, cached_logo)
         logos = [cached_logo]
     adaptive = video.get('field_order') != 'progressive'
     replacement_report = work / 'replacement.json'

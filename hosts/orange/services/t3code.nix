@@ -35,6 +35,7 @@ let
     "/api/attachments/upload/"
     "/api/preview-stream/"
     "/api/device-hub/"
+    "/api/auth/websocket-ticket/"
     "/oauth/mcp/"
   ];
   apiEndpoints = [

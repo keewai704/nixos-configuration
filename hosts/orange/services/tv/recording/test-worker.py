@@ -1,3 +1,4 @@
+import errno
 import importlib.util
 import subprocess
 import sys
@@ -175,6 +176,7 @@ class RecordingWorkspace(unittest.TestCase):
             logo = Path(sys.argv[sys.argv.index('-o') + 1])
             logo.with_name('station.genlogo.123.tmp.lgd').write_bytes(b'partial')
             logo.write_bytes(b'complete')
+            logo.chmod(0o660)
         ''')
         self.args.amatsukaze = self.tool('amatsukaze', '''
             import json
@@ -220,6 +222,37 @@ class RecordingWorkspace(unittest.TestCase):
         self.args.logo_generator = self.tool('unexpected-generator', 'raise SystemExit(1)')
         self.analyze()
         self.assertFalse((self.cache / 'station.lgd').exists())
+
+    def test_generated_logo_is_published_across_mount_boundaries(self):
+        replace = Path.replace
+
+        def replace_within_mount(path, target):
+            if path.is_relative_to(self.work) and Path(target).is_relative_to(self.args.logos):
+                raise OSError(errno.EXDEV, 'Separate mount points')
+            return replace(path, target)
+
+        with patch.object(Path, 'replace', replace_within_mount):
+            self.analyze()
+        cached = self.cache / 'station.lgd'
+        self.assertEqual(cached.read_bytes(), b'complete')
+        self.assertEqual(cached.stat().st_mode & 0o777, 0o660)
+        self.assertEqual(list(self.cache.iterdir()), [cached])
+
+    def test_cache_copy_failure_does_not_publish_a_partial_logo(self):
+        def fail_copy(source, destination):
+            destination.write(b'partial')
+            raise OSError(errno.ENOSPC, 'No space left')
+
+        with patch.object(encoder.shutil, 'copyfileobj', fail_copy):
+            with self.assertRaises(OSError):
+                self.analyze()
+        self.assertEqual(list(self.cache.iterdir()), [])
+
+    def test_cache_sync_failure_does_not_publish_a_logo(self):
+        with patch.object(encoder.os, 'fsync', side_effect=OSError(errno.EIO, 'Sync failed')):
+            with self.assertRaises(OSError):
+                self.analyze()
+        self.assertEqual(list(self.cache.iterdir()), [])
 
     def test_failed_generation_does_not_publish_an_incomplete_logo(self):
         self.args.logo_generator = self.tool('failing-generator', '''
