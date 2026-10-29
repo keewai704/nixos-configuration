@@ -1,0 +1,23 @@
+--- a/app/tsreplace.cpp
++++ b/app/tsreplace.cpp
+@@ -2444,6 +2444,20 @@
+             auto err = readTS(tsPackets);
+             if (err != RGY_ERR_NONE) {
+                 if (err == RGY_ERR_MORE_DATA) {
++                    if (!cutMode() && m_vidFirstTimestampOut != TIMESTAMP_INVALID_VALUE) {
++                        for (;;) {
++                            auto [replaceErr, packet] = m_videoReplace->getFrontPktAndPop();
++                            if (replaceErr == RGY_ERR_MORE_DATA) {
++                                break;
++                            }
++                            if (replaceErr != RGY_ERR_NONE) {
++                                return replaceErr;
++                            }
++                            if (auto videoErr = writeReplacedVideo(packet.get()); videoErr != RGY_ERR_NONE) {
++                                return videoErr;
++                            }
++                        }
++                    }
+                     if (auto flushErr = flushHeldADTSPES(tailTrimPTS() != TIMESTAMP_INVALID_VALUE); flushErr != RGY_ERR_NONE) {
+                         return flushErr;
+                     }

@@ -446,7 +446,7 @@
     "amatsukaze-releases": {
       "flake": false,
       "locked": {
-        "narHash": "sha256-5T1vE7WwsQ6GzChUrnMyz+Ln1SWqXp/9LWxTZRuuG38=",
+        "narHash": "sha256-st9fThmCJwzzJ/xfW7w7dsNv6Grd8xJz/ok0qCrCPiI=",
         "type": "file",
         "url": "https://api.github.com/repos/rigaya/Amatsukaze/releases/latest"
       },
