@@ -175,6 +175,8 @@ USB 通信に必要な usbmuxd と udev の権限設定は
 - [local-backup](hosts/orange/services/local-backup/) がバックアップ、[health-monitor](hosts/orange/services/health-monitor/) が
   15 分ごとに異常を Discord へ通知、[smart-tests](hosts/orange/services/smart-tests.nix) がディスクの診断、
   [maintenance](hosts/orange/services/maintenance.nix) がログの掃除・TRIM・Nix ストアの保守を受け持ちます。
+  Minecraft は JustEnoughBackups のスナップショットから、サーバーを停止せずに保存します。
+  Minecraft と Vaultwarden は、片方のバックアップに失敗しても、もう片方の保存を試みます。
 - 各サービスが `orange.healthMonitor.units` と `loopbackPorts` に監視対象を追加します。
   T3 Code は `userUnits` で `keewai` のユーザーサービスとして、PC/SC は `pcscd.socket` の待受として確認します。
   Web 監視は Immich、Vaultwarden、T3 Code、KonomiTV の応答を確認します。

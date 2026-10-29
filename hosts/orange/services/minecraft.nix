@@ -8,7 +8,9 @@ let
   inherit (import ../settings.nix)
     lanInterface
     minecraftDataDir
+    minecraftLiveBackupRoot
     minecraftPort
+    storageMountUnit
     ;
   dataDir = minecraftDataDir;
   minecraftVersion = "26.3";
@@ -30,6 +32,20 @@ let
   };
 
   mods = {
+    fabric-api = pkgs.fetchurl {
+      pname = "fabric-api";
+      version = "0.161.0+26.3";
+      url = "https://cdn.modrinth.com/data/P7dR8mSH/versions/bNnaTiuM/fabric-api-0.161.0%2B26.3.jar";
+      hash = "sha512-7Wslhtb94R/ehHL1pSfFHpm2cCbkb5TUv9hefijOXuKZFz7hatV2zrUfOfmNMKgRCGpt6xqGpSSFnMFuEtoQnQ==";
+    };
+
+    justenoughbackups = pkgs.fetchurl {
+      pname = "justenoughbackups";
+      version = "1.2.0.9+26.3";
+      url = "https://cdn.modrinth.com/data/ctV8T1ZK/versions/F1HJvFXY/justenoughbackups-1.2.0.9%2B26.3.jar";
+      hash = "sha512-8osxzMMqIN0E1QcHpvqSfgLszdsEr6VBl/enrVTxklAEe9l6Iore9rw/7V477RjGhrbK/X9ViU4pgG5K33ct4g==";
+    };
+
     lithium = pkgs.fetchurl {
       pname = "lithium-fabric";
       version = "0.26.0+mc26.3";
@@ -55,6 +71,24 @@ let
   fabricLauncherProperties = pkgs.writeText "fabric-server-launcher.properties" ''
     serverJar=${minecraftServer}
   '';
+
+  backupConfig = pkgs.writeText "justenoughbackups.json" (
+    builtins.toJSON {
+      backupMode = "FULL";
+      backupOnServerStart = false;
+      backupOnServerStop = false;
+      automaticSchedule = {
+        full.enabled = false;
+        partial.enabled = false;
+        differential.enabled = false;
+      };
+      integrityMode = "STRICT";
+      threadCount = 2;
+      backupDirectory = minecraftLiveBackupRoot;
+      retention.full = 14;
+      remoteStorage.enabled = false;
+    }
+  );
 
   jvmArgs = [
     "-Xms2G"
@@ -94,16 +128,49 @@ in
     tailscale0.allowedTCPPorts = [ minecraftPort ];
   };
 
+  systemd.sockets.minecraft = {
+    bindsTo = [ "minecraft.service" ];
+    socketConfig = {
+      ListenFIFO = "/run/minecraft.stdin";
+      SocketMode = "0600";
+      SocketUser = "minecraft";
+      SocketGroup = "minecraft";
+      RemoveOnStop = true;
+      FlushPending = true;
+    };
+  };
+
+  systemd.services.minecraft-backup-prepare = {
+    description = "Prepare Minecraft live backup storage";
+    requires = [ storageMountUnit ];
+    after = [ storageMountUnit ];
+    serviceConfig.Type = "oneshot";
+    script = ''
+      install -d -m 0700 -o minecraft -g minecraft ${minecraftLiveBackupRoot}
+    '';
+  };
+
   systemd.services.minecraft = {
     description = "Minecraft ${minecraftVersion} Fabric server";
     documentation = [ "https://fabricmc.net/use/server/" ];
     wantedBy = [ "multi-user.target" ];
     wants = [ "network-online.target" ];
-    after = [ "network-online.target" ];
+    requires = [
+      "minecraft.socket"
+      "minecraft-backup-prepare.service"
+    ];
+    after = [
+      "network-online.target"
+      "minecraft.socket"
+      "minecraft-backup-prepare.service"
+    ];
 
     preStart = ''
-      install -d -m 0755 ${dataDir}/mods ${dataDir}/logs
+      install -d -m 0755 ${dataDir}/mods ${dataDir}/logs ${dataDir}/config
+      install -m 0600 ${backupConfig} ${dataDir}/config/justenoughbackups.json
       ln -sfn ${fabricLauncherProperties} ${dataDir}/fabric-server-launcher.properties
+      ln -sfn ${mods.fabric-api} ${dataDir}/mods/fabric-api.jar
+      ln -sfn ${mods.justenoughbackups} ${dataDir}/mods/justenoughbackups.jar
       ln -sfn ${mods.lithium} ${dataDir}/mods/lithium.jar
       ln -sfn ${mods.krypton} ${dataDir}/mods/krypton.jar
       ln -sfn ${mods.scalablelux} ${dataDir}/mods/scalablelux.jar
@@ -123,6 +190,11 @@ in
       Group = "minecraft";
       WorkingDirectory = dataDir;
       StateDirectory = "minecraft";
+      StandardInput = "socket";
+      StandardOutput = "journal";
+      StandardError = "journal";
+      UMask = "0077";
+      ReadWritePaths = [ minecraftLiveBackupRoot ];
       ExecStart = lib.escapeShellArgs (
         [
           "${pkgs.jdk25_headless}/bin/java"

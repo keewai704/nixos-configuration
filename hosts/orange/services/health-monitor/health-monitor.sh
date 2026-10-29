@@ -112,12 +112,6 @@ check_fresh_file() {
   fi
 }
 
-minecraft_backup_running() {
-  local state
-  state=$(systemctl show orange-local-backup.service --property ActiveState --value)
-  [[ "$state" == activating ]]
-}
-
 minecraft_starting() {
   local started_usec uptime_seconds elapsed_seconds
   systemctl is-active --quiet minecraft.service || return 1
@@ -157,9 +151,6 @@ check_units() {
   local unit
   local -a user_units=(@monitoredUserUnits@)
   for unit in @monitoredUnits@; do
-    if [[ "$unit" == minecraft.service ]] && minecraft_backup_running; then
-      continue
-    fi
     check_unit "$unit"
   done
 
@@ -364,7 +355,7 @@ check_tcp_services() {
   local port_and_name port name
   for port_and_name in '@minecraftPort@ minecraft' '445 samba'; do
     read -r port name <<<"$port_and_name"
-    if [[ "$name" == minecraft ]] && { minecraft_backup_running || minecraft_starting; }; then
+    if [[ "$name" == minecraft ]] && minecraft_starting; then
       continue
     fi
     if nc -z -w 3 127.0.0.1 "$port" >/dev/null 2>&1; then
