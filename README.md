@@ -61,8 +61,8 @@ flake.nix
 
 ```sh
 nix flake update                                                  # 入力をまとめて更新（適用の前に毎回実行してコミット）
-sudo nixos-rebuild test --accept-flake-config --flake .#orange    # 一時的に適用して動作確認（再起動で戻る）
-sudo nixos-rebuild switch --accept-flake-config --flake .#orange  # 本適用（起動時の既定にもなる）
+sudo systemd-run --scope --slice=nix.slice nixos-rebuild test --accept-flake-config --flake .#orange    # 一時的に適用して動作確認（再起動で戻る）
+sudo systemd-run --scope --slice=nix.slice nixos-rebuild switch --accept-flake-config --flake .#orange  # 本適用（起動時の既定にもなる）
 nix fmt                                                           # Nix ファイルを整形
 nix develop                                                       # 言語サーバーや整形ツール入りのシェル
 nix build --accept-flake-config .#<パッケージ名>                   # pkgs/ のパッケージを単体でビルド
@@ -85,12 +85,16 @@ nix build --accept-flake-config .#<パッケージ名>                   # pkgs/
 
 - 新しい設定を適用する前の最初のビルドでもキャッシュを使えるよう、`nixos-rebuild` と `nix build` には
   `--accept-flake-config` を付けます。初回の適用前に単体ビルドするときは
-  `sudo nix build --accept-flake-config --no-link .#<パッケージ>` を使います
+  `sudo systemd-run --scope --slice=nix.slice nix build --accept-flake-config --no-link .#<パッケージ>` を使います
   （信頼されていない利用者は、flake を受け入れても新しいキャッシュや鍵を追加できないため）。
 - `accept-flake-config` を全体で有効にはしません。中身を確かめた flake のキャッシュ設定だけを受け入れます。
 - `cache.nixos.org` はそのまま使います。
 - キャッシュに載るのは、まったく同じストアパスのものだけです。自前のパッチを当てたパッケージなどは
   手元でビルドされます。署名の検証は無効にしません。
+
+Nix デーモンと上記の適用コマンドは `nix.slice` にまとめ、CPU・I/O の競合時の優先度を下げ、メモリに2 GiBのソフト上限を設けています。
+root のビルドはデーモンを経由しない場合があるため、`systemd-run` で同じ制御を適用します。
+他の重い root のビルドにも `sudo systemd-run --scope --slice=nix.slice nix build …` を使います。
 
 ## コーディングエージェント
 

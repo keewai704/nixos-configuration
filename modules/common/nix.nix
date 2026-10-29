@@ -27,4 +27,12 @@
       ];
     };
   };
+
+  systemd.slices.nix.sliceConfig = {
+    CPUWeight = 20;
+    IOWeight = 20;
+    MemoryHigh = "2G";
+  };
+
+  systemd.services.nix-daemon.serviceConfig.Slice = "nix.slice";
 }
