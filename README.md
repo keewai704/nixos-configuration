@@ -146,6 +146,7 @@ GitHub のダウンロード数は更新判定に含めません。
 - Web 画面は `https://orange.tail1e65cd.ts.net/t3/` です。
   Tailscale Serve HTTPS 443 → `127.0.0.1:8000` の nginx → `127.0.0.1:3773` のサーバーで配信し、管理画面用の API と WebSocket も同じ HTTPS 入口を通ります。
   `/t3/` 用に Web 画面のルーター、ペアリング成功後の遷移、静的ファイル参照、PWA manifest をパッケージ内で補正します。
+  HTTP MCP が返すスレッドリンクも、orange の HTTPS URL では `/t3/` を使います。
   ルートは Immich です。
   ゲスト共有リンクは、上流の T3 Connect の専用ホストを使います。
 - 起動時にサービスが始まり、既存の `~/.t3` のペアリング、プロジェクト、会話履歴を使います。
@@ -206,6 +207,7 @@ GitHub のダウンロード数は更新判定に含めません。
 Sony CECH-ZD1 J 2台を、機器ごとの `torne-receiver` → mirakc の順に接続し、KonomiTV のライブ受信と
 BonDriver_LinuxMirakc → xtne6f 版 EDCB（Linux ネイティブ）の録画で共有します。
 KonomiTV は EDCB バックエンドの `always_receive_tv_from_mirakurun` を有効にし、番組情報・録画予約は EDCB、放送波は mirakc から取得します。
+Twitter 連携で使うヘッドレス Chromium は、KonomiTV パッケージの内部依存として供給します。
 mirakc は [settings.nix](hosts/orange/services/tv/settings.nix) で指定したループバックポートの内部接続だけで利用します。同じ放送波は共有し、異なる2つの放送波を同時受信できます。チューナー不足の場合は EDCB の録画を優先します。
 内蔵 B-CAS スロットは専用 IFD と標準 pcscd で公開し、ライブは aribb25、EDCB は B25Decoder で復号します。映像は Intel QSV で変換します。
 8TB HDD 上の録画専用ディレクトリは `/srv/storage/KonomiTV/Recordings`、キャプチャは `/srv/storage/KonomiTV/Captures`、設定・番組表は

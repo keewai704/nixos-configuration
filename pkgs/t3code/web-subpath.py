@@ -48,3 +48,23 @@ for key in ("id", "start_url", "scope"):
 for icon in data.get("icons", []):
     icon["src"] = "/t3/" + icon["src"].lstrip("/")
 manifest.write_text(json.dumps(data))
+
+thread_link_before = """const threadLinkFor = (scope, threadId) => {
+\tconst origin = scope.client?.webOrigin;
+\treturn origin === void 0 ? formatThreadLink({
+\t\tenvironmentId: scope.environmentId,
+\t\tthreadId
+\t}) : `${origin}/${encodeURIComponent(scope.environmentId)}/${encodeURIComponent(threadId)}`;
+};"""
+thread_link_after = thread_link_before.replace(
+    "\treturn origin",
+    '\tconst basePath = origin === "https://orange.tail1e65cd.ts.net" ? "/t3" : "";\n\treturn origin',
+).replace("`${origin}/", "`${origin}${basePath}/")
+thread_link_replacements = 0
+for path in (root / "apps/server/dist").glob("*.mjs"):
+    source = path.read_text()
+    count = source.count(thread_link_before)
+    if count:
+        path.write_text(source.replace(thread_link_before, thread_link_after))
+        thread_link_replacements += count
+assert thread_link_replacements == 1, thread_link_replacements
