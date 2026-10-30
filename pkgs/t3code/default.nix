@@ -45,6 +45,7 @@
   gh,
   git,
   tailscale,
+  webOrigin ? null,
 }:
 let
   sourceInfo = map lib.trim (lib.splitString "\n" (builtins.readFile (upstream + "/.SRCINFO")));
@@ -130,7 +131,7 @@ stdenv.mkDerivation {
 
   postPatch = ''
     asar extract resources/app.asar app
-    python3 ${./web-subpath.py} app
+    python3 ${./web-subpath.py} app ${lib.escapeShellArg (builtins.toJSON webOrigin)}
     asar pack app resources/app.asar --unpack-dir node_modules
     rm -r app
   '';
@@ -172,7 +173,7 @@ stdenv.mkDerivation {
     ELECTRON_RUN_AS_NODE=1 $out/libexec/t3code/t3code ${./test-web-subpath.mjs} \
       "$PWD/t3code-install-check"
     ELECTRON_RUN_AS_NODE=1 $out/libexec/t3code/t3code ${./test-thread-links.mjs} \
-      "$PWD/t3code-install-check/apps/server/dist"
+      "$PWD/t3code-install-check/apps/server/dist" ${lib.escapeShellArg (builtins.toJSON webOrigin)}
     ELECTRON_RUN_AS_NODE=1 $out/libexec/t3code/t3code ${./test-codex-recovery.mjs} \
       "$PWD/t3code-install-check/apps/server/dist"
     runHook postInstallCheck

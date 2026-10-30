@@ -147,6 +147,7 @@ GitHub のダウンロード数は更新判定に含めません。
   Tailscale Serve HTTPS 443 → `127.0.0.1:8000` の nginx → `127.0.0.1:3773` のサーバーで配信し、管理画面用の API と WebSocket も同じ HTTPS 入口を通ります。
   `/t3/` 用に Web 画面のルーター、ペアリング成功後の遷移、静的ファイル参照、PWA manifest をパッケージ内で補正します。
   HTTP MCP が返すスレッドリンクも、orange の HTTPS URL では `/t3/` を使います。
+  公開元の URL は [settings.nix](hosts/orange/settings.nix) の `tailnetOrigin` から `services.t3code.webOrigin` を通じてパッケージへ渡します。
   ルートは Immich です。
   ゲスト共有リンクは、上流の T3 Connect の専用ホストを使います。
 - 起動時にサービスが始まり、既存の `~/.t3` のペアリング、プロジェクト、会話履歴を使います。

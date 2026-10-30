@@ -51,8 +51,9 @@ const factory = /function ([\w$]+)\([\w$]+\)\{let [\w$]+=[\w$]+\?\.window\?\?\(t
 );
 assert.ok(factory, "Bundled browser history factory changed");
 
+const origin = "https://pairing.example";
 for (const suffix of ["#synthetic-token", "?source=fixture#synthetic-token", ""]) {
-  let url = new URL(`https://orange.tail1e65cd.ts.net/t3/pair${suffix}`);
+  let url = new URL(`${origin}/t3/pair${suffix}`);
   let reloaded;
   const window = {
     get location() {
@@ -87,7 +88,7 @@ for (const suffix of ["#synthetic-token", "?source=fixture#synthetic-token", ""]
   });
   authenticated();
   await Promise.resolve();
-  assert.equal(reloaded, "https://orange.tail1e65cd.ts.net/t3/");
+  assert.equal(reloaded, `${origin}/t3/`);
   history.destroy();
 }
 console.log("Bundled pairing callback and browser history preserve /t3/ after authentication (3 cases)");

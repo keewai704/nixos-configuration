@@ -4,6 +4,7 @@ import sys
 from pathlib import Path
 
 root = Path(sys.argv[1])
+web_origin = json.loads(sys.argv[2])
 clients = list(root.glob("**/index.html"))
 clients = [
     p.parent
@@ -58,7 +59,7 @@ thread_link_before = """const threadLinkFor = (scope, threadId) => {
 };"""
 thread_link_after = thread_link_before.replace(
     "\treturn origin",
-    '\tconst basePath = origin === "https://orange.tail1e65cd.ts.net" ? "/t3" : "";\n\treturn origin',
+    f'\tconst basePath = origin === {json.dumps(web_origin)} ? "/t3" : "";\n\treturn origin',
 ).replace("`${origin}/", "`${origin}${basePath}/")
 thread_link_replacements = 0
 for path in (root / "apps/server/dist").glob("*.mjs"):

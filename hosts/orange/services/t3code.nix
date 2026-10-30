@@ -66,6 +66,7 @@ in
   home-manager.users.keewai.services.t3code = {
     enable = true;
     port = t3codePort;
+    webOrigin = tailnetOrigin;
   };
 
   services.nginx.virtualHosts.${tailnetHostname}.locations =

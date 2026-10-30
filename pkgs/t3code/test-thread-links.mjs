@@ -29,14 +29,15 @@ const declarations = [
 ];
 const threadLinkFor = runInNewContext(`${declarations.join("\n")}\nthreadLinkFor`);
 const environmentId = "00000000-0000-4000-8000-000000000001";
-const origin = "https://orange.tail1e65cd.ts.net";
+const origin = JSON.parse(process.argv[3]);
+const destinations = [
+  ...(origin === null ? [] : [[origin, "/t3"]]),
+  ["https://synthetic.connect.example", ""],
+  ["http://127.0.0.1:3773", ""],
+];
 
 for (const threadId of ["synthetic-thread", "thread:synthetic/review?value=1"]) {
-  for (const [webOrigin, prefix] of [
-    [origin, "/t3"],
-    ["https://synthetic.connect.example", ""],
-    ["http://127.0.0.1:3773", ""],
-  ]) {
+  for (const [webOrigin, prefix] of destinations) {
     assert.equal(
       threadLinkFor({ environmentId, client: { webOrigin } }, threadId),
       `${webOrigin}${prefix}/${environmentId}/${encodeURIComponent(threadId)}`,
@@ -46,4 +47,6 @@ for (const threadId of ["synthetic-thread", "thread:synthetic/review?value=1"]) 
     assert.equal(threadLinkFor(scope, threadId), `<t3-thread://v2/${environmentId}/${threadId}>`);
   }
 }
-console.log("Bundled HTTP thread links use /t3/ on orange and preserve Connect and native links (10 cases)");
+console.log(
+  `Bundled HTTP thread links use the configured origin and preserve Connect and native links (${2 * (destinations.length + 2)} cases)`,
+);

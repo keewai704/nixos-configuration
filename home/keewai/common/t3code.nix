@@ -7,6 +7,7 @@
 let
   cfg = config.services.t3code;
   package = pkgs.local.t3code.override {
+    inherit (cfg) webOrigin;
     claude-code = config.programs.claude-code.finalPackage;
     gh = config.programs.gh.package;
     git = config.programs.git.package;
@@ -23,6 +24,10 @@ in
       type = lib.types.port;
       default = 3773;
       description = "Loopback port of the headless server.";
+    };
+    webOrigin = lib.mkOption {
+      type = lib.types.str;
+      description = "External origin whose HTTP thread links use the /t3/ web mount.";
     };
   };
 
