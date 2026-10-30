@@ -51,6 +51,7 @@ in
       ];
       environment = {
         LIBVA_DRIVER_NAME = "iHD";
+        XDG_CONFIG_HOME = "/var/lib/konomitv";
       };
       serviceConfig = serviceDefaults // {
         StateDirectory = "konomitv";
