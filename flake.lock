@@ -192,11 +192,11 @@
     "konomitv": {
       "flake": false,
       "locked": {
-        "lastModified": 1793342974,
-        "narHash": "sha256-dCc2ROJbxnbxIOe4irnReJytn7k2ezKuA7AZzYma5U0=",
+        "lastModified": 1793371483,
+        "narHash": "sha256-OINr8ftleUfeudGi3rg7m20wbpTn0Vs91OD29U0AewY=",
         "ref": "master",
-        "rev": "e5999ee354d2865fdcac269d686468047cede8e3",
-        "revCount": 4190,
+        "rev": "1319cf39ea098ecca31cee4e2e59cffb94136292",
+        "revCount": 4207,
         "type": "git",
         "url": "https://github.com/tsukumijima/KonomiTV"
       },
@@ -257,7 +257,7 @@
     "mirakc-swagger-ui": {
       "flake": false,
       "locked": {
-        "narHash": "sha256-i/VHnCQdxPSM0rU+QLOqJyly2hsTwg3I1dCL8KlcH/Y=",
+        "narHash": "sha256-3MPsXsAnIviI9NDBUa3DLUwT1/tUfo1K/K5ZDV6Itdc=",
         "type": "file",
         "url": "https://github.com/swagger-api/swagger-ui/archive/refs/heads/master.zip"
       },
