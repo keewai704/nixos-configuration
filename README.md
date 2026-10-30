@@ -208,7 +208,7 @@ GitHub のダウンロード数は更新判定に含めません。
 Sony CECH-ZD1 J 2台を、機器ごとの `torne-receiver` → mirakc の順に接続し、KonomiTV のライブ受信と
 BonDriver_LinuxMirakc → xtne6f 版 EDCB（Linux ネイティブ）の録画で共有します。
 KonomiTV は EDCB バックエンドの `always_receive_tv_from_mirakurun` を有効にし、番組情報・録画予約は EDCB、放送波は mirakc から取得します。
-Twitter 連携で使うヘッドレス Chromium は、KonomiTV パッケージの内部依存として供給し、設定領域には `/var/lib/konomitv` を使います。
+Twitter 連携は利用せず、そのためのサーバー側ブラウザは導入していません。
 mirakc は [settings.nix](hosts/orange/services/tv/settings.nix) で指定したループバックポートの内部接続だけで利用します。同じ放送波は共有し、異なる2つの放送波を同時受信できます。チューナー不足の場合は EDCB の録画を優先します。
 内蔵 B-CAS スロットは専用 IFD と標準 pcscd で公開し、ライブは aribb25、EDCB は B25Decoder で復号します。映像は Intel QSV で変換します。
 8TB HDD 上の録画専用ディレクトリは `/srv/storage/KonomiTV/Recordings`、キャプチャは `/srv/storage/KonomiTV/Captures`、設定・番組表は

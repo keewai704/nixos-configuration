@@ -4,7 +4,6 @@
   stdenvNoCC,
   callPackage,
   python313,
-  chromium,
   autoPatchelfHook,
   makeWrapper,
   unzip,
@@ -113,7 +112,6 @@ stdenvNoCC.mkDerivation {
     ln -s ${binaries} "$out/share/konomitv/server/thirdparty"
     makeWrapper ${pythonEnv}/bin/python "$out/bin/konomitv" \
       --chdir "$out/share/konomitv/server" \
-      --prefix PATH : ${lib.makeBinPath [ chromium ]} \
       --set PYTHONUNBUFFERED 1 \
       --add-flags "$out/share/konomitv/server/KonomiTV.py"
     runHook postInstall

@@ -192,11 +192,11 @@
     "konomitv": {
       "flake": false,
       "locked": {
-        "lastModified": 1793314352,
-        "narHash": "sha256-VnPNrOrtA8wncl9u4EusQmBo1hrvUdSzODk544RJVIo=",
+        "lastModified": 1793342974,
+        "narHash": "sha256-dCc2ROJbxnbxIOe4irnReJytn7k2ezKuA7AZzYma5U0=",
         "ref": "master",
-        "rev": "9a48e789a7dcd23c0aa45b28e7e220306c774d5c",
-        "revCount": 4187,
+        "rev": "e5999ee354d2865fdcac269d686468047cede8e3",
+        "revCount": 4190,
         "type": "git",
         "url": "https://github.com/tsukumijima/KonomiTV"
       },
@@ -388,11 +388,11 @@
     "t3code-nightly": {
       "flake": false,
       "locked": {
-        "lastModified": 1793323910,
-        "narHash": "sha256-FbF2WR2/q+FobuEDOc/71/9U0OSibInEIZm04r31QSE=",
+        "lastModified": 1793346592,
+        "narHash": "sha256-VDwjbrnUz5tAt1yetMuAbaZwXfLI/NcfJq3aVx62d4I=",
         "ref": "master",
-        "rev": "021aebe0d1d534820b85cb001e719055b150bfdf",
-        "revCount": 474,
+        "rev": "596677ffc4aa29c402737d31e32ee45287f4de8b",
+        "revCount": 475,
         "type": "git",
         "url": "https://aur.archlinux.org/t3code-nightly-bin.git"
       },
