@@ -17,7 +17,6 @@ in
   nginxPort = 8000;
   t3codePort = 3773;
   rustxngPort = 8888;
-  jellyfinPort = 8096;
   smartDevices = [
     "/dev/sda"
     "/dev/sdb"
