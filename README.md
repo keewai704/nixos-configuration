@@ -111,7 +111,7 @@ Claude Code と Codex は orange で Home Manager が導入し、どのシェル
 - **Web 検索**：[rustxng.nix](home/keewai/common/rustxng.nix) が [RustXNG](https://github.com/sahenjp/RustXNG) を
   `127.0.0.1:8888` のユーザーサービスとして動かし、nixpkgs の `mcp-searxng` を `rustxng` MCP サーバーとして登録します。
   Claude Code の `WebSearch` と Codex の組み込み `web_search` は無効にし、検索はこの MCP サーバーだけを使います。
-  RustXNG は `rustxng` 入力で上流の `main` を追い、`nix flake update` で更新します。
+  RustXNG はビルドせず、`rustxng-release` 入力で上流の最新リリースの Linux 用バイナリを選び、`nix flake update` で更新します。
 - **Claude Code の共通指示**：[共通の UI・開発方針](home/keewai/common/coding-agents/shared-instructions.md)を
   `~/.claude/CLAUDE.md` に置きます。
 - **Claude Code の共通設定**：`autoCompactWindow = 400000` と `env.CLAUDE_CODE_SIMPLE_SYSTEM_PROMPT = "1"` を適用時に設定します。

@@ -115,8 +115,8 @@
       flake = false;
     };
 
-    rustxng = {
-      url = "git+https://github.com/sahenjp/RustXNG?ref=main";
+    rustxng-release = {
+      url = "file+https://api.github.com/repos/sahenjp/RustXNG/releases/latest";
       flake = false;
     };
 
