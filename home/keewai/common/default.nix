@@ -6,6 +6,7 @@
     ./git.nix
     ./nix
     ./packages.nix
+    ./rustxng.nix
     ./shell
     ./t3code.nix
   ];

@@ -106,8 +106,12 @@ Claude Code と Codex は orange で Home Manager が導入し、どのシェル
 [coding-agents/](home/keewai/common/coding-agents/default.nix) が次のものを配ります。
 
 - **スキル**：[skills/](skills/) の全ディレクトリを `~/.claude/skills/` と `~/.agents/skills/` にリンクします。
-- **MCP サーバー**：`codingAgents.mcpServers.<名前> = { command; args; env; }` を、適用時に `~/.claude.json` へ書き込みます。
-  Nix から外したサーバーだけを消し、手で追加したサーバーはそのまま残します。
+- **MCP サーバー**：`codingAgents.mcpServers.<名前> = { command; args; env; }` を、適用時に `~/.claude.json` と
+  `~/.codex/config.toml` へ書き込みます。`~/.claude.json` では Nix から外したサーバーだけを消し、手で追加したサーバーはそのまま残します。
+- **Web 検索**：[rustxng.nix](home/keewai/common/rustxng.nix) が [RustXNG](https://github.com/sahenjp/RustXNG) を
+  `127.0.0.1:8888` のユーザーサービスとして動かし、nixpkgs の `mcp-searxng` を `rustxng` MCP サーバーとして登録します。
+  Claude Code の `WebSearch` と Codex の組み込み `web_search` は無効にし、検索はこの MCP サーバーだけを使います。
+  RustXNG は `rustxng` 入力で上流の `main` を追い、`nix flake update` で更新します。
 - **Claude Code の共通指示**：[共通の UI・開発方針](home/keewai/common/coding-agents/shared-instructions.md)を
   `~/.claude/CLAUDE.md` に置きます。
 - **Claude Code の共通設定**：`autoCompactWindow = 400000` と `env.CLAUDE_CODE_SIMPLE_SYSTEM_PROMPT = "1"` を適用時に設定します。

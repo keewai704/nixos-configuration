@@ -115,6 +115,11 @@
       flake = false;
     };
 
+    rustxng = {
+      url = "git+https://github.com/sahenjp/RustXNG?ref=main";
+      flake = false;
+    };
+
     iphone-control = {
       url = "git+https://github.com/keewai704/iphone-control?ref=main";
       inputs.nixpkgs.follows = "nixpkgs";

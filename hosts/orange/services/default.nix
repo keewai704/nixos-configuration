@@ -7,6 +7,7 @@
     ./local-backup
     ./maintenance.nix
     ./minecraft.nix
+    ./rustxng.nix
     ./samba.nix
     ./smart-tests.nix
     ./storage.nix

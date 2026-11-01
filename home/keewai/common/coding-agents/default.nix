@@ -52,7 +52,7 @@ in
         }
       );
       default = { };
-      description = "Stdio MCP servers registered in Claude Code user configuration.";
+      description = "Stdio MCP servers registered in Claude Code and Codex user configuration.";
     };
   };
 
@@ -61,8 +61,10 @@ in
       enable = true;
       mutableSettings = true;
       package = inputs.codex.packages.${pkgs.stdenv.hostPlatform.system}.default;
-      settings.developer_instructions =
-        builtins.readFile ./codex-instructions.md + "\n" + sharedInstructions;
+      settings = {
+        developer_instructions = builtins.readFile ./codex-instructions.md + "\n" + sharedInstructions;
+        mcp_servers = lib.mkIf (cfg.mcpServers != { }) cfg.mcpServers;
+      };
     };
 
     programs.claude-code = {

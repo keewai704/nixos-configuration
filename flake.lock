@@ -349,10 +349,28 @@
         "nixpkgs": "nixpkgs",
         "pyproject-build-systems": "pyproject-build-systems",
         "pyproject-nix": "pyproject-nix",
+        "rustxng": "rustxng",
         "t3code-nightly": "t3code-nightly",
         "torne-driver": "torne-driver",
         "tsreplace": "tsreplace",
         "uv2nix": "uv2nix"
+      }
+    },
+    "rustxng": {
+      "flake": false,
+      "locked": {
+        "lastModified": 1793452081,
+        "narHash": "sha256-mB4XFHlZ2TZzr2P/mFZqsY/s3hKSwazoekiFKNDXg6Y=",
+        "ref": "main",
+        "rev": "3c44f7977eda414a54d7ebdbe37b4fb4edf28aea",
+        "revCount": 80,
+        "type": "git",
+        "url": "https://github.com/sahenjp/RustXNG"
+      },
+      "original": {
+        "ref": "main",
+        "type": "git",
+        "url": "https://github.com/sahenjp/RustXNG"
       }
     },
     "systems": {
