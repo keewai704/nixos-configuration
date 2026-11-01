@@ -23,7 +23,7 @@
     "amatsukaze-artifacts": {
       "flake": false,
       "locked": {
-        "narHash": "sha256-V+6KvbwSCAdjvwD5fxyJDBCxsiBU+9412hafgznMjmg=",
+        "narHash": "sha256-Sm+XpPBXRzDfX6i6jWuEMy4tAp9WQhTnv2gbF6VDjxE=",
         "type": "file",
         "url": "https://api.github.com/repos/rigaya/Amatsukaze/actions/artifacts?per_page=100"
       },
@@ -377,7 +377,7 @@
     "rustxng-release": {
       "flake": false,
       "locked": {
-        "narHash": "sha256-XgC9G4EjfmwSgP9n/g/FfZYvcy+AK98gvfY+PBDIW74=",
+        "narHash": "sha256-M89tbquWYqhjKKivVWzrjWCOHiI2lZ16Irk4AOopZTk=",
         "type": "file",
         "url": "https://api.github.com/repos/sahenjp/RustXNG/releases/latest"
       },
