@@ -359,7 +359,7 @@
     "rustxng-release": {
       "flake": false,
       "locked": {
-        "narHash": "sha256-qM2TROVkrWVIAOFi2oys/Ixe50hrK6uydrKQTAOFw6c=",
+        "narHash": "sha256-IlcXBSpPz1VCQU3B3S3wIIDCG+kfdVX1SCGdGUytDHo=",
         "type": "file",
         "url": "https://api.github.com/repos/sahenjp/RustXNG/releases/latest"
       },
