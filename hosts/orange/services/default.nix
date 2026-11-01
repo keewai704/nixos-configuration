@@ -4,6 +4,7 @@
     ./apple-device-usb.nix
     ./health-monitor
     ./immich
+    ./jellyfin
     ./local-backup
     ./maintenance.nix
     ./minecraft.nix
