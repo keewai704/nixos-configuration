@@ -1,20 +1,24 @@
 ---
 name: faster-whisper
-description: Transcribe local audio/video with Whisper large-v3 on CPU to text or subtitles, including Japanese. Not text-to-speech.
-compatibility: Requires the Nix-managed whisper-ctranslate2 command. Internet access and several GB of disk space are needed for the initial model download.
+description: Transcribe local audio/video with Whisper large-v3 on CPU to text or subtitles, including Japanese, after RE-USE speech denoising. Not text-to-speech.
+compatibility: Requires the Nix-managed reuse-denoise and whisper-ctranslate2 commands. Internet access and several GB of disk space are needed for the initial model download.
 ---
 
 # Local transcription with faster-whisper
 
-Use the packaged `whisper-ctranslate2` CLI, which runs faster-whisper through
-CTranslate2. The model is **large-v3**, not the faster-whisper package version.
-Do not substitute `turbo`, `distil-large-v3`, or a smaller model without a request.
+Denoise each input with the packaged `reuse-denoise` command, which runs
+NVIDIA NemotronLabs RE-USE speech enhancement on CPU, then transcribe its output
+with the packaged `whisper-ctranslate2` CLI, which runs faster-whisper through
+CTranslate2. The Whisper model is **large-v3**, not the faster-whisper package
+version. Do not substitute `turbo`, `distil-large-v3`, or a smaller model without
+a request. Skip denoising only when the user asks to transcribe the original audio.
 
 ## Environment
 
-Home Manager installs the command through
+Home Manager installs both commands through
 `home/keewai/common/faster-whisper.nix` in the nixos-configuration repository.
-Check `command -v whisper-ctranslate2` and `whisper-ctranslate2 --version`.
+Check `command -v reuse-denoise whisper-ctranslate2` and
+`whisper-ctranslate2 --version`.
 If missing, report that the Nix-managed environment needs activation; do not
 install packages with pip or modify generated skill files.
 
@@ -27,10 +31,18 @@ or terminate another workload as part of transcription.
 Allow the running command to finish rather than launching duplicates.
 PyAV handles supported audio/video decoding without a separate FFmpeg command.
 
-The first run downloads the public `Systran/faster-whisper-large-v3` model from
-Hugging Face into the cache specified below. No Hugging Face token is needed.
-Weights are cached user data, not bundled into the Nix system closure. Keep
-inference local; do not send media to an external transcription service.
+`reuse-denoise INPUT OUTPUT_DIR` writes `OUTPUT_DIR/<input stem>.wav` as 16 kHz
+mono speech, prints that path, and refuses to overwrite an existing file. The
+duration matches the input, so transcript timestamps still apply to the original.
+It takes about 16 times the audio duration on orange; run long files in the
+background and tell the user the expected wait. RE-USE keeps the main speaker
+and suppresses overlapping voices, so mention this when other speakers matter.
+Its weights are part of the Nix package and need no download.
+
+The first transcription downloads the public `Systran/faster-whisper-large-v3`
+model from Hugging Face into the cache specified below. No Hugging Face token is
+needed. Whisper weights are cached user data, not bundled into the Nix system
+closure. Keep inference local; do not send media to an external service.
 Reading or quoting transcript text in a remote-model session also sends that
 text to the model provider. Do so only when the user explicitly requests the
 contents in chat or authorizes that disclosure. Otherwise return local paths
@@ -49,7 +61,7 @@ and metadata only, leaving content review to the user.
 3. Use a new output directory for each input. The CLI overwrites matching
    output filenames, and inputs with the same basename collide even when their
    extensions differ. Never overwrite existing transcripts without permission.
-4. Run the command below, selecting `txt`, `srt`, `vtt`, `tsv`, `json`, or `all`
+4. Run the commands below, selecting `txt`, `srt`, `vtt`, `tsv`, `json`, or `all`
    according to the requested deliverable. Default to `txt` for plain transcription.
 5. Check errors and actual output files before reporting success. This upstream
    CLI can catch a per-file failure and still exit successfully. Keep
@@ -67,11 +79,13 @@ and metadata only, leaving content review to the user.
 ## Japanese transcription
 
 Replace the input path with the actual local file. Run in a writable working
-directory; `mktemp` creates a fresh private output directory.
+directory; `mktemp` creates a fresh private output directory, with the denoised
+audio in its `denoised/` subdirectory.
 
 ```sh
 output_dir=$(mktemp -d ./transcription.XXXXXX) &&
-whisper-ctranslate2 "/absolute/path/to/audio.m4a" \
+denoised=$(reuse-denoise "/absolute/path/to/audio.m4a" "$output_dir/denoised") &&
+whisper-ctranslate2 "$denoised" \
   --model large-v3 \
   --model_dir "${XDG_CACHE_HOME:-$HOME/.cache}/faster-whisper" \
   --device cpu --compute_type int8 \
@@ -98,6 +112,7 @@ include its weights, configuration, and tokenizer; an original OpenAI checkpoint
 is not interchangeable with a converted CTranslate2 model.
 
 For unexpectedly missing speech, inspect the source before retrying with
-`--vad_filter False`, writing to a new directory. Do not enable speaker
-diarization, live recording, batching, a daemon, or system configuration changes
-as part of ordinary file transcription.
+`--vad_filter False`, writing to a new directory. If denoising appears to have
+removed speech, report it and offer a transcription of the original audio. Do
+not enable speaker diarization, live recording, batching, a daemon, or system
+configuration changes as part of ordinary file transcription.

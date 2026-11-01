@@ -127,7 +127,7 @@ Claude Code と Codex は orange で Home Manager が導入し、どのシェル
 | `superpowers` | 設計・計画・デバッグ・レビューなど大きめの作業の進め方 |
 | `add-nix-skill` | このリポジトリでスキルを追加・修正するとき |
 | `apple-device-usb` | USB や Wi-Fi 経由で iPhone・iPad を操作 |
-| `faster-whisper` | 音声・動画の文字起こし |
+| `faster-whisper` | 音声・動画を RE-USE でノイズ除去してから文字起こし |
 
 端末操作 GUI と `apple-device-usb` の実装は
 [iphone-control](https://github.com/keewai704/iphone-control) で管理します。

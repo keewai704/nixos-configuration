@@ -120,6 +120,11 @@
       flake = false;
     };
 
+    nemotronlabs-re-use = {
+      url = "git+https://huggingface.co/nvidia/NVIDIA-NemotronLabs-RE-USE?ref=main";
+      flake = false;
+    };
+
     iphone-control = {
       url = "git+https://github.com/keewai704/iphone-control?ref=main";
       inputs.nixpkgs.follows = "nixpkgs";

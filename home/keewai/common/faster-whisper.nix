@@ -1,4 +1,7 @@
 { pkgs, ... }:
 {
-  home.packages = [ pkgs.whisper-ctranslate2 ];
+  home.packages = [
+    pkgs.local.reuse-denoise
+    pkgs.whisper-ctranslate2
+  ];
 }

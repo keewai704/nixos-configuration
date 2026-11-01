@@ -266,6 +266,23 @@
         "url": "https://github.com/swagger-api/swagger-ui/archive/refs/heads/master.zip"
       }
     },
+    "nemotronlabs-re-use": {
+      "flake": false,
+      "locked": {
+        "lastModified": 1792705299,
+        "narHash": "sha256-26ywEXOnI6Uz74fIV5t0Ywr5VNyhcF73Bt2Xro1G9ew=",
+        "ref": "main",
+        "rev": "31f82f2efad1095034492f236e8dac9239ba713b",
+        "revCount": 45,
+        "type": "git",
+        "url": "https://huggingface.co/nvidia/NVIDIA-NemotronLabs-RE-USE"
+      },
+      "original": {
+        "ref": "main",
+        "type": "git",
+        "url": "https://huggingface.co/nvidia/NVIDIA-NemotronLabs-RE-USE"
+      }
+    },
     "nixpkgs": {
       "locked": {
         "lastModified": 1793341285,
@@ -346,6 +363,7 @@
         "mirakc": "mirakc",
         "mirakc-arib": "mirakc-arib",
         "mirakc-swagger-ui": "mirakc-swagger-ui",
+        "nemotronlabs-re-use": "nemotronlabs-re-use",
         "nixpkgs": "nixpkgs",
         "pyproject-build-systems": "pyproject-build-systems",
         "pyproject-nix": "pyproject-nix",
