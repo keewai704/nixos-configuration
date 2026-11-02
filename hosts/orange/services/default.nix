@@ -7,8 +7,8 @@
     ./local-backup
     ./maintenance.nix
     ./minecraft.nix
-    ./rustxng.nix
     ./samba.nix
+    ./searxng.nix
     ./smart-tests.nix
     ./storage.nix
     ./t3code.nix

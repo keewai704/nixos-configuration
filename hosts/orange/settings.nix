@@ -16,7 +16,7 @@ in
   lanInterface = "enp2s0";
   nginxPort = 8000;
   t3codePort = 3773;
-  rustxngPort = 8888;
+  searxngPort = 8888;
   smartDevices = [
     "/dev/sda"
     "/dev/sdb"

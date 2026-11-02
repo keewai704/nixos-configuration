@@ -14,9 +14,9 @@ the task, with the relevant file locations and an explanation of each difference
 
 # Web research
 
-Search the web with the `rustxng` MCP server's `searxng_web_search` first. Use
-TinyFish `search` when RustXNG results are missing, off-target, or stale, or when
-news, research-paper, date-range, or location filters matter. Read pages with
+Search the web with the `searxng` MCP server's `searxng_web_search`. Use TinyFish
+`search` when SearXNG results are missing, off-target, or stale, or when news,
+research-paper, date-range, or location filters matter. Fetch page content with
 TinyFish `fetch_content`, which renders JavaScript and accepts up to 10 URLs per
 call; use `web_url_read` when TinyFish is unavailable. Use TinyFish
 `run_web_automation` only when the task needs interaction such as clicking,

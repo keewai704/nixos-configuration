@@ -6,7 +6,7 @@
     ./git.nix
     ./nix
     ./packages.nix
-    ./rustxng.nix
+    ./searxng.nix
     ./shell
     ./t3code.nix
     ./tinyfish

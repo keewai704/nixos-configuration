@@ -26,7 +26,6 @@ in
     bondriver-linuxmirakc = final.callPackage ./bondriver-linuxmirakc {
       upstream = inputs.bondriver-linuxmirakc;
     };
-    rustxng = final.callPackage ./rustxng { release = inputs.rustxng-release; };
     reuse-denoise = final.callPackage ./reuse-denoise { upstream = inputs.nemotronlabs-re-use; };
     t3code = final.callPackage ./t3code {
       upstream = inputs.t3code-nightly;

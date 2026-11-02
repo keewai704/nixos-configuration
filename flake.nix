@@ -115,11 +115,6 @@
       flake = false;
     };
 
-    rustxng-release = {
-      url = "file+https://api.github.com/repos/sahenjp/RustXNG/releases/latest";
-      flake = false;
-    };
-
     nemotronlabs-re-use = {
       url = "git+https://huggingface.co/nvidia/NVIDIA-NemotronLabs-RE-USE?ref=main";
       flake = false;
