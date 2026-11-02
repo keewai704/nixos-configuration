@@ -106,12 +106,18 @@ Claude Code と Codex は orange で Home Manager が導入し、どのシェル
 [coding-agents/](home/keewai/common/coding-agents/default.nix) が次のものを配ります。
 
 - **スキル**：[skills/](skills/) の全ディレクトリを `~/.claude/skills/` と `~/.agents/skills/` にリンクします。
-- **MCP サーバー**：`codingAgents.mcpServers.<名前> = { command; args; env; }` を、適用時に `~/.claude.json` と
-  `~/.codex/config.toml` へ書き込みます。`~/.claude.json` では Nix から外したサーバーだけを消し、手で追加したサーバーはそのまま残します。
+- **MCP サーバー**：`codingAgents.mcpServers.<名前>` に stdio の `{ command; args; env; }` か HTTP の `{ url; headersHelper; }` を書くと、
+  適用時に `~/.claude.json` と `~/.codex/config.toml` へ書き込みます。`headersHelper` は HTTP ヘッダーの JSON を出力するコマンドです。`~/.claude.json` では Nix から外したサーバーだけを消し、手で追加したサーバーはそのまま残します。
 - **Web 検索**：[rustxng.nix](home/keewai/common/rustxng.nix) が [RustXNG](https://github.com/sahenjp/RustXNG) を
   `127.0.0.1:8888` のユーザーサービスとして動かし、nixpkgs の `mcp-searxng` を `rustxng` MCP サーバーとして登録します。
-  Claude Code の `WebSearch` と Codex の組み込み `web_search` は無効にし、検索はこの MCP サーバーだけを使います。
+  Claude Code の `WebSearch` と Codex の組み込み `web_search` は無効にします。
   RustXNG はビルドせず、`rustxng-release` 入力で上流の最新リリースの Linux 用バイナリを選び、`nix flake update` で更新します。
+  リリース情報にはダウンロード数が含まれ再取得すると hash が変わるため、取得した情報はシステム世代で保持します。
+- **ブラウザー操作**：[tinyfish/](home/keewai/common/tinyfish/default.nix) が [TinyFish](https://docs.tinyfish.ai/) の
+  リモート MCP サーバーを `tinyfish` として登録します。API キーは `TINYFISH_API_KEY` か `~/.tinyfish/config.json`
+  （`tinyfish auth login` と同じ形式）から適用時ではなく接続時に読み、Nix には保存しません。
+  検索は RustXNG を先に使い、ページの読み取りは TinyFish の `fetch_content`、クリックや入力が必要な操作だけ
+  有料の `run_web_automation` を使うよう、[共通指示](home/keewai/common/coding-agents/shared-instructions.md)で振り分けます。
 - **Claude Code の共通指示**：[共通の UI・開発方針](home/keewai/common/coding-agents/shared-instructions.md)を
   `~/.claude/CLAUDE.md` に置きます。
 - **Claude Code の共通設定**：`autoCompactWindow = 400000` と `env.CLAUDE_CODE_SIMPLE_SYSTEM_PROMPT = "1"` を適用時に設定します。

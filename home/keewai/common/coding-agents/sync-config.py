@@ -26,7 +26,7 @@ def sync_claude(servers, stale):
     for name in stale:
         current.pop(name, None)
     for name, server in servers.items():
-        current[name] = {"type": "stdio", **server}
+        current[name] = server
     if current:
         data["mcpServers"] = current
     else:

@@ -9,5 +9,6 @@
     ./rustxng.nix
     ./shell
     ./t3code.nix
+    ./tinyfish
   ];
 }

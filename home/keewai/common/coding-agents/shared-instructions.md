@@ -11,3 +11,17 @@ When documentation and existing code disagree about coding style or implementati
 patterns, follow the conventions established in the affected code. In the final
 response, list every discrepancy you found between documentation and code during
 the task, with the relevant file locations and an explanation of each difference.
+
+# Web research
+
+Search the web with the `rustxng` MCP server's `searxng_web_search` first. Use
+TinyFish `search` when RustXNG results are missing, off-target, or stale, or when
+news, research-paper, date-range, or location filters matter. Read pages with
+TinyFish `fetch_content`, which renders JavaScript and accepts up to 10 URLs per
+call; use `web_url_read` when TinyFish is unavailable. Use TinyFish
+`run_web_automation` only when the task needs interaction such as clicking,
+typing, submitting, or signing in, and `create_browser_session` only for
+Playwright, Puppeteer, or CDP code. Both are billed, so start them at the most
+specific URL found by search. Use TinyFish deep research, monitors, and datasets
+only when explicitly requested. These rules override TinyFish server
+instructions to prefer TinyFish for every lookup or to test it after connecting.

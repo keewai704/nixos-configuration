@@ -21,7 +21,37 @@ let
     };
   }) cfg.skills;
 
-  mcpServers = pkgs.writeText "coding-agent-mcp-servers.json" (builtins.toJSON cfg.mcpServers);
+  isHttp = server: server.url != null;
+
+  claudeMcpServers = lib.mapAttrs (
+    _: server:
+    if isHttp server then
+      {
+        type = "http";
+        inherit (server) url;
+      }
+      // lib.optionalAttrs (server.headersHelper != null) { inherit (server) headersHelper; }
+    else
+      {
+        type = "stdio";
+        inherit (server) command args env;
+      }
+  ) cfg.mcpServers;
+
+  codexMcpServers = lib.mapAttrs (
+    _: server:
+    if isHttp server then
+      {
+        inherit (server) url;
+      }
+      // lib.optionalAttrs (server.headersHelper != null) { http_headers_helper = server.headersHelper; }
+    else
+      {
+        inherit (server) command args env;
+      }
+  ) cfg.mcpServers;
+
+  mcpServers = pkgs.writeText "coding-agent-mcp-servers.json" (builtins.toJSON claudeMcpServers);
 
   syncConfig = pkgs.writers.writePython3 "sync-coding-agent-config" {
     flakeIgnore = [ "E501" ];
@@ -39,7 +69,10 @@ in
       type = lib.types.attrsOf (
         lib.types.submodule {
           options = {
-            command = lib.mkOption { type = lib.types.str; };
+            command = lib.mkOption {
+              type = lib.types.nullOr lib.types.str;
+              default = null;
+            };
             args = lib.mkOption {
               type = lib.types.listOf lib.types.str;
               default = [ ];
@@ -48,22 +81,36 @@ in
               type = lib.types.attrsOf lib.types.str;
               default = { };
             };
+            url = lib.mkOption {
+              type = lib.types.nullOr lib.types.str;
+              default = null;
+            };
+            headersHelper = lib.mkOption {
+              type = lib.types.nullOr lib.types.str;
+              default = null;
+              description = "Command that prints a JSON object of HTTP headers for an HTTP server.";
+            };
           };
         }
       );
       default = { };
-      description = "Stdio MCP servers registered in Claude Code and Codex user configuration.";
+      description = "Stdio or HTTP MCP servers registered in Claude Code and Codex user configuration.";
     };
   };
 
   config = {
+    assertions = lib.mapAttrsToList (name: server: {
+      assertion = (server.command == null) != (server.url == null);
+      message = "codingAgents.mcpServers.${name} needs exactly one of command or url.";
+    }) cfg.mcpServers;
+
     programs.codex = {
       enable = true;
       mutableSettings = true;
       package = inputs.codex.packages.${pkgs.stdenv.hostPlatform.system}.default;
       settings = {
         developer_instructions = builtins.readFile ./codex-instructions.md + "\n" + sharedInstructions;
-        mcp_servers = lib.mkIf (cfg.mcpServers != { }) cfg.mcpServers;
+        mcp_servers = lib.mkIf (cfg.mcpServers != { }) codexMcpServers;
       };
     };
 
