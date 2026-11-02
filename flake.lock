@@ -168,6 +168,23 @@
         "type": "github"
       }
     },
+    "imozuru": {
+      "flake": false,
+      "locked": {
+        "lastModified": 1793197058,
+        "narHash": "sha256-LrYzlLo4LYLmgFdQcHjlL3ALP1jbOr+oqTgoAdunWGU=",
+        "ref": "main",
+        "rev": "808407e501bc5a1e596655b0a6d62e1f3b20ba1b",
+        "revCount": 81,
+        "type": "git",
+        "url": "https://github.com/MaryCache/imozuru"
+      },
+      "original": {
+        "ref": "main",
+        "type": "git",
+        "url": "https://github.com/MaryCache/imozuru"
+      }
+    },
     "iphone-control": {
       "inputs": {
         "nixpkgs": [
@@ -357,6 +374,7 @@
         "codex": "codex",
         "edcb": "edcb",
         "home-manager": "home-manager",
+        "imozuru": "imozuru",
         "iphone-control": "iphone-control",
         "konomitv": "konomitv",
         "konomitv-thirdparty": "konomitv-thirdparty",
@@ -370,7 +388,8 @@
         "t3code-nightly": "t3code-nightly",
         "torne-driver": "torne-driver",
         "tsreplace": "tsreplace",
-        "uv2nix": "uv2nix"
+        "uv2nix": "uv2nix",
+        "yomiyasu": "yomiyasu"
       }
     },
     "systems": {
@@ -476,6 +495,23 @@
         "ref": "master",
         "type": "git",
         "url": "https://github.com/pyproject-nix/uv2nix"
+      }
+    },
+    "yomiyasu": {
+      "flake": false,
+      "locked": {
+        "lastModified": 1793326902,
+        "narHash": "sha256-9cGUSvLgc1+996i3lWQuQm1aTWOxSY6fbS9+vn5aElw=",
+        "ref": "main",
+        "rev": "29d67ccb05e370b5958d72920a9cd1aa829dee80",
+        "revCount": 67,
+        "type": "git",
+        "url": "https://github.com/nanaism/yomiyasu"
+      },
+      "original": {
+        "ref": "main",
+        "type": "git",
+        "url": "https://github.com/nanaism/yomiyasu"
       }
     }
   },

@@ -120,6 +120,16 @@
       flake = false;
     };
 
+    yomiyasu = {
+      url = "git+https://github.com/nanaism/yomiyasu?ref=main";
+      flake = false;
+    };
+
+    imozuru = {
+      url = "git+https://github.com/MaryCache/imozuru?ref=main";
+      flake = false;
+    };
+
     iphone-control = {
       url = "git+https://github.com/keewai704/iphone-control?ref=main";
       inputs.nixpkgs.follows = "nixpkgs";

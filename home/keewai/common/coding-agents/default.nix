@@ -8,6 +8,10 @@
 let
   cfg = config.codingAgents;
   skillRoot = ../../../../skills;
+  upstreamSkills = {
+    yomiyasu = inputs.yomiyasu + "/skills/yomiyasu";
+    imozuru = inputs.imozuru + "/skills/imozuru";
+  };
   sharedInstructions = builtins.readFile ./shared-instructions.md;
 
   skillLinks = lib.concatMapAttrs (name: source: {
@@ -124,9 +128,9 @@ in
       };
     };
 
-    codingAgents.skills = lib.genAttrs (builtins.attrNames (builtins.readDir skillRoot)) (
-      name: skillRoot + "/${name}"
-    );
+    codingAgents.skills =
+      lib.genAttrs (builtins.attrNames (builtins.readDir skillRoot)) (name: skillRoot + "/${name}")
+      // upstreamSkills;
 
     home.file = skillLinks // {
       ".claude/CLAUDE.md".text = sharedInstructions;

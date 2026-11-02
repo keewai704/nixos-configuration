@@ -106,6 +106,8 @@ Claude Code と Codex は orange で Home Manager が導入し、どのシェル
 [coding-agents/](home/keewai/common/coding-agents/default.nix) が次のものを配ります。
 
 - **スキル**：[skills/](skills/) の全ディレクトリを `~/.claude/skills/` と `~/.agents/skills/` にリンクします。
+  上流のスキル `yomiyasu`（[nanaism/yomiyasu](https://github.com/nanaism/yomiyasu)）と `imozuru`（[MaryCache/imozuru](https://github.com/MaryCache/imozuru)）は
+  同名の flake 入力から同じ場所にリンクし、`nix flake update` で更新します。
 - **MCP サーバー**：`codingAgents.mcpServers.<名前>` に stdio の `{ command; args; env; }` か HTTP の `{ url; headersHelper; }` を書くと、
   適用時に `~/.claude.json` と `~/.codex/config.toml` へ書き込みます。`headersHelper` は HTTP ヘッダーの JSON を出力するコマンドです。`~/.claude.json` では Nix から外したサーバーだけを消し、手で追加したサーバーはそのまま残します。
 - **Web 検索**：[searxng.nix](home/keewai/common/searxng.nix) が nixpkgs の [SearXNG](https://github.com/searxng/searxng) を
@@ -133,6 +135,8 @@ Claude Code と Codex は orange で Home Manager が導入し、どのシェル
 | `add-nix-skill` | このリポジトリでスキルを追加・修正するとき |
 | `apple-device-usb` | USB や Wi-Fi 経由で iPhone・iPad を操作 |
 | `faster-whisper` | 音声・動画を RE-USE でノイズ除去してから文字起こし |
+| `yomiyasu` | 成果物の日本語文書を推敲（共通指示で文書出力時に使用、通常の応答では不使用） |
+| `imozuru` | 知らない分野を原文まで芋づる式に調べて保存 |
 
 端末操作 GUI と `apple-device-usb` の実装は
 [iphone-control](https://github.com/keewai704/iphone-control) で管理します。
