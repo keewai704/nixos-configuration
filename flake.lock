@@ -23,7 +23,7 @@
     "amatsukaze-artifacts": {
       "flake": false,
       "locked": {
-        "narHash": "sha256-Sm+XpPBXRzDfX6i6jWuEMy4tAp9WQhTnv2gbF6VDjxE=",
+        "narHash": "sha256-az/sX/vg2cnhr2tuLG9DsoNroltBG92S0SpybOFBOpw=",
         "type": "file",
         "url": "https://api.github.com/repos/rigaya/Amatsukaze/actions/artifacts?per_page=100"
       },
@@ -238,11 +238,11 @@
     "mirakc-arib": {
       "flake": false,
       "locked": {
-        "lastModified": 1792102972,
-        "narHash": "sha256-qbvYY0ed9AxthSNOUF9Wfggvkc2SUWv4wtM0KFJ4b1E=",
+        "lastModified": 1793582764,
+        "narHash": "sha256-2CdlBSmHRiqQ2anVTZqAaukX3lSLaj1ATRzz1c+xmBI=",
         "ref": "main",
-        "rev": "312168e85b30941a1fc0344900fd543a036ea341",
-        "revCount": 519,
+        "rev": "0438abab3e195734a52923e5b5c89bc56f0bde6e",
+        "revCount": 520,
         "submodules": true,
         "type": "git",
         "url": "https://github.com/mirakc/mirakc-arib"
@@ -312,11 +312,11 @@
         ]
       },
       "locked": {
-        "lastModified": 1793303843,
-        "narHash": "sha256-wLiau0yOPONjWSoQNC++uirtJqx2D4hGAWSKU0TfKGc=",
+        "lastModified": 1793585423,
+        "narHash": "sha256-Fzdew7s0V4PHsBX0GDQ+1Zcd4HejuqAh9rAjSP9M6JQ=",
         "ref": "master",
-        "rev": "6171a3484937e14cdf2316ed9a60f1c27b6cb71e",
-        "revCount": 92,
+        "rev": "461a6a8540307fb9c05b8f6ad29e9720d2a621db",
+        "revCount": 93,
         "type": "git",
         "url": "https://github.com/pyproject-nix/build-system-pkgs"
       },
@@ -377,7 +377,7 @@
     "rustxng-release": {
       "flake": false,
       "locked": {
-        "narHash": "sha256-Z1cYxzCr0ZPEcwM71gm9U+5p/xmGdhSeMWNz7mwmrnY=",
+        "narHash": "sha256-O1OW5byJ5otKOKZquObTCqfXsBB3OzAuwu5fkz0jwkU=",
         "type": "file",
         "url": "https://api.github.com/repos/sahenjp/RustXNG/releases/latest"
       },
@@ -419,11 +419,11 @@
     "t3code-nightly": {
       "flake": false,
       "locked": {
-        "lastModified": 1793512125,
-        "narHash": "sha256-6EImzZ2T7snFQ4fJC+FFf9xSB4W6tN0ZOEy3FILbFGA=",
+        "lastModified": 1793569767,
+        "narHash": "sha256-tmcxFkoCoi3QgeV7ZEy2RaDFrkt85Cp11k3Br2fb8go=",
         "ref": "master",
-        "rev": "3620118a43eff762fa838810f6e6b52b66781066",
-        "revCount": 483,
+        "rev": "768fcf9983f65f8f60ea2e098ba569659d193be6",
+        "revCount": 485,
         "type": "git",
         "url": "https://aur.archlinux.org/t3code-nightly-bin.git"
       },
