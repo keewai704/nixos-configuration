@@ -12,6 +12,7 @@
   at-spi2-atk,
   cairo,
   cups,
+  curl,
   dbus,
   expat,
   gdk-pixbuf,
@@ -165,17 +166,21 @@ stdenv.mkDerivation {
   '';
 
   doInstallCheck = true;
+  nativeInstallCheckInputs = [ curl ];
   installCheckPhase = ''
     runHook preInstallCheck
-    ELECTRON_RUN_AS_NODE=1 $out/libexec/t3code/t3code -p 'process.versions.electron'
+    export HOME="$TMPDIR/home" T3CODE_HOME="$TMPDIR/t3"
+    mkdir -p "$HOME"
     $out/bin/t3 --version | grep -F '${version}'
-    asar extract $out/libexec/t3code/resources/app.asar t3code-install-check
-    ELECTRON_RUN_AS_NODE=1 $out/libexec/t3code/t3code ${./test-web-subpath.mjs} \
-      "$PWD/t3code-install-check"
-    ELECTRON_RUN_AS_NODE=1 $out/libexec/t3code/t3code ${./test-thread-links.mjs} \
-      "$PWD/t3code-install-check/apps/server/dist" ${lib.escapeShellArg (builtins.toJSON webOrigin)}
-    ELECTRON_RUN_AS_NODE=1 $out/libexec/t3code/t3code ${./test-codex-recovery.mjs} \
-      "$PWD/t3code-install-check/apps/server/dist"
+    $out/bin/t3 serve --mode web --host 127.0.0.1 --port 38773 &
+    server=$!
+    trap 'kill $server' EXIT
+    for _ in $(seq 60); do
+      curl -fs http://127.0.0.1:38773/ -o index.html && break
+      sleep 1
+    done
+    grep -F 'href="/t3/manifest.webmanifest"' index.html
+    curl -fs http://127.0.0.1:38773/manifest.webmanifest | grep -F '"scope": "/t3/"'
     runHook postInstallCheck
   '';
 

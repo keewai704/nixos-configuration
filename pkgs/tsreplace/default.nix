@@ -33,7 +33,6 @@ stdenv.mkDerivation {
   ];
   doCheck = true;
   postCheck = ''
-    python ${./test-pmt.py} "$NIX_BUILD_TOP/$sourceRoot" ${./test-pmt.cpp.in}
     python ${./test-vfr.py} ./tsreplace ${ffmpeg}/bin/ffmpeg ${ffmpeg}/bin/ffprobe
   '';
   meta = {

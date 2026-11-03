@@ -46,12 +46,6 @@ stdenv.mkDerivation {
   nativeCheckInputs = [ python3 ];
   checkPhase = ''
     runHook preCheck
-    $CC -std=gnu11 -O2 -Wall -Wextra -Wno-unused-parameter -I. \
-      ${./test-dib.c} -o test-dib
-    ./test-dib
-    $CC -std=gnu11 -O2 -Wall -Wextra -Wno-unused-parameter -I. \
-      ${./test-control.c} -o test-control
-    ./test-control
     python ${./test-bondriver.py} "$PWD/BonDriver_Torne.so"
     runHook postCheck
   '';

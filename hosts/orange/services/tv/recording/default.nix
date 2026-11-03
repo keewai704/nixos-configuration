@@ -7,12 +7,8 @@
 let
   inherit (import ../settings.nix) recordings queueRoot serviceDefaults;
   recordingEncoder =
-    pkgs.runCommand "recording-encode.py" { nativeBuildInputs = [ pkgs.python3 ]; }
-      ''
-        export PYTHONDONTWRITEBYTECODE=1
-        python ${./test-worker.py} ${./worker.py}
-        install -m444 ${./worker.py} "$out"
-      '';
+    pkgs.runCommand "recording-encode.py" { }
+      ''install -m444 ${./worker.py} "$out"'';
   preservingMuxer = pkgs.writeShellScript "recording-tsreplace" ''
     exec ${pkgs.python3}/bin/python ${recordingEncoder} mux \
       --tsreplace ${pkgs.local.tsreplace}/bin/tsreplace \

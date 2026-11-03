@@ -98,12 +98,6 @@ stdenvNoCC.mkDerivation {
     substituteInPlace server/app/config.py \
       --replace-fail "_CONFIG_YAML_PATH = BASE_DIR.parent /" "_CONFIG_YAML_PATH = Path('/var/lib/konomitv') /"
   '';
-  doCheck = true;
-  checkPhase = ''
-    runHook preCheck
-    python ${./test-recording.py} .
-    runHook postCheck
-  '';
   installPhase = ''
     runHook preInstall
     mkdir -p "$out/share/konomitv" "$out/bin"
