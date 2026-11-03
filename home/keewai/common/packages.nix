@@ -1,6 +1,7 @@
 { pkgs, ... }:
 {
   home.packages = [
+    pkgs.ffmpeg
     pkgs.file
     pkgs.gws
     pkgs.nixfmt
