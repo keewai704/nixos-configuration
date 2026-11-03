@@ -101,15 +101,19 @@ root のビルドはデーモンを経由しない場合があるため、`syste
 
 ## コーディングエージェント
 
-Claude Code と Codex は orange で Home Manager が導入し、どのシェルからでも使えます。
+Claude Code・Codex・Pi は orange で Home Manager が導入し、どのシェルからでも使えます。
+Pi は [pi.nix](https://github.com/lukasl-dev/pi.nix) の Home Manager モジュールで入れ、ビルド済みの成果物を
+[pi.cachix.org](https://pi.cachix.org) から取得します。
 `~/.claude` の設定やログイン情報は基本的に Nix で管理しません。例外として
 [coding-agents/](home/keewai/common/coding-agents/default.nix) が次のものを配ります。
 
 - **スキル**：[skills/](skills/) の全ディレクトリを `~/.claude/skills/` と `~/.agents/skills/` にリンクします。
   上流のスキル `yomiyasu`（[nanaism/yomiyasu](https://github.com/nanaism/yomiyasu)）と `imozuru`（[MaryCache/imozuru](https://github.com/MaryCache/imozuru)）は
   同名の flake 入力から同じ場所にリンクし、`nix flake update` で更新します。
+  Pi は `~/.agents/skills/` を標準で読むため、同じスキルが使えます。
 - **MCP サーバー**：`codingAgents.mcpServers.<名前>` に stdio の `{ command; args; env; }` か HTTP の `{ url; headersHelper; }` を書くと、
-  適用時に `~/.claude.json` と `~/.codex/config.toml` へ書き込みます。`headersHelper` は HTTP ヘッダーの JSON を出力するコマンドです。`~/.claude.json` では Nix から外したサーバーだけを消し、手で追加したサーバーはそのまま残します。
+  適用時に `~/.claude.json` と `~/.codex/config.toml` へ書き込み、Pi には `~/.pi/agent/mcp.json` へ実行時に反映します。
+  Pi の HTTP サーバーには、`headersHelper` が出力する `Authorization` ヘッダーだけを渡します。`headersHelper` は HTTP ヘッダーの JSON を出力するコマンドです。`~/.claude.json` では Nix から外したサーバーだけを消し、手で追加したサーバーはそのまま残します。
 - **Web 検索**：[searxng.nix](home/keewai/common/searxng.nix) が nixpkgs の [SearXNG](https://github.com/searxng/searxng) を
   `127.0.0.1:8888` のユーザーサービスとして動かし、nixpkgs の `mcp-searxng` を `searxng` MCP サーバーとして登録します。
   Claude Code の `WebSearch` と Codex の組み込み `web_search` は無効にします。
@@ -119,6 +123,8 @@ Claude Code と Codex は orange で Home Manager が導入し、どのシェル
   （`tinyfish auth login` と同じ形式）から適用時ではなく接続時に読み、Nix には保存しません。
   検索は SearXNG、ページの読み取りは TinyFish の `fetch_content`、クリックや入力が必要な操作だけ
   有料の `run_web_automation` を使うよう、[共通指示](home/keewai/common/coding-agents/shared-instructions.md)で振り分けます。
+- **Pi の拡張機能**：[pi-blackhole](https://github.com/k0valik/pi-blackhole)（決定的なコンパクションと観察記憶）を
+  同名の flake 入力のソースから `--extension` で読み込み、`nix flake update` で更新します。
 - **Claude Code の共通指示**：[共通の UI・開発方針](home/keewai/common/coding-agents/shared-instructions.md)を
   `~/.claude/CLAUDE.md` に置きます。
 - **Claude Code の共通設定**：`autoCompactWindow = 400000` と `env.CLAUDE_CODE_SIMPLE_SYSTEM_PROMPT = "1"` を適用時に設定します。

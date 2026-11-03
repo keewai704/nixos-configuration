@@ -55,6 +55,23 @@ let
       }
   ) cfg.mcpServers;
 
+  piMcpServers = lib.mapAttrs (
+    name: server:
+    if isHttp server then
+      {
+        inherit (server) url;
+      }
+      // lib.optionalAttrs (server.headersHelper != null) {
+        headers.Authorization = "!${pkgs.writeShellScript "pi-mcp-${name}-authorization" ''
+          ${server.headersHelper} | ${lib.getExe pkgs.jq} -r .Authorization
+        ''}";
+      }
+    else
+      {
+        inherit (server) command args env;
+      }
+  ) cfg.mcpServers;
+
   mcpServers = pkgs.writeText "coding-agent-mcp-servers.json" (builtins.toJSON claudeMcpServers);
 
   syncConfig = pkgs.writers.writePython3 "sync-coding-agent-config" {
@@ -62,11 +79,13 @@ let
   } (builtins.readFile ./sync-config.py);
 in
 {
+  imports = [ inputs.pi.homeModules.default ];
+
   options.codingAgents = {
     skills = lib.mkOption {
       type = lib.types.attrsOf lib.types.path;
       default = { };
-      description = "Skill directories linked into Claude Code.";
+      description = "Skill directories linked into Claude Code, Codex, and Pi.";
     };
 
     mcpServers = lib.mkOption {
@@ -98,7 +117,7 @@ in
         }
       );
       default = { };
-      description = "Stdio or HTTP MCP servers registered in Claude Code and Codex user configuration.";
+      description = "Stdio or HTTP MCP servers registered in Claude Code, Codex, and Pi user configuration.";
     };
   };
 
@@ -126,6 +145,12 @@ in
         autoCompactWindow = 400000;
         env.CLAUDE_CODE_SIMPLE_SYSTEM_PROMPT = "1";
       };
+    };
+
+    programs.pi.coding-agent = {
+      enable = true;
+      extensions = [ "${inputs.pi-blackhole}/index.ts" ];
+      mcp.mcpServers = piMcpServers;
     };
 
     codingAgents.skills =

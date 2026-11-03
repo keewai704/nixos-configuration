@@ -6,11 +6,13 @@
       "https://claude-code.cachix.org"
       "https://codex-cli.cachix.org"
       "https://nix-community.cachix.org"
+      "https://pi.cachix.org"
     ];
     extra-trusted-public-keys = [
       "claude-code.cachix.org-1:YeXf2aNu7UTX8Vwrze0za1WEDS+4DuI2kVeWEE4fsRk="
       "codex-cli.cachix.org-1:1Br3H1hHoRYG22n//cGKJOk3cQXgYobUel6O8DgSing="
       "nix-community.cachix.org-1:mB9FSh9qf2dCimDSUo8Zy7bkq5CX+/rkCWyvRCYg3Fs="
+      "pi.cachix.org-1:lGeoGJaZ5ZDabuRzkcD5EBTNnDM4HJ1vqeOxlWk1Flk="
     ];
   };
 
@@ -108,6 +110,15 @@
     codex = {
       url = "github:sadjow/codex-cli-nix/main";
       inputs.nixpkgs.follows = "nixpkgs";
+    };
+
+    pi = {
+      url = "github:lukasl-dev/pi.nix/master";
+    };
+
+    pi-blackhole = {
+      url = "git+https://github.com/k0valik/pi-blackhole?ref=main";
+      flake = false;
     };
 
     t3code-nightly = {
