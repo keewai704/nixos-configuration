@@ -79,10 +79,7 @@ let
   } (builtins.readFile ./sync-config.py);
 in
 {
-  imports = [
-    inputs.pi.homeModules.default
-    ./dsh-ptc
-  ];
+  imports = [ inputs.pi.homeModules.default ];
 
   options.codingAgents = {
     skills = lib.mkOption {
@@ -154,6 +151,10 @@ in
       enable = true;
       extensions = [ "${inputs.pi-blackhole}/index.ts" ];
       mcp.mcpServers = piMcpServers;
+      settings = {
+        defaultTools = [ "+codemode" ];
+        codemode.mode = "only";
+      };
     };
 
     codingAgents.skills =
