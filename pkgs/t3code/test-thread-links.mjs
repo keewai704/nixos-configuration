@@ -11,10 +11,10 @@ const sources = await Promise.all(
 );
 const servers = sources.filter((source) => source.includes("const threadLinkFor ="));
 assert.equal(servers.length, 1, "Expected one server thread link implementation");
-const source = servers[0];
+const combined = sources.join("\n");
 
 function declaration(pattern) {
-  const matches = [...source.matchAll(pattern)];
+  const matches = [...combined.matchAll(pattern)];
   assert.equal(matches.length, 1, `Expected one bundled declaration: ${pattern}`);
   return matches[0][0];
 }
