@@ -23,7 +23,7 @@
     "amatsukaze-artifacts": {
       "flake": false,
       "locked": {
-        "narHash": "sha256-az/sX/vg2cnhr2tuLG9DsoNroltBG92S0SpybOFBOpw=",
+        "narHash": "sha256-zOAXJdDHh/zJrD9lChBuiKVl2gySVj/hK9w4L+X4rLE=",
         "type": "file",
         "url": "https://api.github.com/repos/rigaya/Amatsukaze/actions/artifacts?per_page=100"
       },
@@ -302,11 +302,11 @@
     },
     "nixpkgs": {
       "locked": {
-        "lastModified": 1793341285,
-        "narHash": "sha256-Y1CiZ4SoBUjLQyQM/pY+rS2dXD3CHLPstF0lmOc73D4=",
+        "lastModified": 1793540411,
+        "narHash": "sha256-fiPJ88izTVucjeo2EQ3jk4aWmLg03I1D4vxnX2QjEgE=",
         "owner": "NixOS",
         "repo": "nixpkgs",
-        "rev": "1c89083e451e891152365b799595cf7790a43325",
+        "rev": "0bb2eedc20e4739f29e8045034f2828ad7054f8f",
         "type": "github"
       },
       "original": {
@@ -425,11 +425,11 @@
     "t3code-nightly": {
       "flake": false,
       "locked": {
-        "lastModified": 1793569767,
-        "narHash": "sha256-tmcxFkoCoi3QgeV7ZEy2RaDFrkt85Cp11k3Br2fb8go=",
+        "lastModified": 1793648974,
+        "narHash": "sha256-LH0mKrLpSXsEbn7ycbyEPPfyjVxBmYwF+rTznGtCc6c=",
         "ref": "master",
-        "rev": "768fcf9983f65f8f60ea2e098ba569659d193be6",
-        "revCount": 485,
+        "rev": "250fcf41f61c33b8a9fcf6e6b08d23b7d72fe13b",
+        "revCount": 489,
         "type": "git",
         "url": "https://aur.archlinux.org/t3code-nightly-bin.git"
       },
