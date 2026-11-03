@@ -79,7 +79,10 @@ let
   } (builtins.readFile ./sync-config.py);
 in
 {
-  imports = [ inputs.pi.homeModules.default ];
+  imports = [
+    inputs.pi.homeModules.default
+    ./dsh-ptc
+  ];
 
   options.codingAgents = {
     skills = lib.mkOption {
