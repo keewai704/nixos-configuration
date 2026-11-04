@@ -552,7 +552,7 @@
 +
 +static int finish_tune(struct torne_dib *d, int result)
 +{
-+    u64 deadline = now_ms(d) + 1000;
++    u64 deadline = now_ms(d) + 3000;
 +    record(d, torne_bridge_flush(d->br));
 +    if (result || d->err)
 +        return d->err ?: result;
