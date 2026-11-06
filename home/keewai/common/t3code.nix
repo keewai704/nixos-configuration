@@ -27,7 +27,7 @@ in
     };
     webOrigin = lib.mkOption {
       type = lib.types.str;
-      description = "External origin whose HTTP thread links use the /t3/ web mount.";
+      description = "External origin whose /t3/ web mount receives MCP thread links.";
     };
   };
 

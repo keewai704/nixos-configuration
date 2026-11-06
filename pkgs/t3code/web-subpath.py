@@ -20,26 +20,26 @@ pairing_redirects = 0
 for path in (client / "assets").glob("*.js"):
     source = path.read_text()
     source, count = re.subn(
-        r'(context:\{\},)(defaultPreload:[`\"\']intent[`\"\'])',
+        r"(context:\{\},)(defaultPreload:[`\"\']intent[`\"\'])",
         r'\1basepath:"/t3",\2',
         source,
     )
     routers += count
     source, count = re.subn(
-        r'(?P<prefix>\(\)=>\{(?P<router>[A-Za-z_$][\w$]*)\.history\.replace\()'
-        r'(?P<quote>[`\"\'])/(?P=quote)'
-        r'(?P<suffix>\),(?P=router)\.history\.flush\(\),window\.location\.reload\(\)\})',
+        r"(?P<prefix>\(\)=>\{(?P<router>[A-Za-z_$][\w$]*)\.history\.replace\()"
+        r"(?P<quote>[`\"\'])/(?P=quote)"
+        r"(?P<suffix>\),(?P=router)\.history\.flush\(\),window\.location\.reload\(\)\})",
         lambda match: match["prefix"] + '"/t3/"' + match["suffix"],
         source,
     )
     pairing_redirects += count
-    source = re.sub(r'([`\"\'])/assets/', r'\1/t3/assets/', source)
-    source = re.sub(r'([`\"\'])assets/', r'\1t3/assets/', source)
+    source = re.sub(r"([`\"\'])/assets/", r"\1/t3/assets/", source)
+    source = re.sub(r"([`\"\'])assets/", r"\1t3/assets/", source)
     path.write_text(source)
 assert routers == 1, routers
 assert pairing_redirects == 1, pairing_redirects
 index = client / "index.html"
-index.write_text(re.sub(r'((?:src|href)=")/(?!/)', r'\1/t3/', index.read_text()))
+index.write_text(re.sub(r'((?:src|href)=")/(?!/)', r"\1/t3/", index.read_text()))
 for path in (client / "assets").glob("*.css"):
     path.write_text(path.read_text().replace("url(/assets/", "url(/t3/assets/"))
 manifest = client / "manifest.webmanifest"
@@ -50,17 +50,15 @@ for icon in data.get("icons", []):
     icon["src"] = "/t3/" + icon["src"].lstrip("/")
 manifest.write_text(json.dumps(data))
 
-thread_link_before = """const threadLinkFor = (scope, threadId) => {
-\tconst origin = scope.client?.webOrigin;
-\treturn origin === void 0 ? formatThreadLink({
-\t\tenvironmentId: scope.environmentId,
-\t\tthreadId
-\t}) : `${origin}/${encodeURIComponent(scope.environmentId)}/${encodeURIComponent(threadId)}`;
-};"""
-thread_link_after = thread_link_before.replace(
-    "\treturn origin",
-    f'\tconst basePath = origin === {json.dumps(web_origin)} ? "/t3" : "";\n\treturn origin',
-).replace("`${origin}/", "`${origin}${basePath}/")
+thread_link_before = "return hostedAppUrl === void 0 ? formatThreadLink(ref) : hostedThreadLink(ref, hostedAppUrl);"
+thread_link_after = (
+    thread_link_before
+    if web_origin is None
+    else thread_link_before.replace(
+        "hostedThreadLink(ref, hostedAppUrl)",
+        f"{json.dumps(web_origin + '/t3')} + new URL(hostedThreadLink(ref, {json.dumps(web_origin)})).pathname",
+    )
+)
 thread_link_replacements = 0
 for path in (root / "apps/server/dist").glob("*.mjs"):
     source = path.read_text()
