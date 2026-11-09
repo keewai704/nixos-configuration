@@ -216,6 +216,9 @@ Noctalia のテーマ・壁紙・アプリテンプレートの既定値は [des
 `~/.config/umbriel/config.toml` は [desktop/](hosts/citrus/desktop/) が Home Manager で配り、Umbriel の既定設定に Noctalia のテーマ（`noctalia.toml`）とモニターのモード指定を重ねます。
 外部モニターの輝度は ddcutil 経由で Noctalia から操作し、Alt+[ で下げ、Alt+] で上げます。
 
+OpenAI 互換の文字起こし API を `https://citrus.tail1e65cd.ts.net/stt/v1` で提供します（[stt-server/](hosts/citrus/services/stt-server/)）。
+RE-USE でノイズ除去してから Whisper large-v3 で文字起こしし、接続元は [settings.nix](hosts/citrus/settings.nix) の端末に限ります。
+
 orange の Immich の機械学習は citrus の GPU で実行します。
 Immich は orange の [citrus-wake](hosts/orange/services/citrus-wake/) に推論を依頼し、
 citrus が応答しないときは citrus-wake が Wake-on-LAN で起こして待ってから
