@@ -7,6 +7,7 @@
 }:
 let
   wallpaper = ./wallpaper.png;
+  helium = inputs.helium.packages.x86_64-linux.helium-widevine;
 in
 {
   nixpkgs.overlays = [
@@ -96,6 +97,8 @@ in
           output."Dell Inc. AW3926QW CMYQ7K4".mode = "5120x2160@165";
         };
 
+    programs.gh.settings.browser = lib.mkForce "${lib.getExe' pkgs.systemd "systemd-run"} --user --collect --quiet ${lib.getExe helium}";
+
     programs.nixcord = {
       enable = true;
       discord.equicord.enable = true;
@@ -105,7 +108,8 @@ in
       pkgs.bitwarden-desktop
       pkgs.kitty
       pkgs.spotify
-      inputs.helium.packages.x86_64-linux.helium-widevine
+      pkgs.wl-clipboard
+      helium
     ];
 
     programs.noctalia = {

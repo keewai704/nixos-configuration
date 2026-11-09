@@ -10,7 +10,6 @@
       };
       efi.canTouchEfiVariables = true;
     };
-    kernelParams = [ "split_lock_detect=off" ];
     supportedFilesystems = [ "zfs" ];
     zfs = {
       package = config.boot.kernelPackages.zfs_cachyos;
