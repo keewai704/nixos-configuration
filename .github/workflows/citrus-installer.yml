@@ -27,7 +27,19 @@ jobs:
 
       - name: Build installer ISO
         run: |
-          iso_dir=$(nix build --accept-flake-config --no-link --print-out-paths .#nixosConfigurations.citrus-installer.config.system.build.isoImage)
+          set -euo pipefail
+          iso_dir=""
+          for attempt in 1 2 3 4; do
+            if iso_dir=$(nix build --accept-flake-config --no-link --print-out-paths .#nixosConfigurations.citrus-installer.config.system.build.isoImage); then
+              break
+            fi
+            echo "attempt $attempt failed; retrying"
+            sleep 60
+          done
+          if [ -z "$iso_dir" ]; then
+            echo "ISO build failed"
+            exit 1
+          fi
           iso=$(find "$iso_dir/iso" -maxdepth 1 -name '*.iso' -type f | head -1)
           echo "iso=$iso" >> "$GITHUB_ENV"
           size=$(du -h "$iso" | cut -f1)
