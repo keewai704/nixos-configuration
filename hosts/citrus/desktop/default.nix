@@ -44,7 +44,7 @@ in
   i18n.inputMethod = {
     enable = true;
     type = "fcitx5";
-    fcitx5.addons = [ pkgs.fcitx5-meltype ];
+    fcitx5.addons = [ (pkgs.fcitx5-meltype.override { meltype = pkgs.meltype-bin; }) ];
     fcitx5.waylandFrontend = true;
     fcitx5.settings = {
       globalOptions."Hotkey/TriggerKeys"."0" = "Alt+grave";
