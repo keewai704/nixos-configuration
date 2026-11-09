@@ -15,5 +15,7 @@ in
     hostId = "175be74a";
   };
 
+  systemd.slices.nix.sliceConfig.MemoryHigh = "20G";
+
   system.stateVersion = "26.05";
 }

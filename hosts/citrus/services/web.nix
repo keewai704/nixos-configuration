@@ -41,13 +41,13 @@ in
     ];
     wants = [
       "network-online.target"
-      "tailscale-set.service"
+      "tailscaled-set.service"
     ];
     after = [
       "network-online.target"
       "nginx.service"
       "tailscaled.service"
-      "tailscale-set.service"
+      "tailscaled-set.service"
     ];
     wantedBy = [
       "multi-user.target"

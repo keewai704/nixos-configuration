@@ -1,3 +1,4 @@
+{ lib, ... }:
 {
   nix = {
     daemonIOSchedClass = "idle";
@@ -31,7 +32,7 @@
 
   systemd.slices.nix.sliceConfig = {
     CPUWeight = 20;
-    MemoryHigh = "2G";
+    MemoryHigh = lib.mkDefault "2G";
   };
 
   systemd.services.nix-daemon.serviceConfig.Slice = "nix.slice";
