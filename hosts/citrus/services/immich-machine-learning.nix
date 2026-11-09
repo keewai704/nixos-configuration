@@ -18,6 +18,7 @@ in
       IMMICH_PORT = toString immichMachineLearningPort;
       MACHINE_LEARNING_CACHE_FOLDER = cacheDirectory;
       XDG_CACHE_HOME = cacheDirectory;
+      HOME = cacheDirectory;
     };
     serviceConfig = {
       ExecStart = lib.getExe cudaPkgs.immich-machine-learning;
