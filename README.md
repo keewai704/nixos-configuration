@@ -213,12 +213,12 @@ NVIDIA ドライバーは 580 系（`nvidiaPackages.legacy_580`、オープン�
 いずれも nixpkgs と Home Manager のパッケージ・モジュールから入れます。
 Noctalia のテーマ・壁紙・アプリテンプレートの既定値は [desktop/](hosts/citrus/desktop/) が配り、
 設定GUIでの変更は Noctalia が状態ディレクトリに保存するため、再適用後も手元の変更が保持されます。
-Umbriel のユーザー設定は宣言的に管理せず、`~/.config/umbriel/config.toml` を直接編集します。
+`~/.config/umbriel/config.toml` は [desktop/](hosts/citrus/desktop/) が Home Manager で配り、Umbriel の既定設定にモニターのモード指定を重ねます。
 
-日本語入力は fcitx5 と [Hazkey](https://github.com/aster-void/nix-hazkey)（`services.hazkey`）です。
-hazkey-server はユーザーサービスとして動き、fcitx5 アドオンの登録と既定の入力メソッドはモジュールが行います。
+日本語入力は fcitx5 と [Meltype](https://github.com/aster-void/nix-meltype) です。
+Discord は [Nixcord](https://github.com/4evy/nixcord) 経由の Equicord 入りで導入し、Bitwarden はデスクトップ版を入れます。
 ブラウザーは Helium（Widevine 対応）を [helium-flake](https://github.com/amaanq/helium-flake) から、
-Steam は Proton-CachyOS を互換ツールとして導入します。Spotify と kitty も入っています。
+Steam は [Millennium](https://docs.steambrew.app/) 入りで、Proton-CachyOS を互換ツールとして導入します。Spotify と kitty も入っています。
 
 M.2 は GPT の3パーティション構成です。[hardware-configuration.nix](hosts/citrus/hardware-configuration.nix) が
 FAT32 の ESP（4GiB、ラベル `CITRUS-ESP`、`/boot`）、ZFS ルート（残り全部、プール `citrus`、データセット `root`）、
@@ -227,7 +227,7 @@ NTFS のデータ領域（1TiB、ラベル `Data`、`/mnt/data`）をマウン�
 ### インストーラーISO
 
 [installer/default.nix](hosts/citrus/installer/default.nix) は citrus のデスクトップ構成（カーネル・ZFS・NVIDIA・
-Umbriel・Noctalia・fcitx5/Hazkey・コーディングエージェント込み）に NixOS インストーラーの基本構成を合わせた
+Umbriel・Noctalia・fcitx5/Meltype・コーディングエージェント込み）に NixOS インストーラーの基本構成を合わせた
 ライブISOです。起動すると keewai として Umbriel セッションに自動ログインし（パスワードは `citrus`）、
 kitty から Claude Code・Codex・Pi がそのまま使えます。インストール作業はこのライブ環境から
 `nixos-install --flake` で行えます。Steam と同梱チャンネルだけは容量削減のため無効化しています。

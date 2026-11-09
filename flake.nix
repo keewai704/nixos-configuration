@@ -168,8 +168,18 @@
       inputs.nixpkgs.follows = "nixpkgs";
     };
 
-    nix-hazkey = {
-      url = "github:aster-void/nix-hazkey";
+    nix-meltype = {
+      url = "github:aster-void/nix-meltype/main";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
+
+    nixcord = {
+      url = "github:4evy/nixcord/main";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
+
+    millennium = {
+      url = "github:SteamClientHomebrew/Millennium/main?dir=packages/nix";
       inputs.nixpkgs.follows = "nixpkgs";
     };
 

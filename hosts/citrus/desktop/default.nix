@@ -8,7 +8,10 @@ let
   wallpaper = ./wallpaper.png;
 in
 {
-  imports = [ inputs.nix-hazkey.nixosModules.hazkey ];
+  nixpkgs.overlays = [
+    inputs.millennium.overlays.default
+    inputs.nix-meltype.overlays.default
+  ];
 
   programs = {
     noctalia = {
@@ -36,6 +39,7 @@ in
   i18n.inputMethod = {
     enable = true;
     type = "fcitx5";
+    fcitx5.addons = [ pkgs.fcitx5-meltype ];
     fcitx5.settings = {
       globalOptions."Hotkey/TriggerKeys"."0" = "Alt+grave";
       inputMethod = {
@@ -43,12 +47,10 @@ in
         "Groups/0"."Default Layout" = "us";
         "Groups/0".DefaultIM = "keyboard-us";
         "Groups/0/Items/0".Name = "keyboard-us";
-        "Groups/0/Items/1".Name = "hazkey";
+        "Groups/0/Items/1".Name = "meltype";
       };
     };
   };
-
-  services.hazkey.enable = true;
 
   fonts.packages = [
     pkgs.nerd-fonts.jetbrains-mono
@@ -68,12 +70,15 @@ in
 
   programs.steam = {
     enable = true;
+    package = pkgs.millennium-steam;
     extraCompatPackages = [ inputs.chaotic.unrestrictedPackages.x86_64-linux.proton-cachyos ];
   };
 
   programs.dconf.enable = true;
 
   home-manager.users.keewai = {
+    imports = [ inputs.nixcord.homeModules.nixcord ];
+
     services.searxng.enable = true;
 
     xdg.configFile."umbriel/config.toml".source =
@@ -83,7 +88,13 @@ in
           output."Dell Inc. AW3926QW CMYQ7K4".mode = "5120x2160@165";
         };
 
+    programs.nixcord = {
+      enable = true;
+      discord.equicord.enable = true;
+    };
+
     home.packages = [
+      pkgs.bitwarden-desktop
       pkgs.kitty
       pkgs.spotify
       inputs.helium.packages.x86_64-linux.helium-widevine
