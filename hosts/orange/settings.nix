@@ -14,6 +14,7 @@ in
 
   hostName = "orange";
   lanInterface = "enp2s0";
+  lanBroadcast = "192.168.11.255";
   nginxPort = 8000;
   t3codePort = 3773;
   searxngPort = 8888;
@@ -26,6 +27,8 @@ in
 
   immichPort = 2283;
   immichBackupRoot = "${immichMediaRoot}/backups";
+
+  citrusWakePort = 3003;
 
   vaultwardenPort = 8222;
   vaultwardenBackupRoot = "${storageRoot}/server/backups/vaultwarden-nixos";

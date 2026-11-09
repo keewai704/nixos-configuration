@@ -4,6 +4,7 @@
   nixConfig = {
     extra-substituters = [
       "https://cache.lantian.pub/lantian"
+      "https://cache.nixos-cuda.org"
       "https://claude-code.cachix.org"
       "https://codex-cli.cachix.org"
       "https://nix-community.cachix.org"
@@ -11,6 +12,7 @@
       "https://pi.cachix.org"
     ];
     extra-trusted-public-keys = [
+      "cache.nixos-cuda.org:74DUi4Ye579gUqzH4ziL9IyiJBlDpMRn9MBN8oNan9M="
       "claude-code.cachix.org-1:YeXf2aNu7UTX8Vwrze0za1WEDS+4DuI2kVeWEE4fsRk="
       "lantian:WVGO7vsRMSEN+h7Lp7kv6SAmrkEXgUGbbXm7jMDjBuQ="
       "codex-cli.cachix.org-1:1Br3H1hHoRYG22n//cGKJOk3cQXgYobUel6O8DgSing="

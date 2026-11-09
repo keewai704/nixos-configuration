@@ -155,7 +155,7 @@ Pi は [pi.nix](https://github.com/lukasl-dev/pi.nix) の Home Manager モジュ
 | `superpowers` | 設計・計画・デバッグ・レビューなど大きめの作業の進め方 |
 | `add-nix-skill` | このリポジトリでスキルを追加・修正するとき |
 | `apple-device-usb` | USB や Wi-Fi 経由で iPhone・iPad を操作 |
-| `faster-whisper` | 音声・動画を RE-USE でノイズ除去してから文字起こし |
+| `faster-whisper` | 音声・動画を RE-USE でノイズ除去してから GPU で文字起こし（citrus のみ） |
 | `yomiyasu` | 成果物の日本語文書を推敲（共通指示で文書出力時に使用、通常の応答では不使用） |
 | `imozuru` | 知らない分野を原文まで芋づる式に調べて保存 |
 
@@ -214,12 +214,17 @@ NVIDIA ドライバーは 580 系（`nvidiaPackages.legacy_580`、オープン�
 Noctalia のテーマ・壁紙・アプリテンプレートの既定値は [desktop/](hosts/citrus/desktop/) が配り、
 設定GUIでの変更は Noctalia が状態ディレクトリに保存するため、再適用後も手元の変更が保持されます。
 `~/.config/umbriel/config.toml` は [desktop/](hosts/citrus/desktop/) が Home Manager で配り、Umbriel の既定設定に Noctalia のテーマ（`noctalia.toml`）とモニターのモード指定を重ねます。
-外部モニターの輝度は ddcutil 経由で Noctalia から操作します。
+外部モニターの輝度は ddcutil 経由で Noctalia から操作し、Alt+[ で下げ、Alt+] で上げます。
+
+orange の Immich の機械学習は citrus の GPU で実行します。
+Immich は orange の [citrus-wake](hosts/orange/services/citrus-wake/) に推論を依頼し、
+citrus が応答しないときは citrus-wake が Wake-on-LAN で起こして待ってから
+[immich-machine-learning.nix](hosts/citrus/services/immich-machine-learning.nix) へ中継します。
 
 日本語入力は fcitx5 と [Meltype](https://github.com/aster-void/nix-meltype) です。
 Discord は [Nixcord](https://github.com/4evy/nixcord) 経由の Equicord 入りで導入し、Bitwarden はデスクトップ版を入れます。
 ブラウザーは Helium（Widevine 対応）を [helium-flake](https://github.com/amaanq/helium-flake) から、
-Steam は [Millennium](https://docs.steambrew.app/) 入りで、Proton-CachyOS を互換ツールとして導入します。Spotify と kitty も入っています。
+Steam は [Millennium](https://docs.steambrew.app/) 入りで、Proton-CachyOS を互換ツールとして導入し、`ntsync` モジュールと GameMode を有効にします。GameMode を使うゲームには起動オプション `gamemoderun %command%` を設定します。Spotify と kitty も入っています。
 
 M.2 は GPT の3パーティション構成です。[hardware-configuration.nix](hosts/citrus/hardware-configuration.nix) が
 FAT32 の ESP（4GiB、ラベル `CITRUS-ESP`、`/boot`）、ZFS ルート（残り全部、プール `citrus`、データセット `root`）、
@@ -248,6 +253,7 @@ runner 上でビルドされます。
 | Vaultwarden | `https://orange.tail1e65cd.ts.net/vault/` | [vaultwarden/](hosts/orange/services/vaultwarden/) |
 | T3 Code | `https://orange.tail1e65cd.ts.net/t3/` | [t3code.nix](hosts/orange/services/t3code.nix) |
 | KonomiTV | `https://orange.tail1e65cd.ts.net/tv/` | [tv/](hosts/orange/services/tv/) |
+| citrus の起動 | `https://orange.tail1e65cd.ts.net/wake/citrus`（muse からのみ） | [citrus-wake/](hosts/orange/services/citrus-wake/) |
 | Samba | HDD の共有 | [samba.nix](hosts/orange/services/samba.nix) |
 | Minecraft | Fabric サーバー | [minecraft.nix](hosts/orange/services/minecraft.nix) |
 | Tailscale 出口ノード | 出口ノード | [tailscale-exit-node.nix](hosts/orange/services/tailscale-exit-node.nix) |

@@ -158,7 +158,9 @@ in
     };
 
     codingAgents.skills =
-      lib.genAttrs (builtins.attrNames (builtins.readDir skillRoot)) (name: skillRoot + "/${name}")
+      lib.genAttrs (lib.remove "faster-whisper" (builtins.attrNames (builtins.readDir skillRoot))) (
+        name: skillRoot + "/${name}"
+      )
       // upstreamSkills;
 
     home.file = skillLinks // {

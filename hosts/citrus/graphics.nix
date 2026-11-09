@@ -1,5 +1,18 @@
-{ config, lib, ... }:
 {
+  config,
+  inputs,
+  lib,
+  ...
+}:
+{
+  _module.args.cudaPkgs = import inputs.nixpkgs {
+    system = "x86_64-linux";
+    config = {
+      allowUnfree = true;
+      cudaSupport = true;
+    };
+  };
+
   hardware.graphics = {
     enable = true;
     enable32Bit = true;

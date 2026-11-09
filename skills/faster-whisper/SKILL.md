@@ -1,6 +1,6 @@
 ---
 name: faster-whisper
-description: Transcribe local audio/video with Whisper large-v3 on CPU to text or subtitles, including Japanese, after RE-USE speech denoising. Not text-to-speech.
+description: Transcribe local audio/video on citrus with Whisper large-v3 on CUDA to text or subtitles, including Japanese, after RE-USE speech denoising. Not text-to-speech.
 compatibility: Requires the Nix-managed reuse-denoise and whisper-ctranslate2 commands. Internet access and several GB of disk space are needed for the initial model download.
 ---
 
@@ -9,21 +9,21 @@ compatibility: Requires the Nix-managed reuse-denoise and whisper-ctranslate2 co
 Denoise each input with the packaged `reuse-denoise` command, which runs
 NVIDIA NemotronLabs RE-USE speech enhancement on CPU, then transcribe its output
 with the packaged `whisper-ctranslate2` CLI, which runs faster-whisper through
-CTranslate2. The Whisper model is **large-v3**, not the faster-whisper package
+CTranslate2 on the citrus NVIDIA GPU. The Whisper model is **large-v3**, not the faster-whisper package
 version. Do not substitute `turbo`, `distil-large-v3`, or a smaller model without
 a request. Skip denoising only when the user asks to transcribe the original audio.
 
 ## Environment
 
-Home Manager installs both commands through
-`home/keewai/common/faster-whisper.nix` in the nixos-configuration repository.
+Home Manager installs both commands on citrus only, through
+`hosts/citrus/faster-whisper.nix` in the nixos-configuration repository.
 Check `command -v reuse-denoise whisper-ctranslate2` and
 `whisper-ctranslate2 --version`.
 If missing, report that the Nix-managed environment needs activation; do not
 install packages with pip or modify generated skill files.
 
-Use **`--device cpu --compute_type int8`** with the CPU package installed on
-orange. Do not select `cuda` or `auto`.
+Use **`--device cuda --compute_type float16`** with the CUDA package installed on
+citrus. Do not select `cpu` or `auto`.
 
 If the command or model cannot load, or memory is insufficient, report the
 blocker. Do not silently change the device or model. Do not install packages
@@ -34,7 +34,7 @@ PyAV handles supported audio/video decoding without a separate FFmpeg command.
 `reuse-denoise INPUT OUTPUT_DIR` writes `OUTPUT_DIR/<input stem>.wav` as 16 kHz
 mono speech, prints that path, and refuses to overwrite an existing file. The
 duration matches the input, so transcript timestamps still apply to the original.
-It takes about 16 times the audio duration on orange; run long files in the
+It runs on CPU and takes about twice the audio duration on citrus; run long files in the
 background and tell the user the expected wait. RE-USE keeps the main speaker
 and suppresses overlapping voices, so mention this when other speakers matter.
 Its weights are part of the Nix package and need no download.
@@ -88,7 +88,7 @@ denoised=$(reuse-denoise "/absolute/path/to/audio.m4a" "$output_dir/denoised") &
 whisper-ctranslate2 "$denoised" \
   --model large-v3 \
   --model_dir "${XDG_CACHE_HOME:-$HOME/.cache}/faster-whisper" \
-  --device cpu --compute_type int8 \
+  --device cuda --compute_type float16 \
   --task transcribe --language ja \
   --vad_filter True --verbose False \
   --output_format txt --output_dir "$output_dir"

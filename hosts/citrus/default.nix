@@ -5,6 +5,7 @@ in
   imports = [
     ./boot.nix
     ./desktop
+    ./faster-whisper.nix
     ./graphics.nix
     ./hardware-configuration.nix
     ./services

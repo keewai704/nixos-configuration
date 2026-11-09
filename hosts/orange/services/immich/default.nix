@@ -10,6 +10,7 @@ let
     immichBackupRoot
     immichMediaRoot
     immichPort
+    citrusWakePort
     storageMountUnit
     tailnetHostname
     tailnetOrigin
@@ -75,7 +76,6 @@ in
 
       machine-learning.enable = false;
       environment = {
-        IMMICH_MACHINE_LEARNING_ENABLED = "false";
         LIBVA_DRIVER_NAME = "iHD";
       };
 
@@ -93,14 +93,9 @@ in
           realtime.enabled = true;
         };
         machineLearning = {
-          enabled = false;
+          urls = [ "http://127.0.0.1:${toString citrusWakePort}" ];
           availabilityChecks.enabled = false;
-          clip.enabled = false;
-          duplicateDetection.enabled = false;
-          facialRecognition.enabled = false;
-          ocr.enabled = false;
         };
-        nightlyTasks.clusterNewFaces = false;
         server.externalDomain = tailnetOrigin;
       };
     };

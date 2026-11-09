@@ -31,7 +31,10 @@ in
   };
 
   hardware.i2c.enable = true;
-  users.users.keewai.extraGroups = [ "i2c" ];
+  users.users.keewai.extraGroups = [
+    "gamemode"
+    "i2c"
+  ];
 
   services.keyd = {
     enable = true;
@@ -59,7 +62,10 @@ in
   };
 
   environment.variables.QT_IM_MODULES = "wayland;fcitx";
-  environment.sessionVariables.NIXOS_OZONE_WL = "1";
+  environment.sessionVariables = {
+    NIXOS_OZONE_WL = "1";
+    __GL_SHADER_DISK_CACHE_SKIP_CLEANUP = "1";
+  };
   environment.etc = lib.genAttrs [ "xdg/gtk-3.0/settings.ini" "xdg/gtk-4.0/settings.ini" ] (_: {
     text = lib.generators.toINI { } { Settings.gtk-im-module = "fcitx"; };
   });
@@ -82,6 +88,14 @@ in
     pulse.enable = true;
   };
 
+  boot.kernelModules = [ "ntsync" ];
+
+  programs.gamemode = {
+    enable = true;
+    enableRenice = true;
+    settings.general.renice = 10;
+  };
+
   programs.steam = {
     enable = true;
     package = pkgs.millennium-steam;
@@ -102,7 +116,14 @@ in
             files = [ "${config.programs.umbriel.package}/share/umbriel/config.toml" ];
             optional.files = [ "noctalia.toml" ];
           };
-          output."Dell Inc. AW3926QW CMYQ7K4".mode = "5120x2160@165";
+          output."Dell Inc. AW3926QW CMYQ7K4" = {
+            mode = "5120x2160@165";
+            vrr = "fullscreen";
+          };
+          keybinds = {
+            "Alt+bracketleft" = "spawn noctalia msg brightness-down";
+            "Alt+bracketright" = "spawn noctalia msg brightness-up";
+          };
         };
 
     xdg.configFile."kitty/font.conf".text = ''

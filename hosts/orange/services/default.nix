@@ -2,6 +2,7 @@
 {
   imports = [
     ./apple-device-usb.nix
+    ./citrus-wake
     ./health-monitor
     ./immich
     ./local-backup
