@@ -220,9 +220,9 @@ hazkey-server はユーザーサービスとして動き、fcitx5 アドオン�
 ブラウザーは Helium（Widevine 対応）を [helium-flake](https://github.com/amaanq/helium-flake) から、
 Steam は Proton-CachyOS を互換ツールとして導入します。Spotify と kitty も入っています。
 
-[hardware-configuration.nix](hosts/citrus/hardware-configuration.nix) は ZFS ルート（プール `citrus`、
-データセット `root`、ESP ラベル `CITRUS-ESP`）を想定した初期値です。
-実機へのインストール時には `nixos-generate-config` の結果に合わせて更新してください。
+M.2 は GPT の3パーティション構成です。[hardware-configuration.nix](hosts/citrus/hardware-configuration.nix) が
+FAT32 の ESP（4GiB、ラベル `CITRUS-ESP`、`/boot`）、ZFS ルート（残り全部、プール `citrus`、データセット `root`）、
+NTFS のデータ領域（1TiB、ラベル `Data`、`/mnt/data`）をマウントします。
 
 ### インストーラーISO
 

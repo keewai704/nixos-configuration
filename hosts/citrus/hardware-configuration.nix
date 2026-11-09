@@ -31,6 +31,18 @@
         "dmask=0077"
       ];
     };
+
+    "/mnt/data" = {
+      device = "/dev/disk/by-label/Data";
+      fsType = "ntfs3";
+      options = [
+        "nofail"
+        "noatime"
+        "uid=1000"
+        "gid=100"
+        "umask=022"
+      ];
+    };
   };
 
   nixpkgs.hostPlatform = lib.mkDefault "x86_64-linux";

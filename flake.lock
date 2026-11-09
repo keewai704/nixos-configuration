@@ -23,7 +23,7 @@
     "amatsukaze-artifacts": {
       "flake": false,
       "locked": {
-        "narHash": "sha256-nYsxgagvmjEdnTFgkkxMcSVKQgf+eCmeiHUODyT5xNU=",
+        "narHash": "sha256-Ese/PYy4hlnulr1DhnDSZ5bRLUSy2trcsvewEpAdMLo=",
         "type": "file",
         "url": "https://api.github.com/repos/rigaya/Amatsukaze/actions/artifacts?per_page=100"
       },
@@ -52,11 +52,11 @@
     "bondriver-linuxmirakc": {
       "flake": false,
       "locked": {
-        "lastModified": 1728897379,
-        "narHash": "sha256-nEWCuA0BRY7qFNASV4jj0BKRpFXIyJzgI1ch1nyoSQ0=",
+        "lastModified": 1794027728,
+        "narHash": "sha256-NFoujpjB5EALbdMg0NAO+Wzgvz6JWss1GArH4dn/Kac=",
         "ref": "main",
-        "rev": "cfbefc6d21dab4009db5f124984c1b720b76d869",
-        "revCount": 14,
+        "rev": "bc1d70c7415ea5b49b8384151045b0c826fded5c",
+        "revCount": 15,
         "submodules": true,
         "type": "git",
         "url": "https://github.com/matching/BonDriver_LinuxMirakc"
@@ -157,11 +157,11 @@
         "systems": "systems"
       },
       "locked": {
-        "lastModified": 1793750548,
-        "narHash": "sha256-kAPQcLt1ZrEU5P47Hvis9WH+YEWkYnmoo2vY5fv42w4=",
+        "lastModified": 1794145993,
+        "narHash": "sha256-VTuZErYZM9Dc5XyXzpejgxsCjYHxEZVTYKRSJYxN9PY=",
         "owner": "sadjow",
         "repo": "claude-code-nix",
-        "rev": "02cb98e535e518b992598bea883a7f6393ca5b8c",
+        "rev": "dcf5354053c67a0c653796cca9af5630e4a54fc4",
         "type": "github"
       },
       "original": {
@@ -342,11 +342,11 @@
         ]
       },
       "locked": {
-        "lastModified": 1793757180,
-        "narHash": "sha256-gyV7AtCwLnOImcrfSETP4J3Ie96bz19DY47B7m7Y3HM=",
+        "lastModified": 1793979366,
+        "narHash": "sha256-7OoWDsYO9teiPxl0QdlS5lYE20Pue8/5mpscSL32FUA=",
         "owner": "nix-community",
         "repo": "home-manager",
-        "rev": "b787c48e2ec57a9d098f5c2721882a3bc1e16f97",
+        "rev": "2c0c1f01521469cf0271180c453c79782d53c2f6",
         "type": "github"
       },
       "original": {
@@ -433,11 +433,11 @@
     "konomitv": {
       "flake": false,
       "locked": {
-        "lastModified": 1793915715,
-        "narHash": "sha256-ccgP515n5436XoWuBoSfcFq0ljR4HzrJdteujvmwJ+s=",
+        "lastModified": 1794209403,
+        "narHash": "sha256-fedljc72iufZKRvgg/aIfrm4SI1sKDc9O9gslUfMbRM=",
         "ref": "master",
-        "rev": "941d5a24ba6f5dbddab4a9bebed6eb0a7edf71c8",
-        "revCount": 4298,
+        "rev": "77969e1a55edd4b763499ae28babe8ed815535da",
+        "revCount": 4327,
         "type": "git",
         "url": "https://github.com/tsukumijima/KonomiTV"
       },
@@ -450,7 +450,7 @@
     "konomitv-thirdparty": {
       "flake": false,
       "locked": {
-        "narHash": "sha256-AKbWVWLrsfkmuYhC6QUvdNJYohCcV91402m33y/E7+w=",
+        "narHash": "sha256-+BtnkFeZIUTt4o9kk0iyv757bvSMPWvZvEPmxnL7Q20=",
         "type": "file",
         "url": "https://nightly.link/tsukumijima/KonomiTV/workflows/build_thirdparty.yaml/master/thirdparty-linux.tar.xz.zip"
       },
@@ -498,7 +498,7 @@
     "mirakc-swagger-ui": {
       "flake": false,
       "locked": {
-        "narHash": "sha256-3MPsXsAnIviI9NDBUa3DLUwT1/tUfo1K/K5ZDV6Itdc=",
+        "narHash": "sha256-HAAvYlM9tHKcJClx6ntntfmf35krCWwjJAV90/RYXOI=",
         "type": "file",
         "url": "https://github.com/swagger-api/swagger-ui/archive/refs/heads/master.zip"
       },
@@ -643,11 +643,11 @@
     },
     "nixpkgs_3": {
       "locked": {
-        "lastModified": 1793726008,
-        "narHash": "sha256-jQp1wKvbwWdLBASTXkSi/VYmDJ5AbBi1WvcMt9HWJC8=",
+        "lastModified": 1794042290,
+        "narHash": "sha256-ziZn2PvCJE5JEEpqTdxXwJpPB+L3YqoCpTAMCzyaP3U=",
         "owner": "NixOS",
         "repo": "nixpkgs",
-        "rev": "1d060086d60cb76a40cf37109f979d88a5bd6396",
+        "rev": "f4a03c008967841f2a0b3cb7c436fc6fc31671f6",
         "type": "github"
       },
       "original": {
@@ -683,11 +683,11 @@
         "nixpkgs-x86_64-darwin": "nixpkgs-x86_64-darwin"
       },
       "locked": {
-        "lastModified": 1793896364,
-        "narHash": "sha256-YPafGb170lkEpDjOrCS4JbW45dRDq2mogDWMIuC5IFU=",
+        "lastModified": 1794151284,
+        "narHash": "sha256-IO8dFdt0gLRGuzIsmi9I1CjwTEwzM3h/9u9eGXMDJBc=",
         "owner": "lukasl-dev",
         "repo": "pi.nix",
-        "rev": "ee8b231464af89a65ea4cc257e9155deb5b86934",
+        "rev": "44a222eff3a82ab6940913daba989f59e298c10d",
         "type": "github"
       },
       "original": {
@@ -727,11 +727,11 @@
         ]
       },
       "locked": {
-        "lastModified": 1793820911,
-        "narHash": "sha256-cc2EX2rfojnhcvqPQh4JEFGm2Mn/VoJyw5hTJTaw7Wo=",
+        "lastModified": 1794012432,
+        "narHash": "sha256-zBKFTg7tEGApNt+CEKI5+WNNomD5MZqYNBr+r6/Bmdg=",
         "ref": "master",
-        "rev": "947b2b0c973de462b19577715f04ba8d6f48ed7e",
-        "revCount": 95,
+        "rev": "bdbc5f8dd2ad6136bb2ccecb14f6ec343965b194",
+        "revCount": 96,
         "type": "git",
         "url": "https://github.com/pyproject-nix/build-system-pkgs"
       },
@@ -844,11 +844,11 @@
     "t3code-nightly": {
       "flake": false,
       "locked": {
-        "lastModified": 1793925983,
-        "narHash": "sha256-RU4D9y7UFkEetApOS96YwXYbQktX4JrtsyT1lvVKbT4=",
+        "lastModified": 1794196736,
+        "narHash": "sha256-eYMAbL4W9T9uC4GsIej5xqekvXHjCfSQ33EU2v2gf68=",
         "ref": "master",
-        "rev": "84e16ec4798f340dc43ac6fdd58e35e2eb84846b",
-        "revCount": 500,
+        "rev": "622a885340674552227eacc8afed58505342d325",
+        "revCount": 512,
         "type": "git",
         "url": "https://aur.archlinux.org/t3code-nightly-bin.git"
       },
@@ -861,11 +861,11 @@
     "torne-driver": {
       "flake": false,
       "locked": {
-        "lastModified": 1793117711,
-        "narHash": "sha256-JBvjzfBaQZOIG2Gm24TnqTCPUmvjaQzjbTzuQNteUIY=",
+        "lastModified": 1794152133,
+        "narHash": "sha256-dIwcPZ6exzOhcCBCIUdio8GFL3YLL0QO3PiSKWoBMo0=",
         "ref": "main",
-        "rev": "fc662902a3e4ad56566b00cae4a0ead922e3dd02",
-        "revCount": 11,
+        "rev": "2a13b472ea9cdd9c302c28aaa59a3ed1d972198c",
+        "revCount": 15,
         "type": "git",
         "url": "https://github.com/mihalinn/torne_drv"
       },
