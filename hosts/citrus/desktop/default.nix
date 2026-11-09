@@ -68,7 +68,9 @@ in
     pkgs.nerd-fonts.jetbrains-mono
     pkgs.noto-fonts-cjk-sans
     pkgs.noto-fonts-cjk-serif
+    pkgs.udev-gothic
   ];
+  fonts.fontconfig.defaultFonts.sansSerif = [ "Noto Sans CJK JP" ];
 
   security.rtkit.enable = true;
   services.pipewire = {
@@ -103,6 +105,16 @@ in
           output."Dell Inc. AW3926QW CMYQ7K4".mode = "5120x2160@165";
         };
 
+    xdg.configFile."kitty/font.conf".text = ''
+      font_family UDEV Gothic
+    '';
+
+    home.activation.kittyFontInclude = inputs.home-manager.lib.hm.dag.entryAfter [ "linkGeneration" ] ''
+      kitty_conf="$HOME/.config/kitty/kitty.conf"
+      grep -qxsF 'include font.conf' "$kitty_conf" \
+        || echo 'include font.conf' | run tee -a "$kitty_conf" > /dev/null
+    '';
+
     programs.gh.settings.browser = lib.mkForce "${lib.getExe' pkgs.systemd "systemd-run"} --user --collect --quiet ${lib.getExe helium}";
 
     programs.nixcord = {
@@ -124,7 +136,7 @@ in
       systemd.enable = true;
       settings = {
         brightness.enable_ddcutil = true;
-        shell.font_family = "JetBrainsMono Nerd Font";
+        shell.font_family = "Noto Sans CJK JP";
         theme = {
           mode = "dark";
           source = "builtin";
