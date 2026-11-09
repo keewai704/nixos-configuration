@@ -197,6 +197,14 @@
         ];
       };
 
+      nixosConfigurations.citrus-installer = nixpkgs.lib.nixosSystem {
+        specialArgs = { inherit inputs; };
+        modules = [
+          ./modules/common
+          ./hosts/citrus/installer
+        ];
+      };
+
       packages.${system} = (pkgs.extend (import ./pkgs { inherit inputs; })).local;
 
       devShells.${system}.default = pkgs.mkShellNoCC {

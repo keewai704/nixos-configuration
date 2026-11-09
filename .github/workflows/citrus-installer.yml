@@ -1,0 +1,46 @@
+name: citrus installer ISO
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  iso:
+    runs-on: ubuntu-latest
+    timeout-minutes: 180
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Maximize disk space
+        run: |
+          sudo rm -rf /usr/local/lib/android /usr/share/dotnet /opt/ghc /usr/local/.ghcup
+          sudo docker image prune --all --force >/dev/null 2>&1 || true
+          sudo apt-get clean
+          df -h /
+
+      - uses: cachix/install-nix-action@v31
+        with:
+          extra_nix_config: |
+            system-features = big-parallel kvm
+
+      - name: Build installer ISO
+        run: |
+          iso_dir=$(nix build --accept-flake-config --no-link --print-out-paths .#nixosConfigurations.citrus-installer.config.system.build.isoImage)
+          iso=$(find "$iso_dir/iso" -maxdepth 1 -name '*.iso' -type f | head -1)
+          echo "iso=$iso" >> "$GITHUB_ENV"
+          size=$(du -h "$iso" | cut -f1)
+          {
+            echo "## citrus installer ISO"
+            echo ""
+            echo "- File: $(basename "$iso")"
+            echo "- Size: $size"
+            echo "- SHA256: $(sha256sum "$iso" | cut -d' ' -f1)"
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: citrus-installer-iso
+          path: ${{ env.iso }}
+          retention-days: 14

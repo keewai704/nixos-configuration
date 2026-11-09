@@ -57,6 +57,8 @@ in
   programs.dconf.enable = true;
 
   home-manager.users.keewai = {
+    services.searxng.enable = true;
+
     home.packages = [
       pkgs.kitty
       pkgs.spotify

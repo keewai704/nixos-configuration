@@ -16,7 +16,7 @@ TCP・Unix ソケットのローカル／リモート転送を禁止していま
 .
 ├── flake.nix            入力（依存リポジトリ）、各ホストの構成、開発用シェル
 ├── hosts/orange/        ハードウェア、GPU、起動、settings.nix、services/ にサーバー機能
-├── hosts/citrus/        デスクトップPCのハードウェア、GPU、起動、desktop/ にデスクトップ機能
+├── hosts/citrus/        デスクトップPCのハードウェア、GPU、起動、desktop/ にデスクトップ機能、installer/ にインストーラーISO
 ├── modules/common/     Nix、ネットワーク、ユーザー、Home Manager の接続
 ├── home/keewai/common/  個人設定（シェル、Git、コーディングエージェント、T3 Code）
 ├── pkgs/                自作・改造パッケージとパッチ
@@ -37,11 +37,13 @@ flake.nix
 │   │   └── home-manager.nix  →  home/keewai/common
 │   └── hosts/orange
 │       └── services/        default.nix がサーバー機能を明示的に読み込む
-└── nixosConfigurations.citrus
-    ├── modules/common
-    └── hosts/citrus
-        ├── desktop/         Umbriel・Noctalia・日本語入力・フォント・壁紙
-        └── services/        T3 Code の Web 公開
+├── nixosConfigurations.citrus
+│   ├── modules/common
+│   └── hosts/citrus
+│       ├── desktop/         Umbriel・Noctalia・日本語入力・フォント・壁紙
+│       └── services/        T3 Code の Web 公開
+└── nixosConfigurations.citrus-installer
+    └── hosts/citrus/installer/  インストーラーISO（デスクトップ構成＋インストーラー）
 ```
 
 ## やりたいこと別の編集先
@@ -57,6 +59,7 @@ flake.nix
 | orange のサービス・ポート・保存先 | [hosts/orange/services/](hosts/orange/services/)、[settings.nix](hosts/orange/settings.nix) |
 | citrus のハードウェア・GPU・起動 | [hosts/citrus/](hosts/citrus/)、[graphics.nix](hosts/citrus/graphics.nix) |
 | citrus のデスクトップ・日本語入力 | [desktop/](hosts/citrus/desktop/) |
+| citrus のインストーラーISO | [installer/](hosts/citrus/installer/default.nix)、[.github/workflows/citrus-installer.yml](.github/workflows/citrus-installer.yml) |
 | orange の USB チューナー・EDCB・KonomiTV | [tv/](hosts/orange/services/tv/)、[pkgs/](pkgs/) |
 
 迷ったときは次の基準で置き場所を決めます。
@@ -220,6 +223,18 @@ Steam は Proton-CachyOS を互換ツールとして導入します。Spotify �
 [hardware-configuration.nix](hosts/citrus/hardware-configuration.nix) は ZFS ルート（プール `citrus`、
 データセット `root`、ESP ラベル `CITRUS-ESP`）を想定した初期値です。
 実機へのインストール時には `nixos-generate-config` の結果に合わせて更新してください。
+
+### インストーラーISO
+
+[installer/default.nix](hosts/citrus/installer/default.nix) は citrus のデスクトップ構成（カーネル・ZFS・NVIDIA・
+Umbriel・Noctalia・fcitx5/Hazkey・コーディングエージェント込み）に NixOS インストーラーの基本構成を合わせた
+ライブISOです。起動すると keewai として Umbriel セッションに自動ログインし（パスワードは `citrus`）、
+kitty から Claude Code・Codex・Pi がそのまま使えます。インストール作業はこのライブ環境から
+`nixos-install --flake` で行えます。Steam と同梱チャンネルだけは容量削減のため無効化しています。
+
+ビルドは [GitHub Actions](.github/workflows/citrus-installer.yml)（手動実行）で行い、完成したISOは
+artifact から取得します。カーネル・ZFS は lantian キャッシュから、NVIDIA 580 モジュールは
+runner 上でビルドされます。
 
 ## orange（サーバー）
 
