@@ -162,6 +162,11 @@
       inputs.nixpkgs.follows = "nixpkgs";
     };
 
+    plamo-app = {
+      url = "git+https://github.com/keewai704/plamo-app?ref=server-clients-rewrite";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
+
     chaotic = {
       url = "github:chaotic-cx/nyx/nyxpkgs-unstable";
     };

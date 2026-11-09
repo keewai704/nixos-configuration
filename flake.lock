@@ -863,11 +863,11 @@
         "nixpkgs-x86_64-darwin": "nixpkgs-x86_64-darwin"
       },
       "locked": {
-        "lastModified": 1794250493,
-        "narHash": "sha256-cTfr+9NLzVV8BmUbDS42YuYTqaXwxqOvAyTMmJlWi4U=",
+        "lastModified": 1794267401,
+        "narHash": "sha256-yeTD5gnq2jPZd4Q9BHgTpBNi8N6nulMmpWpDj6xE/+4=",
         "owner": "lukasl-dev",
         "repo": "pi.nix",
-        "rev": "ff3bad1a08b4beb705d9ae1b7d8579174c0c9126",
+        "rev": "fb02ea6dbc8d72185de7b70cf13b4df1c6a633d8",
         "type": "github"
       },
       "original": {
@@ -892,6 +892,27 @@
         "ref": "main",
         "type": "git",
         "url": "https://github.com/k0valik/pi-blackhole"
+      }
+    },
+    "plamo-app": {
+      "inputs": {
+        "nixpkgs": [
+          "nixpkgs"
+        ]
+      },
+      "locked": {
+        "lastModified": 1794266796,
+        "narHash": "sha256-D9BiQpH3BkEfAfubhaFpvbYzMCv/P2lK0DEK+A9OuHg=",
+        "ref": "server-clients-rewrite",
+        "rev": "bdf864738fd8b319bfc3d0644d23e9e1e068f763",
+        "revCount": 7,
+        "type": "git",
+        "url": "https://github.com/keewai704/plamo-app"
+      },
+      "original": {
+        "ref": "server-clients-rewrite",
+        "type": "git",
+        "url": "https://github.com/keewai704/plamo-app"
       }
     },
     "pyproject-build-systems": {
@@ -971,6 +992,7 @@
         "nixpkgs": "nixpkgs_3",
         "pi": "pi",
         "pi-blackhole": "pi-blackhole",
+        "plamo-app": "plamo-app",
         "pyproject-build-systems": "pyproject-build-systems",
         "pyproject-nix": "pyproject-nix",
         "t3code-nightly": "t3code-nightly",
