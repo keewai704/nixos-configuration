@@ -213,7 +213,8 @@ NVIDIA ドライバーは 580 系（`nvidiaPackages.legacy_580`、オープン�
 いずれも nixpkgs と Home Manager のパッケージ・モジュールから入れます。
 Noctalia のテーマ・壁紙・アプリテンプレートの既定値は [desktop/](hosts/citrus/desktop/) が配り、
 設定GUIでの変更は Noctalia が状態ディレクトリに保存するため、再適用後も手元の変更が保持されます。
-`~/.config/umbriel/config.toml` は [desktop/](hosts/citrus/desktop/) が Home Manager で配り、Umbriel の既定設定にモニターのモード指定を重ねます。
+`~/.config/umbriel/config.toml` は [desktop/](hosts/citrus/desktop/) が Home Manager で配り、Umbriel の既定設定に Noctalia のテーマ（`noctalia.toml`）とモニターのモード指定を重ねます。
+外部モニターの輝度は ddcutil 経由で Noctalia から操作します。
 
 日本語入力は fcitx5 と [Meltype](https://github.com/aster-void/nix-meltype) です。
 Discord は [Nixcord](https://github.com/4evy/nixcord) 経由の Equicord 入りで導入し、Bitwarden はデスクトップ版を入れます。

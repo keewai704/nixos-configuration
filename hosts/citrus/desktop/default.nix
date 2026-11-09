@@ -30,6 +30,9 @@ in
     user = "keewai";
   };
 
+  hardware.i2c.enable = true;
+  users.users.keewai.extraGroups = [ "i2c" ];
+
   services.keyd = {
     enable = true;
     keyboards.su75-ultra = {
@@ -93,7 +96,10 @@ in
     xdg.configFile."umbriel/config.toml".source =
       (pkgs.formats.toml { }).generate "umbriel-config.toml"
         {
-          include.files = [ "${config.programs.umbriel.package}/share/umbriel/config.toml" ];
+          include = {
+            files = [ "${config.programs.umbriel.package}/share/umbriel/config.toml" ];
+            optional.files = [ "noctalia.toml" ];
+          };
           output."Dell Inc. AW3926QW CMYQ7K4".mode = "5120x2160@165";
         };
 
@@ -106,6 +112,7 @@ in
 
     home.packages = [
       pkgs.bitwarden-desktop
+      pkgs.ddcutil
       pkgs.kitty
       pkgs.spotify
       pkgs.wl-clipboard
@@ -116,6 +123,7 @@ in
       enable = true;
       systemd.enable = true;
       settings = {
+        brightness.enable_ddcutil = true;
         shell.font_family = "JetBrainsMono Nerd Font";
         theme = {
           mode = "dark";
