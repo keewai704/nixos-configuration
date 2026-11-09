@@ -15,6 +15,11 @@ in
     hostId = "175be74a";
   };
 
+  nix.settings.trusted-users = [
+    "root"
+    "keewai"
+  ];
+
   systemd.slices.nix.sliceConfig.MemoryHigh = "20G";
 
   system.stateVersion = "26.05";

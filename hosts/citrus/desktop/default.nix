@@ -1,6 +1,7 @@
 {
   config,
   inputs,
+  lib,
   pkgs,
   ...
 }:
@@ -40,6 +41,7 @@ in
     enable = true;
     type = "fcitx5";
     fcitx5.addons = [ pkgs.fcitx5-meltype ];
+    fcitx5.waylandFrontend = true;
     fcitx5.settings = {
       globalOptions."Hotkey/TriggerKeys"."0" = "Alt+grave";
       inputMethod = {
@@ -51,6 +53,12 @@ in
       };
     };
   };
+
+  environment.variables.QT_IM_MODULES = "wayland;fcitx";
+  environment.sessionVariables.NIXOS_OZONE_WL = "1";
+  environment.etc = lib.genAttrs [ "xdg/gtk-3.0/settings.ini" "xdg/gtk-4.0/settings.ini" ] (_: {
+    text = lib.generators.toINI { } { Settings.gtk-im-module = "fcitx"; };
+  });
 
   fonts.packages = [
     pkgs.nerd-fonts.jetbrains-mono
