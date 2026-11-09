@@ -137,6 +137,11 @@
       flake = false;
     };
 
+    mamba-ssm = {
+      url = "git+https://github.com/state-spaces/mamba?ref=main";
+      flake = false;
+    };
+
     nemotronlabs-re-use = {
       url = "git+https://huggingface.co/nvidia/NVIDIA-NemotronLabs-RE-USE?ref=main";
       flake = false;

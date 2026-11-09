@@ -7,7 +7,7 @@ compatibility: Requires the Nix-managed reuse-denoise and whisper-ctranslate2 co
 # Local transcription with faster-whisper
 
 Denoise each input with the packaged `reuse-denoise` command, which runs
-NVIDIA NemotronLabs RE-USE speech enhancement on CPU, then transcribe its output
+NVIDIA NemotronLabs RE-USE's upstream `inference_chunk.py` on CUDA, then transcribe its output
 with the packaged `whisper-ctranslate2` CLI, which runs faster-whisper through
 CTranslate2 on the citrus NVIDIA GPU. The Whisper model is **large-v3**, not the faster-whisper package
 version. Do not substitute `turbo`, `distil-large-v3`, or a smaller model without
@@ -31,10 +31,10 @@ or terminate another workload as part of transcription.
 Allow the running command to finish rather than launching duplicates.
 PyAV handles supported audio/video decoding without a separate FFmpeg command.
 
-`reuse-denoise INPUT OUTPUT_DIR` writes `OUTPUT_DIR/<input stem>.wav` as 16 kHz
-mono speech, prints that path, and refuses to overwrite an existing file. The
+`reuse-denoise INPUT OUTPUT_DIR` writes `OUTPUT_DIR/<input stem>.flac` as mono
+speech at the input sample rate, prints that path, and refuses to overwrite an existing file. The
 duration matches the input, so transcript timestamps still apply to the original.
-It runs on CPU and takes about twice the audio duration on citrus; run long files in the
+Run long files in the
 background and tell the user the expected wait. RE-USE keeps the main speaker
 and suppresses overlapping voices, so mention this when other speakers matter.
 Its weights are part of the Nix package and need no download.

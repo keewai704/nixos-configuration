@@ -169,11 +169,11 @@
         "systems": "systems"
       },
       "locked": {
-        "lastModified": 1794145993,
-        "narHash": "sha256-VTuZErYZM9Dc5XyXzpejgxsCjYHxEZVTYKRSJYxN9PY=",
+        "lastModified": 1794253360,
+        "narHash": "sha256-/a6BDNT687BMsWHiobSSO9GiWNmp4sLzUYg8ukEeSPo=",
         "owner": "sadjow",
         "repo": "claude-code-nix",
-        "rev": "dcf5354053c67a0c653796cca9af5630e4a54fc4",
+        "rev": "7408fb1fbd27a75e8acd655b826ec7d66c54bf68",
         "type": "github"
       },
       "original": {
@@ -354,11 +354,11 @@
         ]
       },
       "locked": {
-        "lastModified": 1793979366,
-        "narHash": "sha256-7OoWDsYO9teiPxl0QdlS5lYE20Pue8/5mpscSL32FUA=",
+        "lastModified": 1794260194,
+        "narHash": "sha256-jmaqtyhtPFNgK52WZo33PRvNPPs8AjOWBeCc07nTAM8=",
         "owner": "nix-community",
         "repo": "home-manager",
-        "rev": "2c0c1f01521469cf0271180c453c79782d53c2f6",
+        "rev": "a9752a621164e9f84eb2a15858f1d54fd3cedab8",
         "type": "github"
       },
       "original": {
@@ -470,6 +470,23 @@
       "original": {
         "type": "file",
         "url": "https://nightly.link/tsukumijima/KonomiTV/workflows/build_thirdparty.yaml/master/thirdparty-linux.tar.xz.zip"
+      }
+    },
+    "mamba-ssm": {
+      "flake": false,
+      "locked": {
+        "lastModified": 1784749272,
+        "narHash": "sha256-ORYm3mMLYyM8mErmCXBYWF4pQt5qYJZVqwD+G0B9Y14=",
+        "ref": "main",
+        "rev": "e9594ce1c732d97440f0332fdc43170a2294dbfa",
+        "revCount": 235,
+        "type": "git",
+        "url": "https://github.com/state-spaces/mamba"
+      },
+      "original": {
+        "ref": "main",
+        "type": "git",
+        "url": "https://github.com/state-spaces/mamba"
       }
     },
     "meltype-src": {
@@ -673,11 +690,11 @@
         "treefmt-nix": "treefmt-nix"
       },
       "locked": {
-        "lastModified": 1794217410,
-        "narHash": "sha256-+mmW6HXHWAyqWTHEs+V3IQFIiGmMxldCHYBtwisFfq8=",
+        "lastModified": 1794256476,
+        "narHash": "sha256-Yhde3cQF3MBv/EoEcsFu4P1KRSlJJmYl9du3E/BImQM=",
         "owner": "4evy",
         "repo": "nixcord",
-        "rev": "73d476f96dc51c590544b5339c8fa9be012d6d97",
+        "rev": "834451b1578209be59a03197445392331d701cd4",
         "type": "github"
       },
       "original": {
@@ -846,11 +863,11 @@
         "nixpkgs-x86_64-darwin": "nixpkgs-x86_64-darwin"
       },
       "locked": {
-        "lastModified": 1794151284,
-        "narHash": "sha256-IO8dFdt0gLRGuzIsmi9I1CjwTEwzM3h/9u9eGXMDJBc=",
+        "lastModified": 1794250493,
+        "narHash": "sha256-cTfr+9NLzVV8BmUbDS42YuYTqaXwxqOvAyTMmJlWi4U=",
         "owner": "lukasl-dev",
         "repo": "pi.nix",
-        "rev": "44a222eff3a82ab6940913daba989f59e298c10d",
+        "rev": "ff3bad1a08b4beb705d9ae1b7d8579174c0c9126",
         "type": "github"
       },
       "original": {
@@ -942,6 +959,7 @@
         "iphone-control": "iphone-control",
         "konomitv": "konomitv",
         "konomitv-thirdparty": "konomitv-thirdparty",
+        "mamba-ssm": "mamba-ssm",
         "millennium": "millennium",
         "mirakc": "mirakc",
         "mirakc-arib": "mirakc-arib",
@@ -1010,11 +1028,11 @@
     "t3code-nightly": {
       "flake": false,
       "locked": {
-        "lastModified": 1794196736,
-        "narHash": "sha256-eYMAbL4W9T9uC4GsIej5xqekvXHjCfSQ33EU2v2gf68=",
+        "lastModified": 1794256137,
+        "narHash": "sha256-8LNlh5LYMgBnnmVSSkWznK9ry62anuJkuPssqIGE2VI=",
         "ref": "master",
-        "rev": "622a885340674552227eacc8afed58505342d325",
-        "revCount": 512,
+        "rev": "1b2122ba0c5aeab0f807eea166688ae2945d3d42",
+        "revCount": 514,
         "type": "git",
         "url": "https://aur.archlinux.org/t3code-nightly-bin.git"
       },

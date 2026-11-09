@@ -26,7 +26,6 @@ in
     bondriver-linuxmirakc = final.callPackage ./bondriver-linuxmirakc {
       upstream = inputs.bondriver-linuxmirakc;
     };
-    reuse-denoise = final.callPackage ./reuse-denoise { upstream = inputs.nemotronlabs-re-use; };
     t3code = final.callPackage ./t3code {
       upstream = inputs.t3code-nightly;
       inherit claude-code;

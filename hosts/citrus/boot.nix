@@ -1,5 +1,7 @@
 { config, inputs, ... }:
 {
+  systemd.tmpfiles.rules = [ "w /sys/kernel/mm/lru_gen/min_ttl_ms - - - - 0" ];
+
   boot = {
     kernelPackages = inputs.nix-cachyos-kernel.legacyPackages.x86_64-linux.linuxPackages-cachyos-latest;
     loader = {
