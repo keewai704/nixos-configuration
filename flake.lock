@@ -23,7 +23,7 @@
     "amatsukaze-artifacts": {
       "flake": false,
       "locked": {
-        "narHash": "sha256-Ese/PYy4hlnulr1DhnDSZ5bRLUSy2trcsvewEpAdMLo=",
+        "narHash": "sha256-v7QbT3jWyRi/Tq1aAkJNQLyTW1uGTq4JXGxyYHOUkhM=",
         "type": "file",
         "url": "https://api.github.com/repos/rigaya/Amatsukaze/actions/artifacts?per_page=100"
       },
@@ -126,6 +126,18 @@
         "ref": "2.1.0",
         "repo": "bun2nix",
         "type": "github"
+      }
+    },
+    "cachyos-limine-splash": {
+      "flake": false,
+      "locked": {
+        "narHash": "sha256-sda+s5pJHcIfy1uhBTELa0lBLxFRDpFwBlVivddkA6E=",
+        "type": "file",
+        "url": "https://raw.githubusercontent.com/CachyOS/cachyos-wallpapers/develop/usr/share/wallpapers/cachyos-wallpapers/limine-splash.png"
+      },
+      "original": {
+        "type": "file",
+        "url": "https://raw.githubusercontent.com/CachyOS/cachyos-wallpapers/develop/usr/share/wallpapers/cachyos-wallpapers/limine-splash.png"
       }
     },
     "chaotic": {
@@ -498,7 +510,7 @@
     "mirakc-swagger-ui": {
       "flake": false,
       "locked": {
-        "narHash": "sha256-HAAvYlM9tHKcJClx6ntntfmf35krCWwjJAV90/RYXOI=",
+        "narHash": "sha256-CuIttYkxXjM11CKX4J1BIEDghO4WJt1rpqg2uJAL33o=",
         "type": "file",
         "url": "https://github.com/swagger-api/swagger-ui/archive/refs/heads/master.zip"
       },
@@ -768,6 +780,7 @@
         "amatsukaze-artifacts": "amatsukaze-artifacts",
         "b25-decoder": "b25-decoder",
         "bondriver-linuxmirakc": "bondriver-linuxmirakc",
+        "cachyos-limine-splash": "cachyos-limine-splash",
         "chaotic": "chaotic",
         "claude-code": "claude-code",
         "codex": "codex",

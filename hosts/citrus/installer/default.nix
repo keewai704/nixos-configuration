@@ -1,5 +1,4 @@
 {
-  config,
   inputs,
   lib,
   ...
@@ -22,11 +21,6 @@
   };
 
   users.users.keewai.initialPassword = "citrus";
-
-  services.greetd.settings.initial_session = {
-    command = "${config.programs.umbriel.package}/bin/start-umbriel";
-    user = "keewai";
-  };
 
   programs.steam.enable = lib.mkForce false;
   system.installer.channel.enable = false;

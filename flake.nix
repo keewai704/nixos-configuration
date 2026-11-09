@@ -43,6 +43,11 @@
       flake = false;
     };
 
+    cachyos-limine-splash = {
+      url = "file+https://raw.githubusercontent.com/CachyOS/cachyos-wallpapers/develop/usr/share/wallpapers/cachyos-wallpapers/limine-splash.png";
+      flake = false;
+    };
+
     bondriver-linuxmirakc = {
       url = "git+https://github.com/matching/BonDriver_LinuxMirakc?ref=main&submodules=1";
       flake = false;

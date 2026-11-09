@@ -3,9 +3,10 @@
   boot = {
     kernelPackages = inputs.nix-cachyos-kernel.legacyPackages.x86_64-linux.linuxPackages-cachyos-latest;
     loader = {
-      systemd-boot = {
+      limine = {
         enable = true;
-        configurationLimit = 10;
+        maxGenerations = 10;
+        style.wallpapers = [ inputs.cachyos-limine-splash.outPath ];
       };
       efi.canTouchEfiVariables = true;
     };
