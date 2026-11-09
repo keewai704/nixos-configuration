@@ -313,11 +313,11 @@
         ]
       },
       "locked": {
-        "lastModified": 1793905744,
-        "narHash": "sha256-Mt7SC8lr9XisvIsPGSIqHWLeM2x5sVB+Qtx5SYcWxlI=",
+        "lastModified": 1794230081,
+        "narHash": "sha256-DhKcqLTODYxr/mstPAgink4lTj1a1p3DAce41cfeWm4=",
         "owner": "amaanq",
         "repo": "helium-flake",
-        "rev": "a7a4fc5016d1f33abfa534fa494dae540a7b7ef8",
+        "rev": "72d88147285f4a2dd183460f6d06b1709823749c",
         "type": "github"
       },
       "original": {
