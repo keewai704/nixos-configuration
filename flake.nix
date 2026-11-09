@@ -1,17 +1,21 @@
 {
-  description = "NixOS configuration for orange (server)";
+  description = "NixOS configurations for orange (server) and citrus (desktop)";
 
   nixConfig = {
     extra-substituters = [
+      "https://cache.lantian.pub/lantian"
       "https://claude-code.cachix.org"
       "https://codex-cli.cachix.org"
       "https://nix-community.cachix.org"
+      "https://nyx-cache.chaotic.cx"
       "https://pi.cachix.org"
     ];
     extra-trusted-public-keys = [
       "claude-code.cachix.org-1:YeXf2aNu7UTX8Vwrze0za1WEDS+4DuI2kVeWEE4fsRk="
+      "lantian:WVGO7vsRMSEN+h7Lp7kv6SAmrkEXgUGbbXm7jMDjBuQ="
       "codex-cli.cachix.org-1:1Br3H1hHoRYG22n//cGKJOk3cQXgYobUel6O8DgSing="
       "nix-community.cachix.org-1:mB9FSh9qf2dCimDSUo8Zy7bkq5CX+/rkCWyvRCYg3Fs="
+      "nyx-cache.chaotic.cx:dJxTrgMC3V3cFfyIiBQDQorG6k1LsqurH/srpMSq7qk="
       "pi.cachix.org-1:lGeoGJaZ5ZDabuRzkcD5EBTNnDM4HJ1vqeOxlWk1Flk="
     ];
   };
@@ -146,6 +150,24 @@
       inputs.nixpkgs.follows = "nixpkgs";
     };
 
+    chaotic = {
+      url = "github:chaotic-cx/nyx/nyxpkgs-unstable";
+    };
+
+    nix-cachyos-kernel = {
+      url = "github:xddxdd/nix-cachyos-kernel/release";
+    };
+
+    helium = {
+      url = "github:amaanq/helium-flake";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
+
+    nix-hazkey = {
+      url = "github:aster-void/nix-hazkey";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
+
   };
 
   outputs =
@@ -164,6 +186,14 @@
         modules = [
           ./modules/common
           ./hosts/orange
+        ];
+      };
+
+      nixosConfigurations.citrus = nixpkgs.lib.nixosSystem {
+        specialArgs = { inherit inputs; };
+        modules = [
+          ./modules/common
+          ./hosts/citrus
         ];
       };
 

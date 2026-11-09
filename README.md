@@ -1,6 +1,6 @@
 # nixos-configuration
 
-自宅サーバー `orange`（`x86_64-linux`）の NixOS 設定です。
+自宅サーバー `orange` とデスクトップPC `citrus`（ともに `x86_64-linux`）の NixOS 設定です。
 
 OS・ハードウェア・システムサービスは **NixOS**、個人のアプリや設定は **Home Manager** で管理します。
 作業ルール（検証・コミット・適用の手順）は [AGENTS.md](AGENTS.md) にあります。
@@ -14,8 +14,9 @@ TCP・Unix ソケットのローカル／リモート転送を禁止していま
 
 ```text
 .
-├── flake.nix            入力（依存リポジトリ）、orange の構成、開発用シェル
+├── flake.nix            入力（依存リポジトリ）、各ホストの構成、開発用シェル
 ├── hosts/orange/        ハードウェア、GPU、起動、settings.nix、services/ にサーバー機能
+├── hosts/citrus/        デスクトップPCのハードウェア、GPU、起動、desktop/ にデスクトップ機能
 ├── modules/common/     Nix、ネットワーク、ユーザー、Home Manager の接続
 ├── home/keewai/common/  個人設定（シェル、Git、コーディングエージェント、T3 Code）
 ├── pkgs/                自作・改造パッケージとパッチ
@@ -31,11 +32,16 @@ TCP・Unix ソケットのローカル／リモート転送を禁止していま
 
 ```text
 flake.nix
-└── nixosConfigurations.orange
+├── nixosConfigurations.orange
+│   ├── modules/common
+│   │   └── home-manager.nix  →  home/keewai/common
+│   └── hosts/orange
+│       └── services/        default.nix がサーバー機能を明示的に読み込む
+└── nixosConfigurations.citrus
     ├── modules/common
-    │   └── home-manager.nix  →  home/keewai/common
-    └── hosts/orange
-        └── services/        default.nix がサーバー機能を明示的に読み込む
+    └── hosts/citrus
+        ├── desktop/         Umbriel・Noctalia・日本語入力・フォント・壁紙
+        └── services/        T3 Code の Web 公開
 ```
 
 ## やりたいこと別の編集先
@@ -49,6 +55,8 @@ flake.nix
 | T3 Code（nightly サーバー） | [t3code.nix](home/keewai/common/t3code.nix)、[pkgs/t3code](pkgs/t3code/) |
 | orange のハードウェア・GPU・起動 | [hosts/orange/](hosts/orange/)、[graphics.nix](hosts/orange/graphics.nix) |
 | orange のサービス・ポート・保存先 | [hosts/orange/services/](hosts/orange/services/)、[settings.nix](hosts/orange/settings.nix) |
+| citrus のハードウェア・GPU・起動 | [hosts/citrus/](hosts/citrus/)、[graphics.nix](hosts/citrus/graphics.nix) |
+| citrus のデスクトップ・日本語入力 | [desktop/](hosts/citrus/desktop/) |
 | orange の USB チューナー・EDCB・KonomiTV | [tv/](hosts/orange/services/tv/)、[pkgs/](pkgs/) |
 
 迷ったときは次の基準で置き場所を決めます。
@@ -89,6 +97,10 @@ nix build --accept-flake-config .#<パッケージ名>                   # pkgs/
   （信頼されていない利用者は、flake を受け入れても新しいキャッシュや鍵を追加できないため）。
 - `accept-flake-config` を全体で有効にはしません。中身を確かめた flake のキャッシュ設定だけを受け入れます。
 - `cache.nixos.org` はそのまま使います。
+- citrus の CachyOS カーネル・ZFS は [nix-cachyos-kernel](https://github.com/xddxdd/nix-cachyos-kernel) のキャッシュ
+  （`https://cache.lantian.pub/lantian`）、Proton-CachyOS は [Chaotic-Nyx](https://www.nyx.chaotic.cx/) のキャッシュ
+  （`https://nyx-cache.chaotic.cx`）から取得します。URL と鍵は [flake.nix](flake.nix) の `nixConfig` にだけ書き、
+  NixOS モジュールの側には書きません（pi.cachix.org と同じ扱いです）。
 - キャッシュに載るのは、まったく同じストアパスのものだけです。自前のパッチを当てたパッケージなどは
   手元でビルドされます。署名の検証は無効にしません。
 
@@ -154,15 +166,16 @@ nixpkgs の usbmuxd モジュールを通じて udev の権限設定も導入し
 
 ### T3 Code nightly
 
-[T3 Code](https://github.com/pingdotgg/t3code) は、orange で Home Manager の常駐サーバーとして動きます。
-公開経路と接続先は [t3code.nix](hosts/orange/services/t3code.nix)、ユーザーサービスは [t3code.nix](home/keewai/common/t3code.nix) が管理します。
+[T3 Code](https://github.com/pingdotgg/t3code) は、orange と citrus で Home Manager の常駐サーバーとして動きます。
+公開経路と接続先は [hosts/orange/services/t3code.nix](hosts/orange/services/t3code.nix) と
+[hosts/citrus/services/t3code.nix](hosts/citrus/services/t3code.nix)、ユーザーサービスは [t3code.nix](home/keewai/common/t3code.nix) が管理します。
 公式の nightly AppImage に含まれる CLI を `t3 serve` で実行し、グラフィカルセッションには依存しません。
 リリース情報は、上流が更新する AUR の `.SRCINFO` を `t3code-nightly` 入力で固定します。
 バージョンと AppImage の SHA256 を読み取り、更新は `nix flake update` と通常の適用手順で行います。
 GitHub のダウンロード数は更新判定に含めません。
 アプリ内の自動更新は無効です。
 
-- Web 画面は `https://orange.tail1e65cd.ts.net/t3/` です。
+- Web 画面は orange では `https://orange.tail1e65cd.ts.net/t3/`、citrus では `https://citrus.tail1e65cd.ts.net/t3/` です。
   Tailscale Serve HTTPS 443 → `127.0.0.1:8000` の nginx → `127.0.0.1:3773` のサーバーで配信し、管理画面用の API と WebSocket も同じ HTTPS 入口を通ります。
   `/t3/` 用に Web 画面のルーター、ペアリング成功後の遷移、静的ファイル参照、PWA manifest をパッケージ内で補正します。
   HTTP MCP が返すスレッドリンクも、orange の HTTPS URL では `/t3/` を使います。
@@ -181,6 +194,32 @@ GitHub のダウンロード数は更新判定に含めません。
   **Settings → Source Control → Rescan** を選びます。トークンを Nix にコピーすることはありません。
 - T3 Code は利用者の権限でコマンドを実行できます。
   tailnet 内だけの公開でも、隔離された環境になるわけではありません。
+
+## citrus（デスクトップ）
+
+AMD Ryzen 7 9800X3D・GeForce RTX 5070 Ti・M.2 2TB のデスクトップPCです。
+カーネルは [nix-cachyos-kernel](https://github.com/xddxdd/nix-cachyos-kernel) が上流 CachyOS のパッチと設定でビルドした
+`linuxPackages-cachyos-latest`（EEVDF・GCC・非LTO）と、CachyOS パッチ適用済みの ZFS を使います。
+カーネルと ZFS は同 flake のバイナリキャッシュから全出力（out・dev・modules）ごと取得できるため、
+NVIDIA モジュールのビルドや initrd の生成でカーネルを再ビルドしません。
+NVIDIA ドライバーは 580 系（`nvidiaPackages.legacy_580`、オープンカーネルモジュール）に固定します。
+このモジュールだけはキャッシュに存在しないためカーネル更新のたびにローカルビルドされ、
+[graphics.nix](hosts/citrus/graphics.nix) のアサーションが 580 系から外れる変更を検出します。
+
+デスクトップは Umbriel（コンポジター）+ Noctalia v5（シェル）+ Noctalia Greeter（ログイン画面）で、
+いずれも nixpkgs と Home Manager のパッケージ・モジュールから入れます。
+Noctalia のテーマ・壁紙・アプリテンプレートの既定値は [desktop/](hosts/citrus/desktop/) が配り、
+設定GUIでの変更は Noctalia が状態ディレクトリに保存するため、再適用後も手元の変更が保持されます。
+Umbriel のユーザー設定は宣言的に管理せず、`~/.config/umbriel/config.toml` を直接編集します。
+
+日本語入力は fcitx5 と [Hazkey](https://github.com/aster-void/nix-hazkey)（`services.hazkey`）です。
+hazkey-server はユーザーサービスとして動き、fcitx5 アドオンの登録と既定の入力メソッドはモジュールが行います。
+ブラウザーは Helium（Widevine 対応）を [helium-flake](https://github.com/amaanq/helium-flake) から、
+Steam は Proton-CachyOS を互換ツールとして導入します。Spotify と kitty も入っています。
+
+[hardware-configuration.nix](hosts/citrus/hardware-configuration.nix) は ZFS ルート（プール `citrus`、
+データセット `root`、ESP ラベル `CITRUS-ESP`）を想定した初期値です。
+実機へのインストール時には `nixos-generate-config` の結果に合わせて更新してください。
 
 ## orange（サーバー）
 
