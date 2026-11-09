@@ -50,7 +50,7 @@ for icon in data.get("icons", []):
     icon["src"] = "/t3/" + icon["src"].lstrip("/")
 manifest.write_text(json.dumps(data))
 
-thread_link_before = "return hostedAppUrl === void 0 ? formatThreadLink(ref) : hostedThreadLink(ref, hostedAppUrl);"
+thread_link_before = "return hostedAppUrl === void 0 ? formatThreadLink(ref, title) : hostedThreadLink(ref, hostedAppUrl);"
 thread_link_after = (
     thread_link_before
     if web_origin is None
