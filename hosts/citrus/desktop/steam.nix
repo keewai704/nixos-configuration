@@ -1,4 +1,5 @@
 {
+  config,
   inputs,
   lib,
   pkgs,
@@ -43,6 +44,7 @@ let
     builtins.toJSON {
       general.checkForPluginAndThemeUpdates = false;
       themes.activeTheme = theme;
+      themes.conditions.${theme}.Font = "Arial";
       plugins.enabledPlugins = lib.attrNames plugins;
     }
   );
@@ -68,6 +70,12 @@ let
         }
       )
     }}
+
+    :root * {
+      font-family: ${
+        lib.concatMapStringsSep ", " builtins.toJSON config.fonts.fontconfig.defaultFonts.sansSerif
+      }, sans-serif !important;
+    }
   '';
 
   applySettings = pkgs.writeShellApplication {
