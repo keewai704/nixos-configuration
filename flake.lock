@@ -1067,11 +1067,11 @@
     "torne-driver": {
       "flake": false,
       "locked": {
-        "lastModified": 1794152133,
-        "narHash": "sha256-dIwcPZ6exzOhcCBCIUdio8GFL3YLL0QO3PiSKWoBMo0=",
+        "lastModified": 1793117711,
+        "narHash": "sha256-JBvjzfBaQZOIG2Gm24TnqTCPUmvjaQzjbTzuQNteUIY=",
         "ref": "main",
-        "rev": "2a13b472ea9cdd9c302c28aaa59a3ed1d972198c",
-        "revCount": 15,
+        "rev": "fc662902a3e4ad56566b00cae4a0ead922e3dd02",
+        "revCount": 11,
         "type": "git",
         "url": "https://github.com/mihalinn/torne_drv"
       },
