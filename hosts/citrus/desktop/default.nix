@@ -125,6 +125,10 @@ in
           keybinds = {
             "Alt+bracketleft" = "spawn noctalia msg brightness-down";
             "Alt+bracketright" = "spawn noctalia msg brightness-up";
+            "Mod+V" = {
+              action = "spawn noctalia msg panel-toggle clipboard";
+              repeat = false;
+            };
           };
         };
 
