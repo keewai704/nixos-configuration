@@ -7,10 +7,37 @@
 let
   theme = "SpaceTheme";
 
-  plugins = lib.mapAttrs' (_: source: {
-    inherit ((lib.importJSON "${source}/plugin.json")) name;
-    value = source;
-  }) (lib.filterAttrs (name: _: lib.hasPrefix "millennium-plugin-" name) inputs);
+  quickCssWatcher = "quick-css-watcher";
+
+  plugins =
+    lib.mapAttrs' (_: source: {
+      inherit ((lib.importJSON "${source}/plugin.json")) name;
+      value = source;
+    }) (lib.filterAttrs (name: _: lib.hasPrefix "millennium-plugin-" name) inputs)
+    // {
+      ${quickCssWatcher} = pkgs.symlinkJoin {
+        name = "millennium-${quickCssWatcher}";
+        paths = [
+          (pkgs.writeTextDir "plugin.json" (
+            builtins.toJSON {
+              name = quickCssWatcher;
+              common_name = "Quick CSS Watcher";
+              description = "Reloads quick.css whenever the file changes.";
+              useBackend = false;
+            }
+          ))
+          (pkgs.writeTextDir ".millennium/Dist/index.js" ''
+            const pluginName = ${builtins.toJSON quickCssWatcher};
+            (window.PLUGIN_LIST ||= {})[pluginName] ||= {};
+            (async () => {
+              window.PLUGIN_LIST[pluginName].__millennium_internal_plugin_name_do_not_use_or_change__ = pluginName;
+              await window.MILLENNIUM_API.Millennium.callServerMethod("core", "Core_WatchQuickCss");
+              MILLENNIUM_BACKEND_IPC.postMessage(1, { pluginName });
+            })();
+          '')
+        ];
+      };
+    };
 
   settings = pkgs.writeText "millennium-settings.json" (
     builtins.toJSON {
@@ -22,23 +49,26 @@ let
 
   color = token: "{{colors.${token}.dark.rgb_csv}}";
 
-  noctaliaColors = pkgs.writeText "millennium-noctalia.json" (
-    builtins.toJSON {
-      themes.themeColors.${theme} = {
-        "--st-accent-1" = color "primary";
-        "--st-accent-2" = "{{colors.primary.dark.rgb_csv | lighten 8}}";
-        "--st-background" = color "surface";
-        "--st-color-1" = color "surface_container_low";
-        "--st-color-2" = color "surface_container_highest";
-        "--st-color-3" = color "surface_container";
-        "--st-color-4" = color "surface_container_high";
-        "--st-color-5" = color "surface_bright";
-        "--st-color-6" = color "surface_bright";
-        "--st-red" = color "error";
-        "--st-red-hover" = "{{colors.error.dark.rgb_csv | lighten 8}}";
-      };
-    }
-  );
+  quickCss = pkgs.writeText "millennium-quick.css" ''
+    :root {
+    ${
+      lib.concatStrings (
+        lib.mapAttrsToList (name: value: "  --st-${name}: ${value} !important;\n") {
+          accent-1 = color "primary";
+          accent-2 = "{{colors.primary.dark.rgb_csv | lighten 8}}";
+          background = color "surface";
+          color-1 = color "surface_container_low";
+          color-2 = color "surface_container_highest";
+          color-3 = color "surface_container";
+          color-4 = color "surface_container_high";
+          color-5 = color "surface_bright";
+          color-6 = color "surface_bright";
+          red = color "error";
+          red-hover = "{{colors.error.dark.rgb_csv | lighten 8}}";
+        }
+      )
+    }}
+  '';
 
   applySettings = pkgs.writeShellApplication {
     name = "millennium-apply-settings";
@@ -54,9 +84,6 @@ let
       mkdir -p "$dir"
       if [ -s "$config" ]; then
         layers=("$config" "''${layers[@]}")
-      fi
-      if [ -s "$dir/noctalia.json" ]; then
-        layers+=("$dir/noctalia.json")
       fi
 
       merged="$(mktemp "$config.XXXXXX")"
@@ -92,8 +119,8 @@ in
     }) plugins;
 
     programs.noctalia.settings.theme.templates.user.millennium = {
-      input_path = "${noctaliaColors}";
-      output_path = "$XDG_CONFIG_HOME/millennium/noctalia.json";
+      input_path = "${quickCss}";
+      output_path = "$XDG_CONFIG_HOME/millennium/quick.css";
     };
   };
 }
