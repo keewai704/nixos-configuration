@@ -10,7 +10,10 @@ let
   helium = inputs.helium.packages.x86_64-linux.helium-widevine;
 in
 {
-  imports = [ ./steam.nix ];
+  imports = [
+    ./steam.nix
+    ./theme.nix
+  ];
 
   nixpkgs.overlays = [ inputs.nix-meltype.overlays.default ];
 
@@ -65,9 +68,6 @@ in
     NIXOS_OZONE_WL = "1";
     __GL_SHADER_DISK_CACHE_SKIP_CLEANUP = "1";
   };
-  environment.etc = lib.genAttrs [ "xdg/gtk-3.0/settings.ini" "xdg/gtk-4.0/settings.ini" ] (_: {
-    text = lib.generators.toINI { } { Settings.gtk-im-module = "fcitx"; };
-  });
 
   fonts.packages = [
     pkgs.nerd-fonts.jetbrains-mono
@@ -96,6 +96,12 @@ in
   };
 
   programs.dconf.enable = true;
+
+  programs.thunar.enable = true;
+  programs.xfconf.enable = true;
+  services.gvfs.enable = true;
+  services.tumbler.enable = true;
+  xdg.mime.defaultApplications."inode/directory" = "thunar.desktop";
 
   home-manager.users.keewai = {
     imports = [ inputs.nixcord.homeModules.nixcord ];
@@ -195,28 +201,6 @@ in
         shell = {
           font_family = "Noto Sans CJK JP";
           screenshot.save_to_file = false;
-        };
-        theme = {
-          mode = "dark";
-          source = "builtin";
-          builtin = "Noctalia";
-          templates = {
-            enable_builtin_templates = true;
-            builtin_ids = [
-              "gtk"
-              "kitty"
-              "qt"
-              "umbriel"
-            ];
-            enable_community_templates = true;
-            community_ids = [
-              "chromium-based"
-              "claude-code"
-              "codex"
-              "fcitx5"
-              "pi-agent"
-            ];
-          };
         };
         wallpaper = {
           enabled = true;
