@@ -45,7 +45,7 @@ in
   machineLearningModels = {
     clip = "XLM-Roberta-Large-ViT-H-14__frozen_laion5b_s13b_b90k";
     facialRecognition = "antelopev2";
-    ocr = "PP-OCRv6_medium";
+    ocr = "PP-OCRv6_small";
   };
   immichMachineLearningClients = [
     "100.85.28.79"
