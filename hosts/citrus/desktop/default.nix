@@ -6,26 +6,18 @@
   ...
 }:
 let
-  wallpaper = ./wallpaper.png;
   helium = inputs.helium.packages.x86_64-linux.helium-widevine;
 in
 {
   imports = [
+    ./noctalia.nix
     ./steam.nix
     ./theme.nix
   ];
 
   nixpkgs.overlays = [ inputs.nix-meltype.overlays.default ];
 
-  programs = {
-    noctalia = {
-      enable = true;
-      recommendedServices.enable = true;
-    };
-    umbriel.enable = true;
-  };
-
-  services.displayManager.noctalia-greeter.enable = true;
+  programs.umbriel.enable = true;
 
   services.greetd.settings.initial_session = {
     command = "${config.programs.umbriel.package}/bin/start-umbriel";
@@ -192,21 +184,5 @@ in
       pkgs.wl-clipboard
       helium
     ];
-
-    programs.noctalia = {
-      enable = true;
-      systemd.enable = true;
-      settings = {
-        brightness.enable_ddcutil = true;
-        shell = {
-          font_family = "Noto Sans CJK JP";
-          screenshot.save_to_file = false;
-        };
-        wallpaper = {
-          enabled = true;
-          default.path = "${wallpaper}";
-        };
-      };
-    };
   };
 }

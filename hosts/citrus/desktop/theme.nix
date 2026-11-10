@@ -75,35 +75,9 @@ in
 
     programs.nixcord.config.enabledThemes = [ "noctalia.theme.css" ];
 
-    programs.noctalia.settings.theme = {
-      mode = "dark";
-      source = "builtin";
-      builtin = "Noctalia";
-      templates = {
-        enable_builtin_templates = true;
-        builtin_ids = [
-          "gtk3"
-          "gtk4"
-          "kitty"
-          "qt"
-          "umbriel"
-        ];
-        enable_community_templates = true;
-        community_ids = [
-          "chromium-based"
-          "claude-code"
-          "codex"
-          "discord"
-          "fcitx5"
-          "papirus-icons"
-          "pi-agent"
-          "thunar"
-        ];
-        user.starship = {
-          input_path = "${starshipConfig}";
-          output_path = "$XDG_CONFIG_HOME/starship.toml";
-        };
-      };
+    programs.noctalia.settings.theme.templates.user.starship = {
+      input_path = "${starshipConfig}";
+      output_path = "$XDG_CONFIG_HOME/starship.toml";
     };
   };
 }

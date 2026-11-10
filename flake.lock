@@ -949,11 +949,11 @@
         "nixpkgs-x86_64-darwin": "nixpkgs-x86_64-darwin"
       },
       "locked": {
-        "lastModified": 1794314432,
-        "narHash": "sha256-fZ8xJGJrDW9u8rNKmEER+ApmNV7xGVAbbl/RANdHISc=",
+        "lastModified": 1794328189,
+        "narHash": "sha256-dGBZidyLzf2xhO4ca5pl+VQ379xzf1bPjJMKCABIQJ0=",
         "owner": "lukasl-dev",
         "repo": "pi.nix",
-        "rev": "5fe160e61fbea8e0c5e2ea1f3ab50a51e0d8cc5c",
+        "rev": "0eef6da6a8e092464f11a592b7f01a32b9d8640c",
         "type": "github"
       },
       "original": {
@@ -1143,11 +1143,11 @@
     "t3code-nightly": {
       "flake": false,
       "locked": {
-        "lastModified": 1794302689,
-        "narHash": "sha256-EmRv7U1eH+LSZo1UmzVs8RiMf/LUpzv88HgiRrGWyf4=",
+        "lastModified": 1794325711,
+        "narHash": "sha256-UyJJkGDUxoEfaotkqTqfGIBSwKK2CQVRXhkUiEoKRgY=",
         "ref": "master",
-        "rev": "4c710eec81ae1b75c7545b8adef1139b6b12c89a",
-        "revCount": 519,
+        "rev": "c21ab08368042a34ae454fe7e82dc20314d90fa4",
+        "revCount": 520,
         "type": "git",
         "url": "https://aur.archlinux.org/t3code-nightly-bin.git"
       },
