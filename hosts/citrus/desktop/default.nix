@@ -10,10 +10,9 @@ let
   helium = inputs.helium.packages.x86_64-linux.helium-widevine;
 in
 {
-  nixpkgs.overlays = [
-    inputs.millennium.overlays.default
-    inputs.nix-meltype.overlays.default
-  ];
+  imports = [ ./steam.nix ];
+
+  nixpkgs.overlays = [ inputs.nix-meltype.overlays.default ];
 
   programs = {
     noctalia = {
@@ -94,12 +93,6 @@ in
     enable = true;
     enableRenice = true;
     settings.general.renice = 10;
-  };
-
-  programs.steam = {
-    enable = true;
-    package = pkgs.millennium-steam;
-    extraCompatPackages = [ inputs.chaotic.unrestrictedPackages.x86_64-linux.proton-cachyos ];
   };
 
   programs.dconf.enable = true;

@@ -195,6 +195,46 @@
       inputs.nixpkgs.follows = "nixpkgs";
     };
 
+    millennium-theme-spacetheme = {
+      url = "github:SpaceTheme/Steam";
+      flake = false;
+    };
+
+    millennium-plugin-size-on-disk = {
+      url = "tarball+https://steambrew.app/api/v1/plugins/download/?id=e73371b61eef68019413475b7642ecc37e53bbbd&n=size-on-disk.zip";
+      flake = false;
+    };
+
+    millennium-plugin-hltb = {
+      url = "tarball+https://steambrew.app/api/v1/plugins/download/?id=f685622bace6c63a70a24265f72fabd32aa497b5&n=hltb-for-millennium.zip";
+      flake = false;
+    };
+
+    millennium-plugin-achievement-groups = {
+      url = "tarball+https://steambrew.app/api/v1/plugins/download/?id=13f2dcc363c8afc41a42ba5df62aef06db1cc600&n=achievement-groups.zip";
+      flake = false;
+    };
+
+    millennium-plugin-browser-history = {
+      url = "tarball+https://steambrew.app/api/v1/plugins/download/?id=aca2451aea1d2bc5e5df9a2b8bb3d1b6a8f3fa8b&n=browser_history.zip";
+      flake = false;
+    };
+
+    millennium-plugin-playercount-badge = {
+      url = "tarball+https://steambrew.app/api/v1/plugins/download/?id=a8c27aa008d9a0b6d638ea6a9c6bceab30da78ef&n=playercount-badge.zip";
+      flake = false;
+    };
+
+    millennium-plugin-protondb = {
+      url = "tarball+https://steambrew.app/api/v1/plugins/download/?id=7913678dca9592b28d2f619aeefd47b06ebf36a2&n=protondb.zip";
+      flake = false;
+    };
+
+    millennium-plugin-global-launch-options = {
+      url = "tarball+https://steambrew.app/api/v1/plugins/download/?id=ade101371bfd58fb3de4c28d7f60b343325cc19d&n=global_launch_options.zip";
+      flake = false;
+    };
+
   };
 
   outputs =
