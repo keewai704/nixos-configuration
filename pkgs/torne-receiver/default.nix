@@ -12,10 +12,6 @@ stdenv.mkDerivation {
   pname = "torne-receiver";
   version = "0-unstable-${upstream.shortRev}";
   src = upstream;
-  patches = [
-    ./fast-control.patch
-    ./pcsc-socket.patch
-  ];
   nativeBuildInputs = [ pkg-config ];
   buildInputs = [
     libusb1
@@ -60,7 +56,7 @@ stdenv.mkDerivation {
   '';
   meta = {
     description = "Persistent USB receiver and native BonDriver2 for Sony CECH-ZD1 J";
-    homepage = "https://github.com/mihalinn/torne_drv";
+    homepage = "https://github.com/keewai704/torne_drv";
     license = lib.licenses.gpl2Only;
     mainProgram = "torne-receiver";
     platforms = lib.platforms.linux;

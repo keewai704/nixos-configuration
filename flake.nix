@@ -26,7 +26,7 @@
     nixpkgs.url = "github:NixOS/nixpkgs/nixos-unstable";
 
     torne-driver = {
-      url = "git+https://github.com/mihalinn/torne_drv?ref=main";
+      url = "git+https://github.com/keewai704/torne_drv?ref=main";
       flake = false;
     };
 
