@@ -122,6 +122,18 @@ in
               action = "spawn noctalia msg panel-toggle clipboard";
               repeat = false;
             };
+            "Print" = {
+              action = "spawn noctalia msg screenshot-region";
+              repeat = false;
+            };
+            "Shift+Print" = {
+              action = "spawn noctalia msg screenshot-window";
+              repeat = false;
+            };
+            "Ctrl+Print" = {
+              action = "spawn noctalia msg screenshot-fullscreen";
+              repeat = false;
+            };
           };
         };
 
@@ -161,7 +173,10 @@ in
       systemd.enable = true;
       settings = {
         brightness.enable_ddcutil = true;
-        shell.font_family = "Noto Sans CJK JP";
+        shell = {
+          font_family = "Noto Sans CJK JP";
+          screenshot.save_to_file = false;
+        };
         theme = {
           mode = "dark";
           source = "builtin";
