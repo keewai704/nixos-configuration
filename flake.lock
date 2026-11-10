@@ -568,11 +568,11 @@
     "mirakc-arib": {
       "flake": false,
       "locked": {
-        "lastModified": 1793924364,
-        "narHash": "sha256-LqZ68biafeZVzrYvnjIShKSX/jhoukLnsp2Ff0OzhNE=",
+        "lastModified": 1794273722,
+        "narHash": "sha256-BM7qXMyyRva/aV/Q5u5Df+43a7wXi7UcH3Gsy0XAa0U=",
         "ref": "main",
-        "rev": "4a1a806fc01db01a0a2e9cb26b4520c588f74aae",
-        "revCount": 521,
+        "rev": "3d180f53e811cc9ef80e4325a38d2811ad02906c",
+        "revCount": 522,
         "submodules": true,
         "type": "git",
         "url": "https://github.com/mirakc/mirakc-arib"
@@ -901,11 +901,11 @@
         ]
       },
       "locked": {
-        "lastModified": 1794269197,
-        "narHash": "sha256-iVg78v2o3dzufDUZF9jlVUF/plqWugrQ+WdJRzzZjZs=",
+        "lastModified": 1794277813,
+        "narHash": "sha256-ft5f30uK9U/Xov7X2mvAhmdNZkpNclraBiJ89SkifOQ=",
         "ref": "server-clients-rewrite",
-        "rev": "e0bb1d7f1af23e3c4d061c115e1639c054698a05",
-        "revCount": 10,
+        "rev": "da0db57faa4e7308b70591c80f5283f2214cc06f",
+        "revCount": 11,
         "type": "git",
         "url": "https://github.com/keewai704/plamo-app"
       },
@@ -1050,11 +1050,11 @@
     "t3code-nightly": {
       "flake": false,
       "locked": {
-        "lastModified": 1794269315,
-        "narHash": "sha256-fL5lRQnlLTw7qHAx95lfhU/m/zrHT9ejasnJqXEAyUE=",
+        "lastModified": 1794275602,
+        "narHash": "sha256-qSshQa+4GaG3lE9Q9CnuCJunZJ7lJr7/05ozmpGUgZ8=",
         "ref": "master",
-        "rev": "1f35f4bed8cef6883d14d5a5b42e56af9f408261",
-        "revCount": 515,
+        "rev": "4c15da6aa9f7e28d9ebfb67379239a5b971a6735",
+        "revCount": 517,
         "type": "git",
         "url": "https://aur.archlinux.org/t3code-nightly-bin.git"
       },
