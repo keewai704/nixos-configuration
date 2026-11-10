@@ -119,6 +119,7 @@ in
           output."Dell Inc. AW3926QW CMYQ7K4" = {
             mode = "5120x2160@165";
             vrr = "fullscreen";
+            hdr = "auto";
           };
           keybinds = {
             "Alt+bracketleft" = "spawn noctalia msg brightness-down";
@@ -141,6 +142,11 @@ in
     programs.nixcord = {
       enable = true;
       discord.equicord.enable = true;
+    };
+
+    programs.mangohud = {
+      enable = true;
+      settings.toggle_hud = "Home";
     };
 
     home.packages = [
