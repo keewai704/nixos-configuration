@@ -111,7 +111,10 @@ in
         ${lib.getExe applySettings} || true
       '';
     };
-    extraCompatPackages = [ inputs.chaotic.unrestrictedPackages.x86_64-linux.proton-cachyos ];
+    extraCompatPackages = [
+      inputs.chaotic.unrestrictedPackages.x86_64-linux.proton-cachyos
+      pkgs.local.proton-wineland
+    ];
   };
 
   home-manager.users.keewai = {

@@ -65,6 +65,11 @@
       flake = false;
     };
 
+    proton-wineland-release = {
+      url = "file+https://api.github.com/repos/nanomatters/proton-salkim/releases/latest";
+      flake = false;
+    };
+
     amatsukaze-artifacts = {
       url = "file+https://api.github.com/repos/rigaya/Amatsukaze/actions/artifacts?per_page=100";
       flake = false;

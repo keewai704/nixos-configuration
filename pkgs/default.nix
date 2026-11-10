@@ -9,6 +9,7 @@ in
     b25-decoder = final.callPackage ./b25-decoder { upstream = inputs.b25-decoder; };
     tsreplace = final.callPackage ./tsreplace { upstream = inputs.tsreplace; };
     amatsukaze = final.callPackage ./amatsukaze { artifacts = inputs.amatsukaze-artifacts; };
+    proton-wineland = final.callPackage ./proton-wineland { release = inputs.proton-wineland-release; };
     konomitv = final.callPackage ./konomitv {
       upstream = inputs.konomitv;
       thirdparty = inputs.konomitv-thirdparty;

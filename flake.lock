@@ -23,7 +23,7 @@
     "amatsukaze-artifacts": {
       "flake": false,
       "locked": {
-        "narHash": "sha256-v7QbT3jWyRi/Tq1aAkJNQLyTW1uGTq4JXGxyYHOUkhM=",
+        "narHash": "sha256-9iYha+G4fdNDwrTDEOVJTY7DtsYuKv22NDRarjXkE+Q=",
         "type": "file",
         "url": "https://api.github.com/repos/rigaya/Amatsukaze/actions/artifacts?per_page=100"
       },
@@ -1022,6 +1022,18 @@
         "url": "https://github.com/keewai704/plamo-app"
       }
     },
+    "proton-wineland-release": {
+      "flake": false,
+      "locked": {
+        "narHash": "sha256-Zq7HHkmzSkpSukYu0NIbhVoicYldr7tj/W88AT0+VYY=",
+        "type": "file",
+        "url": "https://api.github.com/repos/nanomatters/proton-salkim/releases/latest"
+      },
+      "original": {
+        "type": "file",
+        "url": "https://api.github.com/repos/nanomatters/proton-salkim/releases/latest"
+      }
+    },
     "pyproject-build-systems": {
       "inputs": {
         "nixpkgs": [
@@ -1108,6 +1120,7 @@
         "pi": "pi",
         "pi-blackhole": "pi-blackhole",
         "plamo-app": "plamo-app",
+        "proton-wineland-release": "proton-wineland-release",
         "pyproject-build-systems": "pyproject-build-systems",
         "pyproject-nix": "pyproject-nix",
         "t3code-nightly": "t3code-nightly",
