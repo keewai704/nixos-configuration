@@ -29,6 +29,7 @@ in
       ExecStart = lib.getExe plamoServer;
       DynamicUser = true;
       CacheDirectory = "plamo-server";
+      ExecPaths = "/var/cache/private/plamo-server";
       Restart = "on-failure";
       RestartSec = "5s";
     };
