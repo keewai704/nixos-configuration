@@ -901,16 +901,16 @@
         ]
       },
       "locked": {
-        "lastModified": 1794277813,
+        "lastModified": 1794278592,
         "narHash": "sha256-ft5f30uK9U/Xov7X2mvAhmdNZkpNclraBiJ89SkifOQ=",
-        "ref": "server-clients-rewrite",
-        "rev": "da0db57faa4e7308b70591c80f5283f2214cc06f",
-        "revCount": 11,
+        "ref": "main",
+        "rev": "0ef5f8bf3708a6efef5ae080d2c4d2477aaa5370",
+        "revCount": 12,
         "type": "git",
         "url": "https://github.com/keewai704/plamo-app"
       },
       "original": {
-        "ref": "server-clients-rewrite",
+        "ref": "main",
         "type": "git",
         "url": "https://github.com/keewai704/plamo-app"
       }

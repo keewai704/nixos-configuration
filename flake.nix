@@ -163,7 +163,7 @@
     };
 
     plamo-app = {
-      url = "git+https://github.com/keewai704/plamo-app?ref=server-clients-rewrite";
+      url = "git+https://github.com/keewai704/plamo-app?ref=main";
       inputs.nixpkgs.follows = "nixpkgs";
     };
 

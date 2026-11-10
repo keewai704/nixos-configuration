@@ -7,13 +7,12 @@
 let
   inherit (import ../settings.nix)
     plamoClients
-    plamoIdleSeconds
     plamoPort
     tailnetHostname
     ;
 
   cacheDirectory = "/var/cache/plamo-server";
-  plamoServer = inputs.plamo-app.packages.${pkgs.stdenv.hostPlatform.system}.vulkan;
+  plamoServer = inputs.plamo-app.packages.${pkgs.stdenv.hostPlatform.system}.vllm;
 in
 {
   systemd.services.plamo-server = {
@@ -23,7 +22,6 @@ in
     wantedBy = [ "multi-user.target" ];
     environment = {
       PLAMO_PORT = toString plamoPort;
-      PLAMO_IDLE_SECONDS = toString plamoIdleSeconds;
       PLAMO_MODEL_DIR = "${cacheDirectory}/models";
       HOME = cacheDirectory;
     };

@@ -27,7 +27,6 @@ in
   ];
 
   plamoPort = 8020;
-  plamoIdleSeconds = 600;
   plamoClients = [
     "100.65.216.48"
     "fd7a:115c:a1e0::832c:d831"
