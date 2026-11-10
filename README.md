@@ -214,6 +214,7 @@ NVIDIA ドライバーは 580 系（`nvidiaPackages.legacy_580`、オープン�
 Noctalia のテーマ・壁紙・アプリテンプレートの既定値は [desktop/](hosts/citrus/desktop/) が配り、
 設定GUIでの変更は Noctalia が状態ディレクトリに保存するため、再適用後も手元の変更が保持されます。
 `~/.config/umbriel/config.toml` は [desktop/](hosts/citrus/desktop/) が Home Manager で配り、Umbriel の既定設定に Noctalia のテーマ（`noctalia.toml`）とモニターのモード指定を重ねます。
+フォーカスはポインターに追従し、非アクティブなウィンドウは半透明になって背景のぼかしと [glass.glsl](hosts/citrus/desktop/glass.glsl) の光沢が掛かります。
 外部モニターの輝度は ddcutil 経由で Noctalia から操作し、Alt+[ で下げ、Alt+] で上げます。
 Mod+V で Noctalia のクリップボード履歴を開きます。
 

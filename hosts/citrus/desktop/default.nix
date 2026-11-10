@@ -115,6 +115,21 @@ in
             hdr = "auto";
           };
           layout.scrolling.default_extent_fraction = 0.333;
+          input.focus = {
+            follows_mouse = true;
+            hover_raises = false;
+          };
+          effects.preset.glass = {
+            kind = "window";
+            shader = "${./glass.glsl}";
+          };
+          window_rule = [
+            {
+              match.is_focused = false;
+              opacity = 0.9;
+              window_effect = "glass";
+            }
+          ];
           keybinds = {
             "Alt+bracketleft" = "spawn noctalia msg brightness-down";
             "Alt+bracketright" = "spawn noctalia msg brightness-up";
