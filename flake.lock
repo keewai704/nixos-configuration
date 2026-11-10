@@ -1050,11 +1050,11 @@
     "t3code-nightly": {
       "flake": false,
       "locked": {
-        "lastModified": 1794279612,
-        "narHash": "sha256-EGB/fqicvSUNSNul+C866+ZiiFknpfbl7lz9gVhnl+0=",
+        "lastModified": 1794302689,
+        "narHash": "sha256-EmRv7U1eH+LSZo1UmzVs8RiMf/LUpzv88HgiRrGWyf4=",
         "ref": "master",
-        "rev": "22c5c6cb4c2b28f68c1f3d538a3db2e09e3676d0",
-        "revCount": 518,
+        "rev": "4c710eec81ae1b75c7545b8adef1139b6b12c89a",
+        "revCount": 519,
         "type": "git",
         "url": "https://aur.archlinux.org/t3code-nightly-bin.git"
       },
