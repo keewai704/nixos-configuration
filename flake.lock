@@ -52,11 +52,11 @@
     "bondriver-linuxmirakc": {
       "flake": false,
       "locked": {
-        "lastModified": 1794027728,
-        "narHash": "sha256-NFoujpjB5EALbdMg0NAO+Wzgvz6JWss1GArH4dn/Kac=",
+        "lastModified": 1728897379,
+        "narHash": "sha256-nEWCuA0BRY7qFNASV4jj0BKRpFXIyJzgI1ch1nyoSQ0=",
         "ref": "main",
-        "rev": "bc1d70c7415ea5b49b8384151045b0c826fded5c",
-        "revCount": 15,
+        "rev": "cfbefc6d21dab4009db5f124984c1b720b76d869",
+        "revCount": 14,
         "submodules": true,
         "type": "git",
         "url": "https://github.com/matching/BonDriver_LinuxMirakc"
