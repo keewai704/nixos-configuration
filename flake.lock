@@ -147,11 +147,11 @@
         "nixpkgs": "nixpkgs"
       },
       "locked": {
-        "lastModified": 1794259768,
-        "narHash": "sha256-ejdoyhbc/pbRHPjF6HJVUU1xk4SM7wlqMFmhbLkVPMk=",
+        "lastModified": 1794312199,
+        "narHash": "sha256-cOh/XI2UQxSPgAsqWqvvXE52EOdzQ8eD2fnVJ58yX7Y=",
         "owner": "chaotic-cx",
         "repo": "nyx",
-        "rev": "c68a761e2dddfafd6a0c0a1f91e2db7c0cfb6c44",
+        "rev": "4439da3af73094d2d6cadad9b244ab03e1b3b298",
         "type": "github"
       },
       "original": {
@@ -313,11 +313,11 @@
         ]
       },
       "locked": {
-        "lastModified": 1794230081,
-        "narHash": "sha256-DhKcqLTODYxr/mstPAgink4lTj1a1p3DAce41cfeWm4=",
+        "lastModified": 1794313532,
+        "narHash": "sha256-0dKSs9yz1zJ5Fr1ouWRoc3pCSm16Dq1NiGe0INkDKJc=",
         "owner": "amaanq",
         "repo": "helium-flake",
-        "rev": "72d88147285f4a2dd183460f6d06b1709823749c",
+        "rev": "20568958fc47239af0a4ac7441bc52357ca95f7d",
         "type": "github"
       },
       "original": {
@@ -334,11 +334,11 @@
         ]
       },
       "locked": {
-        "lastModified": 1793979366,
-        "narHash": "sha256-7OoWDsYO9teiPxl0QdlS5lYE20Pue8/5mpscSL32FUA=",
+        "lastModified": 1794278858,
+        "narHash": "sha256-rkrJwLgLSHBnXfgoSKIDa+2LLGdTqynsV3GAxOTGhUU=",
         "owner": "nix-community",
         "repo": "home-manager",
-        "rev": "2c0c1f01521469cf0271180c453c79782d53c2f6",
+        "rev": "82ce401aa350502897c3f2e85f384d61cd3b0b6d",
         "type": "github"
       },
       "original": {
@@ -797,11 +797,11 @@
         "treefmt-nix": "treefmt-nix"
       },
       "locked": {
-        "lastModified": 1794283107,
-        "narHash": "sha256-fgYChaW/eKaraK7DmgWsUh2yjBt14ZoeoVn37W8Dujc=",
+        "lastModified": 1794315797,
+        "narHash": "sha256-s5Z1kkGY3N3h+Y1lXvnJEuGYr57ZRWUULVXWNvOhqvg=",
         "owner": "4evy",
         "repo": "nixcord",
-        "rev": "5421dd748d71389e5caad776e85230f951b29569",
+        "rev": "2b2a979e9b9ed28267c525d1639cfbabec139c23",
         "type": "github"
       },
       "original": {
@@ -970,11 +970,11 @@
         "nixpkgs-x86_64-darwin": "nixpkgs-x86_64-darwin"
       },
       "locked": {
-        "lastModified": 1794267401,
-        "narHash": "sha256-yeTD5gnq2jPZd4Q9BHgTpBNi8N6nulMmpWpDj6xE/+4=",
+        "lastModified": 1794314432,
+        "narHash": "sha256-fZ8xJGJrDW9u8rNKmEER+ApmNV7xGVAbbl/RANdHISc=",
         "owner": "lukasl-dev",
         "repo": "pi.nix",
-        "rev": "fb02ea6dbc8d72185de7b70cf13b4df1c6a633d8",
+        "rev": "5fe160e61fbea8e0c5e2ea1f3ab50a51e0d8cc5c",
         "type": "github"
       },
       "original": {
@@ -1020,18 +1020,6 @@
         "ref": "main",
         "type": "git",
         "url": "https://github.com/keewai704/plamo-app"
-      }
-    },
-    "proton-wineland-release": {
-      "flake": false,
-      "locked": {
-        "narHash": "sha256-Zq7HHkmzSkpSukYu0NIbhVoicYldr7tj/W88AT0+VYY=",
-        "type": "file",
-        "url": "https://api.github.com/repos/nanomatters/proton-salkim/releases/latest"
-      },
-      "original": {
-        "type": "file",
-        "url": "https://api.github.com/repos/nanomatters/proton-salkim/releases/latest"
       }
     },
     "pyproject-build-systems": {
@@ -1120,7 +1108,6 @@
         "pi": "pi",
         "pi-blackhole": "pi-blackhole",
         "plamo-app": "plamo-app",
-        "proton-wineland-release": "proton-wineland-release",
         "pyproject-build-systems": "pyproject-build-systems",
         "pyproject-nix": "pyproject-nix",
         "t3code-nightly": "t3code-nightly",
