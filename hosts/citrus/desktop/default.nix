@@ -121,6 +121,7 @@ in
             vrr = "fullscreen";
             hdr = "auto";
           };
+          layout.scrolling.default_extent_fraction = 0.333;
           keybinds = {
             "Alt+bracketleft" = "spawn noctalia msg brightness-down";
             "Alt+bracketright" = "spawn noctalia msg brightness-up";
