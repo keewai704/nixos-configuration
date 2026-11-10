@@ -198,9 +198,10 @@ AMD Ryzen 7 9800X3D・GeForce RTX 5070 Ti・M.2 2TB のデスクトップPCで�
 `linuxPackages-cachyos-latest`（EEVDF・GCC・非LTO）と、CachyOS パッチ適用済みの ZFS を使います。
 カーネルと ZFS は同 flake のバイナリキャッシュから全出力（out・dev・modules）ごと取得できるため、
 NVIDIA モジュールのビルドや initrd の生成でカーネルを再ビルドしません。
-NVIDIA ドライバーは 580 系（`nvidiaPackages.legacy_580`、オープンカーネルモジュール）に固定します。
-このモジュールだけはキャッシュに存在しないためカーネル更新のたびにローカルビルドされ、
-[graphics.nix](hosts/citrus/graphics.nix) のアサーションが 580 系から外れる変更を検出します。
+NVIDIA ドライバーは nixpkgs より新しい 620.70.06（オープンカーネルモジュール）を
+[graphics.nix](hosts/citrus/graphics.nix) の `nvidiaPackages.mkDriver` でバージョンとハッシュごと固定します。
+`nix flake update` では更新されないため、更新するときはこの定義を書き換えます。
+このモジュールだけはキャッシュに存在しないためカーネル更新のたびにローカルビルドされます。
 
 デスクトップは Umbriel（コンポジター）+ Noctalia v5（シェル）+ Noctalia Greeter（ログイン画面）で、
 いずれも nixpkgs と Home Manager のパッケージ・モジュールから入れます。
@@ -237,7 +238,7 @@ kitty から Claude Code・Codex・Pi がそのまま使えます。インスト
 `nixos-install --flake` で行えます。Steam と同梱チャンネルだけは容量削減のため無効化しています。
 
 ビルドは [GitHub Actions](.github/workflows/citrus-installer.yml)（手動実行）で行い、完成したISOは
-artifact から取得します。カーネル・ZFS は lantian キャッシュから、NVIDIA 580 モジュールは
+artifact から取得します。カーネル・ZFS は lantian キャッシュから、NVIDIA モジュールは
 runner 上でビルドされます。
 
 ## orange（サーバー）
