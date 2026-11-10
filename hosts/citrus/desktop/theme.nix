@@ -7,32 +7,6 @@
 let
   iconTheme = "Papirus-Dark";
 
-  terminalColor = name: "{{colors.terminal_${name}.default.hex}}";
-
-  starshipConfig = pkgs.writeText "starship-noctalia.toml" ''
-    palette = "noctalia"
-
-    ${builtins.readFile ../../../home/keewai/common/shell/starship.toml}
-    [palettes.noctalia]
-    ${lib.concatStrings (
-      lib.mapAttrsToList (name: value: "${name} = \"${value}\"\n") (
-        lib.genAttrs [
-          "black"
-          "red"
-          "green"
-          "yellow"
-          "blue"
-          "magenta"
-          "cyan"
-          "white"
-        ] (name: terminalColor "normal_${name}")
-        // {
-          bright-black = terminalColor "bright_black";
-        }
-      )
-    )}
-  '';
-
   qtctConfig =
     name:
     lib.generators.toINI { } {
@@ -74,10 +48,5 @@ in
     };
 
     programs.nixcord.config.enabledThemes = [ "noctalia.theme.css" ];
-
-    programs.noctalia.settings.theme.templates.user.starship = {
-      input_path = "${starshipConfig}";
-      output_path = "$XDG_CONFIG_HOME/starship.toml";
-    };
   };
 }

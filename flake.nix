@@ -190,8 +190,8 @@
       inputs.nixpkgs.follows = "nixpkgs";
     };
 
-    millennium-theme-spacetheme = {
-      url = "github:SpaceTheme/Steam";
+    millennium-theme-material = {
+      url = "github:kuska1/Material-Theme";
       flake = false;
     };
 

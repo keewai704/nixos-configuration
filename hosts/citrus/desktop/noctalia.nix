@@ -154,6 +154,7 @@ in
               "fcitx5"
               "papirus-icons"
               "pi-agent"
+              "starship"
               "thunar"
             ];
           };

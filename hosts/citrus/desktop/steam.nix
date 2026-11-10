@@ -6,7 +6,15 @@
   ...
 }:
 let
-  theme = "SpaceTheme";
+  theme = "Material-Theme";
+
+  themeColors = "css/main/colors/matugen.css";
+
+  themeSource = pkgs.runCommand "millennium-${theme}" { } ''
+    cp -r ${inputs.millennium-theme-material} $out
+    chmod -R u+w $out
+    rm $out/${themeColors}
+  '';
 
   quickCssWatcher = "quick-css-watcher";
 
@@ -44,33 +52,25 @@ let
     builtins.toJSON {
       general.checkForPluginAndThemeUpdates = false;
       themes.activeTheme = theme;
-      themes.conditions.${theme}.Font = "Arial";
+      themes.conditions.${theme} = {
+        Color = "Matugen";
+        Font = "Default";
+      };
       plugins.enabledPlugins = lib.attrNames plugins;
     }
   );
 
-  color = token: "{{colors.${token}.dark.rgb_csv}}";
+  matugenCss = pkgs.writeText "millennium-matugen.css" ''
+    :root {
+        --theme-color: "Matugen";
+        --hue-rotate: 220deg;
+        <* for name, value in colors *>
+        --md-sys-color-{{name | replace: "_", "-" }}: {{value.default.rgb}};
+        <* endfor *>
+    }
+  '';
 
   quickCss = pkgs.writeText "millennium-quick.css" ''
-    :root {
-    ${
-      lib.concatStrings (
-        lib.mapAttrsToList (name: value: "  --st-${name}: ${value} !important;\n") {
-          accent-1 = color "primary";
-          accent-2 = "{{colors.primary.dark.rgb_csv | lighten 8}}";
-          background = color "surface";
-          color-1 = color "surface_container_low";
-          color-2 = color "surface_container_highest";
-          color-3 = color "surface_container";
-          color-4 = color "surface_container_high";
-          color-5 = color "surface_bright";
-          color-6 = color "surface_bright";
-          red = color "error";
-          red-hover = "{{colors.error.dark.rgb_csv | lighten 8}}";
-        }
-      )
-    }}
-
     :root * {
       font-family: ${
         lib.concatMapStringsSep ", " builtins.toJSON config.fonts.fontconfig.defaultFonts.sansSerif
@@ -115,8 +115,10 @@ in
   };
 
   home-manager.users.keewai = {
-    home.file.".local/share/Steam/millennium/themes/${theme}".source =
-      inputs.millennium-theme-spacetheme;
+    home.file.".local/share/Steam/millennium/themes/${theme}" = {
+      source = themeSource;
+      recursive = true;
+    };
 
     xdg.dataFile = lib.mapAttrs' (name: source: {
       name = "millennium/plugins/${name}";
@@ -126,9 +128,15 @@ in
       };
     }) plugins;
 
-    programs.noctalia.settings.theme.templates.user.millennium = {
-      input_path = "${quickCss}";
-      output_path = "$XDG_CONFIG_HOME/millennium/quick.css";
+    programs.noctalia.settings.theme.templates.user = {
+      millennium = {
+        input_path = "${quickCss}";
+        output_path = "$XDG_CONFIG_HOME/millennium/quick.css";
+      };
+      millennium-colors = {
+        input_path = "${matugenCss}";
+        output_path = "$XDG_DATA_HOME/Steam/millennium/themes/${theme}/${themeColors}";
+      };
     };
   };
 }

@@ -191,11 +191,11 @@
         ]
       },
       "locked": {
-        "lastModified": 1793931226,
-        "narHash": "sha256-V2P3uslOSDm+QeKgfyuqy2Jc0DVpYQs9P7bg7CoeL9U=",
+        "lastModified": 1794348542,
+        "narHash": "sha256-fOS55Ti40BIaqhh+n56vOBslQUT8ymFM352ec9tza3s=",
         "owner": "sadjow",
         "repo": "codex-cli-nix",
-        "rev": "8aba16f50c25eef6f6fa0a1a285ceff309573073",
+        "rev": "8a99245315baee447cd2833f5965222c50d74c9f",
         "type": "github"
       },
       "original": {
@@ -618,19 +618,19 @@
         "type": "github"
       }
     },
-    "millennium-theme-spacetheme": {
+    "millennium-theme-material": {
       "flake": false,
       "locked": {
-        "lastModified": 1794155087,
-        "narHash": "sha256-VSA5WP3b4NYzqfWWh0qT9IK70fKzbk7+pFXPYBiV4a0=",
-        "owner": "SpaceTheme",
-        "repo": "Steam",
-        "rev": "81db49b34f5e6e73b673f80f2818430f9dab4ea7",
+        "lastModified": 1794235244,
+        "narHash": "sha256-/4nzYxoVnEuqy+Nvo7qw7c9zFccPitp1Py2FJiCpOsI=",
+        "owner": "kuska1",
+        "repo": "Material-Theme",
+        "rev": "5e2d66912f446391165e5bcad4efcf33b9212694",
         "type": "github"
       },
       "original": {
-        "owner": "SpaceTheme",
-        "repo": "Steam",
+        "owner": "kuska1",
+        "repo": "Material-Theme",
         "type": "github"
       }
     },
@@ -776,11 +776,11 @@
         "treefmt-nix": "treefmt-nix"
       },
       "locked": {
-        "lastModified": 1794324842,
-        "narHash": "sha256-54MAVlTBxvqEjobNpu6Yu53+psn0cOJ/NnMdT8Ws9h8=",
+        "lastModified": 1794341718,
+        "narHash": "sha256-9bj63AR1pMyDiIvG7xUmoaWaen++SFAfoNZ2PWksnOU=",
         "owner": "4evy",
         "repo": "nixcord",
-        "rev": "803504cff18fad929f6d72612e0b8b23de6d9c02",
+        "rev": "724ee63395f8ada6767a67ef737a2b3336527307",
         "type": "github"
       },
       "original": {
@@ -1074,7 +1074,7 @@
         "millennium-plugin-playercount-badge": "millennium-plugin-playercount-badge",
         "millennium-plugin-protondb": "millennium-plugin-protondb",
         "millennium-plugin-size-on-disk": "millennium-plugin-size-on-disk",
-        "millennium-theme-spacetheme": "millennium-theme-spacetheme",
+        "millennium-theme-material": "millennium-theme-material",
         "mirakc": "mirakc",
         "mirakc-arib": "mirakc-arib",
         "mirakc-swagger-ui": "mirakc-swagger-ui",
@@ -1143,11 +1143,11 @@
     "t3code-nightly": {
       "flake": false,
       "locked": {
-        "lastModified": 1794325711,
-        "narHash": "sha256-UyJJkGDUxoEfaotkqTqfGIBSwKK2CQVRXhkUiEoKRgY=",
+        "lastModified": 1794349494,
+        "narHash": "sha256-5H5Egw0HhVXaH5TY3FL3XT6nN43X/D0l/QZ/fbEnQ88=",
         "ref": "master",
-        "rev": "c21ab08368042a34ae454fe7e82dc20314d90fa4",
-        "revCount": 520,
+        "rev": "400ad3590ade19c82f72b002885c9295e1dcca3f",
+        "revCount": 521,
         "type": "git",
         "url": "https://aur.archlinux.org/t3code-nightly-bin.git"
       },
@@ -1283,11 +1283,11 @@
     "yomiyasu": {
       "flake": false,
       "locked": {
-        "lastModified": 1793787168,
-        "narHash": "sha256-0ozlVPllwcxnKIn/o9Vs++3Mmr/F1N7068lnPGBua8U=",
+        "lastModified": 1794341672,
+        "narHash": "sha256-6+CiX3zd2iMUNm6ZlMJ/UVbAAMnm46GpW8aig/SagLg=",
         "ref": "main",
-        "rev": "8394e099486aaa2e28cf89992e46f5ebe5ed839d",
-        "revCount": 68,
+        "rev": "7b212ff2f037953b8c233ae315e5c08e7fc36da6",
+        "revCount": 69,
         "type": "git",
         "url": "https://github.com/nanaism/yomiyasu"
       },
