@@ -4,6 +4,7 @@
   fetchurl,
   autoPatchelfHook,
   makeWrapper,
+  patchelfUnstable,
   unzip,
   artifacts,
 }:
@@ -40,6 +41,7 @@ stdenv.mkDerivation {
   nativeBuildInputs = [
     autoPatchelfHook
     makeWrapper
+    patchelfUnstable
     unzip
   ];
   buildInputs = [ stdenv.cc.cc.lib ];
