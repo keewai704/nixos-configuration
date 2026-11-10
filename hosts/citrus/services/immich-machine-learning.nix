@@ -22,6 +22,7 @@ in
       HOME = cacheDirectory;
       HF_HUB_DISABLE_XET = "1";
       MACHINE_LEARNING_MODEL_REVISION = "v2";
+      MACHINE_LEARNING_REQUEST_THREADS = "3";
       MACHINE_LEARNING_PRELOAD__CLIP__TEXTUAL = machineLearningModels.clip;
       MACHINE_LEARNING_PRELOAD__CLIP__VISUAL = machineLearningModels.clip;
       MACHINE_LEARNING_PRELOAD__FACIAL_RECOGNITION__DETECTION = machineLearningModels.facialRecognition;
