@@ -157,11 +157,6 @@
       flake = false;
     };
 
-    iphone-control = {
-      url = "git+https://github.com/keewai704/iphone-control?ref=main";
-      inputs.nixpkgs.follows = "nixpkgs";
-    };
-
     plamo-app = {
       url = "git+https://github.com/keewai704/plamo-app?ref=main";
       inputs.nixpkgs.follows = "nixpkgs";

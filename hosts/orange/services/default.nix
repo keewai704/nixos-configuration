@@ -1,7 +1,6 @@
 { lib, ... }:
 {
   imports = [
-    ./apple-device-usb.nix
     ./citrus-wake
     ./health-monitor
     ./immich

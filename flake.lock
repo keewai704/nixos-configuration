@@ -407,27 +407,6 @@
         "url": "https://github.com/MaryCache/imozuru"
       }
     },
-    "iphone-control": {
-      "inputs": {
-        "nixpkgs": [
-          "nixpkgs"
-        ]
-      },
-      "locked": {
-        "lastModified": 1792898983,
-        "narHash": "sha256-aIHvSLyuM8jzB1xRQz1z6nb2Rz+9M+AkUzQ6c+Fua6I=",
-        "ref": "main",
-        "rev": "6c171f7138da5a395c5d71a14a9f4573388230e6",
-        "revCount": 2,
-        "type": "git",
-        "url": "https://github.com/keewai704/iphone-control"
-      },
-      "original": {
-        "ref": "main",
-        "type": "git",
-        "url": "https://github.com/keewai704/iphone-control"
-      }
-    },
     "jail-nix": {
       "locked": {
         "lastModified": 1776230864,
@@ -1084,7 +1063,6 @@
         "helium": "helium",
         "home-manager": "home-manager_2",
         "imozuru": "imozuru",
-        "iphone-control": "iphone-control",
         "konomitv": "konomitv",
         "konomitv-thirdparty": "konomitv-thirdparty",
         "mamba-ssm": "mamba-ssm",

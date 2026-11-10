@@ -154,16 +154,9 @@ Pi は [pi.nix](https://github.com/lukasl-dev/pi.nix) の Home Manager モジュ
 | `ponytail` | 実装を単純に保つ（KISS / YAGNI） |
 | `superpowers` | 設計・計画・デバッグ・レビューなど大きめの作業の進め方 |
 | `add-nix-skill` | このリポジトリでスキルを追加・修正するとき |
-| `apple-device-usb` | USB や Wi-Fi 経由で iPhone・iPad を操作 |
 | `faster-whisper` | 音声・動画を RE-USE でノイズ除去してから GPU で文字起こし（citrus のみ） |
 | `yomiyasu` | 成果物の日本語文書を推敲（共通指示で文書出力時に使用、通常の応答では不使用） |
 | `imozuru` | 知らない分野を原文まで芋づる式に調べて保存 |
-
-端末操作 GUI と `apple-device-usb` の実装は
-[iphone-control](https://github.com/keewai704/iphone-control) で管理します。
-このリポジトリには flake 入力、導入設定、スキルの手順を置きます。
-[apple-device-usb.nix](hosts/orange/services/apple-device-usb.nix) がシステム側で usbmuxd を有効にし、
-nixpkgs の usbmuxd モジュールを通じて udev の権限設定も導入します。
 
 リポジトリ専用の検証手順は [.agents/skills/nixos-validation](.agents/skills/nixos-validation/SKILL.md) にあります。
 

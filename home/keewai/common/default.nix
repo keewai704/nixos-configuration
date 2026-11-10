@@ -1,6 +1,5 @@
 {
   imports = [
-    ./apple-device-usb.nix
     ./coding-agents
     ./git.nix
     ./nix
