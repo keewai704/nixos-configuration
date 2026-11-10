@@ -227,7 +227,7 @@ Steam は [Millennium](https://docs.steambrew.app/) 入りで、[steam.nix](host
 
 M.2 は GPT の3パーティション構成です。[hardware-configuration.nix](hosts/citrus/hardware-configuration.nix) が
 FAT32 の ESP（4GiB、ラベル `CITRUS-ESP`、`/boot`）、ZFS ルート（残り全部、プール `citrus`、データセット `root`）、
-NTFS のデータ領域（1TiB、ラベル `Data`、`/mnt/data`）をマウントします。
+XFS のデータ領域（1TiB、ラベル `Data`、`/mnt/data`）をマウントします。
 
 ### インストーラーISO
 

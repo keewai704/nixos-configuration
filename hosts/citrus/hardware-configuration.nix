@@ -34,13 +34,10 @@
 
     "/mnt/data" = {
       device = "/dev/disk/by-label/Data";
-      fsType = "ntfs3";
+      fsType = "xfs";
       options = [
         "nofail"
         "noatime"
-        "uid=1000"
-        "gid=100"
-        "umask=022"
       ];
     };
   };
