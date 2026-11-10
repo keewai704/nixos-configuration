@@ -901,11 +901,11 @@
         ]
       },
       "locked": {
-        "lastModified": 1794266796,
-        "narHash": "sha256-D9BiQpH3BkEfAfubhaFpvbYzMCv/P2lK0DEK+A9OuHg=",
+        "lastModified": 1794269197,
+        "narHash": "sha256-iVg78v2o3dzufDUZF9jlVUF/plqWugrQ+WdJRzzZjZs=",
         "ref": "server-clients-rewrite",
-        "rev": "bdf864738fd8b319bfc3d0644d23e9e1e068f763",
-        "revCount": 7,
+        "rev": "e0bb1d7f1af23e3c4d061c115e1639c054698a05",
+        "revCount": 10,
         "type": "git",
         "url": "https://github.com/keewai704/plamo-app"
       },
@@ -1050,11 +1050,11 @@
     "t3code-nightly": {
       "flake": false,
       "locked": {
-        "lastModified": 1794256137,
-        "narHash": "sha256-8LNlh5LYMgBnnmVSSkWznK9ry62anuJkuPssqIGE2VI=",
+        "lastModified": 1794269315,
+        "narHash": "sha256-fL5lRQnlLTw7qHAx95lfhU/m/zrHT9ejasnJqXEAyUE=",
         "ref": "master",
-        "rev": "1b2122ba0c5aeab0f807eea166688ae2945d3d42",
-        "revCount": 514,
+        "rev": "1f35f4bed8cef6883d14d5a5b42e56af9f408261",
+        "revCount": 515,
         "type": "git",
         "url": "https://aur.archlinux.org/t3code-nightly-bin.git"
       },
