@@ -15,6 +15,7 @@ let
     tailnetHostname
     tailnetOrigin
     ;
+  inherit (import ../../../citrus/settings.nix) machineLearningModels;
   mkProxyLocation = import ../web/proxy.nix;
   postgresqlPackage = pkgs.postgresql_17;
   importDependencies = [
@@ -95,6 +96,9 @@ in
         machineLearning = {
           urls = [ "http://127.0.0.1:${toString citrusWakePort}" ];
           availabilityChecks.enabled = false;
+          clip.modelName = machineLearningModels.clip;
+          facialRecognition.modelName = machineLearningModels.facialRecognition;
+          ocr.modelName = machineLearningModels.ocr;
         };
         server.externalDomain = tailnetOrigin;
       };

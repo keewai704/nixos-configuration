@@ -3,6 +3,7 @@ let
   inherit (import ../settings.nix)
     immichMachineLearningClients
     immichMachineLearningPort
+    machineLearningModels
     tailnetHostname
     ;
 
@@ -19,6 +20,14 @@ in
       MACHINE_LEARNING_CACHE_FOLDER = cacheDirectory;
       XDG_CACHE_HOME = cacheDirectory;
       HOME = cacheDirectory;
+      HF_HUB_DISABLE_XET = "1";
+      MACHINE_LEARNING_MODEL_REVISION = "v2";
+      MACHINE_LEARNING_PRELOAD__CLIP__TEXTUAL = machineLearningModels.clip;
+      MACHINE_LEARNING_PRELOAD__CLIP__VISUAL = machineLearningModels.clip;
+      MACHINE_LEARNING_PRELOAD__FACIAL_RECOGNITION__DETECTION = machineLearningModels.facialRecognition;
+      MACHINE_LEARNING_PRELOAD__FACIAL_RECOGNITION__RECOGNITION = machineLearningModels.facialRecognition;
+      MACHINE_LEARNING_PRELOAD__OCR__DETECTION = machineLearningModels.ocr;
+      MACHINE_LEARNING_PRELOAD__OCR__RECOGNITION = machineLearningModels.ocr;
     };
     serviceConfig = {
       ExecStart = lib.getExe cudaPkgs.immich-machine-learning;

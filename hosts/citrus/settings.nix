@@ -42,6 +42,11 @@ in
   ];
 
   immichMachineLearningPort = 3003;
+  machineLearningModels = {
+    clip = "XLM-Roberta-Large-ViT-H-14__frozen_laion5b_s13b_b90k";
+    facialRecognition = "antelopev2";
+    ocr = "PP-OCRv6_medium";
+  };
   immichMachineLearningClients = [
     "100.85.28.79"
     "fd7a:115c:a1e0::953a:1c50"
