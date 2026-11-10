@@ -227,7 +227,7 @@ citrus が応答しないときは citrus-wake が Wake-on-LAN で起こして�
 日本語入力は fcitx5 と [Meltype](https://github.com/aster-void/nix-meltype) です。
 Discord は [Nixcord](https://github.com/4evy/nixcord) 経由の Equicord 入りで導入し、Bitwarden はデスクトップ版を入れます。
 ブラウザーは Helium（Widevine 対応）を [helium-flake](https://github.com/amaanq/helium-flake) から、
-Steam は [Millennium](https://docs.steambrew.app/) 入りで、Proton-CachyOS を互換ツールとして導入し、`ntsync` モジュールと GameMode を有効にします。GameMode を使うゲームには起動オプション `gamemoderun %command%` を設定します。Spotify と kitty も入っています。
+Steam は [Millennium](https://docs.steambrew.app/) 入りで、Proton-CachyOS を互換ツールとして導入し、`ntsync` モジュールと GameMode を有効にします。GameMode を使うゲームには起動オプション `gamemoderun %command%` を設定します。GameMode の間は `gpu-workloads.target` の GPU サービス（Immich の機械学習、PLaMo、STT）を止めて GPU を空け、終了すると起動し直します。Spotify と kitty も入っています。
 
 M.2 は GPT の3パーティション構成です。[hardware-configuration.nix](hosts/citrus/hardware-configuration.nix) が
 FAT32 の ESP（4GiB、ラベル `CITRUS-ESP`、`/boot`）、ZFS ルート（残り全部、プール `citrus`、データセット `root`）、

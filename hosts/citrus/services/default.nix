@@ -1,5 +1,6 @@
 {
   imports = [
+    ./gpu-workloads.nix
     ./immich-machine-learning.nix
     ./plamo-server.nix
     ./stt-server
