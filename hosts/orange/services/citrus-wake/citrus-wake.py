@@ -1,7 +1,6 @@
 import http.client
 import os
 import socket
-import time
 import urllib.error
 import urllib.request
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
@@ -10,12 +9,9 @@ PORT = int(os.environ["CITRUS_WAKE_PORT"])
 MAC = bytes.fromhex(os.environ["CITRUS_MAC"].replace(":", ""))
 BROADCAST = os.environ["CITRUS_LAN_BROADCAST"]
 UPSTREAM = os.environ["CITRUS_MACHINE_LEARNING_URL"].rstrip("/")
-WAKE_TIMEOUT = 240
-RESEND_INTERVAL = 10
-POLL_INTERVAL = 2
-PING_TIMEOUT = 3
+ALIVE_URL = os.environ["CITRUS_ALIVE_URL"]
+ALIVE_TIMEOUT = 3
 PREDICT_TIMEOUT = 280
-UNAVAILABLE = {502, 503, 504}
 FAILURES = (OSError, http.client.HTTPException)
 
 
@@ -27,23 +23,10 @@ def send_magic_packet():
 
 def reachable():
     try:
-        with urllib.request.urlopen(f"{UPSTREAM}/ping", timeout=PING_TIMEOUT) as response:
-            return response.status == 200
+        with urllib.request.urlopen(ALIVE_URL, timeout=ALIVE_TIMEOUT) as response:
+            return response.status == 204
     except FAILURES:
         return False
-
-
-def wake_and_wait():
-    deadline = time.monotonic() + WAKE_TIMEOUT
-    next_packet = 0.0
-    while time.monotonic() < deadline:
-        if reachable():
-            return True
-        if time.monotonic() >= next_packet:
-            send_magic_packet()
-            next_packet = time.monotonic() + RESEND_INTERVAL
-        time.sleep(POLL_INTERVAL)
-    return False
 
 
 def predict(body, content_type):
@@ -86,12 +69,10 @@ class Handler(BaseHTTPRequestHandler):
             self.respond(404, "text/plain", b"not found\n")
             return
         content_type = self.headers.get("Content-Type", "application/octet-stream")
+        if not reachable():
+            self.respond(503, "text/plain", b"citrus is not awake\n")
+            return
         result = predict(body, content_type)
-        if result is None or result[0] in UNAVAILABLE:
-            if not wake_and_wait():
-                self.respond(503, "text/plain", b"citrus did not wake\n")
-                return
-            result = predict(body, content_type)
         if result is None:
             self.respond(502, "text/plain", b"citrus did not answer\n")
         else:

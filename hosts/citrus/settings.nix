@@ -41,6 +41,7 @@ in
   ];
 
   immichMachineLearningPort = 3003;
+  immichMachineLearningBackendPort = 3004;
   immichMachineLearningClients = [
     "100.85.28.79"
     "fd7a:115c:a1e0::953a:1c50"

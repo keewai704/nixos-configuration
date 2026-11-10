@@ -12,14 +12,27 @@ in
   systemd.services =
     lib.genAttrs
       [
-        "immich-machine-learning"
         "plamo-server"
         "stt-server"
       ]
       (_: {
         partOf = [ target ];
         wantedBy = [ target ];
-      });
+      })
+    //
+      lib.genAttrs
+        [
+          "immich-machine-learning"
+          "immich-machine-learning-proxy"
+        ]
+        (_: {
+          partOf = [ target ];
+        });
+
+  systemd.sockets.immich-machine-learning-proxy = {
+    partOf = [ target ];
+    wantedBy = [ target ];
+  };
 
   security.polkit.extraConfig = ''
     polkit.addRule(function(action, subject) {

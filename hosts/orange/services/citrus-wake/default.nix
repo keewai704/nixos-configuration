@@ -36,6 +36,7 @@ in
       CITRUS_MAC = citrus.lanMac;
       CITRUS_LAN_BROADCAST = lanBroadcast;
       CITRUS_MACHINE_LEARNING_URL = "${citrus.tailnetOrigin}/immich-machine-learning";
+      CITRUS_ALIVE_URL = "${citrus.tailnetOrigin}/immich-machine-learning-control/alive";
       SSL_CERT_FILE = "/etc/ssl/certs/ca-certificates.crt";
     };
     serviceConfig = {

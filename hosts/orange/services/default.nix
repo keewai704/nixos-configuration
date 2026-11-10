@@ -5,6 +5,7 @@
     ./citrus-wake
     ./health-monitor
     ./immich
+    ./immich-ml-schedule
     ./local-backup
     ./maintenance.nix
     ./minecraft.nix
