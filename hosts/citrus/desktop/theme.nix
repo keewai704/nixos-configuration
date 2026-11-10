@@ -73,6 +73,8 @@ in
       "qt6ct/qt6ct.conf".text = qtctConfig "qt6ct";
     };
 
+    programs.nixcord.config.enabledThemes = [ "noctalia.theme.css" ];
+
     programs.noctalia.settings.theme = {
       mode = "dark";
       source = "builtin";
@@ -91,6 +93,7 @@ in
           "chromium-based"
           "claude-code"
           "codex"
+          "discord"
           "fcitx5"
           "papirus-icons"
           "pi-agent"
