@@ -138,15 +138,19 @@ in
               repeat = false;
             };
             "Print" = {
-              action = "spawn noctalia msg screenshot-region";
+              action = "spawn noctalia msg screenshot-fullscreen all";
               repeat = false;
             };
-            "Shift+Print" = {
+            "Alt+Print" = {
               action = "spawn noctalia msg screenshot-window";
               repeat = false;
             };
-            "Ctrl+Print" = {
-              action = "spawn noctalia msg screenshot-fullscreen";
+            "Alt+Sys_Req" = {
+              action = "spawn noctalia msg screenshot-window";
+              repeat = false;
+            };
+            "Mod+Shift+S" = {
+              action = "spawn noctalia msg screenshot-region";
               repeat = false;
             };
           };
