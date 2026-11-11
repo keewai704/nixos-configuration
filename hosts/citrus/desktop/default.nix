@@ -186,6 +186,7 @@ in
       pkgs.bitwarden-desktop
       pkgs.ddcutil
       pkgs.kitty
+      pkgs.spotify
       pkgs.wl-clipboard
       helium
     ];
