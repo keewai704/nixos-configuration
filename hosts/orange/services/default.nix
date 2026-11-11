@@ -3,7 +3,7 @@
   imports = [
     ./citrus-wake
     ./health-monitor
-    ./immich
+    ./immich.nix
     ./immich-ml-schedule
     ./local-backup
     ./maintenance.nix
@@ -15,7 +15,7 @@
     ./t3code.nix
     ./tailscale-exit-node.nix
     ./tv
-    ./vaultwarden
+    ./vaultwarden.nix
     ./web.nix
   ];
 

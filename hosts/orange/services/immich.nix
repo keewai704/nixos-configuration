@@ -1,13 +1,7 @@
-{
-  fillTemplate,
-  lib,
-  pkgs,
-  ...
-}:
+{ lib, pkgs, ... }:
 
 let
-  inherit (import ../../settings.nix)
-    immichBackupRoot
+  inherit (import ../settings.nix)
     immichMediaRoot
     immichPort
     citrusWakePort
@@ -15,35 +9,11 @@ let
     tailnetHostname
     tailnetOrigin
     ;
-  mkProxyLocation = import ../../../../modules/tailnet-web/proxy.nix;
-  postgresqlPackage = pkgs.postgresql_17;
-  importDependencies = [
-    "media-storage-prepare.service"
-    storageMountUnit
-    "postgresql-setup.service"
-  ];
+  mkProxyLocation = import ../../../modules/tailnet-web/proxy.nix;
   serverDependencies = [
     "media-storage-prepare.service"
     storageMountUnit
-    "immich-import-existing-database.service"
   ];
-
-  scriptReplacements = {
-    "@utilLinux@" = toString pkgs.util-linux;
-    "@postgresqlPackage@" = toString postgresqlPackage;
-    "@immichBackupRootArg@" = lib.escapeShellArg immichBackupRoot;
-    "@immichBackupRoot@" = immichBackupRoot;
-  };
-
-  importImmichDatabase = pkgs.writeShellApplication {
-    name = "import-existing-immich-database";
-    runtimeInputs = [
-      pkgs.coreutils
-      pkgs.findutils
-      pkgs.gzip
-    ];
-    text = fillTemplate ./import-immich-database.sh scriptReplacements;
-  };
 in
 {
   orange.healthMonitor = {
@@ -106,7 +76,7 @@ in
       };
     };
 
-    postgresql.package = postgresqlPackage;
+    postgresql.package = pkgs.postgresql_17;
   };
 
   systemd.tmpfiles.settings.immich.${immichMediaRoot}.e = {
@@ -119,22 +89,9 @@ in
     proxy_request_buffering off;
   '';
 
-  systemd.services = {
-    immich-import-existing-database = {
-      description = "Import the existing Immich PostgreSQL backup once";
-      requires = importDependencies;
-      after = importDependencies;
-      before = [ "immich-server.service" ];
-      serviceConfig = {
-        Type = "oneshot";
-        ExecStart = lib.getExe importImmichDatabase;
-      };
-    };
-
-    immich-server = {
-      requires = serverDependencies;
-      after = serverDependencies;
-      serviceConfig.ReadWritePaths = [ immichMediaRoot ];
-    };
+  systemd.services.immich-server = {
+    requires = serverDependencies;
+    after = serverDependencies;
+    serviceConfig.ReadWritePaths = [ immichMediaRoot ];
   };
 }
