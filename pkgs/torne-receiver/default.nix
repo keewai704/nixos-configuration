@@ -15,21 +15,14 @@ stdenv.mkDerivation {
     libusb1
     pcsclite
   ];
-  postPatch = ''
-    cp ${./receiver.c} receiver.c
-    cp ${./card-socket.h} card-socket.h
-    cp ${./receiver-client.h} receiver-client.h
-    cp ${./stream.c} stream.c
-    cp ${./stream.h} stream.h
-  '';
   buildPhase = ''
     runHook preBuild
     $CC -std=gnu11 -O2 -Wall -Wextra -Wno-unused-parameter -pthread \
-      -I. -Idriver $(pkg-config --cflags libusb-1.0) receiver.c stream.c \
+      -Ireceiver -Idriver $(pkg-config --cflags libusb-1.0) receiver/receiver.c receiver/stream.c \
       driver/torne_bridge.c driver/torne_dib.c driver/torne_card.c \
       $(pkg-config --libs libusb-1.0) -o torne-receiver
     $CC -std=gnu11 -O2 -Wall -Wextra -Wno-unused-parameter -fPIC -shared -pthread \
-      -I. -Idriver $(pkg-config --cflags libpcsclite) ifd/ifd_torne.c -o libifd_torne.so
+      -Ireceiver -Idriver $(pkg-config --cflags libpcsclite) ifd/ifd_torne.c -o libifd_torne.so
     runHook postBuild
   '';
   installPhase = ''

@@ -317,7 +317,7 @@ KonomiTV は `master`、対応するバイナリは上流の nightly 配布を�
 Amatsukaze は公式 CI の master ビルドを `amatsukaze-artifacts` 入力から選びます。
 配布物の情報と取得したアーカイブはシステム世代で保持し、GC や CI の保存期限後の再評価に備えます。
 更新は `nix flake update` と通常の Orange への適用で行い、ソースの revision と配布物の hash は `flake.lock` に残します。
-Rust と Python の依存は取得元のロックから構築します。専用ドライバーは GPL-2.0 の torne_drv の中核を基に C で実装し、coax の実行・ビルド依存はありません。
+Rust と Python の依存は取得元のロックから構築します。受信デーモンと PC/SC ドライバーは GPL-2.0 の torne_drv のソースからビルドし、coax の実行・ビルド依存はありません。
 
 ## パッケージと入力の方針
 
