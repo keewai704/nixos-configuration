@@ -133,8 +133,6 @@ check_failed_units() {
         clear_alert "failed-unit-$unit"
       fi
     done <"$previous_units"
-  else
-    clear_alert "failed-units"
   fi
 
   while IFS= read -r unit; do
