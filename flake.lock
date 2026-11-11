@@ -1160,11 +1160,11 @@
     "torne-driver": {
       "flake": false,
       "locked": {
-        "lastModified": 1794369901,
-        "narHash": "sha256-jqXEnydHqwLP+LfZAsthzRC6fvnBxYQtZmpOa9h6zlw=",
+        "lastModified": 1794389009,
+        "narHash": "sha256-o8MjI2qfjZlqVD/wpny679hRw25Zn2eYcA3Zu0drOQU=",
         "ref": "main",
-        "rev": "4d00395f034bf763b1707b2ff25a46637cb2586d",
-        "revCount": 17,
+        "rev": "c6164feffb5678b2bb77176c32165956d3856bbe",
+        "revCount": 18,
         "type": "git",
         "url": "https://github.com/keewai704/torne_drv"
       },
