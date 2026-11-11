@@ -1,5 +1,6 @@
 {
   config,
+  cudaPkgs,
   lib,
   pkgs,
   ...
@@ -28,6 +29,7 @@ in
 {
   services.sunshine = {
     enable = true;
+    package = cudaPkgs.sunshine;
     openFirewall = true;
     settings = {
       capture = "wlr";
