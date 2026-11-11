@@ -13,6 +13,7 @@ in
     ./noctalia.nix
     ./spotifast.nix
     ./steam.nix
+    ./sunshine
     ./theme.nix
   ];
 
