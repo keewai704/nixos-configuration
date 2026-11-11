@@ -32,6 +32,8 @@ let
   );
 in
 {
+  networking.firewall.allowedUDPPorts = [ 5353 ];
+
   home-manager.users.keewai = {
     home.packages = [ pkgs.spotifast ];
 
