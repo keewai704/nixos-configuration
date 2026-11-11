@@ -90,6 +90,9 @@ in
 
   programs.dconf.enable = true;
 
+  services.gnome.gnome-keyring.enable = true;
+  security.pam.services.greetd.enableGnomeKeyring = true;
+
   programs.thunar.enable = true;
   programs.xfconf.enable = true;
   services.gvfs.enable = true;
