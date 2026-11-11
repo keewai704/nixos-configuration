@@ -6,6 +6,11 @@
 }:
 let
   cfg = config.services.searxng;
+  blockedEngines = [
+    "duckduckgo"
+    "google"
+    "qwant"
+  ];
   settings = (pkgs.formats.yaml { }).generate "searxng-settings.yml" {
     use_default_settings = true;
     server = {
@@ -21,29 +26,17 @@ let
     engines = map (name: {
       inherit name;
       disabled = true;
-    }) cfg.disabledEngines;
+    }) blockedEngines;
   };
 in
 {
-  options.services.searxng = {
-    enable = lib.mkEnableOption "SearXNG as the coding agents' loopback web search";
-    port = lib.mkOption {
-      type = lib.types.port;
-      default = 8888;
-      description = "Loopback port of the search server.";
-    };
-    disabledEngines = lib.mkOption {
-      type = lib.types.listOf lib.types.str;
-      default = [
-        "duckduckgo"
-        "google"
-        "qwant"
-      ];
-      description = "Engines that this host's network always gets blocked or timed out by.";
-    };
+  options.services.searxng.port = lib.mkOption {
+    type = lib.types.port;
+    default = 8888;
+    description = "Loopback port of the coding agents' web search server.";
   };
 
-  config = lib.mkIf cfg.enable {
+  config = {
     systemd.user.services.searxng = {
       Unit = {
         Description = "SearXNG metasearch server";

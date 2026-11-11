@@ -8,8 +8,5 @@ in
     loopbackPorts = [ searxngPort ];
   };
 
-  home-manager.users.keewai.services.searxng = {
-    enable = true;
-    port = searxngPort;
-  };
+  home-manager.users.keewai.services.searxng.port = searxngPort;
 }

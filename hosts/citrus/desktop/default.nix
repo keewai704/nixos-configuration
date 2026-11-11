@@ -98,8 +98,6 @@ in
   home-manager.users.keewai = {
     imports = [ inputs.nixcord.homeModules.nixcord ];
 
-    services.searxng.enable = true;
-
     xdg.configFile."umbriel/config.toml".source =
       (pkgs.formats.toml { }).generate "umbriel-config.toml"
         {
