@@ -55,11 +55,6 @@ let
         RecMode = 1;
         ServiceMode = 49;
       };
-      "BonDriver_coax.so" = {
-        Count = 0;
-        GetEpg = 0;
-        EPGCount = 0;
-      };
       "BonDriver_LinuxMirakc.so" = {
         Count = tunerCount;
         GetEpg = 1;
