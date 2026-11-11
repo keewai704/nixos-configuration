@@ -182,7 +182,7 @@ in
       pkgs.bitwarden-desktop
       pkgs.ddcutil
       pkgs.kitty
-      pkgs.spotify
+      pkgs.spotifast
       pkgs.wl-clipboard
       helium
     ];
