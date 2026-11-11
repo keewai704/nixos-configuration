@@ -247,8 +247,8 @@ runner 上でビルドされます。
 
 | サービス | URL・用途 | 設定 |
 | --- | --- | --- |
-| Immich | `https://orange.tail1e65cd.ts.net/` | [immich/](hosts/orange/services/immich/) |
-| Vaultwarden | `https://orange.tail1e65cd.ts.net/vault/` | [vaultwarden/](hosts/orange/services/vaultwarden/) |
+| Immich | `https://orange.tail1e65cd.ts.net/` | [immich.nix](hosts/orange/services/immich.nix) |
+| Vaultwarden | `https://orange.tail1e65cd.ts.net/vault/` | [vaultwarden.nix](hosts/orange/services/vaultwarden.nix) |
 | T3 Code | `https://orange.tail1e65cd.ts.net/t3/` | [t3code.nix](hosts/orange/services/t3code.nix) |
 | KonomiTV | `https://orange.tail1e65cd.ts.net/tv/` | [tv/](hosts/orange/services/tv/) |
 | citrus の起動 | `https://orange.tail1e65cd.ts.net/wake/citrus`（muse からのみ） | [citrus-wake/](hosts/orange/services/citrus-wake/) |
@@ -262,7 +262,7 @@ runner 上でビルドされます。
 - サービスの追加は [services/default.nix](hosts/orange/services/default.nix) に明示し、公開ルートは各サービスの設定に置きます。
   プロキシは [proxy.nix](modules/tailnet-web/proxy.nix) を使い、ホスト・HTTPS・クライアントIPの転送を揃えます。
 - Intel GPU と QSV のドライバーは [graphics.nix](hosts/orange/graphics.nix) が管理し、Immich とテレビから利用します。
-- 起動の順番は「HDD のマウント → 共有ディレクトリの準備 → 既存データの取り込み → アプリ」です（[storage.nix](hosts/orange/services/storage.nix)）。
+- 起動の順番は「HDD のマウント → 共有ディレクトリの準備 → アプリ」です（[storage.nix](hosts/orange/services/storage.nix)）。
 - [local-backup](hosts/orange/services/local-backup/) がバックアップ、[health-monitor](hosts/orange/services/health-monitor/) が
   15 分ごとに異常を Discord へ通知、[smart-tests](hosts/orange/services/smart-tests.nix) がディスクの診断、
   [maintenance](hosts/orange/services/maintenance.nix) がログの掃除・TRIM・Nix ストアの保守を受け持ちます。
@@ -297,8 +297,7 @@ mirakc は [settings.nix](hosts/orange/services/tv/settings.nix) で指定した
 携帯回線の低遅延モードは初回適用時に有効化し、その後の手動変更は維持します。
 専用ドライバーは libusb で直接制御し、初期化と校正を機器ごとの常駐プロセスで保持します。機器とUSB接続位置の対応は [tuners.nix](hosts/orange/services/tv/tuners.nix)、放送局は [channels.nix](hosts/orange/services/tv/channels.nix) で管理します。レジスター書き込みは USB コマンドへまとめ、受信に成功した周波数の TMCC を再利用します。フルセグと TMCC のロックに失敗した場合は自動探索へ戻し、放送局IDを指定した受信では、PAT の整合性とIDを確認してから配信します。受信要求は機器ごとに排他制御し、切断済みの要求は選局せず破棄します。切断時にはUSB転送と待機を解除します。
 [px4_drv本家](https://github.com/nns779/px4_drv) の転送・バッファ設計を参考に、8本の非同期USB転送と受信バッファでUSB受信とアプリへの送信を分離しています。
-直接利用するLinuxネイティブのBonDriver2は `/var/lib/edcb/lib/BonDriver_Torne0.so` と `BonDriver_Torne1.so` です。`CreateBonDriver` と EDCB の `CreateBonStruct` を公開し、選局、信号レベル、TS取得・待機・消去、開閉に対応します。同名の `.so.ini` で制御ソケットと放送局一覧を指定します。設定を省く場合は1台目のソケットとUHF 13〜62chを使います。
-自動録画では `BonDriver_LinuxMirakc.so` の2枠を利用し、KonomiTVとの共有を維持します。直接BonDriverとmirakcは同一機器を同時には占有できません。直接利用するアプリは `tv` グループで実行してください。`keewai` のグループ追加を既存ログインへ反映するには再ログインが必要です。
+自動録画では `BonDriver_LinuxMirakc.so` の2枠を利用し、KonomiTVとの共有を維持します。
 NHK総合の京都・神戸とサンテレビ2は、EDCB の表示・EPG取得・検索を無効にし、KonomiTV の一覧にも反映します。
 
 今後の録画は EDCB の `PostRecEnd.lua` からキューへ登録し、[録画処理](hosts/orange/services/tv/recording/default.nix)が AmatsukazeCLI と QSVEncC で映像を H.265 に変換し、tsreplace で元 TS の映像だけを置換します。
