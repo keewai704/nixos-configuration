@@ -5,11 +5,6 @@
 OS・ハードウェア・システムサービスは **NixOS**、個人のアプリや設定は **Home Manager** で管理します。
 作業ルール（検証・コミット・適用の手順）は [AGENTS.md](AGENTS.md) にあります。
 
-orange の Tailscale SSH は、[Tailworm の報告](https://tailworm.com/)への暫定対策として
-TCP・Unix ソケットのローカル／リモート転送を禁止しています。SSH ログインは利用できます。
-`tailscaled` のメモリは 1 GiB、スワップは 0 に制限し、メモリ枯渇時の影響を抑えます。
-設定は [modules/common/network.nix](modules/common/network.nix) で管理します。
-
 ## ディレクトリ構成
 
 ```text
@@ -17,7 +12,8 @@ TCP・Unix ソケットのローカル／リモート転送を禁止していま
 ├── flake.nix            入力（依存リポジトリ）、各ホストの構成、開発用シェル
 ├── hosts/orange/        ハードウェア、GPU、起動、settings.nix、services/ にサーバー機能
 ├── hosts/citrus/        デスクトップPCのハードウェア、GPU、起動、desktop/ にデスクトップ機能、installer/ にインストーラーISO
-├── modules/common/     Nix、ネットワーク、ユーザー、Home Manager の接続
+├── modules/common/      Nix、ネットワーク、ユーザー、Home Manager の接続
+├── modules/tailnet-web/ nginx と Tailscale Serve の入口、T3 Code の公開経路（orange と citrus で共有）
 ├── home/keewai/common/  個人設定（シェル、Git、コーディングエージェント、T3 Code）
 ├── pkgs/                自作・改造パッケージとパッチ
 ├── skills/              Claude Code・Codex に配る個人スキル
@@ -41,7 +37,7 @@ flake.nix
 │   ├── modules/common
 │   └── hosts/citrus
 │       ├── desktop/         Umbriel・Noctalia・日本語入力・フォント・壁紙
-│       └── services/        T3 Code の Web 公開
+│       └── services/        GPU サービス（STT・PLaMo・Immich の機械学習）、Wake-on-LAN、Web 公開
 └── nixosConfigurations.citrus-installer
     └── hosts/citrus/installer/  インストーラーISO（デスクトップ構成＋インストーラー）
 ```
@@ -54,7 +50,7 @@ flake.nix
 | シェル・エイリアス・プロンプト | [shell/](home/keewai/common/shell/default.nix)（`starship.toml` も同じ場所） |
 | Git / GitHub CLI | [git.nix](home/keewai/common/git.nix) |
 | Claude Code・Codex・スキル・MCP サーバー | [coding-agents/](home/keewai/common/coding-agents/default.nix)、[skills/](skills/) |
-| T3 Code（nightly サーバー） | [t3code.nix](home/keewai/common/t3code.nix)、[pkgs/t3code](pkgs/t3code/) |
+| T3 Code（nightly サーバー） | [t3code.nix](home/keewai/common/t3code.nix)、[pkgs/t3code](pkgs/t3code/)、[公開経路](modules/tailnet-web/t3code.nix) |
 | orange のハードウェア・GPU・起動 | [hosts/orange/](hosts/orange/)、[graphics.nix](hosts/orange/graphics.nix) |
 | orange のサービス・ポート・保存先 | [hosts/orange/services/](hosts/orange/services/)、[settings.nix](hosts/orange/settings.nix) |
 | citrus のハードウェア・GPU・起動 | [hosts/citrus/](hosts/citrus/)、[graphics.nix](hosts/citrus/graphics.nix) |
@@ -90,9 +86,10 @@ nix build --accept-flake-config .#<パッケージ名>                   # pkgs/
 
 ## バイナリキャッシュ
 
-`flake.nix` の `nixConfig` と `modules/common/nix.nix` に、Claude Code・Codex・nix-community の
-キャッシュの URL と署名鍵を書いています。`nixConfig` には import や計算式が使えないため、
-共通の URL と鍵は両方を手で同じ内容に保ちます。
+`flake.nix` の `nixConfig` と `modules/common/nix.nix` に、nix-community のキャッシュの URL と
+署名鍵を書いています。`nixConfig` には import や計算式が使えないため、両方を手で同じ内容に保ちます。
+Claude Code と Codex は `nixpkgs` をこの flake に合わせてビルドするため、上流のキャッシュとは
+ストアパスが一致しません。どちらも配布バイナリを取得するだけなので、キャッシュは登録していません。
 
 - 新しい設定を適用する前の最初のビルドでもキャッシュを使えるよう、`nixos-rebuild` と `nix build` には
   `--accept-flake-config` を付けます。初回の適用前に単体ビルドするときは
@@ -116,7 +113,7 @@ root のビルドはデーモンを経由しない場合があるため、`syste
 
 ## コーディングエージェント
 
-Claude Code・Codex・Pi は orange で Home Manager が導入し、どのシェルからでも使えます。
+Claude Code・Codex・Pi は全ホストで Home Manager が導入し、どのシェルからでも使えます。
 Pi は [pi.nix](https://github.com/lukasl-dev/pi.nix) の Home Manager モジュールで入れ、ビルド済みの成果物を
 [pi.cachix.org](https://pi.cachix.org) から取得します。
 `~/.claude` の設定やログイン情報は基本的に Nix で管理しません。例外として
@@ -132,7 +129,7 @@ Pi は [pi.nix](https://github.com/lukasl-dev/pi.nix) の Home Manager モジュ
 - **Web 検索**：[searxng.nix](home/keewai/common/searxng.nix) が nixpkgs の [SearXNG](https://github.com/searxng/searxng) を
   `127.0.0.1:8888` のユーザーサービスとして動かし、nixpkgs の `mcp-searxng` を `searxng` MCP サーバーとして登録します。
   Claude Code の `WebSearch` と Codex の組み込み `web_search` は無効にします。
-  この回線で常にブロックまたはタイムアウトする DuckDuckGo・Google・Qwant は `disabledEngines` で外してあります。
+  この回線で常にブロックまたはタイムアウトする DuckDuckGo・Google・Qwant は無効にしてあります。
 - **ブラウザー操作**：[tinyfish/](home/keewai/common/tinyfish/default.nix) が [TinyFish](https://docs.tinyfish.ai/) の
   リモート MCP サーバーを `tinyfish` として登録します。API キーは `TINYFISH_API_KEY` か `~/.tinyfish/config.json`
   （`tinyfish auth login` と同じ形式）から適用時ではなく接続時に読み、Nix には保存しません。
@@ -144,7 +141,7 @@ Pi は [pi.nix](https://github.com/lukasl-dev/pi.nix) の Home Manager モジュ
   `~/.claude/CLAUDE.md` に置きます。
 - **Claude Code の共通設定**：`autoCompactWindow = 400000` と `env.CLAUDE_CODE_SIMPLE_SYSTEM_PROMPT = "1"` を適用時に設定します。
 - **Codex の共通指示**：[codex-instructions.md](home/keewai/common/coding-agents/codex-instructions.md) と共通の UI・開発方針を
-  orange の `~/.codex/config.toml` の `developer_instructions` に設定します。
+  `~/.codex/config.toml` の `developer_instructions` に設定します。
   [OpenCode の方針](https://github.com/anomalyco/opencode/blob/dev/AGENTS.md)を参考にした実装・検証の指示が、
   全プロジェクトの新しい Codex セッションで組み込み指示に追加されます。
   プロジェクト固有の `AGENTS.md` の規約を尊重し、手動の設定やログイン情報は保持します。
@@ -163,8 +160,8 @@ Pi は [pi.nix](https://github.com/lukasl-dev/pi.nix) の Home Manager モジュ
 ### T3 Code nightly
 
 [T3 Code](https://github.com/pingdotgg/t3code) は、orange と citrus で Home Manager の常駐サーバーとして動きます。
-公開経路と接続先は [hosts/orange/services/t3code.nix](hosts/orange/services/t3code.nix) と
-[hosts/citrus/services/t3code.nix](hosts/citrus/services/t3code.nix)、ユーザーサービスは [t3code.nix](home/keewai/common/t3code.nix) が管理します。
+公開経路と接続先は両ホスト共通の [modules/tailnet-web/t3code.nix](modules/tailnet-web/t3code.nix)、
+ユーザーサービスは [t3code.nix](home/keewai/common/t3code.nix) が管理します。
 公式の nightly AppImage に含まれる CLI を `t3 serve` で実行し、グラフィカルセッションには依存しません。
 リリース情報は、上流が更新する AUR の `.SRCINFO` を `t3code-nightly` 入力で固定します。
 バージョンと AppImage の SHA256 を読み取り、更新は `nix flake update` と通常の適用手順で行います。
@@ -216,14 +213,16 @@ OpenAI 互換の文字起こし API を `https://citrus.tail1e65cd.ts.net/stt/v1
 RE-USE でノイズ除去してから Whisper large-v3 で文字起こしし、接続元は [settings.nix](hosts/citrus/settings.nix) の端末に限ります。
 
 orange の Immich の機械学習は citrus の GPU で実行します。
-Immich は orange の [citrus-wake](hosts/orange/services/citrus-wake/) に推論を依頼し、
-citrus が応答しないときは citrus-wake が Wake-on-LAN で起こして待ってから
+Immich は orange の [citrus-wake](hosts/orange/services/citrus-wake/) に推論を依頼し、citrus-wake が
 [immich-machine-learning.nix](hosts/citrus/services/immich-machine-learning.nix) へ中継します。
+citrus が応答しないときは起こさずに 503 を返します。
+機械学習のキューは普段は止めておき、[immich-ml-schedule](hosts/orange/services/immich-ml-schedule/) が
+平日 9 時に citrus を Wake-on-LAN で起こしてキューを流し、自分で起こした場合は終わったらサスペンドさせます。
 
 日本語入力は fcitx5 と [Meltype](https://github.com/aster-void/nix-meltype) です。
 Discord は [Nixcord](https://github.com/4evy/nixcord) 経由の Equicord 入りで導入し、Bitwarden はデスクトップ版を入れます。
 ブラウザーは Helium（Widevine 対応）を [helium-flake](https://github.com/amaanq/helium-flake) から、
-Steam は [Millennium](https://docs.steambrew.app/) 入りで、[steam.nix](hosts/citrus/desktop/steam.nix) がテーマ（SpaceTheme）とプラグインを flake 入力から配ります。プラグインは `millennium-plugin-` で始まる入力を足すと導入され、`nix flake update` で更新します。テーマの色は Noctalia が Millennium の Quick CSS（`~/.config/millennium/quick.css`）へ書き出し、パレットを変えると起動中の Steam にもすぐ反映されます。Proton-CachyOS を互換ツールとして導入し、`ntsync` モジュールと GameMode を有効にします。GameMode を使うゲームには起動オプション `gamemoderun %command%` を設定します。GameMode の間は `gpu-workloads.target` の GPU サービス（Immich の機械学習、PLaMo、STT）を止めて GPU を空け、終了すると起動し直します。Spotify と kitty も入っています。
+Steam は [Millennium](https://docs.steambrew.app/) 入りで、[steam.nix](hosts/citrus/desktop/steam.nix) がテーマ（Material Theme）とプラグインを flake 入力から配ります。プラグインは `millennium-plugin-` で始まる入力を足すと導入され、`nix flake update` で更新します。テーマの色は Noctalia がテーマの配色ファイル（`css/main/colors/matugen.css`）へ、フォントは Millennium の Quick CSS（`~/.config/millennium/quick.css`）へ書き出し、パレットを変えると起動中の Steam にもすぐ反映されます。Proton-CachyOS を互換ツールとして導入し、`ntsync` モジュールと GameMode を有効にします。GameMode を使うゲームには起動オプション `gamemoderun %command%` を設定します。GameMode の間は `gpu-workloads.target` の GPU サービス（Immich の機械学習、PLaMo、STT）を止めて GPU を空け、終了すると起動し直します。Spotify と kitty も入っています。
 
 M.2 は GPT の3パーティション構成です。[hardware-configuration.nix](hosts/citrus/hardware-configuration.nix) が
 FAT32 の ESP（4GiB、ラベル `CITRUS-ESP`、`/boot`）、ZFS ルート（残り全部、プール `citrus`、データセット `root`）、
@@ -256,12 +255,12 @@ runner 上でビルドされます。
 | Samba | HDD の共有 | [samba.nix](hosts/orange/services/samba.nix) |
 | Minecraft | Fabric サーバー | [minecraft.nix](hosts/orange/services/minecraft.nix) |
 | Tailscale 出口ノード | 出口ノード | [tailscale-exit-node.nix](hosts/orange/services/tailscale-exit-node.nix) |
-| 公開の経路 | nginx と Tailscale Serve | [web/](hosts/orange/services/web/) |
+| 公開の経路 | nginx と Tailscale Serve | [modules/tailnet-web/](modules/tailnet-web/) |
 
 - 複数の機能で共有するポート・パス・URL は [settings.nix](hosts/orange/settings.nix) にまとめています。
   テレビ内部の接続先と保存先は [tv/settings.nix](hosts/orange/services/tv/settings.nix) で管理します。
 - サービスの追加は [services/default.nix](hosts/orange/services/default.nix) に明示し、公開ルートは各サービスの設定に置きます。
-  プロキシは [web/proxy.nix](hosts/orange/services/web/proxy.nix) を使い、ホスト・HTTPS・クライアントIPの転送を揃えます。
+  プロキシは [proxy.nix](modules/tailnet-web/proxy.nix) を使い、ホスト・HTTPS・クライアントIPの転送を揃えます。
 - Intel GPU と QSV のドライバーは [graphics.nix](hosts/orange/graphics.nix) が管理し、Immich とテレビから利用します。
 - 起動の順番は「HDD のマウント → 共有ディレクトリの準備 → 既存データの取り込み → アプリ」です（[storage.nix](hosts/orange/services/storage.nix)）。
 - [local-backup](hosts/orange/services/local-backup/) がバックアップ、[health-monitor](hosts/orange/services/health-monitor/) が

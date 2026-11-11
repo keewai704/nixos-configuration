@@ -23,7 +23,7 @@ Home Manager links every `skills/<name>` directory into `~/.claude/skills`
 (Claude Code) and `~/.agents/skills` through `codingAgents.skills` in
 [coding-agents](/home/keewai/nixos-configuration/home/keewai/common/coding-agents/default.nix).
 That module excludes host-only skills, which their host adds to `codingAgents.skills`.
-The same module registers `codingAgents.mcpServers` with Claude Code and Codex.
+The same module registers `codingAgents.mcpServers` with Claude Code, Codex, and Pi.
 Keep skills harness-neutral: refer to "the harness's subagent tool" or "TODO
 ledger" rather than one client's tool names.
 

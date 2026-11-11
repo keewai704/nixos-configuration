@@ -56,7 +56,7 @@ and explain non-obvious placement choices.
 
 Personal applications, CLI tools, shell settings, user services, and files belong
 in `home/<user>/common/`. Prefer suitable `programs.*`/`services.*` modules, then
-`home.packages`. Orange loads this common profile through
+`home.packages`. Every host loads this common profile through
 `modules/common/home-manager.nix`, which owns the NixOS connection.
 `useUserPackages = true` puts packages in
 `/etc/profiles/per-user/<user>`; deployment still uses NixOS activation.
