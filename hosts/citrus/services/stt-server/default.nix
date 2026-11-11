@@ -5,7 +5,7 @@
   ...
 }:
 let
-  inherit (import ../../settings.nix) sttClients sttPort tailnetHostname;
+  inherit (import ../../settings.nix) gpuApiClients sttPort tailnetHostname;
 
   cacheDirectory = "/var/cache/stt-server";
 
@@ -49,7 +49,7 @@ in
         default 0;
         ${lib.concatMapStrings (client: ''
           "${client}" 1;
-        '') sttClients}
+        '') gpuApiClients}
       }
     '';
 

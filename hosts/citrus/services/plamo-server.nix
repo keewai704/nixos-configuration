@@ -6,7 +6,7 @@
 }:
 let
   inherit (import ../settings.nix)
-    plamoClients
+    gpuApiClients
     plamoPort
     tailnetHostname
     ;
@@ -41,7 +41,7 @@ in
         default 0;
         ${lib.concatMapStrings (client: ''
           "${client}" 1;
-        '') plamoClients}
+        '') gpuApiClients}
       }
     '';
 
