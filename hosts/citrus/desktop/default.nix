@@ -11,6 +11,7 @@ in
 {
   imports = [
     ./noctalia.nix
+    ./spotifast.nix
     ./steam.nix
     ./theme.nix
   ];
@@ -182,7 +183,6 @@ in
       pkgs.bitwarden-desktop
       pkgs.ddcutil
       pkgs.kitty
-      pkgs.spotifast
       pkgs.wl-clipboard
       helium
     ];
