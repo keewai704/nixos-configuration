@@ -776,11 +776,11 @@
         "treefmt-nix": "treefmt-nix"
       },
       "locked": {
-        "lastModified": 1794341718,
-        "narHash": "sha256-9bj63AR1pMyDiIvG7xUmoaWaen++SFAfoNZ2PWksnOU=",
+        "lastModified": 1794358929,
+        "narHash": "sha256-rS0LXCe8SEx/KMCPyEBN6Jg3+UvpRBQRJpwdfBTgmd8=",
         "owner": "4evy",
         "repo": "nixcord",
-        "rev": "724ee63395f8ada6767a67ef737a2b3336527307",
+        "rev": "d4e982c45559f1d1798a84d736d861e2c2666096",
         "type": "github"
       },
       "original": {
@@ -966,11 +966,11 @@
     "pi-blackhole": {
       "flake": false,
       "locked": {
-        "lastModified": 1793731673,
-        "narHash": "sha256-6JYZh4/9k2aAs9kjTUPyQez9Y/DrZombq+V1N8GHyRk=",
+        "lastModified": 1794354607,
+        "narHash": "sha256-QKscYe4KtH0qc1LahZ4oToVCQMLzFOs59n9JJlNmX4g=",
         "ref": "main",
-        "rev": "c0e282ae1938eaf8eb9faae6e473e3a1027b5c1f",
-        "revCount": 671,
+        "rev": "90dc1aad8bd2e996efbb75fc9909de68e04d12d0",
+        "revCount": 694,
         "type": "git",
         "url": "https://github.com/k0valik/pi-blackhole"
       },
@@ -1143,11 +1143,11 @@
     "t3code-nightly": {
       "flake": false,
       "locked": {
-        "lastModified": 1794349494,
-        "narHash": "sha256-5H5Egw0HhVXaH5TY3FL3XT6nN43X/D0l/QZ/fbEnQ88=",
+        "lastModified": 1794366796,
+        "narHash": "sha256-w3apdAxwJso2DsUuvaf80tSMaY+xsKwPNh/wuz+w4c4=",
         "ref": "master",
-        "rev": "400ad3590ade19c82f72b002885c9295e1dcca3f",
-        "revCount": 521,
+        "rev": "ed8bf18043e1cdf5eaede5596095b553348b7f87",
+        "revCount": 522,
         "type": "git",
         "url": "https://aur.archlinux.org/t3code-nightly-bin.git"
       },
