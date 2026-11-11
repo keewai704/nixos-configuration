@@ -1,34 +1,6 @@
 { inputs, pkgs, ... }:
 let
   wallpaper = ./wallpaper.png;
-
-  loginBox = output: cy: {
-    inherit cy output;
-    box_height = 196.0;
-    box_width = 810.0;
-    cx = 2560.0;
-    placement_height = 2160.0;
-    placement_width = 5120.0;
-    rotation = 0.0;
-    type = "login_box";
-    settings = {
-      background_color = "surface_container";
-      background_opacity = 0.88;
-      background_radius = 12.0;
-      center_password_text = false;
-      input_opacity = 1.0;
-      input_radius = 6.0;
-      layout = "regular";
-      show_caps_lock = true;
-      show_keyboard_layout = true;
-      show_login_button = true;
-      show_media = true;
-      show_password_reveal = true;
-      show_session_buttons = true;
-      show_unlock_hint = true;
-      show_weather = true;
-    };
-  };
 in
 {
   programs.noctalia = {
@@ -89,23 +61,6 @@ in
         control_center.hidden_tabs = [ "screen-time" ];
         desktop_widgets.enabled = false;
         location.auto_locate = true;
-        lockscreen_widgets = {
-          enabled = false;
-          schema_version = 2;
-          widget_order = [
-            "lockscreen-login-box@DP-1"
-            "lockscreen-login-box@DP-2"
-          ];
-          grid = {
-            cell_size = 16;
-            major_interval = 4;
-            visible = true;
-          };
-          widget = {
-            "lockscreen-login-box@DP-1" = loginBox "DP-1" 1887.0;
-            "lockscreen-login-box@DP-2" = loginBox "DP-2" 1978.0;
-          };
-        };
         notification = {
           background_opacity = 0.8;
           keep_dismissed_in_history = false;
