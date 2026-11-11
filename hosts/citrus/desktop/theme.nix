@@ -6,6 +6,7 @@
 }:
 let
   iconTheme = "Papirus-Dark";
+  cursor = config.home-manager.users.keewai.home.pointerCursor;
 
   qtctConfig =
     name:
@@ -28,6 +29,8 @@ in
     text = lib.generators.toINI { } {
       Settings = {
         gtk-icon-theme-name = iconTheme;
+        gtk-cursor-theme-name = cursor.name;
+        gtk-cursor-theme-size = cursor.size;
         gtk-im-module = "fcitx";
       };
     };
@@ -39,7 +42,17 @@ in
       pkgs.papirus-icon-theme
     ];
 
-    dconf.settings."org/gnome/desktop/interface".icon-theme = iconTheme;
+    home.pointerCursor = {
+      package = pkgs.bibata-cursors;
+      name = "Bibata-Modern-Classic";
+      size = 24;
+    };
+
+    dconf.settings."org/gnome/desktop/interface" = {
+      icon-theme = iconTheme;
+      cursor-theme = cursor.name;
+      cursor-size = cursor.size;
+    };
 
     xdg.configFile = {
       "starship.toml".enable = false;

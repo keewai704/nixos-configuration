@@ -113,6 +113,10 @@ in
             hdr = "auto";
           };
           layout.scrolling.default_extent_fraction = 0.333;
+          input.cursor = {
+            inherit (config.home-manager.users.keewai.home.pointerCursor) size;
+            theme = config.home-manager.users.keewai.home.pointerCursor.name;
+          };
           input.focus = {
             follows_mouse = true;
             hover_raises = false;
