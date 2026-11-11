@@ -16,7 +16,7 @@
     ./tailscale-exit-node.nix
     ./tv
     ./vaultwarden
-    ./web
+    ./web.nix
   ];
 
   _module.args.fillTemplate =

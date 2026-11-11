@@ -15,7 +15,7 @@ let
     tailnetHostname
     tailnetOrigin
     ;
-  mkProxyLocation = import ../web/proxy.nix;
+  mkProxyLocation = import ../../../../modules/tailnet-web/proxy.nix;
   postgresqlPackage = pkgs.postgresql_17;
   importDependencies = [
     "media-storage-prepare.service"

@@ -1,11 +1,14 @@
+let
+  settings = import ../settings.nix;
+in
 {
   imports = [
     ./gpu-workloads.nix
     ./immich-machine-learning.nix
     ./plamo-server.nix
     ./stt-server
-    ./t3code.nix
+    (import ../../../modules/tailnet-web/t3code.nix settings)
     ./wake-on-lan.nix
-    ./web.nix
+    (import ../../../modules/tailnet-web settings)
   ];
 }

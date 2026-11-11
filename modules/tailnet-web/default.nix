@@ -1,6 +1,7 @@
+settings:
 { pkgs, ... }:
 let
-  inherit (import ../settings.nix) nginxPort tailnetHostname;
+  inherit (settings) nginxPort tailnetHostname;
 in
 {
   services.nginx = {

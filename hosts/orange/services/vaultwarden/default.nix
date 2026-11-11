@@ -14,7 +14,7 @@ let
     vaultwardenBackupRoot
     vaultwardenPort
     ;
-  mkProxyLocation = import ../web/proxy.nix;
+  mkProxyLocation = import ../../../../modules/tailnet-web/proxy.nix;
   legacyVaultwardenRoot = "${storageRoot}/server/vaultwarden";
   storagePreparationDependencies = [
     "media-storage-prepare.service"

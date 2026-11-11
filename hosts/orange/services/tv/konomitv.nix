@@ -11,7 +11,7 @@ let
     serviceDefaults
     ;
   inherit (import ../../settings.nix) tailnetHostname tailnetOrigin;
-  mkProxyLocation = import ../web/proxy.nix;
+  mkProxyLocation = import ../../../../modules/tailnet-web/proxy.nix;
   konomitvConfig = (pkgs.formats.yaml { }).generate "konomitv.yaml" {
     general = {
       backend = "EDCB";

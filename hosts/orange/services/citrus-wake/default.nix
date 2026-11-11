@@ -6,7 +6,7 @@ let
     tailnetHostname
     ;
   citrus = import ../../../citrus/settings.nix;
-  mkProxyLocation = import ../web/proxy.nix;
+  mkProxyLocation = import ../../../../modules/tailnet-web/proxy.nix;
 
   museAddresses = [
     "100.99.205.86"
