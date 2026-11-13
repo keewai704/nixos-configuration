@@ -44,6 +44,7 @@ let
         '';
         env = old.env // {
           MAMBA_KEEP_CUDA_BUILD = "TRUE";
+          MAX_JOBS = "2";
         };
       }))
       pyyaml
