@@ -5,7 +5,7 @@ in
   imports = [
     ./boot.nix
     ./bootvine.nix
-    ./curve-optimizer.nix
+    ./curve-optimizer
     ./desktop
     ./faster-whisper.nix
     ./graphics.nix
