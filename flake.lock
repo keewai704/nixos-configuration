@@ -23,7 +23,7 @@
     "amatsukaze-artifacts": {
       "flake": false,
       "locked": {
-        "narHash": "sha256-pdyHtVt1Qyuy54s//hic0Ac4ep1tG6ep6+Zvrxh5Vn0=",
+        "narHash": "sha256-+eumO+P7ylRYoQBAlBvnG8QUQqCfwbnYDn+YJJUcO70=",
         "type": "file",
         "url": "https://api.github.com/repos/rigaya/Amatsukaze/actions/artifacts?per_page=100"
       },
