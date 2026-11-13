@@ -147,11 +147,11 @@
         "nixpkgs": "nixpkgs"
       },
       "locked": {
-        "lastModified": 1794566218,
-        "narHash": "sha256-d4n7mUUuvOLfz966RjqTIyxE5JYKRHI/MWpf2/2Enjo=",
+        "lastModified": 1794592226,
+        "narHash": "sha256-ud7kuUgITpvfE+YHXPEs5H5MnLVR1zRkKxeOtYOGWt4=",
         "owner": "chaotic-cx",
         "repo": "nyx",
-        "rev": "9a21b0f205cc1e4f007006df473fe617bd6b7e86",
+        "rev": "8dbea94d5aff73a224d85f0dbdea95539df01105",
         "type": "github"
       },
       "original": {
@@ -169,11 +169,11 @@
         "systems": "systems"
       },
       "locked": {
-        "lastModified": 1794524492,
-        "narHash": "sha256-1/riKy6MLNQGmVifeDdqnyrgUJYJot1/cmk1r3pbxso=",
+        "lastModified": 1794603688,
+        "narHash": "sha256-ayfDlD5d9U5b06xxwZndph+/tRgusLaKg4Dcj7bvnEM=",
         "owner": "sadjow",
         "repo": "claude-code-nix",
-        "rev": "376fb1856b0aa2d4f233b303ba84194592bcd304",
+        "rev": "2c0782ecf4d07e4395cb56b33555fa4eb30f6784",
         "type": "github"
       },
       "original": {
@@ -313,11 +313,11 @@
         ]
       },
       "locked": {
-        "lastModified": 1794584015,
-        "narHash": "sha256-XBrjhDk8Hl8SV4+48CCBF1/T5JpLG9BXIV9Yqk4PoNk=",
+        "lastModified": 1794597681,
+        "narHash": "sha256-dteS+YYEOrbYupP9U8EvYxBNTTlf4Lup0ji51ubGv+I=",
         "owner": "amaanq",
         "repo": "helium-flake",
-        "rev": "2020dd6dafaa4406f5ce628ae2f62c8c729d0ca4",
+        "rev": "698f12b0a5b93aa2c6b582779bdb683f0d8692a3",
         "type": "github"
       },
       "original": {
@@ -425,11 +425,11 @@
     "konomitv": {
       "flake": false,
       "locked": {
-        "lastModified": 1794497164,
-        "narHash": "sha256-Sn6Ppw2tVomgtBkF4o/CG+2vNkcyEsNmhgVxw92NLQw=",
+        "lastModified": 1794614595,
+        "narHash": "sha256-59S9R2zPGFw/b8KvdfXUZt4eMqcMNI+0xotbMedz3A8=",
         "ref": "master",
-        "rev": "3c4a7cb6b51534a9d94d392f25be2d3524fce35a",
-        "revCount": 4333,
+        "rev": "687b904bb0a2cbb329596fd7b0368c09afe19a6c",
+        "revCount": 4358,
         "type": "git",
         "url": "https://github.com/tsukumijima/KonomiTV"
       },
@@ -495,11 +495,11 @@
       },
       "locked": {
         "dir": "packages/nix",
-        "lastModified": 1793036394,
-        "narHash": "sha256-vKNDa2aF7mi8I5SJVlqtePTwel64sYEAiHQR7HbUpwk=",
+        "lastModified": 1794588209,
+        "narHash": "sha256-i0Y49re/VXOTBGSjsYdEoIrP9IaNejmCeUHFssGQ+NQ=",
         "owner": "SteamClientHomebrew",
         "repo": "Millennium",
-        "rev": "d6a7822a43744b6290a0e059bdd032d9b9a2ec94",
+        "rev": "6522c24e8bd3de41a7601ceb4e78a619930f1704",
         "type": "github"
       },
       "original": {
@@ -604,17 +604,17 @@
     "millennium-src": {
       "flake": false,
       "locked": {
-        "lastModified": 1792710296,
-        "narHash": "sha256-e79vMkWWeK7Rk3OjbK82yC+EgVgCCtG9wRMxO1ZP+vE=",
+        "lastModified": 1794587997,
+        "narHash": "sha256-UZQSHMsAaYTcx1TDAI7FTqVRsMpB1jLBL8kYKivwbYo=",
         "owner": "SteamClientHomebrew",
         "repo": "Millennium",
-        "rev": "3858d60a2081f612739f07386ceac9b79f68274b",
+        "rev": "ac5e1ad646b1d1dd76a04aecf32d9e5e41779201",
         "type": "github"
       },
       "original": {
         "owner": "SteamClientHomebrew",
         "repo": "Millennium",
-        "rev": "3858d60a2081f612739f07386ceac9b79f68274b",
+        "rev": "ac5e1ad646b1d1dd76a04aecf32d9e5e41779201",
         "type": "github"
       }
     },
@@ -637,11 +637,11 @@
     "mirakc": {
       "flake": false,
       "locked": {
-        "lastModified": 1794553582,
-        "narHash": "sha256-OyyJr09S+GKL9LW2fhMQaSHuu9G5Cz/x1eI8OMLC7C4=",
+        "lastModified": 1794607158,
+        "narHash": "sha256-K/xe4/nPohaYxES7F4P7x7l0Jbfr5jni3icdeErRAGs=",
         "ref": "release",
-        "rev": "ea95fe60f9858921bd9dd00c4a5003f179945f55",
-        "revCount": 3630,
+        "rev": "a42fc6b133b82188c2321b2ba40ea99fb5959fd0",
+        "revCount": 3631,
         "type": "git",
         "url": "https://github.com/mirakc/mirakc"
       },
@@ -776,11 +776,11 @@
         "treefmt-nix": "treefmt-nix"
       },
       "locked": {
-        "lastModified": 1794563098,
-        "narHash": "sha256-RGrKRCdfDUTORgZpmWTAAxLPbTrL2QdaLu97WlKbxVk=",
+        "lastModified": 1794612436,
+        "narHash": "sha256-VSA1YxaiNxqGvVAGfbRYTlwG+dANdAGI5jx6IR55W1I=",
         "owner": "4evy",
         "repo": "nixcord",
-        "rev": "81c13bcdadbdd8528075b6df6f68cb78bc721b34",
+        "rev": "013f378d06a88e1f6b023b655a07c0a080835561",
         "type": "github"
       },
       "original": {
@@ -949,11 +949,11 @@
         "nixpkgs-x86_64-darwin": "nixpkgs-x86_64-darwin"
       },
       "locked": {
-        "lastModified": 1794502481,
-        "narHash": "sha256-3VWXFV7e5JwrLIsbk6wo7v0bC7J4wwucwYPJxYWlrxI=",
+        "lastModified": 1794587545,
+        "narHash": "sha256-QNjeRusN2M1XQ5JtjkKKw8tLhK7gDQJOVsfhwNJiHYA=",
         "owner": "lukasl-dev",
         "repo": "pi.nix",
-        "rev": "f5e7fe7875bd7846df460271ce5adcbb702f79ea",
+        "rev": "18f8a2607b08cd10c0ea42cf3be06fb66e01d239",
         "type": "github"
       },
       "original": {
