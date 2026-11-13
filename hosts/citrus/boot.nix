@@ -1,5 +1,12 @@
-{ config, inputs, ... }:
 {
+  config,
+  inputs,
+  pkgs,
+  ...
+}:
+{
+  environment.systemPackages = [ pkgs.sbctl ];
+
   systemd.tmpfiles.rules = [ "w /sys/kernel/mm/lru_gen/min_ttl_ms - - - - 0" ];
 
   boot = {
@@ -9,6 +16,11 @@
         enable = true;
         maxGenerations = 10;
         style.wallpapers = [ inputs.cachyos-limine-splash.outPath ];
+        secureBoot = {
+          enable = true;
+          autoGenerateKeys = true;
+          autoEnrollKeys.enable = true;
+        };
       };
       efi.canTouchEfiVariables = true;
     };
