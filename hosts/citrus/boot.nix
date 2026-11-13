@@ -15,7 +15,12 @@
       limine = {
         enable = true;
         maxGenerations = 10;
-        style.wallpapers = [ inputs.cachyos-limine-splash.outPath ];
+        resolution = "3440x1440";
+        style = {
+          wallpapers = [ inputs.cachyos-limine-splash.outPath ];
+          interface.resolution = "3440x1440";
+          graphicalTerminal.font.scale = "2x2";
+        };
         secureBoot = {
           enable = true;
           autoGenerateKeys = true;
