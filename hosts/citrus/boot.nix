@@ -15,10 +15,10 @@
       limine = {
         enable = true;
         maxGenerations = 10;
-        resolution = "3440x1440";
+        resolution = "5120x2160";
         style = {
           wallpapers = [ inputs.cachyos-limine-splash.outPath ];
-          interface.resolution = "3440x1440";
+          interface.resolution = "5120x2160";
           graphicalTerminal.font.scale = "2x2";
         };
         secureBoot = {
