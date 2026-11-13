@@ -15,6 +15,7 @@
     ];
     serviceConfig = {
       Type = "exec";
+      TimeoutStartSec = "5min";
       WorkingDirectory = "/var/lib/co-tune";
       ExecStartPre = "${pkgs.coreutils}/bin/sleep 120";
       ExecStart = "${pkgs.python3}/bin/python3 -I /var/lib/co-tune/tune.py";
