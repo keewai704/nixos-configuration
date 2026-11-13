@@ -4,6 +4,7 @@ in
 {
   imports = [
     ./boot.nix
+    ./bootvine.nix
     ./desktop
     ./faster-whisper.nix
     ./graphics.nix
