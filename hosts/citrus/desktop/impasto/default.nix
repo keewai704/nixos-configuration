@@ -56,9 +56,12 @@ in
       state="''${XDG_STATE_HOME:-$HOME/.local/state}/quickshell"
       run mkdir -p "$data/wallpapers" "$state"
       run cp -rn --no-preserve=mode ${inputs.impasto}/home/.local/share/. "$data/"
-      run cp -n --no-preserve=mode ${../wallpaper.png} "$data/wallpapers/noctalia.png"
+      run install -m644 ${../wallpaper.png} "$data/wallpapers/noctalia.png"
       if [ ! -e "$state/settings.json" ]; then
         echo '${settings}' | run tee "$state/settings.json" > /dev/null
+      fi
+      if [ ! -e "$state/state.json" ]; then
+        echo "{\"currentWallpaper\": \"$data/wallpapers/noctalia.png\"}" | run tee "$state/state.json" > /dev/null
       fi
     '';
 
