@@ -1,68 +1,56 @@
 name=sunshine
 state="${XDG_RUNTIME_DIR:?}/sunshine-disabled-outputs"
+mode="${SUNSHINE_CLIENT_WIDTH:-1920}x${SUNSHINE_CLIENT_HEIGHT:-1080}@${SUNSHINE_CLIENT_FPS:-60}"
 
-outputs() {
-  umbriel outputs --json
+monitors() {
+  hyprctl monitors all -j
+}
+
+monitor() {
+  hyprctl eval "hl.monitor({ $1 })" >/dev/null
 }
 
 main_output() {
-  outputs | jq -r --arg name "$name" '
-    [.[] | select(.name != $name and .enabled)]
-    | max_by(.logical_size.width * .logical_size.height)
+  monitors | jq -r --arg name "$name" '
+    [.[] | select(.name != $name and (.disabled | not))]
+    | max_by((.width / .scale) * (.height / .scale))
     | .name // empty'
 }
 
-evacuate() {
-  local target workspace id
-  target="$(main_output)"
-  [ -n "$target" ] || return 0
-  workspace="$(umbriel workspaces --json |
-    jq -r --arg out "$target" '.[] | select(.output == $out and .active) | .index' | head -n 1)"
-  [ -n "$workspace" ] || return 0
-  for id in $(umbriel windows --json | jq -r --arg out "$name" '.[] | select(.output == $out) | .id'); do
-    umbriel msg window-focus "$id" >/dev/null
-    umbriel msg window-move-to-workspace-silent "$workspace" --output "$target" >/dev/null
-  done
-}
-
 restore() {
-  local output
   if [ -f "$state" ]; then
-    while IFS= read -r output; do
-      umbriel msg output-enable "$output" >/dev/null || true
-    done <"$state"
     rm -f "$state"
+    hyprctl reload >/dev/null || true
   fi
-  if outputs | jq -e --arg name "$name" 'any(.[]; .name == $name)' >/dev/null; then
-    evacuate || true
-    umbriel output-destroy "$name" >/dev/null || true
+  if monitors | jq -e --arg name "$name" 'any(.[]; .name == $name)' >/dev/null; then
+    hyprctl output remove "$name" >/dev/null || true
   fi
 }
 
 create() {
   restore
-  umbriel output-create "$name" \
-    "${SUNSHINE_CLIENT_WIDTH:-1920}x${SUNSHINE_CLIENT_HEIGHT:-1080}@${SUNSHINE_CLIENT_FPS:-60}" >/dev/null
+  hyprctl output create headless "$name" >/dev/null
+  monitor "output = \"$name\", mode = \"$mode\", position = \"${1:-auto}\", scale = 1"
 }
 
 extend() {
-  local main position
+  local main width position
   main="$(main_output)"
-  create
-  [ -n "$main" ] || return 0
-  position="$(outputs | jq -r --arg name "$name" --arg main "$main" '
-    (.[] | select(.name == $name)) as $virtual
-    | (.[] | select(.name == $main)) as $main
-    | "\($main.position.x + (($main.logical_size.width - $virtual.logical_size.width) / 2 | floor)),\($main.position.y + $main.logical_size.height)"')"
-  wlr-randr --output "$name" --pos "$position"
+  width="${SUNSHINE_CLIENT_WIDTH:-1920}"
+  if [ -n "$main" ]; then
+    position="$(monitors | jq -r --arg main "$main" --argjson width "$width" '
+      .[] | select(.name == $main)
+      | "\(.x + ((.width / .scale - $width) / 2 | floor))x\(.y + (.height / .scale | floor))"')"
+  fi
+  create "${position:-auto}"
 }
 
 only() {
   local output
   create
-  outputs | jq -r --arg name "$name" '.[] | select(.name != $name and .enabled) | .name' >"$state"
+  monitors | jq -r --arg name "$name" '.[] | select(.name != $name and (.disabled | not)) | .name' >"$state"
   while IFS= read -r output; do
-    umbriel msg output-disable "$output" >/dev/null
+    monitor "output = \"$output\", disabled = true"
   done <"$state"
 }
 

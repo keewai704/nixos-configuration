@@ -9,9 +9,8 @@ let
   display = pkgs.writeShellApplication {
     name = "sunshine-display";
     runtimeInputs = [
-      config.programs.umbriel.package
+      config.programs.hyprland.package
       pkgs.jq
-      pkgs.wlr-randr
     ];
     text = builtins.readFile ./display.sh;
   };

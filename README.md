@@ -36,7 +36,7 @@ flake.nix
 ├── nixosConfigurations.citrus
 │   ├── modules/common
 │   └── hosts/citrus
-│       ├── desktop/         Umbriel・Noctalia・impasto（Hyprland）・日本語入力・フォント・壁紙
+│       ├── desktop/         Hyprland・impasto・Stylix・日本語入力・フォント・壁紙
 │       └── services/        GPU サービス（STT・PLaMo・Immich の機械学習）、Wake-on-LAN、Web 公開
 └── nixosConfigurations.citrus-installer
     └── hosts/citrus/installer/  インストーラーISO（デスクトップ構成＋インストーラー）
@@ -213,14 +213,20 @@ NVIDIA ドライバーは nixpkgs より新しい 620.70.06（オープンカー
 `nix flake update` では更新されないため、更新するときはこの定義を書き換えます。
 このモジュールだけはキャッシュに存在しないためカーネル更新のたびにローカルビルドされます。
 
-デスクトップは Umbriel（コンポジター）+ Noctalia v5（シェル）+ Noctalia Greeter（ログイン画面）で、
-いずれも nixpkgs と Home Manager のパッケージ・モジュールから入れます。
-Noctalia のテーマ・壁紙・アプリテンプレートの既定値は [desktop/](hosts/citrus/desktop/) が配り、
-設定GUIでの変更は Noctalia が状態ディレクトリに保存するため、再適用後も手元の変更が保持されます。
-`~/.config/umbriel/config.toml` は [desktop/](hosts/citrus/desktop/) が Home Manager で配り、Umbriel の既定設定に Noctalia のテーマ（`noctalia.toml`）とモニターのモード指定を重ねます。
-フォーカスはポインターに追従し、非アクティブなウィンドウは半透明になって背景のぼかしと [glass.glsl](hosts/citrus/desktop/glass.glsl) の光沢が掛かります。
-外部モニターの輝度は ddcutil 経由で Noctalia から操作し、Alt+[ で下げ、Alt+] で上げます。
-Mod+V で Noctalia のクリップボード履歴を開きます。
+デスクトップは Hyprland（UWSM 管理のセッション）と [impasto](https://github.com/andreumassanet/impasto)（Quickshell のシェル）で、
+ログイン画面は impasto のテーマを当てた SDDM です。起動時は keewai として自動ログインします。
+[impasto/](hosts/citrus/desktop/impasto/) が impasto の Quickshell 設定と Hyprland 設定を flake 入力から配り、
+`hypr/` のファイルを impasto の各モジュールの後に読み込ませて、キー操作・スクロール型レイアウト・モニターのモードを上書きします。
+impasto のドックは使わず、impasto がほかのアプリの設定ファイルへ配色を書き込む機能も止めています。
+
+配色は impasto が壁紙から作るパレットが元です。[scheme.py](hosts/citrus/desktop/impasto/scheme.py) がビルド時に impasto 自身の配色計算を
+[wallpaper.png](hosts/citrus/desktop/wallpaper.png) に掛けて base16 に変換し、[Stylix](https://github.com/nix-community/stylix)（[theme.nix](hosts/citrus/desktop/theme.nix)）がそれで GTK・Qt・kitty・fcitx5・Zen Browser・Discord などを塗ります。
+impasto 側も同じ壁紙と自動配色（adaptive）に揃えるため、Home Manager の適用のたびに impasto の状態ファイルへ書き戻します。
+impasto の画面で壁紙や配色を変えても、ほかのアプリは次に設定を適用するまで変わりません。
+Stylix に対応のない Steam・Heroic・spotifast・Pi は、[material-colors.nix](hosts/citrus/desktop/material-colors.nix) などで同じ base16 からテーマを作ります。
+非アクティブなウィンドウは半透明になり、Hyprland のアクリル効果が掛かります。
+外部モニターの輝度は ddcutil 経由で impasto から操作し、Alt+[ で下げ、Alt+] で上げます。
+Mod+V で impasto のクリップボード履歴を開きます。
 
 OpenAI 互換の文字起こし API を `https://citrus.tail1e65cd.ts.net/stt/v1` で提供します（[stt-server/](hosts/citrus/services/stt-server/)）。
 RE-USE でノイズ除去してから Whisper large-v3 で文字起こしし、接続元は [settings.nix](hosts/citrus/settings.nix) の端末に限ります。
@@ -237,13 +243,12 @@ systemd の資格情報としてサービスに渡します。
 日本語入力は fcitx5 と [Meltype](https://github.com/aster-void/nix-meltype) です。
 Discord は [Nixcord](https://github.com/4evy/nixcord) 経由の Equicord 入りで導入し、Bitwarden はデスクトップ版を入れます。
 ブラウザーは Zen Browser を [zen-browser-flake](https://github.com/0xc000022070/zen-browser-flake) から入れて既定のブラウザーにし、[zen-browser.nix](hosts/citrus/desktop/zen-browser.nix) でポリシーと Sine（mod マネージャー）を設定します。
-Steam は [Millennium](https://docs.steambrew.app/) 入りで、[steam.nix](hosts/citrus/desktop/steam.nix) がテーマ（Material Theme）とプラグインを flake 入力から配ります。プラグインは `millennium-plugin-` で始まる入力を足すと導入され、`nix flake update` で更新します。テーマの色は Noctalia がテーマの配色ファイル（`css/main/colors/matugen.css`）へ、フォントは Millennium の Quick CSS（`~/.config/millennium/quick.css`）へ書き出し、パレットを変えると起動中の Steam にもすぐ反映されます。Proton-CachyOS を互換ツールとして導入し、`ntsync` モジュールと GameMode を有効にします。GameMode を使うゲームには起動オプション `gamemoderun %command%` を設定します。GameMode の間は `gpu-workloads.target` の GPU サービス（Immich の機械学習、PLaMo、STT）を止めて GPU を空け、終了すると起動し直します。Ubisoft Connect や Epic のゲームは [Heroic](https://heroicgameslauncher.com/)（[heroic.nix](hosts/citrus/desktop/heroic.nix)）から Proton で起動します。nixpkgs の Heroic は Electron が受け付けない `--disable-gpu-compositing` を渡すため、[pkgs/heroic](pkgs/heroic/) で外しています。ゲームと Wine プレフィックスは `/mnt/data/Games/Heroic` に置き、UI は日本語にします。どちらも [heroic.nix](hosts/citrus/desktop/heroic.nix) が Home Manager の activation で `config.json` と `store/config.json` に書き込みます。配色は Noctalia の community テンプレート `heroiclauncher` が `~/.config/heroic/themes/matugen.css` へ書き出し、Heroic 側でそのテーマを選んでおきます。Steam 版の Anno 1800 (AppID 916440) は Steam の Proton-CachyOS で起動できます。Ubisoft Connect のログインで止まる場合は、[anno1800.nix](hosts/citrus/desktop/anno1800.nix) が入る `anno1800` コマンドが、compatdata の prefix にある `drive_c/users/steamuser/AppData/Local/Ubisoft Game Launcher/settings.yml` の `user.forceoffline` を `true` にしてから起動します。未インストールならストアページを開きます。Spotify クライアントの spotifast と kitty も入っています。spotifast の配色は [spotifast.nix](hosts/citrus/desktop/spotifast.nix) のテンプレートで Noctalia が `~/.config/spotifast/themes/noctalia.json` へ書き出し、`settings.json` でそのテーマを選んでおきます。Spotify が Soloist を見つけられるよう、同じファイルで mDNS（UDP 5353）を開けています。
+Steam は [Millennium](https://docs.steambrew.app/) 入りで、[steam.nix](hosts/citrus/desktop/steam.nix) がテーマ（Material Theme）とプラグインを flake 入力から配ります。プラグインは `millennium-plugin-` で始まる入力を足すと導入され、`nix flake update` で更新します。テーマの配色ファイル（`css/main/colors/matugen.css`）は Stylix の配色から作ってテーマに同梱し、フォントは Millennium の Quick CSS（`~/.config/millennium/quick.css`）で指定します。Proton-CachyOS を互換ツールとして導入し、`ntsync` モジュールと GameMode を有効にします。GameMode を使うゲームには起動オプション `gamemoderun %command%` を設定します。GameMode の間は `gpu-workloads.target` の GPU サービス（Immich の機械学習、PLaMo、STT）を止めて GPU を空け、終了すると起動し直します。Ubisoft Connect や Epic のゲームは [Heroic](https://heroicgameslauncher.com/)（[heroic.nix](hosts/citrus/desktop/heroic.nix)）から Proton で起動します。nixpkgs の Heroic は Electron が受け付けない `--disable-gpu-compositing` を渡すため、[pkgs/heroic](pkgs/heroic/) で外しています。ゲームと Wine プレフィックスは `/mnt/data/Games/Heroic` に置き、UI は日本語にします。どちらも [heroic.nix](hosts/citrus/desktop/heroic.nix) が Home Manager の activation で `config.json` と `store/config.json` に書き込みます。配色は Stylix の配色から `~/.config/heroic/themes/stylix.css` を作り、Heroic 側でそのテーマを選んでおきます。Steam 版の Anno 1800 (AppID 916440) は Steam の Proton-CachyOS で起動できます。Ubisoft Connect のログインで止まる場合は、[anno1800.nix](hosts/citrus/desktop/anno1800.nix) が入る `anno1800` コマンドが、compatdata の prefix にある `drive_c/users/steamuser/AppData/Local/Ubisoft Game Launcher/settings.yml` の `user.forceoffline` を `true` にしてから起動します。未インストールならストアページを開きます。Spotify クライアントの spotifast と kitty も入っています。spotifast の配色は [spotifast.nix](hosts/citrus/desktop/spotifast.nix) が Stylix の配色から `~/.config/spotifast/themes/stylix.json` を作り、`settings.json` でそのテーマを選んでおきます。Spotify が Soloist を見つけられるよう、同じファイルで mDNS（UDP 5353）を開けています。
 
 Moonlight からは [Sunshine](https://github.com/LizardByte/Sunshine) で画面を受け取れます（[sunshine/](hosts/citrus/desktop/sunshine/)）。
-アプリは3つで、「拡張ディスプレイ」はメインモニターの中央下に、「このディスプレイのみ」は物理モニターを外したうえで、クライアントが要求した解像度とリフレッシュレートの Umbriel 仮想出力 `sunshine` を作ります。
+アプリは3つで、「拡張ディスプレイ」はメインモニターの中央下に、「このディスプレイのみ」は物理モニターを外したうえで、クライアントが要求した解像度とリフレッシュレートの Hyprland の仮想出力（headless）`sunshine` を作ります。
 「ミラー」はメインモニターをそのまま配信し、Sunshine がクライアントの解像度とフレームレートに合わせて変換します。
 仮想出力は接続中だけ存在し、セッション終了時や Sunshine の停止時に消して、外したモニターを戻します。
-Umbriel の画面取り込みは HDR 中も SDR で渡すため、配信は常に SDR です。
 初回は `https://localhost:47990` で Web UI のログイン情報を作り、Moonlight の PIN でペアリングします。
 
 M.2 は GPT の3パーティション構成です。[hardware-configuration.nix](hosts/citrus/hardware-configuration.nix) が
@@ -253,8 +258,8 @@ XFS のデータ領域（1TiB、ラベル `Data`、`/mnt/data`）をマウント
 ### インストーラーISO
 
 [installer/default.nix](hosts/citrus/installer/default.nix) は citrus のデスクトップ構成（カーネル・ZFS・NVIDIA・
-Umbriel・Noctalia・fcitx5/Meltype・コーディングエージェント込み）に NixOS インストーラーの基本構成を合わせた
-ライブISOです。起動すると keewai として Umbriel セッションに自動ログインし（パスワードは `citrus`）、
+Hyprland・impasto・fcitx5/Meltype・コーディングエージェント込み）に NixOS インストーラーの基本構成を合わせた
+ライブISOです。起動すると keewai として Hyprland セッションに自動ログインし（パスワードは `citrus`）、
 kitty から Claude Code・Codex・Pi がそのまま使えます。インストール作業はこのライブ環境から
 `nixos-install --flake` で行えます。Steam と同梱チャンネルだけは容量削減のため無効化しています。
 

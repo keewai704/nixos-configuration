@@ -1,7 +1,5 @@
-{ pkgs, ... }:
+{ lib, pkgs, ... }:
 {
-  xdg.configFile."starship.toml".source = ./starship.toml;
-
   home.packages = [
     pkgs.duf
     pkgs.dust
@@ -47,6 +45,7 @@
     starship = {
       enable = true;
       enableZshIntegration = true;
+      settings = lib.importTOML ./starship.toml;
     };
     eza = {
       enable = true;

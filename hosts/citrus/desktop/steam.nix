@@ -13,7 +13,7 @@ let
   themeSource = pkgs.runCommand "millennium-${theme}" { } ''
     cp -r ${inputs.millennium-theme-material} $out
     chmod -R u+w $out
-    rm $out/${themeColors}
+    cp ${themeColorsCss} $out/${themeColors}
   '';
 
   quickCssWatcher = "quick-css-watcher";
@@ -60,14 +60,28 @@ let
     }
   );
 
-  matugenCss = pkgs.writeText "millennium-matugen.css" ''
+  rgb =
+    hex:
+    "rgb(${
+      lib.concatMapStringsSep ", " (start: toString (lib.fromHexString (builtins.substring start 2 hex)))
+        [
+          0
+          2
+          4
+        ]
+    })";
+
+  themeColorsCss = pkgs.writeText "millennium-stylix.css" ''
     :root {
         --theme-color: "Matugen";
         --hue-rotate: 220deg;
-        <* for name, value in colors *>
-        --md-sys-color-{{name | replace: "_", "-" }}: {{value.default.rgb}};
-        <* endfor *>
-    }
+    ${
+      lib.concatStrings (
+        lib.mapAttrsToList (name: hex: "    --md-sys-color-${name}: ${rgb hex};\n") (
+          import ./material-colors.nix config.lib.stylix.colors
+        )
+      )
+    }}
   '';
 
   quickCss = pkgs.writeText "millennium-quick.css" ''
@@ -128,15 +142,6 @@ in
       };
     }) plugins;
 
-    programs.noctalia.settings.theme.templates.user = {
-      millennium = {
-        input_path = "${quickCss}";
-        output_path = "$XDG_CONFIG_HOME/millennium/quick.css";
-      };
-      millennium-colors = {
-        input_path = "${matugenCss}";
-        output_path = "$XDG_DATA_HOME/Steam/millennium/themes/${theme}/${themeColors}";
-      };
-    };
+    xdg.configFile."millennium/quick.css".source = quickCss;
   };
 }

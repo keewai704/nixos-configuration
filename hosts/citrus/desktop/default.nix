@@ -1,5 +1,4 @@
 {
-  config,
   inputs,
   pkgs,
   ...
@@ -7,11 +6,9 @@
 {
   imports = [
     ./anno1800.nix
-    ./bitwarden
     ./heroic.nix
     ./impasto
     ./modrinth.nix
-    ./noctalia.nix
     ./spotifast.nix
     ./steam.nix
     ./sunshine
@@ -20,13 +17,6 @@
   ];
 
   nixpkgs.overlays = [ inputs.nix-meltype.overlays.default ];
-
-  programs.umbriel.enable = true;
-
-  services.greetd.settings.initial_session = {
-    command = "${config.programs.umbriel.package}/bin/start-umbriel";
-    user = "keewai";
-  };
 
   hardware.i2c.enable = true;
   users.users.keewai.extraGroups = [
@@ -71,7 +61,6 @@
     pkgs.noto-fonts-cjk-serif
     pkgs.udev-gothic
   ];
-  fonts.fontconfig.defaultFonts.sansSerif = [ "Noto Sans CJK JP" ];
 
   security.rtkit.enable = true;
   services.pipewire = {
@@ -94,7 +83,7 @@
   programs.dconf.enable = true;
 
   services.gnome.gnome-keyring.enable = true;
-  security.pam.services.greetd.enableGnomeKeyring = true;
+  security.pam.services.sddm.enableGnomeKeyring = true;
 
   programs.thunar.enable = true;
   programs.xfconf.enable = true;
@@ -105,77 +94,7 @@
   home-manager.users.keewai = {
     imports = [ inputs.nixcord.homeModules.nixcord ];
 
-    xdg.configFile."umbriel/config.toml".source =
-      (pkgs.formats.toml { }).generate "umbriel-config.toml"
-        {
-          include = {
-            files = [ "${config.programs.umbriel.package}/share/umbriel/config.toml" ];
-            optional.files = [ "noctalia.toml" ];
-          };
-          output."Dell Inc. AW3926QW CMYQ7K4" = {
-            mode = "5120x2160@165";
-            vrr = "fullscreen";
-            hdr = "auto";
-          };
-          layout.scrolling.default_extent_fraction = 0.333;
-          input.cursor = {
-            inherit (config.home-manager.users.keewai.home.pointerCursor) size;
-            theme = config.home-manager.users.keewai.home.pointerCursor.name;
-          };
-          input.focus = {
-            follows_mouse = true;
-            hover_raises = false;
-          };
-          effects.preset.glass = {
-            kind = "window";
-            shader = "${./glass.glsl}";
-          };
-          window_rule = [
-            {
-              match.is_focused = false;
-              opacity = 0.9;
-              window_effect = "glass";
-            }
-          ];
-          keybinds = {
-            "Alt+bracketleft" = "spawn noctalia msg brightness-down";
-            "Alt+bracketright" = "spawn noctalia msg brightness-up";
-            "Mod+V" = {
-              action = "spawn noctalia msg panel-toggle clipboard";
-              repeat = false;
-            };
-            "Mod+B" = {
-              action = "spawn noctalia msg panel-toggle keewai/bitwarden:panel";
-              repeat = false;
-            };
-            "Print" = {
-              action = "spawn noctalia msg screenshot-fullscreen all";
-              repeat = false;
-            };
-            "Alt+Print" = {
-              action = "spawn noctalia msg screenshot-window";
-              repeat = false;
-            };
-            "Alt+Sys_Req" = {
-              action = "spawn noctalia msg screenshot-window";
-              repeat = false;
-            };
-            "Mod+Shift+S" = {
-              action = "spawn noctalia msg screenshot-region";
-              repeat = false;
-            };
-          };
-        };
-
-    xdg.configFile."kitty/font.conf".text = ''
-      font_family UDEV Gothic
-    '';
-
-    home.activation.kittyFontInclude = inputs.home-manager.lib.hm.dag.entryAfter [ "linkGeneration" ] ''
-      kitty_conf="$HOME/.config/kitty/kitty.conf"
-      grep -qxsF 'include font.conf' "$kitty_conf" \
-        || echo 'include font.conf' | run tee -a "$kitty_conf" > /dev/null
-    '';
+    programs.kitty.enable = true;
 
     programs.nixcord = {
       enable = true;
@@ -190,7 +109,9 @@
     home.packages = [
       pkgs.bitwarden-desktop
       pkgs.ddcutil
-      pkgs.kitty
+      pkgs.jq
+      pkgs.pinentry-qt
+      pkgs.rbw
       pkgs.wl-clipboard
     ];
   };

@@ -1,9 +1,13 @@
 {
+  config,
   inputs,
+  lib,
   pkgs,
   ...
 }:
 let
+  wallpaper = config.stylix.image;
+
   quickshell = pkgs.quickshell.overrideAttrs (old: {
     buildInputs = old.buildInputs ++ [ pkgs.qt6.qtmultimedia ];
   });
@@ -27,10 +31,33 @@ let
       --replace-fail '"nautilus --new-window"' '"thunar"'
   '';
 
+  scheme =
+    pkgs.runCommand "impasto-base16.json"
+      {
+        nativeBuildInputs = [
+          pkgs.imagemagick
+          pkgs.python3
+        ];
+      }
+      ''
+        HOME=$TMPDIR python3 ${./scheme.py} ${shell}/scripts ${wallpaper} > $out
+      '';
+
+  greeter = pkgs.runCommand "impasto-sddm-theme" { } ''
+    mkdir -p $out/share/sddm/themes
+    cp -r ${inputs.impasto}/system/usr/share/sddm/themes/impasto $out/share/sddm/themes/impasto
+    chmod -R u+w $out
+    install -m644 ${wallpaper} $out/share/sddm/themes/impasto/background.jpg
+  '';
+
+  initialSettings = builtins.toJSON { superTapLauncher = true; };
+
   settings = builtins.toJSON {
-    superTapLauncher = true;
+    dockEnabled = false;
     themeTargets = [ ];
   };
+
+  jq = lib.getExe pkgs.jq;
 in
 {
   programs.hyprland = {
@@ -38,10 +65,24 @@ in
     withUWSM = true;
   };
 
-  fonts.packages = [
-    pkgs.inter
-    pkgs.noto-fonts-color-emoji
-  ];
+  services.displayManager = {
+    sddm = {
+      enable = true;
+      wayland.enable = true;
+      theme = "impasto";
+    };
+    autoLogin = {
+      enable = true;
+      user = "keewai";
+    };
+    defaultSession = "hyprland-uwsm";
+  };
+
+  environment.systemPackages = [ greeter ];
+
+  fonts.packages = [ pkgs.inter ];
+
+  stylix.base16Scheme = lib.importJSON scheme;
 
   home-manager.users.keewai = {
     xdg.configFile = {
@@ -49,20 +90,27 @@ in
       hypr.source = hypr;
     };
 
-    systemd.user.services.noctalia.Unit.ConditionEnvironment = "!XDG_CURRENT_DESKTOP=Hyprland";
+    programs.cava.enable = true;
 
     home.activation.impastoData = inputs.home-manager.lib.hm.dag.entryAfter [ "linkGeneration" ] ''
       data="''${XDG_DATA_HOME:-$HOME/.local/share}"
       state="''${XDG_STATE_HOME:-$HOME/.local/state}/quickshell"
+      current="$data/wallpapers/citrus.png"
       run mkdir -p "$data/wallpapers" "$state"
       run cp -rn --no-preserve=mode ${inputs.impasto}/home/.local/share/. "$data/"
-      run install -m644 ${../wallpaper.png} "$data/wallpapers/noctalia.png"
-      if [ ! -e "$state/settings.json" ]; then
-        echo '${settings}' | run tee "$state/settings.json" > /dev/null
-      fi
-      if [ ! -e "$state/state.json" ]; then
-        echo "{\"currentWallpaper\": \"$data/wallpapers/noctalia.png\"}" | run tee "$state/state.json" > /dev/null
-      fi
+      run install -m644 ${wallpaper} "$current"
+
+      [ -s "$state/settings.json" ] || echo '${initialSettings}' > "$state/settings.json"
+      [ -s "$state/state.json" ] || echo '{}' > "$state/state.json"
+
+      merged="$(mktemp "$state/settings.json.XXXXXX")"
+      ${jq} '. * ${settings}' "$state/settings.json" > "$merged"
+      run mv "$merged" "$state/settings.json"
+
+      merged="$(mktemp "$state/state.json.XXXXXX")"
+      ${jq} --arg wallpaper "$current" '.activeTheme = "adaptive" | .currentWallpaper = $wallpaper' \
+        "$state/state.json" > "$merged"
+      run mv "$merged" "$state/state.json"
     '';
 
     home.packages = [
