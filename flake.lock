@@ -1162,11 +1162,11 @@
         ]
       },
       "locked": {
-        "lastModified": 1794668117,
-        "narHash": "sha256-VuZaD7ISfl7/3PZXVd8ZhGzz13hNzJPqvIxxZtFYh2I=",
+        "lastModified": 1794670535,
+        "narHash": "sha256-14akylQxPhgWJNzkOssARudxH55SrJrSTK/uvEIBLhI=",
         "ref": "main",
-        "rev": "38547f385466af0afbaddbc2f55f92c111b4a679",
-        "revCount": 18,
+        "rev": "59e290f54f04d88b3c412e26148c219e8115c1af",
+        "revCount": 19,
         "type": "git",
         "url": "https://github.com/keewai704/plamo-app"
       },
