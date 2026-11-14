@@ -192,11 +192,6 @@
       inputs.nixpkgs.follows = "nixpkgs";
     };
 
-    discord-system24 = {
-      url = "github:refact0r/system24";
-      flake = false;
-    };
-
     millennium = {
       url = "github:SteamClientHomebrew/Millennium/main?dir=packages/nix";
       inputs.nixpkgs.follows = "nixpkgs";

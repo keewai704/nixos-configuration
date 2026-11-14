@@ -5,7 +5,7 @@
   ...
 }:
 let
-  theme = "system24.theme.css";
+  theme = "https://refact0r.github.io/system24/theme/system24.theme.css";
 
   shades =
     name: color:
@@ -18,7 +18,7 @@ let
     ];
 
   colors = with impastoPalette; ''
-    :root {
+    :root:root {
         --text-0: ${accentText};
         --text-1: ${text};
         --text-2: color-mix(in oklch, ${text}, ${textMuted} 33%);
@@ -49,10 +49,12 @@ in
     programs.nixcord = {
       enable = true;
       discord.equicord.enable = true;
-      config.enabledThemes = [ theme ];
+      quickCss = colors;
+      config = {
+        useQuickCss = true;
+        themeLinks = [ theme ];
+        enabledThemeLinks = [ theme ];
+      };
     };
-
-    xdg.configFile."Equicord/themes/${theme}".text =
-      builtins.readFile "${inputs.discord-system24}/theme/system24.theme.css" + colors;
   };
 }
