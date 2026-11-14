@@ -87,6 +87,8 @@ rebind("SUPER + B", hl.dsp.exec_cmd("bitwarden"), { description = "Applications 
 rebind("ALT + bracketleft", hl.dsp.global("quickshell:brightnessDown"), { repeating = true, description = "Media · Brightness down, from Alt" })
 rebind("ALT + bracketright", hl.dsp.global("quickshell:brightnessUp"), { repeating = true, description = "Media · Brightness up, from Alt" })
 
+rebind("SUPER + SHIFT + C", hl.dsp.global("quickshell:palette"), { description = "Shell · Open the palette, from C" })
+
 rebind("Print", hl.dsp.global("quickshell:captureScreen"), { description = "Shell · Capture the whole screen, from Print" })
 rebind("ALT + Print", hl.dsp.global("quickshell:captureWindow"), { description = "Shell · Capture a window, from Print" })
 rebind("ALT + Sys_Req", hl.dsp.global("quickshell:captureWindow"), { description = "Shell · Capture a window, from Sys_Req" })

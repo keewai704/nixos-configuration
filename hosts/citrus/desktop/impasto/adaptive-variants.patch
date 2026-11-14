@@ -1,0 +1,280 @@
+diff -ruN a/bar/island/AppearancePanel.qml b/bar/island/AppearancePanel.qml
+--- bar/island/AppearancePanel.qml
++++ bar/island/AppearancePanel.qml
+@@ -223,7 +223,7 @@
+     // The adaptive entry shows the current theme until the wallpaper has been
+     // read.
+     function daubsOf(theme: var): var {
+-        const colors = theme.adaptive ? ThemeService.dynamicColors : theme.colors
++        const colors = theme.adaptive ? ThemeService.adaptiveColorsOf(theme.id) : theme.colors
+         return colors
+             ? [colors.accent, colors.green, colors.yellow, colors.red, colors.blue]
+             : [Theme.accent, Theme.green, Theme.yellow, Theme.red, Theme.blue]
+diff -ruN a/bar/island/controls/AppearanceCard.qml b/bar/island/controls/AppearanceCard.qml
+--- bar/island/controls/AppearanceCard.qml
++++ bar/island/controls/AppearanceCard.qml
+@@ -72,7 +72,7 @@
+         ColorSwatch {
+             Layout.alignment: Qt.AlignVCenter
+             swatchSize: 11
+-            colors: ThemeService.activeId === "adaptive"
++            colors: ThemeService.isAdaptive(ThemeService.activeId)
+                 ? ThemeService.adaptiveSwatches
+                 : (Palettes.byId(ThemeService.activeId)?.swatches ?? ThemeService.adaptiveSwatches)
+         }
+バイナリーファイル a/scripts/__pycache__/greeting.cpython-314.pyc とb/scripts/__pycache__/greeting.cpython-314.pyc は異なります
+diff -ruN a/scripts/theme_manager.py b/scripts/theme_manager.py
+--- scripts/theme_manager.py
++++ scripts/theme_manager.py
+@@ -3925,9 +3925,92 @@
+     return max(colorful, key=lambda c: c["sat"]) if colorful else NEUTRAL_ACCENT
+ 
+ 
+-def build_palette(image_path):
++ADAPTIVE_METHODS = ("vibrant", "dominant", "muted", "complement")
++
++
++def sample_histogram(image_path):
++    magick = shutil.which("magick") or shutil.which("convert")
++    if not magick:
++        return []
++    command = [magick, image_path, "-resize", "120x120", "-colors", "24",
++               "-format", "%c", "histogram:info:-"]
++    try:
++        result = subprocess.run(command, capture_output=True, text=True, timeout=20)
++    except (OSError, subprocess.SubprocessError) as error:
++        sys.stderr.write(f"Color extraction failed: {error}\n")
++        return []
++    swatches = []
++    for count, value in re.findall(r"^\s*(\d+):.*?(#[0-9A-Fa-f]{6})", result.stdout, re.M):
++        red, green, blue = hex_to_rgb(value)
++        swatches.append({
++            "hex": value.upper(),
++            "r": red, "g": green, "b": blue,
++            "lum": luminance(red, green, blue),
++            "sat": saturation(red, green, blue),
++            "count": int(count),
++        })
++    return swatches
++
++
++def accent_of(value):
++    red, green, blue = hex_to_rgb(value)
++    return {"hex": value.upper(), "r": red, "g": green, "b": blue}
++
++
++def settle(swatch, low, high, sat_low=0.0, sat_high=1.0):
++    hue, lightness, sat = colorsys.rgb_to_hls(swatch["r"] / 255, swatch["g"] / 255, swatch["b"] / 255)
++    return accent_of(rgb_to_hex(*(c * 255 for c in colorsys.hls_to_rgb(
++        hue, min(high, max(low, lightness)), min(sat_high, max(sat_low, sat))))))
++
++
++def pick_dominant(swatches):
++    colourful = [s for s in swatches if s["sat"] > 0.12]
++    if not colourful:
++        return NEUTRAL_ACCENT
++    return settle(max(colourful, key=lambda s: s["count"]), 0.45, 0.65, 0.35)
++
++
++def pick_muted(swatches):
++    soft = [s for s in swatches if 0.08 < s["sat"] <= 0.45 and 0.3 < s["lum"] < 0.8]
++    if soft:
++        return settle(max(soft, key=lambda s: s["count"]), 0.5, 0.7, 0.0, 0.25)
++    return settle(pick_dominant(swatches), 0.5, 0.7, 0.0, 0.25)
++
++
++def pick_complement(image_path):
++    base = pick_accent(sample_colors(image_path))
++    hue, lightness, sat = colorsys.rgb_to_hls(base["r"] / 255, base["g"] / 255, base["b"] / 255)
++    turned = accent_of(rgb_to_hex(*(c * 255 for c in colorsys.hls_to_rgb((hue + 0.5) % 1.0, lightness, sat))))
++    return settle(turned, 0.45, 0.7, 0.45)
++
++
++def pick_for(method, image_path):
++    if method == "dominant":
++        return pick_dominant(sample_histogram(image_path))
++    if method == "muted":
++        return pick_muted(sample_histogram(image_path))
++    if method == "complement":
++        return pick_complement(image_path)
++    return pick_accent(sample_colors(image_path))
++
++
++def adaptive_method(theme_id):
++    if theme_id == "adaptive":
++        return "vibrant"
++    if isinstance(theme_id, str) and theme_id.startswith("adaptive-"):
++        method = theme_id.removeprefix("adaptive-")
++        if method in ADAPTIVE_METHODS:
++            return method
++    return None
++
++
++def adaptive_id(method):
++    return "adaptive" if method == "vibrant" else f"adaptive-{method}"
++
++
++def build_palette(image_path, method="vibrant"):
+     """Derive a full UI palette from the wallpaper's dominant accent."""
+-    accent = pick_accent(sample_colors(image_path))
++    accent = pick_for(method, image_path)
+     red, green, blue = accent["r"], accent["g"], accent["b"]
+ 
+     # Surfaces are near-black, tinted just enough to feel related to the accent.
+@@ -3953,10 +4036,14 @@
+     }
+ 
+ 
+-def extract_colors(image_path):
++def active_method():
++    return adaptive_method(load_state().get("activeTheme")) or "vibrant"
++
++
++def extract_colors(image_path, method=None):
+     if not image_path or not os.path.isfile(image_path):
+         return None
+-    palette = build_palette(image_path)
++    palette = build_palette(image_path, method or active_method())
+     ensure_state_dir()
+     try:
+         with open(DYNAMIC_COLORS_FILE, "w", encoding="utf-8") as handle:
+@@ -4084,6 +4171,9 @@
+     state = load_state()
+     state["activeTheme"] = theme_id
+     save_state(state)
++    method = adaptive_method(theme_id)
++    if method:
++        extract_colors(get_current_wallpaper(), method)
+ 
+ 
+ # The exit status of an `apply-*` for a program switched off in
+@@ -4122,7 +4212,7 @@
+ def main():
+     actions = ("list-wallpapers | list-animated | get-current | get-state | "
+                "set-wallpaper <path> [transition] | "
+-               "restore | extract-colors [path] | set-theme <id> | "
++               "restore | extract-colors [path] | extract-variants [path] | set-theme <id> | "
+                "push-terminal-palette <json> | push-terminal-font <family> | "
+                "apply-vscodium [json] | apply-nautilus | apply-vesktop")
+     if len(sys.argv) < 2:
+@@ -4145,6 +4235,14 @@
+         print(json.dumps(state))
+     elif action == "extract-colors":
+         print(json.dumps(extract_colors(argument or get_current_wallpaper())))
++    elif action == "extract-variants":
++        image_path = argument or get_current_wallpaper()
++        if not image_path or not os.path.isfile(image_path):
++            print("null")
++        else:
++            extract_colors(image_path)
++            print(json.dumps({adaptive_id(method): build_palette(image_path, method)
++                              for method in ADAPTIVE_METHODS}))
+     elif action == "set-wallpaper" and argument:
+         transition = sys.argv[3] if len(sys.argv) >= 4 else "wipe"
+         sys.exit(0 if set_wallpaper(argument, transition) else 1)
+diff -ruN a/services/ProfileService.qml b/services/ProfileService.qml
+--- services/ProfileService.qml
++++ services/ProfileService.qml
+@@ -182,7 +182,7 @@
+         // `applied` repaints, so it is only set here if not already active.
+         const palette = target.palette
+         if (palette !== "" && palette !== ThemeService.activeId
+-                && (palette === "adaptive" || Palettes.byId(palette)))
++                && (ThemeService.isAdaptive(palette) || Palettes.byId(palette)))
+             ThemeService.setTheme(palette)
+         root.showWallpaper(target.wallpaper)
+ 
+@@ -330,7 +330,7 @@
+     // profile's.
+     function fromDocument(document: var, fallback: string): var {
+         const palette = typeof document.palette === "string"
+-            && (document.palette === "adaptive" || Palettes.byId(document.palette))
++            && (ThemeService.isAdaptive(document.palette) || Palettes.byId(document.palette))
+             ? document.palette : ""
+         return {
+             id: root.newId(),
+diff -ruN a/services/ThemeService.qml b/services/ThemeService.qml
+--- services/ThemeService.qml
++++ services/ThemeService.qml
+@@ -22,7 +22,8 @@
+     readonly property string script: Quickshell.shellPath("scripts/theme_manager.py")
+ 
+     property string activeId: "adaptive"
+-    property var dynamicColors: null
++    property var adaptiveColors: ({})
++    readonly property var dynamicColors: root.adaptiveColors[root.isAdaptive(root.activeId) ? root.activeId : "adaptive"] ?? null
+ 
+     // The adaptive entry has no static colours: they come from the wallpaper.
+     readonly property var adaptiveTheme: ({
+@@ -34,7 +35,26 @@
+     })
+ 
+     // Built from Palettes so a palette is described exactly once.
+-    readonly property var availableThemes: [root.adaptiveTheme].concat(Palettes.list)
++    readonly property var adaptiveThemes: [
++        root.adaptiveTheme,
++        { id: "adaptive-dominant", name: "Adaptive · Dominant", badge: "Most Area", adaptive: true, colors: null },
++        { id: "adaptive-muted", name: "Adaptive · Muted", badge: "Soft Tone", adaptive: true, colors: null },
++        { id: "adaptive-complement", name: "Adaptive · Complement", badge: "Opposite Hue", adaptive: true, colors: null }
++    ]
++
++    readonly property var availableThemes: root.adaptiveThemes.concat(Palettes.list)
++
++    function isAdaptive(themeId: string): bool {
++        return root.adaptiveThemes.some(entry => entry.id === themeId)
++    }
++
++    function adaptiveEntry(themeId: string): var {
++        return root.adaptiveThemes.find(entry => entry.id === themeId) ?? root.adaptiveTheme
++    }
++
++    function adaptiveColorsOf(themeId: string): var {
++        return root.adaptiveColors[themeId] ?? null
++    }
+ 
+     // The wallpaper colours once extracted, the current theme until then.
+     readonly property var adaptiveSwatches: root.dynamicColors
+@@ -58,15 +78,16 @@
+     }
+ 
+     readonly property Process extractProcess: Process {
+-        command: [root.script, "extract-colors"]
++        command: [root.script, "extract-variants"]
+         stdout: StdioCollector {
+             onStreamFinished: {
+-                const colors = root.parseJson(text, "wallpaper colours")
+-                if (!colors)
++                const variants = root.parseJson(text, "wallpaper colours")
++                if (!variants)
+                     return
+-                root.dynamicColors = colors
+-                if (root.activeId === "adaptive") {
+-                    Theme.apply(colors, root.adaptiveTheme.name)
++                root.adaptiveColors = variants
++                const colors = root.dynamicColors
++                if (colors && root.isAdaptive(root.activeId)) {
++                    Theme.apply(colors, root.adaptiveEntry(root.activeId).name)
+                     root.pushTerminal(colors)
+                 }
+             }
+@@ -232,7 +253,7 @@
+ 
+     // The colours on screen, for a push that is not a change of palette.
+     function currentColors(): var {
+-        if (root.activeId === "adaptive")
++        if (root.isAdaptive(root.activeId))
+             return root.dynamicColors
+         return Palettes.byId(root.activeId)?.colors ?? null
+     }
+@@ -268,9 +289,9 @@
+         root.activeId = themeId
+         Theme.activeId = themeId
+ 
+-        if (themeId === "adaptive") {
++        if (root.isAdaptive(themeId)) {
+             if (root.dynamicColors) {
+-                Theme.apply(root.dynamicColors, root.adaptiveTheme.name)
++                Theme.apply(root.dynamicColors, root.adaptiveEntry(themeId).name)
+                 root.pushTerminal(root.dynamicColors)
+             } else {
+                 root.reloadAdaptiveColors()

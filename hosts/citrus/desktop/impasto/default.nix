@@ -15,6 +15,7 @@ let
   shell = pkgs.runCommand "impasto-quickshell" { } ''
     cp -r ${inputs.impasto}/home/.config/quickshell $out
     chmod -R u+w $out
+    patch -p0 -d $out < ${./adaptive-variants.patch}
     substituteInPlace $out/scripts/emoji.py \
       --replace-fail /usr/share/unicode/emoji ${pkgs.unicode-emoji}/share/unicode/emoji \
       --replace-fail /usr/share/unicode/cldr ${pkgs.cldr-annotations}/share/unicode/cldr \
