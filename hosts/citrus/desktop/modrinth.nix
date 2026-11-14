@@ -1,10 +1,14 @@
-{ pkgs, ... }:
+{ lib, pkgs, ... }:
 let
-  modrinth-app = pkgs.modrinth-app.override {
-    modrinth-app-unwrapped = pkgs.modrinth-app-unwrapped.overrideAttrs (old: {
-      buildInputs = old.buildInputs ++ [ pkgs.sqlite ];
-    });
-  };
+  modrinth-app =
+    (pkgs.modrinth-app.override {
+      modrinth-app-unwrapped = pkgs.modrinth-app-unwrapped.overrideAttrs (old: {
+        buildInputs = old.buildInputs ++ [ pkgs.sqlite ];
+      });
+    }).overrideAttrs
+      (old: {
+        runtimeDependencies = old.runtimeDependencies + ":" + lib.makeLibraryPath [ pkgs.vulkan-loader ];
+      });
 in
 {
   home-manager.users.keewai =
