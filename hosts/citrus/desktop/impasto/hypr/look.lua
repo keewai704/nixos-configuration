@@ -8,5 +8,8 @@ hl.config({
     },
     decoration = {
         inactive_opacity = 0.9,
+        blur = {
+            variant = "acrylic",
+        },
     },
 })
