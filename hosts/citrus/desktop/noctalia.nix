@@ -108,6 +108,7 @@ in
               "fcitx5"
               "papirus-icons"
               "pi-agent"
+              "pywalfox"
               "starship"
               "thunar"
               "zen-browser"

@@ -1,4 +1,5 @@
 {
+  config,
   inputs,
   lib,
   pkgs,
@@ -6,6 +7,14 @@
 }:
 let
   zen-browser = inputs.zen-browser;
+  sineModule = import (
+    builtins.toFile "sine.nix" (
+      builtins.replaceStrings
+        [ ''listed(.fork; "zen")'' ''listed(.notFork; "zen")'' ]
+        [ ''listed(.fork; "firefox")'' ''listed(.notFork; "firefox")'' ]
+        (builtins.readFile "${zen-browser}/hm-module/sine.nix")
+    )
+  );
   sineSources = (lib.importJSON "${zen-browser}/sources.json").addons.sine;
   mkSinePack =
     { }:
@@ -35,8 +44,6 @@ let
     "layout.css.backdrop-filter.enabled" = true;
     "layout.css.backdrop-filter.force-enabled" = true;
     "userChromeJS.persistent_domcontent_callback" = true;
-    "natsumi.theme.type" = "gradient";
-    "natsumi.theme.accent-color" = "sky-blue";
     "natsumi.theme.icons" = "lucide";
     "natsumi.theme.single-toolbar" = true;
     "natsumi.tabs.new-tab-on-top" = true;
@@ -44,6 +51,21 @@ let
 
   firefox =
     (pkgs.firefox.override {
+      nativeMessagingHosts = [
+        (pkgs.writeTextDir "lib/mozilla/native-messaging-hosts/pywalfox.json" (
+          builtins.toJSON {
+            name = "pywalfox";
+            description = "Noctalia Firefox theme native messaging host";
+            path = lib.getExe config.programs.noctalia.package;
+            type = "stdio";
+            allowed_extensions = [ "pywalfox@frewacom.org" ];
+          }
+        ))
+      ];
+      extraPolicies.ExtensionSettings."pywalfox@frewacom.org" = {
+        installation_mode = "force_installed";
+        install_url = "https://addons.mozilla.org/firefox/downloads/latest/pywalfox/latest.xpi";
+      };
       extraPrefs = lib.concatStrings (
         lib.mapAttrsToList (
           name: value: "defaultPref(${builtins.toJSON name}, ${builtins.toJSON value});\n"
@@ -68,7 +90,7 @@ in
       sine = lib.evalModules {
         specialArgs = { inherit pkgs; };
         modules = [
-          (import "${zen-browser}/hm-module/sine.nix" { inherit mkSinePack; })
+          (sineModule { inherit mkSinePack; })
           {
             options = {
               home.file = lib.mkOption {
