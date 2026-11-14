@@ -562,11 +562,11 @@
     "konomitv": {
       "flake": false,
       "locked": {
-        "lastModified": 1794614595,
-        "narHash": "sha256-59S9R2zPGFw/b8KvdfXUZt4eMqcMNI+0xotbMedz3A8=",
+        "lastModified": 1794672427,
+        "narHash": "sha256-L2OPmLKoiS0mNfyK5NvOZS3p8WIyu5Bqtf+XVGF5Pyo=",
         "ref": "master",
-        "rev": "687b904bb0a2cbb329596fd7b0368c09afe19a6c",
-        "revCount": 4358,
+        "rev": "2774e39e512b5f3dfd423fdfc8a7602e92e844f5",
+        "revCount": 4360,
         "type": "git",
         "url": "https://github.com/tsukumijima/KonomiTV"
       },
@@ -1162,11 +1162,11 @@
         ]
       },
       "locked": {
-        "lastModified": 1794670535,
-        "narHash": "sha256-14akylQxPhgWJNzkOssARudxH55SrJrSTK/uvEIBLhI=",
+        "lastModified": 1794672141,
+        "narHash": "sha256-X9Qi81dg0g7oqvyEr+koPDBiGhIlbAKDAGW7EC7qqGk=",
         "ref": "main",
-        "rev": "59e290f54f04d88b3c412e26148c219e8115c1af",
-        "revCount": 19,
+        "rev": "f46a6e393683880835da677eb033c4d49516bf66",
+        "revCount": 20,
         "type": "git",
         "url": "https://github.com/keewai704/plamo-app"
       },
