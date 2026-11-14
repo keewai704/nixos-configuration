@@ -24,6 +24,14 @@ let
       --replace-fail /usr/share/X11/xkb ${pkgs.xkeyboard_config}/share/X11/xkb
     substituteInPlace $out/theme/Motion.qml \
       --replace-fail 'workspaces: "slide"' 'workspaces: "slidevert"'
+    install -Dm644 ${./bitwarden/BitwardenService.qml} $out/bitwarden/BitwardenService.qml
+    install -Dm644 ${./bitwarden/BitwardenPanel.qml} $out/bitwarden/BitwardenPanel.qml
+    install -Dm644 ${./bitwarden/BitwardenList.qml} $out/bitwarden/BitwardenList.qml
+    install -Dm644 ${./bitwarden/BitwardenDetail.qml} $out/bitwarden/BitwardenDetail.qml
+    install -Dm644 ${./bitwarden/BitwardenSection.qml} $out/bitwarden/BitwardenSection.qml
+    install -Dm644 ${./bitwarden/BitwardenField.qml} $out/bitwarden/BitwardenField.qml
+    install -Dm755 ${./bitwarden/copy.sh} $out/bitwarden/copy.sh
+    patch -p0 -F0 -d $out < ${./bitwarden/bitwarden.patch}
   '';
 
   hypr = pkgs.runCommand "impasto-hypr" { } ''
@@ -63,6 +71,8 @@ let
   jq = lib.getExe pkgs.jq;
 in
 {
+  imports = [ ./bitwarden ];
+
   programs.hyprland = {
     enable = true;
     withUWSM = true;

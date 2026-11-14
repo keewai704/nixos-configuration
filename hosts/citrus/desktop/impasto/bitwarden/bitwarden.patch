@@ -1,0 +1,91 @@
+--- shell.qml
++++ shell.qml
+@@ -514,6 +514,12 @@
+     }
+ 
+     GlobalShortcut {
++        name: "vault"
++        description: "Open the Bitwarden vault"
++        onPressed: root.island?.toggle("vault")
++    }
++
++    GlobalShortcut {
+         name: "board"
+         description: "Open the task board"
+         onPressed: root.island?.toggle("board")
+--- Commands.qml
++++ Commands.qml
+@@ -253,7 +253,7 @@
+ 
+         readonly property var names: ["launcher", "controls", "overview", "appearance", "palette",
+             "stats", "session", "pet", "games", "notes", "board", "keys", "packages",
+-            "machines", "servers", "screentime", "camera", "wifi", "bluetooth", "sound", "microphone", "brightness", "nightlight", "power", "record"]
++            "machines", "servers", "screentime", "camera", "vault", "wifi", "bluetooth", "sound", "microphone", "brightness", "nightlight", "power", "record"]
+ 
+         function open(name: string): string {
+             if (names.indexOf(name) < 0)
+@@ -272,6 +272,26 @@
+         }
+     }
+ 
++    IpcHandler {
++        target: "vault"
++
++        function toggle(): string {
++            root.island?.toggle("vault")
++            return root.ok({ panel: "vault" })
++        }
++
++        function open(): string {
++            root.island?.open("vault")
++            return root.ok({ panel: "vault" })
++        }
++
++        function close(): string {
++            if (root.island?.state.openPanel === "vault")
++                root.island?.close()
++            return root.ok()
++        }
++    }
++
+     // ── VIRTUAL MACHINES ────────────────────────────────────────────────────
+ 
+     IpcHandler {
+--- bar/widgets/DynamicIsland.qml
++++ bar/widgets/DynamicIsland.qml
+@@ -15,6 +15,7 @@
+ import "../island"
+ import "../modules"
+ import "../../components"
++import "../../bitwarden"
+ 
+ // One capsule that changes shape to fit whatever it shows. IslandState picks
+ // the layer, this sizes the capsule for it, and a Loader swaps the contents;
+@@ -115,6 +116,7 @@
+         // Declared by their services, which the panels read back for layout.
+         notes:      { width: NotesService.panelWidth, height: NotesService.panelHeight },
+         board:      { width: TasksService.panelWidth, height: TasksService.panelHeight },
++        vault:      { width: 960, height: 620 },
+         // The key sheet's columns come from the compositor's bind list.
+         keys:       { width: ShortcutService.sheetWidth, height: ShortcutService.sheetHeight },
+         packages:   { width: PackagesService.panelWidth, height: PackagesService.panelHeight },
+@@ -199,6 +201,7 @@
+         games: gamesPanel,
+         notes: notesPanel,
+         board: boardPanel,
++        vault: vaultPanel,
+         keys: keysPanel,
+         packages: packagesPanel,
+         module: moduleDetail,
+@@ -720,6 +723,11 @@
+     }
+ 
+     Component {
++        id: vaultPanel
++        BitwardenPanel { onClosed: root.close() }
++    }
++
++    Component {
+         id: packagesPanel
+         PackagesPanel { onClosed: root.close() }
+     }

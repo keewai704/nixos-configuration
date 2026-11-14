@@ -83,7 +83,7 @@ rebind("SUPER + CTRL + Space", restore_from_scratchpad, { description = "Workspa
 rebind("SUPER + TAB", hl.dsp.window.cycle_next(), { description = "Workspaces · Focus the next window (Tab)" })
 rebind("SUPER + O", hl.dsp.global("quickshell:overview"), { description = "Shell · Open the workspace overview (O)" })
 
-rebind("SUPER + B", hl.dsp.exec_cmd("bitwarden"), { description = "Applications · Open Bitwarden" })
+rebind("SUPER + B", hl.dsp.global("quickshell:vault"), { description = "Applications · Open the Bitwarden vault (B)" })
 rebind("ALT + bracketleft", hl.dsp.global("quickshell:brightnessDown"), { repeating = true, description = "Media · Brightness down, from Alt" })
 rebind("ALT + bracketright", hl.dsp.global("quickshell:brightnessUp"), { repeating = true, description = "Media · Brightness up, from Alt" })
 

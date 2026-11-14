@@ -103,8 +103,6 @@
       pkgs.bitwarden-desktop
       pkgs.ddcutil
       pkgs.jq
-      pkgs.pinentry-qt
-      pkgs.rbw
       pkgs.wl-clipboard
     ];
   };
