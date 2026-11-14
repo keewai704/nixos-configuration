@@ -62,6 +62,8 @@
           };
           settings = {
             "sine.allow-unsafe-js" = true;
+            "browser.tabs.allow_transparent_browser" = true;
+            "zen.widget.linux.transparency" = true;
             "zen.glance.enabled" = false;
             "font.default.ja" = "sans-serif";
             "font.default.x-western" = "sans-serif";
