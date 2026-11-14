@@ -29,14 +29,35 @@ let
     };
   sinePack = mkSinePack { };
 
-  firefox = pkgs.firefox.overrideAttrs (old: {
-    buildCommand = old.buildCommand + ''
-      libDir=$out/lib/firefox
-      chmod u+w $libDir/mozilla.cfg $libDir/defaults/pref/autoconfig.js
-      echo 'pref("general.config.sandbox_enabled", false);' >> $libDir/defaults/pref/autoconfig.js
-      cat ${zen-browser}/hm-module/sine-default-prefs.js ${sinePack.bootloader}/program/config.js >> $libDir/mozilla.cfg
-    '';
-  });
+  defaultPrefs = {
+    "sidebar.revamp" = true;
+    "sidebar.verticalTabs" = true;
+    "layout.css.backdrop-filter.enabled" = true;
+    "layout.css.backdrop-filter.force-enabled" = true;
+    "userChromeJS.persistent_domcontent_callback" = true;
+    "natsumi.theme.type" = "gradient";
+    "natsumi.theme.accent-color" = "sky-blue";
+    "natsumi.theme.icons" = "lucide";
+    "natsumi.theme.single-toolbar" = true;
+    "natsumi.tabs.new-tab-on-top" = true;
+  };
+
+  firefox =
+    (pkgs.firefox.override {
+      extraPrefs = lib.concatStrings (
+        lib.mapAttrsToList (
+          name: value: "defaultPref(${builtins.toJSON name}, ${builtins.toJSON value});\n"
+        ) defaultPrefs
+      );
+    }).overrideAttrs
+      (old: {
+        buildCommand = old.buildCommand + ''
+          libDir=$out/lib/firefox
+          chmod u+w $libDir/mozilla.cfg $libDir/defaults/pref/autoconfig.js
+          echo 'pref("general.config.sandbox_enabled", false);' >> $libDir/defaults/pref/autoconfig.js
+          cat ${zen-browser}/hm-module/sine-default-prefs.js ${sinePack.bootloader}/program/config.js >> $libDir/mozilla.cfg
+        '';
+      });
 
   profile = "default";
 in
@@ -90,6 +111,7 @@ in
                   mods = [
                     "context-menu-icons"
                     "ff-better-findbar"
+                    "natsumi-browser"
                   ];
                 };
               };
