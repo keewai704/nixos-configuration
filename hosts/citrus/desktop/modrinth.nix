@@ -7,8 +7,21 @@ let
       });
     }).overrideAttrs
       (old: {
-        runtimeDependencies = old.runtimeDependencies + ":" + lib.makeLibraryPath [ pkgs.vulkan-loader ];
+        runtimeDependencies =
+          old.runtimeDependencies
+          + ":"
+          + lib.makeLibraryPath [
+            pkgs.vulkan-loader
+            pkgs.wayland
+            pkgs.libxkbcommon
+            pkgs.libdecor
+          ];
+        buildCommand =
+          assert lib.hasInfix wrapCall old.buildCommand;
+          builtins.replaceStrings [ wrapCall ] [ "${wrapCall} --set SDL_VIDEO_DRIVER wayland" ]
+            old.buildCommand;
       });
+  wrapCall = ''wrapGApp "$out/bin/ModrinthApp"'';
 in
 {
   home-manager.users.keewai =
