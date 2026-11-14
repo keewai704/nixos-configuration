@@ -7,6 +7,7 @@
 {
   imports = [
     ./anno1800.nix
+    ./bitwarden
     ./heroic.nix
     ./modrinth.nix
     ./noctalia.nix
@@ -140,6 +141,10 @@
             "Alt+bracketright" = "spawn noctalia msg brightness-up";
             "Mod+V" = {
               action = "spawn noctalia msg panel-toggle clipboard";
+              repeat = false;
+            };
+            "Mod+B" = {
+              action = "spawn noctalia msg panel-toggle keewai/bitwarden:panel";
               repeat = false;
             };
             "Print" = {

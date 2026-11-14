@@ -1,0 +1,62 @@
+id           = "keewai/bitwarden"
+name         = "Bitwarden"
+version      = "1.0.0"
+plugin_api   = 43
+author       = "keewai"
+license      = "MIT"
+icon         = "lock"
+description  = "Bitwarden vault client with a two-pane item list and details view, backed by rbw."
+tags         = ["password-manager", "privacy", "utility"]
+dependencies = ["rbw", "pinentry"]
+
+[[setting]]
+key             = "email"
+type            = "string"
+label_key       = "settings.email.label"
+description_key = "settings.email.description"
+default         = ""
+
+[[setting]]
+key             = "base_url"
+type            = "string"
+label_key       = "settings.base_url.label"
+description_key = "settings.base_url.description"
+default         = ""
+
+[[setting]]
+key             = "sync_on_unlock"
+type            = "bool"
+label_key       = "settings.sync_on_unlock.label"
+description_key = "settings.sync_on_unlock.description"
+default         = true
+
+[[setting]]
+key             = "clear_clipboard_seconds"
+type            = "int"
+label_key       = "settings.clear_clipboard_seconds.label"
+description_key = "settings.clear_clipboard_seconds.description"
+default         = 30
+min             = 0
+max             = 300
+
+[[setting]]
+key             = "lock_on_close"
+type            = "bool"
+label_key       = "settings.lock_on_close.label"
+description_key = "settings.lock_on_close.description"
+default         = false
+
+[[panel]]
+id                       = "panel"
+entry                    = "panel.luau"
+width                    = 860
+height                   = 620
+placement                = "floating"
+position                 = "center"
+keyboard_focus           = "exclusive"
+dismiss_on_outside_click = true
+layer                    = "overlay"
+
+[[widget]]
+id    = "widget"
+entry = "widget.luau"

@@ -41,6 +41,7 @@ in
             "workspaces"
           ];
           end = [
+            "bitwarden"
             "media"
             "tray"
             "notifications"
