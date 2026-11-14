@@ -230,18 +230,18 @@ diff -ruN a/services/SettingsService.qml b/services/SettingsService.qml
      readonly property alias dockGround: config.dockGround
      readonly property alias terminalGround: config.terminalGround
 +    readonly property alias pureBlack: config.pureBlack
-     readonly property alias launcherBareMath: config.launcherBareMath
      readonly property alias superTapLauncher: config.superTapLauncher
      readonly property alias workspaceNumbersOnSuper: config.workspaceNumbersOnSuper
-@@ -909,6 +910,8 @@
+     readonly property alias volumeMax: config.volumeMax
+@@ -902,6 +903,8 @@
          // kitty's ground, as `surfaceStyle`.
          property string terminalGround: "glass"
  
 +        property bool pureBlack: false
 +
-         // Work out a sum typed without the calculator's prefix, as the
-         // first row of the list.
-         property bool launcherBareMath: true
+         // A tap of Super alone opens the launcher.
+         property bool superTapLauncher: false
+         // The workspace strip shows plain numbers while Super is held.
 diff -ruN a/services/ThemeService.qml b/services/ThemeService.qml
 --- services/ThemeService.qml
 +++ services/ThemeService.qml
