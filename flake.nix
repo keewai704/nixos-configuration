@@ -227,6 +227,11 @@
       flake = false;
     };
 
+    millennium-plugin-proton-universal-prefix = {
+      url = "tarball+https://steambrew.app/api/v1/plugins/download/?id=fce8d9cb1d31a1bae3715cbdfce4aa20511f92ec&n=proton_universal_prefix.zip";
+      flake = false;
+    };
+
   };
 
   outputs =

@@ -555,6 +555,19 @@
         "url": "https://steambrew.app/api/v1/plugins/download/?id=a8c27aa008d9a0b6d638ea6a9c6bceab30da78ef&n=playercount-badge.zip"
       }
     },
+    "millennium-plugin-proton-universal-prefix": {
+      "flake": false,
+      "locked": {
+        "lastModified": 1794002755,
+        "narHash": "sha256-4ke9cBKK2stQAFTNiH3JUtcMT3JdqVKnjOgu9G/rzLc=",
+        "type": "tarball",
+        "url": "https://steambrew.app/api/v1/plugins/download/?id=fce8d9cb1d31a1bae3715cbdfce4aa20511f92ec&n=proton_universal_prefix.zip"
+      },
+      "original": {
+        "type": "tarball",
+        "url": "https://steambrew.app/api/v1/plugins/download/?id=fce8d9cb1d31a1bae3715cbdfce4aa20511f92ec&n=proton_universal_prefix.zip"
+      }
+    },
     "millennium-plugin-protondb": {
       "flake": false,
       "locked": {
@@ -1051,6 +1064,7 @@
         "millennium-plugin-global-launch-options": "millennium-plugin-global-launch-options",
         "millennium-plugin-hltb": "millennium-plugin-hltb",
         "millennium-plugin-playercount-badge": "millennium-plugin-playercount-badge",
+        "millennium-plugin-proton-universal-prefix": "millennium-plugin-proton-universal-prefix",
         "millennium-plugin-protondb": "millennium-plugin-protondb",
         "millennium-plugin-size-on-disk": "millennium-plugin-size-on-disk",
         "millennium-theme-material": "millennium-theme-material",
