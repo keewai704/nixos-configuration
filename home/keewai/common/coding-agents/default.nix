@@ -155,6 +155,7 @@ in
       environment.OPENCODE_API_KEY.file = osConfig.age.secrets.opencode-api-key.path;
       settings = {
         defaultProvider = "opencode-go";
+        defaultModel = "kimi-k3.1-pro";
         defaultTools = [ "+codemode" ];
         codemode.mode = "only";
       };
