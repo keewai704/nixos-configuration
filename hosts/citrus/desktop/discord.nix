@@ -1,5 +1,6 @@
 {
   impastoPaletteHook,
+  inputs,
   pkgs,
   ...
 }:
@@ -54,6 +55,11 @@ in
 
     stylix.targets.vencord.enable = false;
 
-    home.packages = [ (pkgs.discord.override { withEquicord = true; }) ];
+    home.packages = [
+      (pkgs.discord.override {
+        withEquicord = true;
+        inherit (inputs.nixcord.packages.${pkgs.stdenv.hostPlatform.system}) equicord;
+      })
+    ];
   };
 }
