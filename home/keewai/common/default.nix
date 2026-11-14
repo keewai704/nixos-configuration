@@ -8,5 +8,6 @@
     ./shell
     ./t3code.nix
     ./tinyfish
+    ./xdg-user-dirs.nix
   ];
 }
