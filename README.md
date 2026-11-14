@@ -135,7 +135,7 @@ Pi は [pi.nix](https://github.com/lukasl-dev/pi.nix) の Home Manager モジュ
   （`tinyfish auth login` と同じ形式）から適用時ではなく接続時に読み、Nix には保存しません。
   検索は SearXNG、ページの読み取りは TinyFish の `fetch_content`、クリックや入力が必要な操作だけ
   有料の `run_web_automation` を使うよう、[共通指示](home/keewai/common/coding-agents/shared-instructions.md)で振り分けます。
-- **Pi のモデル**：既定を OpenCode Go（`opencode-go`）の `kimi-k3.1-pro` にします。API キーは
+- **Pi のモデル**：既定を OpenCode Go（`opencode-go`）の `deepseek-v4.1-flash` にし、推論レベルを `max` にします。API キーは
   [secrets/opencode-api-key.age](secrets/opencode-api-key.age) を [secrets.nix](modules/common/secrets.nix) が
   orange と citrus で `/run/agenix/opencode-api-key` に復号し、Pi の起動時だけ `OPENCODE_API_KEY` に読み込みます。
 - **Pi の拡張機能**：[pi-blackhole](https://github.com/k0valik/pi-blackhole)（決定的なコンパクションと観察記憶）を

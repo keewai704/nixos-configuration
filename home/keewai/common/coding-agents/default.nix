@@ -155,7 +155,8 @@ in
       environment.OPENCODE_API_KEY.file = osConfig.age.secrets.opencode-api-key.path;
       settings = {
         defaultProvider = "opencode-go";
-        defaultModel = "kimi-k3.1-pro";
+        defaultModel = "deepseek-v4.1-flash";
+        modelThinkingLevels."opencode-go/deepseek-v4.1-flash" = "max";
         defaultTools = [ "+codemode" ];
         codemode.mode = "only";
       };
