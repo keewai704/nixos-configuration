@@ -62,10 +62,16 @@ let
           }
         ))
       ];
-      extraPolicies.ExtensionSettings."pywalfox@frewacom.org" = {
-        installation_mode = "force_installed";
-        install_url = "https://addons.mozilla.org/firefox/downloads/latest/pywalfox/latest.xpi";
-      };
+      extraPolicies.ExtensionSettings =
+        lib.mapAttrs
+          (_: slug: {
+            installation_mode = "force_installed";
+            install_url = "https://addons.mozilla.org/firefox/downloads/latest/${slug}/latest.xpi";
+          })
+          {
+            "pywalfox@frewacom.org" = "pywalfox";
+            "{446900e4-71c2-419f-a6a7-df9c091e268b}" = "bitwarden-password-manager";
+          };
       extraPrefs = lib.concatStrings (
         lib.mapAttrsToList (
           name: value: "defaultPref(${builtins.toJSON name}, ${builtins.toJSON value});\n"
