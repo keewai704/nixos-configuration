@@ -221,7 +221,7 @@ citrus が応答しないときは起こさずに 503 を返します。
 
 日本語入力は fcitx5 と [Meltype](https://github.com/aster-void/nix-meltype) です。
 Discord は [Nixcord](https://github.com/4evy/nixcord) 経由の Equicord 入りで導入し、Bitwarden はデスクトップ版を入れます。
-ブラウザーは Helium（Widevine 対応）を [helium-flake](https://github.com/amaanq/helium-flake) から、
+ブラウザーは Zen Browser を [zen-browser-flake](https://github.com/0xc000022070/zen-browser-flake) から入れて既定のブラウザーにし、
 Steam は [Millennium](https://docs.steambrew.app/) 入りで、[steam.nix](hosts/citrus/desktop/steam.nix) がテーマ（Material Theme）とプラグインを flake 入力から配ります。プラグインは `millennium-plugin-` で始まる入力を足すと導入され、`nix flake update` で更新します。テーマの色は Noctalia がテーマの配色ファイル（`css/main/colors/matugen.css`）へ、フォントは Millennium の Quick CSS（`~/.config/millennium/quick.css`）へ書き出し、パレットを変えると起動中の Steam にもすぐ反映されます。Proton-CachyOS を互換ツールとして導入し、`ntsync` モジュールと GameMode を有効にします。GameMode を使うゲームには起動オプション `gamemoderun %command%` を設定します。GameMode の間は `gpu-workloads.target` の GPU サービス（Immich の機械学習、PLaMo、STT）を止めて GPU を空け、終了すると起動し直します。Spotify クライアントの spotifast と kitty も入っています。spotifast の配色は [spotifast.nix](hosts/citrus/desktop/spotifast.nix) のテンプレートで Noctalia が `~/.config/spotifast/themes/noctalia.json` へ書き出し、`settings.json` でそのテーマを選んでおきます。Spotify が Soloist を見つけられるよう、同じファイルで mDNS（UDP 5353）を開けています。
 
 Moonlight からは [Sunshine](https://github.com/LizardByte/Sunshine) で画面を受け取れます（[sunshine/](hosts/citrus/desktop/sunshine/)）。

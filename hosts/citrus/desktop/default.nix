@@ -6,7 +6,7 @@
   ...
 }:
 let
-  helium = inputs.helium.packages.x86_64-linux.helium-widevine;
+  zen-browser = inputs.zen-browser.packages.x86_64-linux.default;
 in
 {
   imports = [
@@ -99,7 +99,12 @@ in
   programs.xfconf.enable = true;
   services.gvfs.enable = true;
   services.tumbler.enable = true;
-  xdg.mime.defaultApplications."inode/directory" = "thunar.desktop";
+  xdg.mime.defaultApplications = {
+    "inode/directory" = "thunar.desktop";
+    "text/html" = "zen-beta.desktop";
+    "x-scheme-handler/http" = "zen-beta.desktop";
+    "x-scheme-handler/https" = "zen-beta.desktop";
+  };
 
   home-manager.users.keewai = {
     imports = [ inputs.nixcord.homeModules.nixcord ];
@@ -172,7 +177,7 @@ in
         || echo 'include font.conf' | run tee -a "$kitty_conf" > /dev/null
     '';
 
-    programs.gh.settings.browser = lib.mkForce "${lib.getExe' pkgs.systemd "systemd-run"} --user --collect --quiet ${lib.getExe helium}";
+    programs.gh.settings.browser = lib.mkForce "${lib.getExe' pkgs.systemd "systemd-run"} --user --collect --quiet ${lib.getExe zen-browser}";
 
     programs.nixcord = {
       enable = true;
@@ -189,7 +194,7 @@ in
       pkgs.ddcutil
       pkgs.kitty
       pkgs.wl-clipboard
-      helium
+      zen-browser
     ];
   };
 }

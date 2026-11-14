@@ -101,7 +101,6 @@ in
             enable_community_templates = true;
             community_ids = [
               "bat"
-              "chromium-based"
               "claude-code"
               "codex"
               "discord"
@@ -111,6 +110,7 @@ in
               "pi-agent"
               "starship"
               "thunar"
+              "zen-browser"
             ];
           };
         };

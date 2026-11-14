@@ -306,26 +306,6 @@
         "type": "github"
       }
     },
-    "helium": {
-      "inputs": {
-        "nixpkgs": [
-          "nixpkgs"
-        ]
-      },
-      "locked": {
-        "lastModified": 1794597681,
-        "narHash": "sha256-dteS+YYEOrbYupP9U8EvYxBNTTlf4Lup0ji51ubGv+I=",
-        "owner": "amaanq",
-        "repo": "helium-flake",
-        "rev": "698f12b0a5b93aa2c6b582779bdb683f0d8692a3",
-        "type": "github"
-      },
-      "original": {
-        "owner": "amaanq",
-        "repo": "helium-flake",
-        "type": "github"
-      }
-    },
     "home-manager": {
       "inputs": {
         "nixpkgs": [
@@ -1060,7 +1040,6 @@
         "claude-code": "claude-code",
         "codex": "codex",
         "edcb": "edcb",
-        "helium": "helium",
         "home-manager": "home-manager_2",
         "imozuru": "imozuru",
         "konomitv": "konomitv",
@@ -1092,7 +1071,8 @@
         "torne-driver": "torne-driver",
         "tsreplace": "tsreplace",
         "uv2nix": "uv2nix",
-        "yomiyasu": "yomiyasu"
+        "yomiyasu": "yomiyasu",
+        "zen-browser": "zen-browser"
       }
     },
     "systems": {
@@ -1295,6 +1275,29 @@
         "ref": "main",
         "type": "git",
         "url": "https://github.com/nanaism/yomiyasu"
+      }
+    },
+    "zen-browser": {
+      "inputs": {
+        "home-manager": [
+          "home-manager"
+        ],
+        "nixpkgs": [
+          "nixpkgs"
+        ]
+      },
+      "locked": {
+        "lastModified": 1794495687,
+        "narHash": "sha256-YufvHb7O/52Cp+B9a3HRVO0HluXSEQ75+WMIcU6YPyE=",
+        "owner": "0xc000022070",
+        "repo": "zen-browser-flake",
+        "rev": "46c4140b55328bc3ee32f22c42185bc534998a1d",
+        "type": "github"
+      },
+      "original": {
+        "owner": "0xc000022070",
+        "repo": "zen-browser-flake",
+        "type": "github"
       }
     }
   },
