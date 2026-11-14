@@ -6,7 +6,51 @@
   ...
 }:
 let
-  zen-browser = inputs.zen-browser.packages.x86_64-linux.default;
+  zen-browser-unwrapped =
+    (inputs.zen-browser.packages.x86_64-linux.beta-unwrapped.override {
+      extraPolicies = {
+        RequestedLocales = [
+          "ja"
+          "en-US"
+        ];
+        TranslateEnabled = false;
+        SearchSuggestEnabled = true;
+        Preferences =
+          lib.mapAttrs
+            (_: Value: {
+              inherit Value;
+              Status = "default";
+            })
+            {
+              "intl.accept_languages" = "ja,en-US,en";
+              "layout.spellcheckDefault" = 0;
+              "signon.firefoxRelay.feature" = "disabled";
+              "dom.security.https_only_mode" = false;
+              "browser.urlbar.suggest.searches" = true;
+            };
+      };
+    }).overrideAttrs
+      (old: {
+        postInstall = (old.postInstall or "") + ''
+          lib_dir=$(echo $out/lib/zen-bin-*)
+          chmod u+w $lib_dir $lib_dir/defaults/pref
+          cat > $lib_dir/defaults/pref/local-settings.js <<'PREF'
+          pref("general.config.filename", "local-settings.cfg");
+          pref("general.config.obscure_value", 0);
+          PREF
+          cat > $lib_dir/local-settings.cfg <<'CFG'
+          //
+          defaultPref("zen.glance.enabled", false);
+          defaultPref("font.default.ja", "sans-serif");
+          defaultPref("font.default.x-western", "sans-serif");
+          defaultPref("font.name.sans-serif.ja", "Noto Sans CJK JP");
+          defaultPref("font.name.sans-serif.x-western", "Noto Sans CJK JP");
+          CFG
+        '';
+      });
+  zen-browser = import "${inputs.zen-browser}/wrap-zen.nix" pkgs.wrapFirefox zen-browser-unwrapped {
+    icon = "zen-browser";
+  };
 in
 {
   imports = [
