@@ -222,6 +222,26 @@ diff -ruN a/services/ProfileService.qml b/services/ProfileService.qml
              ? document.palette : ""
          return {
              id: root.newId(),
+diff -ruN a/services/SettingsService.qml b/services/SettingsService.qml
+--- services/SettingsService.qml
++++ services/SettingsService.qml
+@@ -66,6 +66,7 @@
+     readonly property alias dockOpacity: config.dockOpacity
+     readonly property alias dockGround: config.dockGround
+     readonly property alias terminalGround: config.terminalGround
++    readonly property alias pureBlack: config.pureBlack
+     readonly property alias launcherBareMath: config.launcherBareMath
+     readonly property alias superTapLauncher: config.superTapLauncher
+     readonly property alias workspaceNumbersOnSuper: config.workspaceNumbersOnSuper
+@@ -909,6 +910,8 @@
+         // kitty's ground, as `surfaceStyle`.
+         property string terminalGround: "glass"
+ 
++        property bool pureBlack: false
++
+         // Work out a sum typed without the calculator's prefix, as the
+         // first row of the list.
+         property bool launcherBareMath: true
 diff -ruN a/services/ThemeService.qml b/services/ThemeService.qml
 --- services/ThemeService.qml
 +++ services/ThemeService.qml
@@ -282,11 +302,59 @@ diff -ruN a/services/ThemeService.qml b/services/ThemeService.qml
 +                root.adaptiveColors = variants
 +                const colors = root.dynamicColors
 +                if (colors && root.isAdaptive(root.activeId)) {
-+                    Theme.apply(colors, root.adaptiveEntry(root.activeId).name)
++                    Theme.apply(root.look(colors), root.adaptiveEntry(root.activeId).name)
                      root.pushTerminal(colors)
                  }
              }
-@@ -232,7 +253,7 @@
+@@ -121,6 +142,29 @@
+     // The terminal's ground, chosen beside the shell's.
+     readonly property string terminalGround: SettingsService.terminalGround
+ 
++    readonly property bool pureBlack: SettingsService.pureBlack
++
++    onPureBlackChanged: if (SettingsService.arrived) root.setTheme(root.activeId, false)
++
++    function darken(value: string, amount: real): string {
++        const c = Qt.color(value)
++        return Qt.rgba(c.r * (1 - amount), c.g * (1 - amount), c.b * (1 - amount), 1).toString()
++    }
++
++    function look(colors: var): var {
++        if (!colors || !root.pureBlack)
++            return colors
++        const ground = Qt.color(colors.background)
++        if (0.2126 * ground.r + 0.7152 * ground.g + 0.0722 * ground.b > 0.5)
++            return colors
++        return Object.assign({}, colors, {
++            background: "#000000",
++            surface: root.darken(colors.surface, 0.6),
++            surfaceHover: root.darken(colors.surfaceHover, 0.4),
++            border: root.darken(colors.border, 0.25)
++        })
++    }
++
+     onTerminalGroundChanged: root.pushTerminalGround()
+ 
+     function pushTerminalGround(): void {
+@@ -158,6 +202,8 @@
+         function onArrivedChanged(): void {
+             root.pushedTargets = root.themeTargets
+             root.pushTerminalSettings()
++            if (root.pureBlack)
++                root.setTheme(root.activeId, false)
+         }
+     }
+ 
+@@ -223,7 +269,7 @@
+             return
+         }
+         root.terminalProcess.command = [root.script, "push-terminal-palette",
+-                                        JSON.stringify(colors)]
++                                        JSON.stringify(root.look(colors))]
+         root.terminalProcess.running = true
+     }
+ 
+@@ -232,7 +278,7 @@
  
      // The colours on screen, for a push that is not a change of palette.
      function currentColors(): var {
@@ -295,7 +363,7 @@ diff -ruN a/services/ThemeService.qml b/services/ThemeService.qml
              return root.dynamicColors
          return Palettes.byId(root.activeId)?.colors ?? null
      }
-@@ -268,9 +289,9 @@
+@@ -268,9 +314,9 @@
          root.activeId = themeId
          Theme.activeId = themeId
  
@@ -303,7 +371,35 @@ diff -ruN a/services/ThemeService.qml b/services/ThemeService.qml
 +        if (root.isAdaptive(themeId)) {
              if (root.dynamicColors) {
 -                Theme.apply(root.dynamicColors, root.adaptiveTheme.name)
-+                Theme.apply(root.dynamicColors, root.adaptiveEntry(themeId).name)
++                Theme.apply(root.look(root.dynamicColors), root.adaptiveEntry(themeId).name)
                  root.pushTerminal(root.dynamicColors)
              } else {
                  root.reloadAdaptiveColors()
+@@ -278,7 +324,7 @@
+         } else {
+             const palette = Palettes.byId(themeId)
+             if (palette) {
+-                Theme.apply(palette.colors, palette.name)
++                Theme.apply(root.look(palette.colors), palette.name)
+                 root.pushTerminal(palette.colors)
+             } else {
+                 console.warn("Unknown palette:", themeId)
+diff -ruN a/settings/AppearanceSection.qml b/settings/AppearanceSection.qml
+--- settings/AppearanceSection.qml
++++ settings/AppearanceSection.qml
+@@ -76,6 +76,15 @@
+                     onClicked: root.panelRequested("appearance")
+                 }
+             }
++
++            SettingRow {
++                label: Tr.t("Pure black")
++
++                ToggleSwitch {
++                    checked: SettingsService.pureBlack
++                    onToggled: checked => SettingsService.set("pureBlack", checked)
++                }
++            }
+         }
+ 
+         // Each tile loops its awww transition in miniature.
