@@ -22,6 +22,8 @@ let
       --replace-fail /usr/share/iso-codes ${pkgs.isocodes}/share/iso-codes
     substituteInPlace $out/scripts/compositor.py \
       --replace-fail /usr/share/X11/xkb ${pkgs.xkeyboard_config}/share/X11/xkb
+    substituteInPlace $out/theme/Motion.qml \
+      --replace-fail 'workspaces: "slide"' 'workspaces: "slidevert"'
   '';
 
   hypr = pkgs.runCommand "impasto-hypr" { } ''
