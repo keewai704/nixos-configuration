@@ -137,7 +137,10 @@ Pi は [pi.nix](https://github.com/lukasl-dev/pi.nix) の Home Manager モジュ
   有料の `run_web_automation` を使うよう、[共通指示](home/keewai/common/coding-agents/shared-instructions.md)で振り分けます。
 - **Pi のモデル**：既定を OpenCode Go（`opencode-go`）の `deepseek-v4.1-flash` にし、推論レベルを `max` にします。API キーは
   [secrets/opencode-api-key.age](secrets/opencode-api-key.age) を [secrets.nix](modules/common/secrets.nix) が
-  orange と citrus で `/run/agenix/opencode-api-key` に復号し、Pi の起動時だけ `OPENCODE_API_KEY` に読み込みます。
+  orange と citrus で `/run/agenix/opencode-api-key` に復号し、適用時に `~/.pi/agent/auth.json` へ
+  そのファイルを読むコマンドを `opencode-go` 専用の認証として書き込みます。`OPENCODE_API_KEY` を使わないので、
+  同じキーを読む従量課金の OpenCode Zen（`opencode`）はモデル一覧に出ません。
+  `defaultProjectTrust = "always"` で、どのワークスペースの `.pi/` 設定も確認なしで読み込みます。
 - **Pi の拡張機能**：[pi-blackhole](https://github.com/k0valik/pi-blackhole)（決定的なコンパクションと観察記憶）を
   同名の flake 入力のソースから `--extension` で読み込み、`nix flake update` で更新します。
 - **Claude Code の共通指示**：[共通の UI・開発方針](home/keewai/common/coding-agents/shared-instructions.md)を

@@ -75,6 +75,15 @@ let
 
   mcpServers = pkgs.writeText "coding-agent-mcp-servers.json" (builtins.toJSON claudeMcpServers);
 
+  piAuth = pkgs.writeText "pi-auth.json" (
+    builtins.toJSON {
+      opencode-go = {
+        type = "api_key";
+        key = "!${lib.getExe' pkgs.coreutils "cat"} ${osConfig.age.secrets.opencode-api-key.path}";
+      };
+    }
+  );
+
   syncConfig = pkgs.writers.writePython3 "sync-coding-agent-config" {
     flakeIgnore = [ "E501" ];
   } (builtins.readFile ./sync-config.py);
@@ -152,8 +161,8 @@ in
       enable = true;
       extensions = [ "${inputs.pi-blackhole}/index.ts" ];
       mcp.mcpServers = piMcpServers;
-      environment.OPENCODE_API_KEY.file = osConfig.age.secrets.opencode-api-key.path;
       settings = {
+        defaultProjectTrust = "always";
         defaultProvider = "opencode-go";
         defaultModel = "deepseek-v4.1-flash";
         modelThinkingLevels."opencode-go/deepseek-v4.1-flash" = "max";
@@ -173,7 +182,7 @@ in
     };
 
     home.activation.codingAgentConfig = lib.hm.dag.entryAfter [ "writeBoundary" ] ''
-      run ${syncConfig} ${mcpServers}
+      run ${syncConfig} ${mcpServers} ${piAuth}
     '';
   };
 }
