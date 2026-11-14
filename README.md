@@ -220,10 +220,11 @@ NVIDIA ドライバーは nixpkgs より新しい 620.70.06（オープンカー
 impasto のドックは使わず、impasto がほかのアプリの設定ファイルへ配色を書き込む機能も止めています。
 
 配色は impasto が壁紙から作るパレットが元です。[scheme.py](hosts/citrus/desktop/impasto/scheme.py) がビルド時に impasto 自身の配色計算を
-[wallpaper.png](hosts/citrus/desktop/wallpaper.png) に掛けて base16 に変換し、[Stylix](https://github.com/nix-community/stylix)（[theme.nix](hosts/citrus/desktop/theme.nix)）がそれで GTK・Qt・kitty・fcitx5・Zen Browser・Discord などを塗ります。
+[wallpaper.png](hosts/citrus/desktop/wallpaper.png) に掛けて base16 に変換し、[Stylix](https://github.com/nix-community/stylix)（[theme.nix](hosts/citrus/desktop/theme.nix)）がそれで GTK・Qt・kitty・fcitx5・Zen Browser などを塗ります。
 impasto 側も同じ壁紙と自動配色（adaptive）に揃えるため、Home Manager の適用のたびに impasto の状態ファイルへ書き戻します。
 impasto の画面で壁紙や配色を変えても、ほかのアプリは次に設定を適用するまで変わりません。
-Stylix に対応のない Steam・Heroic・spotifast・Pi は、[material-colors.nix](hosts/citrus/desktop/material-colors.nix) などで同じ base16 からテーマを作ります。
+Stylix に対応のない Heroic・spotifast・Pi は、[material-colors.nix](hosts/citrus/desktop/material-colors.nix) などで同じ base16 からテーマを作ります。
+Steam と Discord は既存のテーマを使い、その色だけを impasto のパレットから直接取ります。
 非アクティブなウィンドウは半透明になり、Hyprland のアクリル効果が掛かります。
 外部モニターの輝度は ddcutil 経由で impasto から操作し、Alt+[ で下げ、Alt+] で上げます。
 Mod+V で impasto のクリップボード履歴を開きます。
@@ -241,9 +242,9 @@ citrus が応答しないときは起こさずに 503 を返します。
 systemd の資格情報としてサービスに渡します。
 
 日本語入力は fcitx5 と [Meltype](https://github.com/aster-void/nix-meltype) です。
-Discord は [Nixcord](https://github.com/4evy/nixcord) 経由の Equicord 入りで導入し、Bitwarden はデスクトップ版を入れます。
+Discord は [Nixcord](https://github.com/4evy/nixcord) 経由の Equicord 入りで導入し、[discord.nix](hosts/citrus/desktop/discord.nix) が [system24](https://github.com/refact0r/system24) テーマの末尾に impasto のパレットから作った色の変数を足して `~/.config/Equicord/themes/system24.theme.css` に置きます。Bitwarden はデスクトップ版を入れます。
 ブラウザーは Zen Browser を [zen-browser-flake](https://github.com/0xc000022070/zen-browser-flake) から入れて既定のブラウザーにし、[zen-browser.nix](hosts/citrus/desktop/zen-browser.nix) でポリシーと Sine（mod マネージャー）を設定します。
-Steam は [Millennium](https://docs.steambrew.app/) 入りで、[steam.nix](hosts/citrus/desktop/steam.nix) がテーマ（Material Theme）とプラグインを flake 入力から配ります。プラグインは `millennium-plugin-` で始まる入力を足すと導入され、`nix flake update` で更新します。テーマの配色ファイル（`css/main/colors/matugen.css`）は Stylix の配色から作ってテーマに同梱し、フォントは Millennium の Quick CSS（`~/.config/millennium/quick.css`）で指定します。Proton-CachyOS を互換ツールとして導入し、`ntsync` モジュールと GameMode を有効にします。GameMode を使うゲームには起動オプション `gamemoderun %command%` を設定します。GameMode の間は `gpu-workloads.target` の GPU サービス（Immich の機械学習、PLaMo、STT）を止めて GPU を空け、終了すると起動し直します。Ubisoft Connect や Epic のゲームは [Heroic](https://heroicgameslauncher.com/)（[heroic.nix](hosts/citrus/desktop/heroic.nix)）から Proton で起動します。nixpkgs の Heroic は Electron が受け付けない `--disable-gpu-compositing` を渡すため、[pkgs/heroic](pkgs/heroic/) で外しています。ゲームと Wine プレフィックスは `/mnt/data/Games/Heroic` に置き、UI は日本語にします。どちらも [heroic.nix](hosts/citrus/desktop/heroic.nix) が Home Manager の activation で `config.json` と `store/config.json` に書き込みます。配色は Stylix の配色から `~/.config/heroic/themes/stylix.css` を作り、Heroic 側でそのテーマを選んでおきます。Spotify クライアントの spotifast と kitty も入っています。spotifast の配色は [spotifast.nix](hosts/citrus/desktop/spotifast.nix) が Stylix の配色から `~/.config/spotifast/themes/stylix.json` を作り、`settings.json` でそのテーマを選んでおきます。Spotify が Soloist を見つけられるよう、同じファイルで mDNS（UDP 5353）を開けています。
+Steam は [Millennium](https://docs.steambrew.app/) 入りで、[steam.nix](hosts/citrus/desktop/steam.nix) がテーマ（[SpaceTheme](https://github.com/SpaceTheme/Steam)）とプラグインを flake 入力から配ります。プラグインは `millennium-plugin-` で始まる入力を足すと導入され、`nix flake update` で更新します。テーマの色（`--st-*` 変数）は impasto のパレットから作り、Steam の起動時に Millennium の設定（`themes.themeColors`）へ書き込みます。フォントは Millennium の Quick CSS（`~/.config/millennium/quick.css`）で指定します。Proton-CachyOS を互換ツールとして導入し、`ntsync` モジュールと GameMode を有効にします。GameMode を使うゲームには起動オプション `gamemoderun %command%` を設定します。GameMode の間は `gpu-workloads.target` の GPU サービス（Immich の機械学習、PLaMo、STT）を止めて GPU を空け、終了すると起動し直します。Ubisoft Connect や Epic のゲームは [Heroic](https://heroicgameslauncher.com/)（[heroic.nix](hosts/citrus/desktop/heroic.nix)）から Proton で起動します。nixpkgs の Heroic は Electron が受け付けない `--disable-gpu-compositing` を渡すため、[pkgs/heroic](pkgs/heroic/) で外しています。ゲームと Wine プレフィックスは `/mnt/data/Games/Heroic` に置き、UI は日本語にします。どちらも [heroic.nix](hosts/citrus/desktop/heroic.nix) が Home Manager の activation で `config.json` と `store/config.json` に書き込みます。配色は Stylix の配色から `~/.config/heroic/themes/stylix.css` を作り、Heroic 側でそのテーマを選んでおきます。Spotify クライアントの spotifast と kitty も入っています。spotifast の配色は [spotifast.nix](hosts/citrus/desktop/spotifast.nix) が Stylix の配色から `~/.config/spotifast/themes/stylix.json` を作り、`settings.json` でそのテーマを選んでおきます。Spotify が Soloist を見つけられるよう、同じファイルで mDNS（UDP 5353）を開けています。
 
 Moonlight からは [Sunshine](https://github.com/LizardByte/Sunshine) で画面を受け取れます（[sunshine/](hosts/citrus/desktop/sunshine/)）。
 アプリは3つで、「拡張ディスプレイ」はメインモニターの中央下に、「このディスプレイのみ」は物理モニターを外したうえで、クライアントが要求した解像度とリフレッシュレートの Hyprland の仮想出力（headless）`sunshine` を作ります。
