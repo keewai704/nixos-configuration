@@ -9,12 +9,6 @@
 let
   theme = "SpaceTheme";
 
-  themeSource = pkgs.runCommand "millennium-${theme}" { } ''
-    cp -r ${inputs.millennium-theme-space} $out
-    chmod -R u+w $out
-    cp ${rootColors} $out/src/css/root.css
-  '';
-
   quickCssWatcher = "quick-css-watcher";
 
   plugins =
@@ -51,6 +45,7 @@ let
     builtins.toJSON {
       general.checkForPluginAndThemeUpdates = false;
       themes.activeTheme = theme;
+      themes.themeColors.${theme} = themeColors;
       plugins.enabledPlugins = lib.attrNames plugins;
     }
   );
@@ -67,35 +62,32 @@ let
     from: to: percent:
     lib.zipListsWith (a: b: (a * (100 - percent) + b * percent) / 100) (channels from) (channels to);
 
-  rootColors =
+  themeColors =
     with impastoPalette;
-    pkgs.writeText "spacetheme-root.css" ''
-      :root {
-      ${
-        lib.concatStrings (
-          lib.mapAttrsToList (name: rgb: "    --st-${name}: ${lib.concatMapStringsSep ", " toString rgb};\n")
-            {
-              accent-1 = channels accent;
-              accent-2 = channels accentHover;
-              background = channels background;
-              color-1 = mix background surface 33;
-              color-3 = mix background surface 66;
-              color-4 = channels surface;
-              color-2 = mix surface surfaceHover 50;
-              color-6 = channels surfaceHover;
-              color-5 = mix surfaceHover border 50;
-              red = channels red;
-              red-hover = mix red text 20;
-              green = channels green;
-              green-hover = mix green text 20;
-              blue = channels blue;
-              blue-hover = mix blue text 20;
-              yellow = channels yellow;
-              yellow-hover = mix yellow text 20;
-            }
-        )
-      }}
-    '';
+    lib.mapAttrs'
+      (name: rgb: {
+        name = "--st-${name}";
+        value = lib.concatMapStringsSep ", " toString rgb;
+      })
+      {
+        accent-1 = channels accent;
+        accent-2 = channels accentHover;
+        background = channels background;
+        color-1 = mix background surface 33;
+        color-3 = mix background surface 66;
+        color-4 = channels surface;
+        color-2 = mix surface surfaceHover 50;
+        color-6 = channels surfaceHover;
+        color-5 = mix surfaceHover border 50;
+        red = channels red;
+        red-hover = mix red text 20;
+        green = channels green;
+        green-hover = mix green text 20;
+        blue = channels blue;
+        blue-hover = mix blue text 20;
+        yellow = channels yellow;
+        yellow-hover = mix yellow text 20;
+      };
 
   quickCss = pkgs.writeText "millennium-quick.css" ''
     :root * {
@@ -143,7 +135,7 @@ in
 
   home-manager.users.keewai = {
     home.file.".local/share/Steam/millennium/themes/${theme}" = {
-      source = themeSource;
+      source = inputs.millennium-theme-space;
       recursive = true;
     };
 

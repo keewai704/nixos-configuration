@@ -5,6 +5,8 @@
   ...
 }:
 let
+  theme = "system24.theme.css";
+
   shades =
     name: color:
     lib.concatImapStrings (index: mix: "    --${name}-${toString index}: ${mix};\n") [
@@ -47,10 +49,10 @@ in
     programs.nixcord = {
       enable = true;
       discord.equicord.enable = true;
-      config = {
-        themes.system24 = builtins.readFile "${inputs.discord-system24}/theme/system24.theme.css" + colors;
-        enabledThemes = [ "system24.css" ];
-      };
+      config.enabledThemes = [ theme ];
     };
+
+    xdg.configFile."Equicord/themes/${theme}".text =
+      builtins.readFile "${inputs.discord-system24}/theme/system24.theme.css" + colors;
   };
 }
