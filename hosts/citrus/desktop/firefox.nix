@@ -32,10 +32,9 @@ let
   firefox = pkgs.firefox.overrideAttrs (old: {
     buildCommand = old.buildCommand + ''
       libDir=$out/lib/firefox
-      chmod -R u+w $libDir/defaults
-      chmod u+w $libDir
-      cat ${zen-browser}/hm-module/sine-default-prefs.js ${sinePack.bootloader}/program/config.js > $libDir/config.js
-      install -m 644 ${sinePack.bootloader}/program/defaults/pref/config-prefs.js $libDir/defaults/pref/config-pref.js
+      chmod u+w $libDir/mozilla.cfg $libDir/defaults/pref/autoconfig.js
+      echo 'pref("general.config.sandbox_enabled", false);' >> $libDir/defaults/pref/autoconfig.js
+      cat ${zen-browser}/hm-module/sine-default-prefs.js ${sinePack.bootloader}/program/config.js >> $libDir/mozilla.cfg
     '';
   });
 
