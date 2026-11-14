@@ -150,6 +150,8 @@ Pi は [pi.nix](https://github.com/lukasl-dev/pi.nix) の Home Manager モジュ
   Pi と同じ `opencode-go/deepseek-v4.1-flash`（thinking `low`）に固定します。適用時にこの4つのキーだけを上書きし、他の設定はそのまま残します。
 - **Claude Code の共通指示**：[共通の UI・開発方針](home/keewai/common/coding-agents/shared-instructions.md)を
   `~/.claude/CLAUDE.md` に置きます。
+- **サブエージェント**：[共通指示](home/keewai/common/coding-agents/shared-instructions.md)で、Claude Code と Codex に
+  T3 Code の `delegate_task` から Pi の `opencode-go/deepseek-v4.1-flash`（thinking `max`）を使わせます。
 - **Claude Code の共通設定**：`autoCompactWindow = 400000` と `env.CLAUDE_CODE_SIMPLE_SYSTEM_PROMPT = "1"` を適用時に設定します。
 - **Codex の共通指示**：[codex-instructions.md](home/keewai/common/coding-agents/codex-instructions.md) と共通の UI・開発方針を
   `~/.codex/config.toml` の `developer_instructions` に設定します。

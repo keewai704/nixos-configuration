@@ -32,3 +32,11 @@ When the task's deliverable is a document written in Japanese (a report, proposa
 manual, letter, or similar file or doc), always refine its text with the `yomiyasu`
 skill before delivering it. Do not use `yomiyasu` for ordinary chat responses, code,
 configuration, or code documentation updates.
+
+# Subagents
+
+Run subagents on OpenCode Go's DeepSeek V4.1 Flash at maximum reasoning: call
+T3 Code `delegate_task` with provider `pi`, model
+`opencode-go/deepseek-v4.1-flash`, and option `thinking: max`, instead of native
+subagent tools. Use native subagents only when `delegate_task` is unavailable or
+the user names another model.
