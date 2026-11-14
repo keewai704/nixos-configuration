@@ -106,6 +106,7 @@ in
               "discord"
               "fastfetch"
               "fcitx5"
+              "heroiclauncher"
               "papirus-icons"
               "pi-agent"
               "pywalfox"

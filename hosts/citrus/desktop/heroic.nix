@@ -11,6 +11,8 @@ let
 
   language = "ja";
 
+  theme = "matugen.css";
+
   settings = {
     defaultInstallPath = directory;
     defaultWinePrefix = prefixDirectory;
@@ -35,20 +37,26 @@ in
     home.activation.heroicSettings = inputs.home-manager.lib.hm.dag.entryAfter [ "writeBoundary" ] ''
       config="''${XDG_CONFIG_HOME:-$HOME/.config}/heroic/config.json"
       store="''${XDG_CONFIG_HOME:-$HOME/.config}/heroic/store/config.json"
+      themes="''${XDG_CONFIG_HOME:-$HOME/.config}/heroic/themes"
 
-      run mkdir -p ${directory} ${prefixDirectory} "$(dirname "$config")" "$(dirname "$store")"
+      run mkdir -p ${directory} ${prefixDirectory} "$themes" "$(dirname "$config")" "$(dirname "$store")"
 
       [ -s "$config" ] || echo '{}' > "$config"
       merged="$(mktemp "$config.XXXXXX")"
       ${lib.getExe pkgs.jq} --argjson settings ${lib.escapeShellArg (builtins.toJSON settings)} \
-        '.defaultSettings = ((.defaultSettings // {}) + $settings) | .version = (.version // "v0")' \
+        --arg themes "$themes" \
+        '.defaultSettings = ((.defaultSettings // {}) + $settings)
+          | .defaultSettings.customThemesPath = $themes
+          | .version = (.version // "v0")' \
         "$config" > "$merged"
       run mv "$merged" "$config"
 
       [ -s "$store" ] || echo '{}' > "$store"
       merged="$(mktemp "$store.XXXXXX")"
-      ${lib.getExe pkgs.jq} --arg language ${lib.escapeShellArg language} \
-        '.language = $language | if has("settings") then .settings.language = $language else . end' \
+      ${lib.getExe pkgs.jq} --arg language ${lib.escapeShellArg language} --arg theme ${lib.escapeShellArg theme} \
+        '.language = $language
+          | .theme = $theme
+          | if has("settings") then .settings.language = $language else . end' \
         "$store" > "$merged"
       run mv "$merged" "$store"
     '';
