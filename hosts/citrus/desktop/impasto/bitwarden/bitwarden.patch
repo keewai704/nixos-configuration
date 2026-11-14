@@ -19,8 +19,8 @@
  
          readonly property var names: ["launcher", "controls", "overview", "appearance", "palette",
              "stats", "session", "pet", "games", "notes", "board", "keys", "packages",
--            "machines", "servers", "screentime", "camera", "wifi", "bluetooth", "sound", "microphone", "brightness", "nightlight", "power", "record"]
-+            "machines", "servers", "screentime", "camera", "vault", "wifi", "bluetooth", "sound", "microphone", "brightness", "nightlight", "power", "record"]
+-            "machines", "servers", "screentime", "camera", "player", "wifi", "bluetooth", "sound", "microphone", "brightness", "nightlight", "power", "record"]
++            "machines", "servers", "screentime", "camera", "player", "vault", "wifi", "bluetooth", "sound", "microphone", "brightness", "nightlight", "power", "record"]
  
          function open(name: string): string {
              if (names.indexOf(name) < 0)
