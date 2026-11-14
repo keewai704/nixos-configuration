@@ -5,8 +5,6 @@
   ...
 }:
 let
-  theme = "https://refact0r.github.io/system24/theme/system24.theme.css";
-
   shades =
     name: color:
     lib.concatImapStrings (index: mix: "    --${name}-${toString index}: ${mix};\n") [
@@ -49,12 +47,10 @@ in
     programs.nixcord = {
       enable = true;
       discord.equicord.enable = true;
-      quickCss = colors;
-      config = {
-        useQuickCss = true;
-        themeLinks = [ theme ];
-        enabledThemeLinks = [ theme ];
-      };
     };
+
+    home.activation.equicord-settings = lib.mkForce (inputs.home-manager.lib.hm.dag.entryAnywhere "");
+
+    xdg.configFile."Equicord/settings/quickCss.css".text = colors;
   };
 }
