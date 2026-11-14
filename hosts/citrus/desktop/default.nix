@@ -6,6 +6,7 @@
 }:
 {
   imports = [
+    ./anno1800.nix
     ./firefox.nix
     ./heroic.nix
     ./modrinth.nix
