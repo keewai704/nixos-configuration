@@ -6,6 +6,7 @@
 }:
 {
   imports = [
+    ./firefox.nix
     ./modrinth.nix
     ./noctalia.nix
     ./spotifast.nix
