@@ -63,8 +63,6 @@ in
     fcitx5Value fcitx5.settings.addons.classicui.globalSection;
 
   home-manager.users.keewai = {
-    stylix.targets.zen-browser.profileNames = [ "default" ];
-
     xdg.dataFile = with fcitx5.themes.stylix; {
       "fcitx5/themes/stylix/theme.conf".source = (pkgs.formats.ini { }).generate "fcitx5-stylix-theme" (
         fcitx5Value theme
