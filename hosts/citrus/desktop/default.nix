@@ -5,7 +5,6 @@
 }:
 {
   imports = [
-    ./anno1800.nix
     ./heroic.nix
     ./impasto
     ./modrinth.nix
