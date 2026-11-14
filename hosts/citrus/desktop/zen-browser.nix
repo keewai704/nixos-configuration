@@ -56,6 +56,7 @@
               "ad97bb70-0066-4e42-9b5f-173a5e42c6fc"
               "auto-pip-setting"
               "c01d3e22-1cee-45c1-a25e-53c0f180eea8"
+              "context-menu-icons"
               "e122b5d9-d385-4bf8-9971-e137809097d0"
             ];
           };
