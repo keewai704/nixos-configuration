@@ -78,6 +78,10 @@ in
     defaultSession = "hyprland-uwsm";
   };
 
+  hardware.bluetooth.enable = true;
+  services.upower.enable = true;
+  services.power-profiles-daemon.enable = true;
+
   environment.systemPackages = [ greeter ];
 
   fonts.packages = [ pkgs.inter ];
