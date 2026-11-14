@@ -25,7 +25,7 @@ let
               "intl.accept_languages" = "ja,en-US,en";
               "layout.spellcheckDefault" = 0;
               "signon.firefoxRelay.feature" = "disabled";
-              "dom.security.https_only_mode" = false;
+              "dom.security.https_only_mode" = true;
               "browser.urlbar.suggest.searches" = true;
             };
       };
