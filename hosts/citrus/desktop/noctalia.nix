@@ -109,7 +109,6 @@ in
               "heroiclauncher"
               "papirus-icons"
               "pi-agent"
-              "pywalfox"
               "starship"
               "thunar"
               "zen-browser"
