@@ -1,4 +1,9 @@
-{ lib, pkgs, ... }:
+{
+  config,
+  lib,
+  pkgs,
+  ...
+}:
 let
   inherit (import ../../settings.nix)
     citrusWakePort
@@ -6,7 +11,6 @@ let
     ;
   citrus = import ../../../citrus/settings.nix;
 
-  apiKeyDirectory = "/var/lib/immich-ml-schedule";
   controlUrl = "${citrus.tailnetOrigin}/immich-machine-learning-control";
 
   schedule = pkgs.writers.writePython3Bin "immich-ml-schedule" {
@@ -26,16 +30,17 @@ let
       Type = "oneshot";
       ExecStart = "${lib.getExe schedule} ${mode}";
       DynamicUser = true;
-      LoadCredential = "api-key:${apiKeyDirectory}/api-key";
+      LoadCredential = "api-key:${config.age.secrets.immich-api-key.path}";
     };
   };
 in
 {
-  systemd.tmpfiles.settings.immich-ml-schedule.${apiKeyDirectory}.d = {
-    user = "root";
-    group = "root";
-    mode = "0700";
+  age.secrets.immich-api-key = {
+    file = ../../../../secrets/immich-api-key.age;
+    mode = "0400";
   };
+
+  systemd.tmpfiles.rules = [ "R /var/lib/immich-ml-schedule" ];
 
   systemd.services = {
     immich-ml-schedule = mkService "Run Immich machine learning on Citrus" "run" // {

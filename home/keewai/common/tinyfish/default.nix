@@ -1,8 +1,11 @@
-{ pkgs, ... }:
+{ osConfig, pkgs, ... }:
 let
-  headersHelper = pkgs.writers.writePython3 "tinyfish-mcp-headers" {
+  headers = pkgs.writers.writePython3 "tinyfish-mcp-headers" {
     flakeIgnore = [ "E501" ];
   } (builtins.readFile ./headers.py);
+  headersHelper = pkgs.writeShellScript "tinyfish-mcp-headers-agenix" ''
+    TINYFISH_API_KEY_FILE=${osConfig.age.secrets.tinyfish-api-key.path} exec ${headers}
+  '';
 in
 {
   codingAgents.mcpServers.tinyfish = {

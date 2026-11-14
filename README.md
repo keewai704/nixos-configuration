@@ -133,9 +133,9 @@ Pi は [pi.nix](https://github.com/lukasl-dev/pi.nix) の Home Manager モジュ
   Claude Code の `WebSearch` と Codex の組み込み `web_search` は無効にします。
   この回線で常にブロックまたはタイムアウトする DuckDuckGo・Google・Qwant は無効にしてあります。
 - **ブラウザー操作**：[tinyfish/](home/keewai/common/tinyfish/default.nix) が [TinyFish](https://docs.tinyfish.ai/) の
-  リモート MCP サーバーを `tinyfish` として登録します。API キーは `TINYFISH_API_KEY` か `~/.tinyfish/config.json`
-  （`tinyfish auth login` と同じ形式）から適用時ではなく接続時に読み、Nix には保存しません。
-  キーが無いときは `tinyfish` をどのエージェントにも登録しないので、起動時に接続エラーが出ません。
+  リモート MCP サーバーを `tinyfish` として登録します。API キーは [secrets/tinyfish-api-key.age](secrets/tinyfish-api-key.age) を
+  [secrets.nix](modules/common/secrets.nix) が `/run/agenix/tinyfish-api-key` に復号し、接続時にヘッダー生成コマンドが読みます。
+  シークレットが復号できないときは `tinyfish` をどのエージェントにも登録しないので、起動時に接続エラーが出ません。
   検索は SearXNG、ページの読み取りは TinyFish の `fetch_content`、クリックや入力が必要な操作だけ
   有料の `run_web_automation` を使うよう、[共通指示](home/keewai/common/coding-agents/shared-instructions.md)で振り分けます。
 - **Pi のモデル**：既定を OpenCode Go（`opencode-go`）の `deepseek-v4.1-flash` にし、推論レベルを `max` にします。API キーは
@@ -229,6 +229,8 @@ Immich は orange の [citrus-wake](hosts/orange/services/citrus-wake/) に推�
 citrus が応答しないときは起こさずに 503 を返します。
 機械学習のキューは普段は止めておき、[immich-ml-schedule](hosts/orange/services/immich-ml-schedule/) が
 平日 9 時に citrus を Wake-on-LAN で起こしてキューを流し、自分で起こした場合は終わったらサスペンドさせます。
+キュー操作に使う Immich の API キーは [secrets/immich-api-key.age](secrets/immich-api-key.age) を agenix で復号し、
+systemd の資格情報としてサービスに渡します。
 
 日本語入力は fcitx5 と [Meltype](https://github.com/aster-void/nix-meltype) です。
 Discord は [Nixcord](https://github.com/4evy/nixcord) 経由の Equicord 入りで導入し、Bitwarden はデスクトップ版を入れます。

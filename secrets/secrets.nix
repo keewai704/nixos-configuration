@@ -4,7 +4,12 @@ let
 in
 {
   "discord-webhook.age".publicKeys = [ orange ];
+  "immich-api-key.age".publicKeys = [ orange ];
   "opencode-api-key.age".publicKeys = [
+    orange
+    citrus
+  ];
+  "tinyfish-api-key.age".publicKeys = [
     orange
     citrus
   ];
