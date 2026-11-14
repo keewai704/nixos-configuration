@@ -1,57 +1,9 @@
 {
   config,
   inputs,
-  lib,
   pkgs,
   ...
 }:
-let
-  zen-browser-unwrapped =
-    (inputs.zen-browser.packages.x86_64-linux.beta-unwrapped.override {
-      extraPolicies = {
-        RequestedLocales = [
-          "ja"
-          "en-US"
-        ];
-        TranslateEnabled = false;
-        SearchSuggestEnabled = true;
-        Preferences =
-          lib.mapAttrs
-            (_: Value: {
-              inherit Value;
-              Status = "default";
-            })
-            {
-              "intl.accept_languages" = "ja,en-US,en";
-              "layout.spellcheckDefault" = 0;
-              "signon.firefoxRelay.feature" = "disabled";
-              "dom.security.https_only_mode" = true;
-              "browser.urlbar.suggest.searches" = true;
-            };
-      };
-    }).overrideAttrs
-      (old: {
-        postInstall = (old.postInstall or "") + ''
-          lib_dir=$(echo $out/lib/zen-bin-*)
-          chmod u+w $lib_dir $lib_dir/defaults/pref
-          cat > $lib_dir/defaults/pref/local-settings.js <<'PREF'
-          pref("general.config.filename", "local-settings.cfg");
-          pref("general.config.obscure_value", 0);
-          PREF
-          cat > $lib_dir/local-settings.cfg <<'CFG'
-          //
-          defaultPref("zen.glance.enabled", false);
-          defaultPref("font.default.ja", "sans-serif");
-          defaultPref("font.default.x-western", "sans-serif");
-          defaultPref("font.name.sans-serif.ja", "Noto Sans CJK JP");
-          defaultPref("font.name.sans-serif.x-western", "Noto Sans CJK JP");
-          CFG
-        '';
-      });
-  zen-browser = import "${inputs.zen-browser}/wrap-zen.nix" pkgs.wrapFirefox zen-browser-unwrapped {
-    icon = "zen-browser";
-  };
-in
 {
   imports = [
     ./modrinth.nix
@@ -60,6 +12,7 @@ in
     ./steam.nix
     ./sunshine
     ./theme.nix
+    ./zen-browser.nix
   ];
 
   nixpkgs.overlays = [ inputs.nix-meltype.overlays.default ];
@@ -143,12 +96,7 @@ in
   programs.xfconf.enable = true;
   services.gvfs.enable = true;
   services.tumbler.enable = true;
-  xdg.mime.defaultApplications = {
-    "inode/directory" = "thunar.desktop";
-    "text/html" = "zen-beta.desktop";
-    "x-scheme-handler/http" = "zen-beta.desktop";
-    "x-scheme-handler/https" = "zen-beta.desktop";
-  };
+  xdg.mime.defaultApplications."inode/directory" = "thunar.desktop";
 
   home-manager.users.keewai = {
     imports = [ inputs.nixcord.homeModules.nixcord ];
@@ -221,8 +169,6 @@ in
         || echo 'include font.conf' | run tee -a "$kitty_conf" > /dev/null
     '';
 
-    programs.gh.settings.browser = lib.mkForce "${lib.getExe' pkgs.systemd "systemd-run"} --user --collect --quiet ${lib.getExe zen-browser}";
-
     programs.nixcord = {
       enable = true;
       discord.equicord.enable = true;
@@ -238,7 +184,6 @@ in
       pkgs.ddcutil
       pkgs.kitty
       pkgs.wl-clipboard
-      zen-browser
     ];
   };
 }
