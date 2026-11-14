@@ -73,7 +73,35 @@ let
       }
   ) cfg.mcpServers;
 
-  mcpServers = pkgs.writeText "coding-agent-mcp-servers.json" (builtins.toJSON claudeMcpServers);
+  syncDocument = pkgs.writeText "coding-agent-sync.json" (
+    builtins.toJSON {
+      checks = lib.mapAttrs (_: server: server.headersHelper) (
+        lib.filterAttrs (_: server: server.headersHelper != null) cfg.mcpServers
+      );
+      servers = {
+        claude = claudeMcpServers;
+        codex = codexMcpServers;
+        pi = piMcpServers;
+      };
+    }
+  );
+
+  piProvider = "opencode-go";
+  piModel = "deepseek-v4.1-flash";
+  piBlackholeModel = {
+    provider = piProvider;
+    id = piModel;
+    thinking = "low";
+  };
+  piBlackholeSettings = {
+    model = piBlackholeModel;
+    observerModel = piBlackholeModel;
+    reflectorModel = piBlackholeModel;
+    dropperModel = piBlackholeModel;
+  };
+  piBlackholeJson = pkgs.writeText "coding-agent-pi-blackhole.json" (
+    builtins.toJSON piBlackholeSettings
+  );
 
   piAuth = pkgs.writeText "pi-auth.json" (
     builtins.toJSON {
@@ -127,7 +155,7 @@ in
         }
       );
       default = { };
-      description = "Stdio or HTTP MCP servers registered in Claude Code, Codex, and Pi user configuration.";
+      description = "Stdio or HTTP MCP servers registered in Claude Code, Codex, and Pi user configuration. HTTP servers are registered only while their headersHelper succeeds.";
     };
   };
 
@@ -160,12 +188,11 @@ in
     programs.pi.coding-agent = {
       enable = true;
       extensions = [ "${inputs.pi-blackhole}/index.ts" ];
-      mcp.mcpServers = piMcpServers;
       settings = {
         defaultProjectTrust = "always";
-        defaultProvider = "opencode-go";
-        defaultModel = "deepseek-v4.1-flash";
-        modelThinkingLevels."opencode-go/deepseek-v4.1-flash" = "max";
+        defaultProvider = piProvider;
+        defaultModel = piModel;
+        modelThinkingLevels."${piProvider}/${piModel}" = "max";
         defaultTools = [ "+codemode" ];
         codemode.mode = "only";
       };
@@ -181,8 +208,10 @@ in
       ".claude/CLAUDE.md".text = sharedInstructions;
     };
 
-    home.activation.codingAgentConfig = lib.hm.dag.entryAfter [ "writeBoundary" ] ''
-      run ${syncConfig} ${mcpServers} ${piAuth}
-    '';
+    home.activation.codingAgentConfig =
+      lib.hm.dag.entryAfter [ "writeBoundary" "codexMutableSettings" ]
+        ''
+          run ${syncConfig} ${syncDocument} ${piAuth} ${piBlackholeJson} ${lib.getExe pkgs.jaq}
+        '';
   };
 }

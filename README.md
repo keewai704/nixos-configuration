@@ -124,8 +124,10 @@ Pi は [pi.nix](https://github.com/lukasl-dev/pi.nix) の Home Manager モジュ
   同名の flake 入力から同じ場所にリンクし、`nix flake update` で更新します。
   Pi は `~/.agents/skills/` を標準で読むため、同じスキルが使えます。
 - **MCP サーバー**：`codingAgents.mcpServers.<名前>` に stdio の `{ command; args; env; }` か HTTP の `{ url; headersHelper; }` を書くと、
-  適用時に `~/.claude.json` と `~/.codex/config.toml` へ書き込み、Pi には `~/.pi/agent/mcp.json` へ実行時に反映します。
-  Pi の HTTP サーバーには、`headersHelper` が出力する `Authorization` ヘッダーだけを渡します。`headersHelper` は HTTP ヘッダーの JSON を出力するコマンドです。`~/.claude.json` では Nix から外したサーバーだけを消し、手で追加したサーバーはそのまま残します。
+  適用時に `~/.claude.json`・`~/.codex/config.toml`・`~/.pi/agent/mcp.json` へ書き込みます。
+  Pi の HTTP サーバーには、`headersHelper` が出力する `Authorization` ヘッダーだけを渡します。`headersHelper` は HTTP ヘッダーの JSON を出力するコマンドです。
+  `headersHelper` が失敗する HTTP サーバーは Pi と Claude Code の設定から外し、Codex の `~/.codex/config.toml` からも削除するので、認証情報がないまま接続エラーになることはありません。
+  `~/.claude.json` と `~/.pi/agent/mcp.json` では Nix から外したサーバーだけを消し、手で追加したサーバーはそのまま残します。
 - **Web 検索**：[searxng.nix](home/keewai/common/searxng.nix) が nixpkgs の [SearXNG](https://github.com/searxng/searxng) を
   `127.0.0.1:8888` のユーザーサービスとして動かし、nixpkgs の `mcp-searxng` を `searxng` MCP サーバーとして登録します。
   Claude Code の `WebSearch` と Codex の組み込み `web_search` は無効にします。
@@ -133,6 +135,7 @@ Pi は [pi.nix](https://github.com/lukasl-dev/pi.nix) の Home Manager モジュ
 - **ブラウザー操作**：[tinyfish/](home/keewai/common/tinyfish/default.nix) が [TinyFish](https://docs.tinyfish.ai/) の
   リモート MCP サーバーを `tinyfish` として登録します。API キーは `TINYFISH_API_KEY` か `~/.tinyfish/config.json`
   （`tinyfish auth login` と同じ形式）から適用時ではなく接続時に読み、Nix には保存しません。
+  キーが無いときは `tinyfish` をどのエージェントにも登録しないので、起動時に接続エラーが出ません。
   検索は SearXNG、ページの読み取りは TinyFish の `fetch_content`、クリックや入力が必要な操作だけ
   有料の `run_web_automation` を使うよう、[共通指示](home/keewai/common/coding-agents/shared-instructions.md)で振り分けます。
 - **Pi のモデル**：既定を OpenCode Go（`opencode-go`）の `deepseek-v4.1-flash` にし、推論レベルを `max` にします。API キーは
@@ -143,6 +146,8 @@ Pi は [pi.nix](https://github.com/lukasl-dev/pi.nix) の Home Manager モジュ
   `defaultProjectTrust = "always"` で、どのワークスペースの `.pi/` 設定も確認なしで読み込みます。
 - **Pi の拡張機能**：[pi-blackhole](https://github.com/k0valik/pi-blackhole)（決定的なコンパクションと観察記憶）を
   同名の flake 入力のソースから `--extension` で読み込み、`nix flake update` で更新します。
+  観察・要約・選別の各ワーカーは `~/.pi/agent/pi-blackhole/pi-blackhole-config.json` の `model`・`observerModel`・`reflectorModel`・`dropperModel` を
+  Pi と同じ `opencode-go/deepseek-v4.1-flash`（thinking `low`）に固定します。適用時にこの4つのキーだけを上書きし、他の設定はそのまま残します。
 - **Claude Code の共通指示**：[共通の UI・開発方針](home/keewai/common/coding-agents/shared-instructions.md)を
   `~/.claude/CLAUDE.md` に置きます。
 - **Claude Code の共通設定**：`autoCompactWindow = 400000` と `env.CLAUDE_CODE_SIMPLE_SYSTEM_PROMPT = "1"` を適用時に設定します。
