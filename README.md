@@ -36,7 +36,7 @@ flake.nix
 ├── nixosConfigurations.citrus
 │   ├── modules/common
 │   └── hosts/citrus
-│       ├── desktop/         Umbriel・Noctalia・日本語入力・フォント・壁紙
+│       ├── desktop/         Umbriel・Noctalia・impasto（Hyprland）・日本語入力・フォント・壁紙
 │       └── services/        GPU サービス（STT・PLaMo・Immich の機械学習）、Wake-on-LAN、Web 公開
 └── nixosConfigurations.citrus-installer
     └── hosts/citrus/installer/  インストーラーISO（デスクトップ構成＋インストーラー）

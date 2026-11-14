@@ -147,11 +147,11 @@
         "nixpkgs": "nixpkgs"
       },
       "locked": {
-        "lastModified": 1794592226,
-        "narHash": "sha256-ud7kuUgITpvfE+YHXPEs5H5MnLVR1zRkKxeOtYOGWt4=",
+        "lastModified": 1794643031,
+        "narHash": "sha256-3uhZQQqyozQBHed6357TNDKMpslfwKM2X1P6J/7h6Jw=",
         "owner": "chaotic-cx",
         "repo": "nyx",
-        "rev": "8dbea94d5aff73a224d85f0dbdea95539df01105",
+        "rev": "b9166f0337e4e7a19c81ff77f356e6a06d6350c7",
         "type": "github"
       },
       "original": {
@@ -385,6 +385,23 @@
         "ref": "main",
         "type": "git",
         "url": "https://github.com/MaryCache/imozuru"
+      }
+    },
+    "impasto": {
+      "flake": false,
+      "locked": {
+        "lastModified": 1794489919,
+        "narHash": "sha256-umveBZsLo2X679ufguKwuoPksw/FeGnc7gteaOx2DwM=",
+        "ref": "main",
+        "rev": "76a1a4f84fea085905b9b0bdef6842fd8e3cd919",
+        "revCount": 280,
+        "type": "git",
+        "url": "https://github.com/andreumassanet/impasto"
+      },
+      "original": {
+        "ref": "main",
+        "type": "git",
+        "url": "https://github.com/andreumassanet/impasto"
       }
     },
     "jail-nix": {
@@ -769,11 +786,11 @@
         "treefmt-nix": "treefmt-nix"
       },
       "locked": {
-        "lastModified": 1794632857,
-        "narHash": "sha256-0sUwKoVXcv8rXpDnqixFgSjZbEtu5hF8q52QcLL4GVI=",
+        "lastModified": 1794658885,
+        "narHash": "sha256-Xz2IPM2IMNm0ztW5qXfeFazfxD/asZS1Rkz1sckNUMo=",
         "owner": "4evy",
         "repo": "nixcord",
-        "rev": "0388b279f74e2d356f1e909ae9b19c2b14c7ed5f",
+        "rev": "1fd806254f5be790861b70f16c2ff9053dda6fcd",
         "type": "github"
       },
       "original": {
@@ -980,11 +997,11 @@
         ]
       },
       "locked": {
-        "lastModified": 1794655916,
-        "narHash": "sha256-s+hU4BD6J0OoF5WL2OLwTlo69ukWI7SsrhiEI5wt3RM=",
+        "lastModified": 1794657882,
+        "narHash": "sha256-+UuVcP3Xkr9BDOz/yd3Wh2gDXiEZ4lig2bzrdCiIA1Y=",
         "ref": "main",
-        "rev": "1329762e3fe2c6a33aaa3ec071abf9788d774758",
-        "revCount": 15,
+        "rev": "261f057b11a9cacc820fe768b7dc39570a264f42",
+        "revCount": 16,
         "type": "git",
         "url": "https://github.com/keewai704/plamo-app"
       },
@@ -1055,6 +1072,7 @@
         "edcb": "edcb",
         "home-manager": "home-manager_2",
         "imozuru": "imozuru",
+        "impasto": "impasto",
         "konomitv": "konomitv",
         "konomitv-thirdparty": "konomitv-thirdparty",
         "mamba-ssm": "mamba-ssm",

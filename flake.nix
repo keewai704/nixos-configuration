@@ -153,6 +153,11 @@
       flake = false;
     };
 
+    impasto = {
+      url = "git+https://github.com/andreumassanet/impasto?ref=main";
+      flake = false;
+    };
+
     plamo-app = {
       url = "git+https://github.com/keewai704/plamo-app?ref=main";
       inputs.nixpkgs.follows = "nixpkgs";

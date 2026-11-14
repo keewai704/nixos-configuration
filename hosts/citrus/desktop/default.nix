@@ -9,6 +9,7 @@
     ./anno1800.nix
     ./bitwarden
     ./heroic.nix
+    ./impasto
     ./modrinth.nix
     ./noctalia.nix
     ./spotifast.nix
