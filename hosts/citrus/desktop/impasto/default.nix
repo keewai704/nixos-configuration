@@ -4,6 +4,10 @@
   ...
 }:
 let
+  quickshell = pkgs.quickshell.overrideAttrs (old: {
+    buildInputs = old.buildInputs ++ [ pkgs.qt6.qtmultimedia ];
+  });
+
   shell = pkgs.runCommand "impasto-quickshell" { } ''
     cp -r ${inputs.impasto}/home/.config/quickshell $out
     chmod -R u+w $out
@@ -71,7 +75,7 @@ in
       pkgs.libnotify
       pkgs.playerctl
       pkgs.pulseaudio
-      pkgs.quickshell
+      quickshell
       pkgs.satty
       pkgs.songrec
       pkgs.tesseract
