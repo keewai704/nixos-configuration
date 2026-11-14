@@ -637,11 +637,11 @@
     "mirakc": {
       "flake": false,
       "locked": {
-        "lastModified": 1794607158,
-        "narHash": "sha256-K/xe4/nPohaYxES7F4P7x7l0Jbfr5jni3icdeErRAGs=",
+        "lastModified": 1794615625,
+        "narHash": "sha256-jPcSGYzgNL4Vt068U5IYz/At3iBasPCAcAmU+izQc14=",
         "ref": "release",
-        "rev": "a42fc6b133b82188c2321b2ba40ea99fb5959fd0",
-        "revCount": 3631,
+        "rev": "a8f9497e1f74f208c9734da3c92a12f6cb9c63f1",
+        "revCount": 3632,
         "type": "git",
         "url": "https://github.com/mirakc/mirakc"
       },
@@ -1143,11 +1143,11 @@
     "t3code-nightly": {
       "flake": false,
       "locked": {
-        "lastModified": 1794581304,
-        "narHash": "sha256-IG8kjvVp0q6SIdWaMkpcfHIuTb/ggxefzWjff9upUTM=",
+        "lastModified": 1794604901,
+        "narHash": "sha256-4hg4Mx8DB5gJTiZGXYpI0riV0/gzIIv+5EYyoPbfvdM=",
         "ref": "master",
-        "rev": "d82eeec879560aa0b800b7adad8bbc9b9926b0ae",
-        "revCount": 532,
+        "rev": "6a8a8686384ab48324817d3a5c6918b30e904bdd",
+        "revCount": 533,
         "type": "git",
         "url": "https://aur.archlinux.org/t3code-nightly-bin.git"
       },
