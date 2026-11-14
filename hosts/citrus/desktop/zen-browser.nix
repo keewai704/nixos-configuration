@@ -65,6 +65,7 @@
             "browser.tabs.allow_transparent_browser" = true;
             "zen.widget.linux.transparency" = true;
             "zen.glance.enabled" = false;
+            "zen.urlbar.single-toolbar-show-copy-url" = false;
             "font.default.ja" = "sans-serif";
             "font.default.x-western" = "sans-serif";
             "font.name.sans-serif.ja" = "Noto Sans CJK JP";
