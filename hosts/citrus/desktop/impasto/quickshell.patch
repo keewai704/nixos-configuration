@@ -148,7 +148,36 @@ diff -ruN a/scripts/theme_manager.py b/scripts/theme_manager.py
  
  
  # The exit status of an `apply-*` for a program switched off in
-@@ -4122,7 +4212,7 @@
+@@ -4113,16 +4203,36 @@
+ )
+ 
+ 
++PALETTE_HOOKS_DIR = os.path.join(XDG_CONFIG_HOME, "impasto", "palette-hooks")
++
++
++def run_palette_hooks(colors):
++    try:
++        names = sorted(os.listdir(PALETTE_HOOKS_DIR))
++    except OSError:
++        return
++    payload = json.dumps(colors)
++    for name in names:
++        hook = os.path.join(PALETTE_HOOKS_DIR, name)
++        if not os.access(hook, os.X_OK):
++            continue
++        try:
++            subprocess.run([hook], input=payload, text=True, timeout=30, check=False)
++        except (OSError, subprocess.SubprocessError) as error:
++            sys.stderr.write(f"{name}: {error}\n")
++
++
+ def push_palette(colors):
+     for target, write in PALETTE_WRITERS:
+         if target_enabled(target):
+             write(colors)
++    run_palette_hooks(colors)
+ 
+ 
  def main():
      actions = ("list-wallpapers | list-animated | get-current | get-state | "
                 "set-wallpaper <path> [transition] | "
@@ -157,7 +186,7 @@ diff -ruN a/scripts/theme_manager.py b/scripts/theme_manager.py
                 "push-terminal-palette <json> | push-terminal-font <family> | "
                 "apply-vscodium [json] | apply-nautilus | apply-vesktop")
      if len(sys.argv) < 2:
-@@ -4145,6 +4235,14 @@
+@@ -4145,6 +4255,14 @@
          print(json.dumps(state))
      elif action == "extract-colors":
          print(json.dumps(extract_colors(argument or get_current_wallpaper())))

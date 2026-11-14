@@ -1,6 +1,6 @@
 {
   config,
-  impastoPalette,
+  impastoPaletteHook,
   inputs,
   lib,
   pkgs,
@@ -45,56 +45,57 @@ let
     builtins.toJSON {
       general.checkForPluginAndThemeUpdates = false;
       themes.activeTheme = theme;
-      themes.themeColors.${theme} = themeColors;
       plugins.enabledPlugins = lib.attrNames plugins;
     }
   );
 
-  channels =
-    hex:
-    map (start: lib.fromHexString (builtins.substring start 2 hex)) [
-      1
-      3
-      5
-    ];
+  fonts = lib.concatMapStringsSep ", " builtins.toJSON config.fonts.fontconfig.defaultFonts.sansSerif;
 
-  mix =
-    from: to: percent:
-    lib.zipListsWith (a: b: (a * (100 - percent) + b * percent) / 100) (channels from) (channels to);
+  quickCss = pkgs.writers.writePython3Bin "millennium-quick-css" { flakeIgnore = [ "E501" ]; } ''
+    import json
+    import os
+    import sys
 
-  themeColors =
-    with impastoPalette;
-    lib.mapAttrs'
-      (name: rgb: {
-        name = "--st-${name}";
-        value = lib.concatMapStringsSep ", " toString rgb;
-      })
-      {
-        accent-1 = channels accent;
-        accent-2 = channels accentHover;
-        background = channels background;
-        color-1 = mix background surface 33;
-        color-3 = mix background surface 66;
-        color-4 = channels surface;
-        color-2 = mix surface surfaceHover 50;
-        color-6 = channels surfaceHover;
-        color-5 = mix surfaceHover border 50;
-        red = channels red;
-        red-hover = mix red text 20;
-        green = channels green;
-        green-hover = mix green text 20;
-        blue = channels blue;
-        blue-hover = mix blue text 20;
-        yellow = channels yellow;
-        yellow-hover = mix yellow text 20;
-      };
+    colors = json.load(sys.stdin)
 
-  quickCss = pkgs.writeText "millennium-quick.css" ''
-    :root * {
-      font-family: ${
-        lib.concatMapStringsSep ", " builtins.toJSON config.fonts.fontconfig.defaultFonts.sansSerif
-      }, sans-serif !important;
+
+    def channels(value):
+        value = value.lstrip("#")
+        return [int(value[index:index + 2], 16) for index in (0, 2, 4)]
+
+
+    def mix(start, end, percent):
+        return [(a * (100 - percent) + b * percent) // 100 for a, b in zip(channels(start), channels(end))]
+
+
+    c = colors
+    variables = {
+        "accent-1": channels(c["accent"]),
+        "accent-2": channels(c["accentHover"]),
+        "background": channels(c["background"]),
+        "color-1": mix(c["background"], c["surface"], 33),
+        "color-3": mix(c["background"], c["surface"], 66),
+        "color-4": channels(c["surface"]),
+        "color-2": mix(c["surface"], c["surfaceHover"], 50),
+        "color-6": channels(c["surfaceHover"]),
+        "color-5": mix(c["surfaceHover"], c["border"], 50),
     }
+    for hue in ("red", "green", "blue", "yellow"):
+        variables[hue] = channels(c[hue])
+        variables[f"{hue}-hover"] = mix(c[hue], c["text"], 20)
+
+    lines = "".join(f"  --st-{name}: {', '.join(map(str, rgb))};\n" for name, rgb in variables.items())
+    css = (
+        ":root * {\n"
+        "  font-family: ${lib.escape [ "\\" "\"" ] fonts}, sans-serif !important;\n"
+        "}\n"
+        f":root:root {{\n{lines}}}\n"
+    )
+
+    path = os.path.join(os.environ.get("XDG_CONFIG_HOME") or os.path.expanduser("~/.config"), "millennium", "quick.css")
+    os.makedirs(os.path.dirname(path), exist_ok=True)
+    with open(path, "w", encoding="utf-8") as handle:
+        handle.write(css)
   '';
 
   applySettings = pkgs.writeShellApplication {
@@ -134,6 +135,8 @@ in
   };
 
   home-manager.users.keewai = {
+    imports = [ (impastoPaletteHook "steam" "millennium/quick.css" quickCss) ];
+
     home.file.".local/share/Steam/millennium/themes/${theme}" = {
       source = inputs.millennium-theme-space;
       recursive = true;
@@ -146,7 +149,5 @@ in
         recursive = true;
       };
     }) plugins;
-
-    xdg.configFile."millennium/quick.css".source = quickCss;
   };
 }

@@ -15,7 +15,7 @@ let
   shell = pkgs.runCommand "impasto-quickshell" { } ''
     cp -r ${inputs.impasto}/home/.config/quickshell $out
     chmod -R u+w $out
-    patch -p0 -d $out < ${./adaptive-variants.patch}
+    patch -p0 -d $out < ${./quickshell.patch}
     substituteInPlace $out/scripts/emoji.py \
       --replace-fail /usr/share/unicode/emoji ${pkgs.unicode-emoji}/share/unicode/emoji \
       --replace-fail /usr/share/unicode/cldr ${pkgs.cldr-annotations}/share/unicode/cldr \
@@ -89,7 +89,20 @@ in
 
   fonts.packages = [ pkgs.inter ];
 
-  _module.args.impastoPalette = (lib.importJSON colors).palette;
+  _module.args.impastoPaletteHook =
+    name: target: script:
+    let
+      hook = lib.getExe script;
+      seed = pkgs.writeText "impasto-palette.json" (builtins.toJSON (lib.importJSON colors).palette);
+    in
+    {
+      xdg.configFile."impasto/palette-hooks/${name}".source = hook;
+      home.activation."impastoPalette-${name}" =
+        inputs.home-manager.lib.hm.dag.entryAfter [ "linkGeneration" ]
+          ''
+            [ -e "''${XDG_CONFIG_HOME:-$HOME/.config}/${target}" ] || run ${hook} < ${seed}
+          '';
+    };
 
   stylix.base16Scheme = (lib.importJSON colors).base16;
 
