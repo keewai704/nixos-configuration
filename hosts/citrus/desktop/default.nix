@@ -7,6 +7,7 @@
 {
   imports = [
     ./firefox.nix
+    ./heroic.nix
     ./modrinth.nix
     ./noctalia.nix
     ./spotifast.nix
