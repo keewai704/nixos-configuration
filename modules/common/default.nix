@@ -4,6 +4,7 @@
     ./home-manager.nix
     ./network.nix
     ./nix.nix
+    ./secrets.nix
     ./users.nix
   ];
 

@@ -2,6 +2,7 @@
   config,
   inputs,
   lib,
+  osConfig,
   pkgs,
   ...
 }:
@@ -151,7 +152,9 @@ in
       enable = true;
       extensions = [ "${inputs.pi-blackhole}/index.ts" ];
       mcp.mcpServers = piMcpServers;
+      environment.OPENCODE_API_KEY.file = osConfig.age.secrets.opencode-api-key.path;
       settings = {
+        defaultProvider = "opencode-go";
         defaultTools = [ "+codemode" ];
         codemode.mode = "only";
       };

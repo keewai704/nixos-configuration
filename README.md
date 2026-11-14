@@ -12,7 +12,7 @@ OS・ハードウェア・システムサービスは **NixOS**、個人のア�
 ├── flake.nix            入力（依存リポジトリ）、各ホストの構成、開発用シェル
 ├── hosts/orange/        ハードウェア、GPU、起動、settings.nix、services/ にサーバー機能
 ├── hosts/citrus/        デスクトップPCのハードウェア、GPU、起動、desktop/ にデスクトップ機能、installer/ にインストーラーISO
-├── modules/common/      Nix、ネットワーク、ユーザー、Home Manager の接続
+├── modules/common/      Nix、ネットワーク、ユーザー、agenix の秘密情報、Home Manager の接続
 ├── modules/tailnet-web/ nginx と Tailscale Serve の入口、T3 Code の公開経路（orange と citrus で共有）
 ├── home/keewai/common/  個人設定（シェル、Git、コーディングエージェント、T3 Code）
 ├── pkgs/                自作・改造パッケージとパッチ
@@ -135,6 +135,9 @@ Pi は [pi.nix](https://github.com/lukasl-dev/pi.nix) の Home Manager モジュ
   （`tinyfish auth login` と同じ形式）から適用時ではなく接続時に読み、Nix には保存しません。
   検索は SearXNG、ページの読み取りは TinyFish の `fetch_content`、クリックや入力が必要な操作だけ
   有料の `run_web_automation` を使うよう、[共通指示](home/keewai/common/coding-agents/shared-instructions.md)で振り分けます。
+- **Pi のモデル**：既定のプロバイダーを OpenCode Go（`opencode-go`）にします。API キーは
+  [secrets/opencode-api-key.age](secrets/opencode-api-key.age) を [secrets.nix](modules/common/secrets.nix) が
+  orange と citrus で `/run/agenix/opencode-api-key` に復号し、Pi の起動時だけ `OPENCODE_API_KEY` に読み込みます。
 - **Pi の拡張機能**：[pi-blackhole](https://github.com/k0valik/pi-blackhole)（決定的なコンパクションと観察記憶）を
   同名の flake 入力のソースから `--extension` で読み込み、`nix flake update` で更新します。
 - **Claude Code の共通指示**：[共通の UI・開発方針](home/keewai/common/coding-agents/shared-instructions.md)を
