@@ -1,7 +1,7 @@
 {
   impastoPalette,
-  inputs,
   lib,
+  pkgs,
   ...
 }:
 let
@@ -37,19 +37,9 @@ let
 in
 {
   home-manager.users.keewai = {
-    imports = [ inputs.nixcord.homeModules.nixcord ];
+    stylix.targets.vencord.enable = false;
 
-    stylix.targets = {
-      nixcord.enable = false;
-      vencord.enable = false;
-    };
-
-    programs.nixcord = {
-      enable = true;
-      discord.equicord.enable = true;
-    };
-
-    home.activation.equicord-settings = lib.mkForce (inputs.home-manager.lib.hm.dag.entryAnywhere "");
+    home.packages = [ (pkgs.discord.override { withEquicord = true; }) ];
 
     xdg.configFile."Equicord/settings/quickCss.css".text = colors;
   };
