@@ -1,5 +1,4 @@
 {
-  config,
   inputs,
   lib,
   pkgs,
@@ -51,17 +50,6 @@ let
 
   firefox =
     (pkgs.firefox.override {
-      nativeMessagingHosts = [
-        (pkgs.writeTextDir "lib/mozilla/native-messaging-hosts/pywalfox.json" (
-          builtins.toJSON {
-            name = "pywalfox";
-            description = "Noctalia Firefox theme native messaging host";
-            path = lib.getExe config.programs.noctalia.package;
-            type = "stdio";
-            allowed_extensions = [ "pywalfox@frewacom.org" ];
-          }
-        ))
-      ];
       extraPolicies.ExtensionSettings =
         lib.mapAttrs
           (_: slug: {
