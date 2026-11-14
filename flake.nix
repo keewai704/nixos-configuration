@@ -192,6 +192,11 @@
       inputs.nixpkgs.follows = "nixpkgs";
     };
 
+    pywal-zen = {
+      url = "github:selvarn/pywal-zen/main";
+      flake = false;
+    };
+
     millennium = {
       url = "github:SteamClientHomebrew/Millennium/main?dir=packages/nix";
       inputs.nixpkgs.follows = "nixpkgs";

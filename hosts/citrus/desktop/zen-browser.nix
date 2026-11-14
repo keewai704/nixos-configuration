@@ -119,7 +119,9 @@ in
               "e122b5d9-d385-4bf8-9971-e137809097d0"
             ];
           };
+          userChrome = builtins.readFile "${inputs.pywal-zen}/chrome/pywal-zen.css";
           settings = {
+            "zen.theme.disable-lightweight" = false;
             "sine.allow-unsafe-js" = true;
             "browser.tabs.allow_transparent_browser" = true;
             "zen.widget.linux.transparency" = true;

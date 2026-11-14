@@ -1224,6 +1224,23 @@
         "url": "https://github.com/pyproject-nix/pyproject.nix"
       }
     },
+    "pywal-zen": {
+      "flake": false,
+      "locked": {
+        "lastModified": 1789753702,
+        "narHash": "sha256-9p9aN5YuJc01NIoNZMw9F3cSCkN2CgC0cAu9ShbeZXY=",
+        "owner": "selvarn",
+        "repo": "pywal-zen",
+        "rev": "cd2398bfbaa7082ff0f6996639d7e7e839d1a246",
+        "type": "github"
+      },
+      "original": {
+        "owner": "selvarn",
+        "ref": "main",
+        "repo": "pywal-zen",
+        "type": "github"
+      }
+    },
     "root": {
       "inputs": {
         "agenix": "agenix",
@@ -1264,6 +1281,7 @@
         "plamo-app": "plamo-app",
         "pyproject-build-systems": "pyproject-build-systems",
         "pyproject-nix": "pyproject-nix",
+        "pywal-zen": "pywal-zen",
         "stylix": "stylix",
         "t3code-nightly": "t3code-nightly",
         "torne-driver": "torne-driver",
