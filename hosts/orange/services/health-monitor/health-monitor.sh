@@ -112,16 +112,6 @@ check_fresh_file() {
   fi
 }
 
-minecraft_starting() {
-  local started_usec uptime_seconds elapsed_seconds
-  systemctl is-active --quiet minecraft.service || return 1
-  started_usec=$(systemctl show minecraft.service --property ActiveEnterTimestampMonotonic --value)
-  [[ "$started_usec" =~ ^[0-9]+$ ]] && ((started_usec > 0)) || return 1
-  read -r uptime_seconds _ </proc/uptime
-  elapsed_seconds=$((${uptime_seconds%.*} - started_usec / 1000000))
-  ((elapsed_seconds >= 0 && elapsed_seconds < 120))
-}
-
 check_failed_units() {
   local unit failed_units previous_units="$state_dir/failed-units.list"
   failed_units=$(systemctl --failed --no-legend --plain 2>/dev/null |
@@ -350,18 +340,11 @@ check_web_services() {
 }
 
 check_tcp_services() {
-  local port_and_name port name
-  for port_and_name in '@minecraftPort@ minecraft' '445 samba'; do
-    read -r port name <<<"$port_and_name"
-    if [[ "$name" == minecraft ]] && minecraft_starting; then
-      continue
-    fi
-    if nc -z -w 3 127.0.0.1 "$port" >/dev/null 2>&1; then
-      clear_alert "tcp-$name"
-    else
-      queue_alert "tcp-$name" "TCP health check failed for $name on port $port"
-    fi
-  done
+  if nc -z -w 3 127.0.0.1 445 >/dev/null 2>&1; then
+    clear_alert "tcp-samba"
+  else
+    queue_alert "tcp-samba" "TCP health check failed for samba on port 445"
+  fi
 }
 
 check_backend_listeners() {
@@ -387,7 +370,6 @@ check_backups() {
 
   local_backup_trigger=$(systemctl show orange-local-backup.timer --property LastTriggerUSec --value 2>/dev/null || true)
   if [[ (-n "$local_backup_trigger" && "$local_backup_trigger" != n/a) || -d @localBackupRoot@ ]]; then
-    check_fresh_file "minecraft" "Minecraft" @minecraftBackupRoot@ 'minecraft-*.tar.zst' 1800
     check_fresh_file "vaultwarden-versioned" "versioned Vaultwarden" @versionedVaultwardenBackupRoot@ 'vaultwarden-*.tar.zst' 1800
   fi
 }

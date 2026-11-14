@@ -32,8 +32,4 @@ in
 
   vaultwardenPort = 8222;
   vaultwardenBackupRoot = "${storageRoot}/server/backups/vaultwarden-nixos";
-
-  minecraftPort = 25565;
-  minecraftDataDir = "/var/lib/minecraft";
-  minecraftLiveBackupRoot = "${storageRoot}/server/backups/minecraft-live";
 }

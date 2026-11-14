@@ -275,7 +275,6 @@ runner 上でビルドされます。
 | KonomiTV | `https://orange.tail1e65cd.ts.net/tv/` | [tv/](hosts/orange/services/tv/) |
 | citrus の起動 | `https://orange.tail1e65cd.ts.net/wake/citrus`（muse からのみ） | [citrus-wake/](hosts/orange/services/citrus-wake/) |
 | Samba | HDD の共有 | [samba.nix](hosts/orange/services/samba.nix) |
-| Minecraft | Fabric サーバー | [minecraft.nix](hosts/orange/services/minecraft.nix) |
 | Tailscale 出口ノード | 出口ノード | [tailscale-exit-node.nix](hosts/orange/services/tailscale-exit-node.nix) |
 | 公開の経路 | nginx と Tailscale Serve | [modules/tailnet-web/](modules/tailnet-web/) |
 
@@ -288,10 +287,8 @@ runner 上でビルドされます。
 - [local-backup](hosts/orange/services/local-backup/) がバックアップ、[health-monitor](hosts/orange/services/health-monitor/) が
   15 分ごとに異常を Discord へ通知、[smart-tests](hosts/orange/services/smart-tests.nix) がディスクの診断、
   [maintenance](hosts/orange/services/maintenance.nix) がログの掃除・TRIM・Nix ストアの保守を受け持ちます。
-  Minecraft は JustEnoughBackups のスナップショットから、サーバーを停止せずに保存します。
-  Minecraft と Vaultwarden は、片方のバックアップに失敗しても、もう片方の保存を試みます。
-  新しい世代を保存できた対象だけ、14日以上前の世代を削除します。保存に失敗した対象の履歴は保持します。
-  一時アーカイブは終了時に削除し、強制終了で残った一時アーカイブと作業ディレクトリは次回実行時に回収します。
+  Vaultwarden の新しい世代を保存できたときだけ、14日以上前の世代を削除します。保存に失敗したときは履歴を保持します。
+  一時アーカイブは終了時に削除し、強制終了で残ったものは次回実行時に回収します。
 - 各サービスが `orange.healthMonitor.units` と `loopbackPorts` に監視対象を追加します。
   T3 Code は `userUnits` で `keewai` のユーザーサービスとして、PC/SC は `pcscd.socket` の待受として確認します。
   Web 監視は Immich、Vaultwarden、T3 Code、KonomiTV の応答を確認します。
@@ -346,7 +343,5 @@ Rust と Python の依存は取得元のロックから構築します。受信�
 - [pkgs/default.nix](pkgs/default.nix) に並べたパッケージは、設定から `pkgs.local.<名前>` で参照でき、
   `nix build .#<名前>` で単体ビルドもできます。パッチは対象パッケージのディレクトリに置きます。
 - 更新の入口は `nix flake update` にそろえます。再現性のための revision と hash は `flake.lock` に残します。
-- orange の Minecraft とその MOD は、バージョンやハッシュを手で管理しているため、
-  `nix flake update` だけでは更新できません。
 - 非自由パッケージは全体で許可しています（`allowUnfree = true`）。
 - `system.stateVersion` と `home.stateVersion` は互換性の基準なので、アップデートに合わせて変えません。

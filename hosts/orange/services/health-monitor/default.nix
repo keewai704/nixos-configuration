@@ -11,7 +11,6 @@ let
   inherit (import ../../settings.nix)
     immichBackupRoot
     localBackupRoot
-    minecraftPort
     nginxPort
     smartDevices
     storageRoot
@@ -35,12 +34,10 @@ let
     "@tailnetOrigin@" = tailnetOrigin;
     "@nginxPort@" = toString nginxPort;
     "@tailnetHostname@" = tailnetHostname;
-    "@minecraftPort@" = toString minecraftPort;
     "@loopbackBackendPortPattern@" = loopbackBackendPortPattern;
     "@immichBackupRoot@" = lib.escapeShellArg immichBackupRoot;
     "@vaultwardenBackupRoot@" = lib.escapeShellArg vaultwardenBackupRoot;
     "@localBackupRoot@" = lib.escapeShellArg localBackupRoot;
-    "@minecraftBackupRoot@" = lib.escapeShellArg "${localBackupRoot}/minecraft";
     "@versionedVaultwardenBackupRoot@" = lib.escapeShellArg "${localBackupRoot}/vaultwarden";
   };
 

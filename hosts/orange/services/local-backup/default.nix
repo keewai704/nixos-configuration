@@ -7,8 +7,6 @@
 let
   inherit (import ../../settings.nix)
     localBackupRoot
-    minecraftDataDir
-    minecraftLiveBackupRoot
     storageMountUnit
     storageRoot
     vaultwardenBackupRoot
@@ -16,8 +14,6 @@ let
 
   scriptReplacements = {
     "@localBackupRoot@" = lib.escapeShellArg localBackupRoot;
-    "@minecraftArchivePath@" = lib.escapeShellArg (lib.removePrefix "/" minecraftDataDir);
-    "@minecraftLiveBackupRoot@" = lib.escapeShellArg minecraftLiveBackupRoot;
     "@vaultwardenDatabase@" = lib.escapeShellArg "${vaultwardenBackupRoot}/db.sqlite3";
     "@vaultwardenBackupRoot@" = lib.escapeShellArg vaultwardenBackupRoot;
   };
@@ -28,9 +24,7 @@ let
       coreutils
       findutils
       gnutar
-      jq
       systemd
-      unzip
       zstd
     ];
     text = fillTemplate ./local-backup.sh scriptReplacements;

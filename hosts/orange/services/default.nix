@@ -7,7 +7,6 @@
     ./immich-ml-schedule
     ./local-backup
     ./maintenance.nix
-    ./minecraft.nix
     ./samba.nix
     ./searxng.nix
     ./smart-tests.nix
