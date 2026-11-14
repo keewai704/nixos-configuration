@@ -10,6 +10,7 @@ let
 in
 {
   imports = [
+    ./modrinth.nix
     ./noctalia.nix
     ./spotifast.nix
     ./steam.nix
