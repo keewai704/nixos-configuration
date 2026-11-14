@@ -1028,11 +1028,11 @@
         "nixpkgs-x86_64-darwin": "nixpkgs-x86_64-darwin"
       },
       "locked": {
-        "lastModified": 1794587545,
-        "narHash": "sha256-QNjeRusN2M1XQ5JtjkKKw8tLhK7gDQJOVsfhwNJiHYA=",
+        "lastModified": 1794669110,
+        "narHash": "sha256-fjsGFgpPj/yN4J5lmRRGZcAZNsPQ+3piGTQSIDFBd9g=",
         "owner": "lukasl-dev",
         "repo": "pi.nix",
-        "rev": "18f8a2607b08cd10c0ea42cf3be06fb66e01d239",
+        "rev": "06ee2f93bfe681252165c926457243931be21ff0",
         "type": "github"
       },
       "original": {
@@ -1066,11 +1066,11 @@
         ]
       },
       "locked": {
-        "lastModified": 1794666338,
-        "narHash": "sha256-dPlGMyMUj8jOGTDwa6ZH3AyPY10XDWTqHGOYPgpW0nI=",
+        "lastModified": 1794668117,
+        "narHash": "sha256-VuZaD7ISfl7/3PZXVd8ZhGzz13hNzJPqvIxxZtFYh2I=",
         "ref": "main",
-        "rev": "3d1b86b6d372c27fb3f136c894ef9a6c7283383a",
-        "revCount": 17,
+        "rev": "38547f385466af0afbaddbc2f55f92c111b4a679",
+        "revCount": 18,
         "type": "git",
         "url": "https://github.com/keewai704/plamo-app"
       },
