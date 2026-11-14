@@ -52,11 +52,11 @@
     "bondriver-linuxmirakc": {
       "flake": false,
       "locked": {
-        "lastModified": 1794027728,
-        "narHash": "sha256-NFoujpjB5EALbdMg0NAO+Wzgvz6JWss1GArH4dn/Kac=",
+        "lastModified": 1794638058,
+        "narHash": "sha256-AFRMzD1J2jbnxh2zPLR4OaBkZApMAsq0OYf4kh8Eadc=",
         "ref": "main",
-        "rev": "bc1d70c7415ea5b49b8384151045b0c826fded5c",
-        "revCount": 15,
+        "rev": "8d74b60db5112bf035e5f85f8a182d24f2480c75",
+        "revCount": 16,
         "submodules": true,
         "type": "git",
         "url": "https://github.com/matching/BonDriver_LinuxMirakc"
@@ -686,11 +686,11 @@
         "nixpkgs": "nixpkgs_2"
       },
       "locked": {
-        "lastModified": 1794544161,
-        "narHash": "sha256-bwCxJCXCYEKEKYeNel621bXZLfOG/lSg5/05ugC5vp8=",
+        "lastModified": 1794610277,
+        "narHash": "sha256-q5xZJkzEbH/fMH2GeWDFiAWNIpxtALATi01pY7fKxvU=",
         "owner": "xddxdd",
         "repo": "nix-cachyos-kernel",
-        "rev": "3084b743b4a3e54840a0ff39ac3c2853ecb87c0c",
+        "rev": "f5e1fb8f1185cb51ef6d433e27ab7b60f54cd0e0",
         "type": "github"
       },
       "original": {
@@ -756,11 +756,11 @@
         "treefmt-nix": "treefmt-nix"
       },
       "locked": {
-        "lastModified": 1794612436,
-        "narHash": "sha256-VSA1YxaiNxqGvVAGfbRYTlwG+dANdAGI5jx6IR55W1I=",
+        "lastModified": 1794632857,
+        "narHash": "sha256-0sUwKoVXcv8rXpDnqixFgSjZbEtu5hF8q52QcLL4GVI=",
         "owner": "4evy",
         "repo": "nixcord",
-        "rev": "013f378d06a88e1f6b023b655a07c0a080835561",
+        "rev": "0388b279f74e2d356f1e909ae9b19c2b14c7ed5f",
         "type": "github"
       },
       "original": {
@@ -873,11 +873,11 @@
     },
     "nixpkgs_2": {
       "locked": {
-        "lastModified": 1794493573,
-        "narHash": "sha256-IzdumBb69us47OjGzNjwqMM9mKw2042rqwOA0g9bJBA=",
+        "lastModified": 1794580336,
+        "narHash": "sha256-nH8frotF2VIsA+4tWfbo4skbobTpxc2XHsrl6z0TtpI=",
         "owner": "NixOS",
         "repo": "nixpkgs",
-        "rev": "3fe6b2e95f7304e16d6637199c6ae3b4382cbf89",
+        "rev": "ac9af266ee64ddb2eafeb4b250cac6a88147b43a",
         "type": "github"
       },
       "original": {
@@ -1123,11 +1123,11 @@
     "t3code-nightly": {
       "flake": false,
       "locked": {
-        "lastModified": 1794604901,
-        "narHash": "sha256-4hg4Mx8DB5gJTiZGXYpI0riV0/gzIIv+5EYyoPbfvdM=",
+        "lastModified": 1794628186,
+        "narHash": "sha256-NrrH3JcyHC/aTO6LJkHxHwT0celzm9G7qJm87oyCOdQ=",
         "ref": "master",
-        "rev": "6a8a8686384ab48324817d3a5c6918b30e904bdd",
-        "revCount": 533,
+        "rev": "4f58e993459a3b5aab3dc7716de3fe921f794a00",
+        "revCount": 534,
         "type": "git",
         "url": "https://aur.archlinux.org/t3code-nightly-bin.git"
       },
