@@ -1,4 +1,5 @@
 {
+  config,
   inputs,
   lib,
   pkgs,
@@ -6,6 +7,7 @@
 }:
 let
   zen-browser = inputs.zen-browser;
+  zen = config.home-manager.users.keewai.programs.zen-browser;
   sineModule = import (
     builtins.toFile "sine.nix" (
       builtins.replaceStrings
@@ -50,16 +52,18 @@ let
 
   firefox =
     (pkgs.firefox.override {
-      extraPolicies.ExtensionSettings =
-        lib.mapAttrs
-          (_: slug: {
-            installation_mode = "force_installed";
-            install_url = "https://addons.mozilla.org/firefox/downloads/latest/${slug}/latest.xpi";
-          })
-          {
-            "pywalfox@frewacom.org" = "pywalfox";
-            "{446900e4-71c2-419f-a6a7-df9c091e268b}" = "bitwarden-password-manager";
-          };
+      extraPolicies = zen.policies // {
+        ExtensionSettings =
+          lib.mapAttrs
+            (_: slug: {
+              installation_mode = "force_installed";
+              install_url = "https://addons.mozilla.org/firefox/downloads/latest/${slug}/latest.xpi";
+            })
+            {
+              "pywalfox@frewacom.org" = "pywalfox";
+              "{446900e4-71c2-419f-a6a7-df9c091e268b}" = "bitwarden-password-manager";
+            };
+      };
       extraPrefs = lib.concatStrings (
         lib.mapAttrsToList (
           name: value: "defaultPref(${builtins.toJSON name}, ${builtins.toJSON value});\n"
@@ -143,7 +147,12 @@ in
         profiles.${profile} = {
           id = 0;
           isDefault = true;
-          inherit (sine.config.programs.zen-browser.profiles.${profile}) settings;
+          settings =
+            sine.config.programs.zen-browser.profiles.${profile}.settings
+            // lib.filterAttrs (name: _: lib.hasPrefix "font." name) zen.profiles.default.settings
+            // {
+              "natsumi.glimpse.enabled" = false;
+            };
         };
       };
 
