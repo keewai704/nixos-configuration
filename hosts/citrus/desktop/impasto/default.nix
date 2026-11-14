@@ -31,8 +31,8 @@ let
       --replace-fail '"nautilus --new-window"' '"thunar"'
   '';
 
-  scheme =
-    pkgs.runCommand "impasto-base16.json"
+  colors =
+    pkgs.runCommand "impasto-colors.json"
       {
         nativeBuildInputs = [
           pkgs.imagemagick
@@ -86,7 +86,9 @@ in
 
   fonts.packages = [ pkgs.inter ];
 
-  stylix.base16Scheme = lib.importJSON scheme;
+  _module.args.impastoPalette = (lib.importJSON colors).palette;
+
+  stylix.base16Scheme = (lib.importJSON colors).base16;
 
   home-manager.users.keewai = {
     xdg.configFile = {
@@ -103,6 +105,7 @@ in
       run mkdir -p "$data/wallpapers" "$state"
       run cp -rn --no-preserve=mode ${inputs.impasto}/home/.local/share/. "$data/"
       run install -m644 ${wallpaper} "$current"
+      run ln -sfn "$current" "$state/current-wallpaper"
 
       [ -s "$state/settings.json" ] || echo '${initialSettings}' > "$state/settings.json"
       [ -s "$state/state.json" ] || echo '{}' > "$state/state.json"

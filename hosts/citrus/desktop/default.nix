@@ -5,6 +5,7 @@
 }:
 {
   imports = [
+    ./discord.nix
     ./heroic.nix
     ./impasto
     ./modrinth.nix
@@ -91,14 +92,7 @@
   xdg.mime.defaultApplications."inode/directory" = "thunar.desktop";
 
   home-manager.users.keewai = {
-    imports = [ inputs.nixcord.homeModules.nixcord ];
-
     programs.kitty.enable = true;
-
-    programs.nixcord = {
-      enable = true;
-      discord.equicord.enable = true;
-    };
 
     programs.mangohud = {
       enable = true;

@@ -192,13 +192,18 @@
       inputs.nixpkgs.follows = "nixpkgs";
     };
 
+    discord-system24 = {
+      url = "github:refact0r/system24";
+      flake = false;
+    };
+
     millennium = {
       url = "github:SteamClientHomebrew/Millennium/main?dir=packages/nix";
       inputs.nixpkgs.follows = "nixpkgs";
     };
 
-    millennium-theme-material = {
-      url = "github:kuska1/Material-Theme";
+    millennium-theme-space = {
+      url = "github:SpaceTheme/Steam";
       flake = false;
     };
 

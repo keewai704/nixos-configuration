@@ -38,7 +38,10 @@ slots = {
 }
 
 json.dump(
-    {"scheme": "impasto", "author": "impasto"}
-    | {slot: value.removeprefix("#") for slot, value in slots.items()},
+    {
+        "palette": palette,
+        "base16": {"scheme": "impasto", "author": "impasto"}
+        | {slot: value.removeprefix("#") for slot, value in slots.items()},
+    },
     sys.stdout,
 )

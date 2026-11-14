@@ -273,6 +273,22 @@
         "type": "github"
       }
     },
+    "discord-system24": {
+      "flake": false,
+      "locked": {
+        "lastModified": 1794001979,
+        "narHash": "sha256-Gnr8cQA9s0s2vcanGLFGd9i1gMfeAoOqUINbbUdNQVU=",
+        "owner": "refact0r",
+        "repo": "system24",
+        "rev": "9ce574cfaf0b1e698251d8878d98ccf1a190e94f",
+        "type": "github"
+      },
+      "original": {
+        "owner": "refact0r",
+        "repo": "system24",
+        "type": "github"
+      }
+    },
     "edcb": {
       "flake": false,
       "locked": {
@@ -768,19 +784,19 @@
         "type": "github"
       }
     },
-    "millennium-theme-material": {
+    "millennium-theme-space": {
       "flake": false,
       "locked": {
-        "lastModified": 1794653895,
-        "narHash": "sha256-kwkPJephYypw1DgvQzQ5HBiJwS/A1bMFTj39w59GcKk=",
-        "owner": "kuska1",
-        "repo": "Material-Theme",
-        "rev": "7783919ac4a54d7b46e9da870eb81adbf8e5bd8b",
+        "lastModified": 1794492013,
+        "narHash": "sha256-TjPGjKQLicT6nKp1iqKtNmHpeKhXZIekAmfZCLhFHic=",
+        "owner": "SpaceTheme",
+        "repo": "Steam",
+        "rev": "65bc106e8a1fe04c359d5b9d5c6f00e4081506ef",
         "type": "github"
       },
       "original": {
-        "owner": "kuska1",
-        "repo": "Material-Theme",
+        "owner": "SpaceTheme",
+        "repo": "Steam",
         "type": "github"
       }
     },
@@ -1234,6 +1250,7 @@
         "chaotic": "chaotic",
         "claude-code": "claude-code",
         "codex": "codex",
+        "discord-system24": "discord-system24",
         "edcb": "edcb",
         "home-manager": "home-manager_2",
         "imozuru": "imozuru",
@@ -1250,7 +1267,7 @@
         "millennium-plugin-proton-universal-prefix": "millennium-plugin-proton-universal-prefix",
         "millennium-plugin-protondb": "millennium-plugin-protondb",
         "millennium-plugin-size-on-disk": "millennium-plugin-size-on-disk",
-        "millennium-theme-material": "millennium-theme-material",
+        "millennium-theme-space": "millennium-theme-space",
         "mirakc": "mirakc",
         "mirakc-arib": "mirakc-arib",
         "mirakc-swagger-ui": "mirakc-swagger-ui",

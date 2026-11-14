@@ -1,19 +1,18 @@
 {
   config,
+  impastoPalette,
   inputs,
   lib,
   pkgs,
   ...
 }:
 let
-  theme = "Material-Theme";
-
-  themeColors = "css/main/colors/matugen.css";
+  theme = "SpaceTheme";
 
   themeSource = pkgs.runCommand "millennium-${theme}" { } ''
-    cp -r ${inputs.millennium-theme-material} $out
+    cp -r ${inputs.millennium-theme-space} $out
     chmod -R u+w $out
-    cp ${themeColorsCss} $out/${themeColors}
+    cp ${rootColors} $out/src/css/root.css
   '';
 
   quickCssWatcher = "quick-css-watcher";
@@ -52,37 +51,51 @@ let
     builtins.toJSON {
       general.checkForPluginAndThemeUpdates = false;
       themes.activeTheme = theme;
-      themes.conditions.${theme} = {
-        Color = "Matugen";
-        Font = "Default";
-      };
       plugins.enabledPlugins = lib.attrNames plugins;
     }
   );
 
-  rgb =
+  channels =
     hex:
-    "rgb(${
-      lib.concatMapStringsSep ", " (start: toString (lib.fromHexString (builtins.substring start 2 hex)))
-        [
-          0
-          2
-          4
-        ]
-    })";
+    map (start: lib.fromHexString (builtins.substring start 2 hex)) [
+      1
+      3
+      5
+    ];
 
-  themeColorsCss = pkgs.writeText "millennium-stylix.css" ''
-    :root {
-        --theme-color: "Matugen";
-        --hue-rotate: 220deg;
-    ${
-      lib.concatStrings (
-        lib.mapAttrsToList (name: hex: "    --md-sys-color-${name}: ${rgb hex};\n") (
-          import ./material-colors.nix config.lib.stylix.colors
+  mix =
+    from: to: percent:
+    lib.zipListsWith (a: b: (a * (100 - percent) + b * percent) / 100) (channels from) (channels to);
+
+  rootColors =
+    with impastoPalette;
+    pkgs.writeText "spacetheme-root.css" ''
+      :root {
+      ${
+        lib.concatStrings (
+          lib.mapAttrsToList (name: rgb: "    --st-${name}: ${lib.concatMapStringsSep ", " toString rgb};\n")
+            {
+              accent-1 = channels accent;
+              accent-2 = channels accentHover;
+              background = channels background;
+              color-1 = mix background surface 33;
+              color-3 = mix background surface 66;
+              color-4 = channels surface;
+              color-2 = mix surface surfaceHover 50;
+              color-6 = channels surfaceHover;
+              color-5 = mix surfaceHover border 50;
+              red = channels red;
+              red-hover = mix red text 20;
+              green = channels green;
+              green-hover = mix green text 20;
+              blue = channels blue;
+              blue-hover = mix blue text 20;
+              yellow = channels yellow;
+              yellow-hover = mix yellow text 20;
+            }
         )
-      )
-    }}
-  '';
+      }}
+    '';
 
   quickCss = pkgs.writeText "millennium-quick.css" ''
     :root * {
