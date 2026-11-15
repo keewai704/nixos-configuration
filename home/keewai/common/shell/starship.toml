@@ -1,8 +1,8 @@
 format = """
-[](fg:cyan)\
-[  ](fg:black bg:cyan)\
+[\ue0b6](fg:cyan)\
+[\uf313 ](fg:black bg:cyan)\
 $directory\
-[](fg:cyan bg:black)\
+[\ue0b4](fg:cyan bg:black)\
 $git_branch\
 $git_status\
 $nix_shell\
@@ -12,35 +12,35 @@ $nodejs\
 $php\
 $python\
 $rust\
-[](fg:black)\
+[\ue0b4](fg:black)\
 $cmd_duration
 $character"""
 
 right_format = "$time"
 
 [character]
-success_symbol = "[❯](bold cyan)"
-error_symbol = "[❯](bold red)"
-vimcmd_symbol = "[❮](bold green)"
+success_symbol = "[\u276f](bold cyan)"
+error_symbol = "[\u276f](bold red)"
+vimcmd_symbol = "[\u276e](bold green)"
 
 [directory]
 format = "[$path$read_only ]($style)"
 style = "fg:black bg:cyan bold"
-read_only = " 󰌾"
+read_only = " \U000f033e"
 read_only_style = "fg:black bg:cyan"
 truncation_length = 3
-truncation_symbol = "…/"
+truncation_symbol = "\u2026/"
 
 [directory.substitutions]
-Documents = "󰈙 "
-Downloads = " "
-Music = "󰝚 "
-Pictures = " "
+Documents = "\U000f0219 "
+Downloads = "\uf019 "
+Music = "\U000f075a "
+Pictures = "\uf03e "
 
 [git_branch]
 format = "[ $symbol $branch ]($style)"
 style = "fg:cyan bg:black"
-symbol = ""
+symbol = "\ue0a0"
 
 [git_status]
 format = "[($all_status$ahead_behind )]($style)"
@@ -49,42 +49,42 @@ style = "fg:yellow bg:black"
 [nix_shell]
 format = "[ $symbol $state ]($style)"
 style = "fg:blue bg:black"
-symbol = ""
+symbol = "\uf313"
 impure_msg = "impure"
 pure_msg = "pure"
 
 [c]
 format = "[ $symbol $version ]($style)"
 style = "fg:blue bg:black"
-symbol = ""
+symbol = "\ue61e"
 
 [golang]
 format = "[ $symbol $version ]($style)"
 style = "fg:blue bg:black"
-symbol = ""
+symbol = "\ue627"
 
 [nodejs]
 format = "[ $symbol $version ]($style)"
 style = "fg:green bg:black"
-symbol = "󰎙"
+symbol = "\U000f0399"
 
 [php]
 format = "[ $symbol $version ]($style)"
 style = "fg:blue bg:black"
-symbol = ""
+symbol = "\ue608"
 
 [python]
 format = "[ $symbol $version ]($style)"
 style = "fg:yellow bg:black"
-symbol = ""
+symbol = "\ue606"
 
 [rust]
 format = "[ $symbol $version ]($style)"
 style = "fg:red bg:black"
-symbol = ""
+symbol = "\ue7a8"
 
 [cmd_duration]
-format = " [󰔟 $duration]($style)"
+format = " [\U000f051f $duration]($style)"
 style = "fg:yellow"
 min_time = 2000
 show_notifications = true
