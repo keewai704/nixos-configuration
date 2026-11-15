@@ -27,6 +27,7 @@ let
     cp -r ${inputs.impasto}/home/.config/hypr $out
     chmod -R u+w $out
     install -Dm644 -t $out/custom ${./hypr}/*.lua
+    echo 'hl.env("QS_ICON_THEME", "${config.stylix.icons.dark}")' >> $out/custom/env.lua
   '';
 
   colors =
@@ -52,7 +53,6 @@ let
 
   settings = builtins.toJSON {
     dockEnabled = false;
-    themeTargets = [ ];
   };
 
   barRight = builtins.toJSON [
@@ -120,7 +120,31 @@ in
       hypr.source = hypr;
     };
 
-    programs.cava.enable = true;
+    stylix.targets = {
+      kitty.colors.enable = false;
+      btop.colors.enable = false;
+      gtk.colors.enable = false;
+      qt.enable = false;
+    };
+
+    programs.kitty = {
+      settings = {
+        allow_remote_control = "socket-only";
+        listen_on = "unix:\${XDG_RUNTIME_DIR}/kitty.sock";
+      };
+      extraConfig = ''
+        include ~/.local/state/quickshell/kitty-palette.conf
+        include ~/.local/state/quickshell/kitty-font.conf
+        include ~/.local/state/quickshell/kitty-ground.conf
+      '';
+    };
+
+    programs.btop.settings.color_theme = "impasto";
+
+    programs.cava = {
+      enable = true;
+      settings.color.theme = "impasto";
+    };
 
     home.activation.impastoData = inputs.home-manager.lib.hm.dag.entryAfter [ "linkGeneration" ] ''
       data="''${XDG_DATA_HOME:-$HOME/.local/share}"
@@ -129,13 +153,14 @@ in
       run mkdir -p "$data/wallpapers" "$state"
       run cp -rn --no-preserve=mode ${inputs.impasto}/home/.local/share/. "$data/"
       run install -m644 ${wallpaper} "$current"
-      run ln -sfn "$current" "$state/current-wallpaper"
+      [ -e "$state/current-wallpaper" ] || run ln -sfn "$current" "$state/current-wallpaper"
 
       [ -s "$state/settings.json" ] || echo '${initialSettings}' > "$state/settings.json"
       [ -s "$state/state.json" ] || echo '{}' > "$state/state.json"
 
       merged="$(mktemp "$state/settings.json.XXXXXX")"
-      ${jq} '. * ${settings}' "$state/settings.json" > "$merged"
+      ${jq} '. * ${settings} | if .themeTargets == [] then del(.themeTargets) else . end' \
+        "$state/settings.json" > "$merged"
       run mv "$merged" "$state/settings.json"
 
       merged="$(mktemp "$state/settings.json.XXXXXX")"
@@ -143,7 +168,7 @@ in
       run mv "$merged" "$state/settings.json"
 
       merged="$(mktemp "$state/state.json.XXXXXX")"
-      ${jq} --arg wallpaper "$current" '.activeTheme = "adaptive" | .currentWallpaper = $wallpaper' \
+      ${jq} --arg wallpaper "$current" '.activeTheme //= "adaptive" | .currentWallpaper //= $wallpaper' \
         "$state/state.json" > "$merged"
       run mv "$merged" "$state/state.json"
     '';
