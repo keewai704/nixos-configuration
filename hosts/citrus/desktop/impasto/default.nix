@@ -54,6 +54,7 @@ let
   initialSettings = builtins.toJSON { superTapLauncher = true; };
 
   settings = builtins.toJSON {
+    barScreens = "primary";
     dockEnabled = false;
     pureBlack = true;
     terminalGround = "classic";
