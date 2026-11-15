@@ -530,18 +530,18 @@
     "impasto": {
       "flake": false,
       "locked": {
-        "lastModified": 1794678149,
-        "narHash": "sha256-uJHc63uJJSHF4x8Bq1D06/bD/kzDDEPEqIpHWWO+LYA=",
-        "ref": "main",
-        "rev": "c4753e5a1f66e359a900679bdc72634650298631",
-        "revCount": 304,
-        "type": "git",
-        "url": "https://github.com/andreumassanet/impasto"
+        "lastModified": 1794705696,
+        "narHash": "sha256-nXi0h/Vo9RAxnYsM8rizbQwc4CAEVnva0o/oM57SVNE=",
+        "owner": "keewai704",
+        "repo": "impasto",
+        "rev": "bd9a27aca4d7e1418bc279dd6552e3801164508c",
+        "type": "github"
       },
       "original": {
+        "owner": "keewai704",
         "ref": "main",
-        "type": "git",
-        "url": "https://github.com/andreumassanet/impasto"
+        "repo": "impasto",
+        "type": "github"
       }
     },
     "jail-nix": {
@@ -856,11 +856,11 @@
         "nixpkgs": "nixpkgs_2"
       },
       "locked": {
-        "lastModified": 1794610277,
-        "narHash": "sha256-q5xZJkzEbH/fMH2GeWDFiAWNIpxtALATi01pY7fKxvU=",
+        "lastModified": 1794692537,
+        "narHash": "sha256-VMug2jV6Ixb/rosbRpFdhwziuhC4h3uFfnJOKuo19sc=",
         "owner": "xddxdd",
         "repo": "nix-cachyos-kernel",
-        "rev": "f5e1fb8f1185cb51ef6d433e27ab7b60f54cd0e0",
+        "rev": "c9620070e884d55c5b5566e3fd46611ee24c4d3b",
         "type": "github"
       },
       "original": {
@@ -926,11 +926,11 @@
         "treefmt-nix": "treefmt-nix"
       },
       "locked": {
-        "lastModified": 1794680765,
-        "narHash": "sha256-w3J7qpuYIj+BYIlXDxBs5j7dfJv1kaa1GLvumq+JbfQ=",
+        "lastModified": 1794695953,
+        "narHash": "sha256-5B6B2Se9HMcXZBV95kYMcEJJBK6W+5Gw1Jy/B4HDdMI=",
         "owner": "4evy",
         "repo": "nixcord",
-        "rev": "36c0dce4adf1b2e8f5efec257ca1a303e680c36a",
+        "rev": "2840179d12e7a69bda760d5440b0301dd912bdcc",
         "type": "github"
       },
       "original": {
@@ -1043,11 +1043,11 @@
     },
     "nixpkgs_2": {
       "locked": {
-        "lastModified": 1794580336,
-        "narHash": "sha256-nH8frotF2VIsA+4tWfbo4skbobTpxc2XHsrl6z0TtpI=",
+        "lastModified": 1794666816,
+        "narHash": "sha256-+0k232f2hL/ENytM0z48OY9BLdnJx1GVdW8lsyQ8lXU=",
         "owner": "NixOS",
         "repo": "nixpkgs",
-        "rev": "ac9af266ee64ddb2eafeb4b250cac6a88147b43a",
+        "rev": "82566dfe91ca5e12bc10b36272280628142f651d",
         "type": "github"
       },
       "original": {
@@ -1389,11 +1389,11 @@
     "t3code-nightly": {
       "flake": false,
       "locked": {
-        "lastModified": 1794674967,
-        "narHash": "sha256-CHdtKo2qQRbNM7CAy1044YZZSbsa3tcuG9a2tbldZQM=",
+        "lastModified": 1794698428,
+        "narHash": "sha256-vsrsKkQ2FMm4jAPRR4Xu0z6oiu7cFyDfWUfPbaV5UyA=",
         "ref": "master",
-        "rev": "0107be8e80a04d94d984ff02a47cb80b80401e69",
-        "revCount": 536,
+        "rev": "e0edbbb42a8b777040f8c342315be0a83118836a",
+        "revCount": 537,
         "type": "git",
         "url": "https://aur.archlinux.org/t3code-nightly-bin.git"
       },

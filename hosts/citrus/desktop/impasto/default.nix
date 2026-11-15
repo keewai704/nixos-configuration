@@ -15,31 +15,18 @@ let
   shell = pkgs.runCommand "impasto-quickshell" { } ''
     cp -r ${inputs.impasto}/home/.config/quickshell $out
     chmod -R u+w $out
-    patch -p0 -d $out < ${./quickshell.patch}
     substituteInPlace $out/scripts/emoji.py \
       --replace-fail /usr/share/unicode/emoji ${pkgs.unicode-emoji}/share/unicode/emoji \
       --replace-fail /usr/share/unicode/cldr ${pkgs.cldr-annotations}/share/unicode/cldr \
       --replace-fail /usr/share/iso-codes ${pkgs.isocodes}/share/iso-codes
     substituteInPlace $out/scripts/compositor.py \
       --replace-fail /usr/share/X11/xkb ${pkgs.xkeyboard_config}/share/X11/xkb
-    substituteInPlace $out/theme/Motion.qml \
-      --replace-fail 'workspaces: "slide"' 'workspaces: "slidevert"'
-    install -Dm644 ${./bitwarden/BitwardenService.qml} $out/bitwarden/BitwardenService.qml
-    install -Dm644 ${./bitwarden/BitwardenPanel.qml} $out/bitwarden/BitwardenPanel.qml
-    install -Dm644 ${./bitwarden/BitwardenList.qml} $out/bitwarden/BitwardenList.qml
-    install -Dm644 ${./bitwarden/BitwardenDetail.qml} $out/bitwarden/BitwardenDetail.qml
-    install -Dm644 ${./bitwarden/BitwardenSection.qml} $out/bitwarden/BitwardenSection.qml
-    install -Dm644 ${./bitwarden/BitwardenField.qml} $out/bitwarden/BitwardenField.qml
-    install -Dm755 ${./bitwarden/copy.sh} $out/bitwarden/copy.sh
-    patch -p0 -F0 -d $out < ${./bitwarden/bitwarden.patch}
   '';
 
   hypr = pkgs.runCommand "impasto-hypr" { } ''
     cp -r ${inputs.impasto}/home/.config/hypr $out
     chmod -R u+w $out
     install -Dm644 -t $out/custom ${./hypr}/*.lua
-    substituteInPlace $out/modules/programs.lua \
-      --replace-fail '"nautilus --new-window"' '"thunar"'
   '';
 
   colors =
@@ -67,6 +54,17 @@ let
     dockEnabled = false;
     themeTargets = [ ];
   };
+
+  barRight = builtins.toJSON [
+    "claude"
+    "opencode"
+    "tray"
+    "notifications"
+    "network"
+    "bluetooth"
+    "volume"
+    "battery"
+  ];
 
   jq = lib.getExe pkgs.jq;
 in
@@ -138,6 +136,10 @@ in
 
       merged="$(mktemp "$state/settings.json.XXXXXX")"
       ${jq} '. * ${settings}' "$state/settings.json" > "$merged"
+      run mv "$merged" "$state/settings.json"
+
+      merged="$(mktemp "$state/settings.json.XXXXXX")"
+      ${jq} '.barRight //= ${barRight}' "$state/settings.json" > "$merged"
       run mv "$merged" "$state/settings.json"
 
       merged="$(mktemp "$state/state.json.XXXXXX")"

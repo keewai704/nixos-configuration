@@ -215,7 +215,8 @@ NVIDIA ドライバーは nixpkgs より新しい 620.70.06（オープンカー
 
 デスクトップは Hyprland（UWSM 管理のセッション）と [impasto](https://github.com/andreumassanet/impasto)（Quickshell のシェル）で、
 ログイン画面は impasto のテーマを当てた SDDM です。起動時は keewai として自動ログインします。
-[impasto/](hosts/citrus/desktop/impasto/) が impasto の Quickshell 設定と Hyprland 設定を flake 入力から配り、
+impasto は自分のフォーク [keewai704/impasto](https://github.com/keewai704/impasto) の `main` ブランチを flake 入力にし、変更はパッチではなくそのコミットとして持ちます（作業用のクローンは `~/impasto`）。
+[impasto/](hosts/citrus/desktop/impasto/) がその Quickshell 設定と Hyprland 設定を配り、Nix ストアのパスだけをビルド時に書き換え、
 `hypr/` のファイルを impasto の各モジュールの後に読み込ませて、キー操作・スクロール型レイアウト・モニターのモードを上書きします。
 impasto のドックは使わず、impasto がほかのアプリの設定ファイルへ配色を書き込む機能も止めています。
 
@@ -228,6 +229,11 @@ Steam・Discord・Zen Browser は、その色だけを impasto のパレット�
 非アクティブなウィンドウは半透明になり、Hyprland のアクリル効果が掛かります。
 外部モニターの輝度は ddcutil 経由で impasto から操作し、Alt+[ で下げ、Alt+] で上げます。
 Mod+V で impasto のクリップボード履歴を開きます。
+バーには impasto の Claude Code の使用量モジュールと、フォークで足した OpenCode Go の使用量モジュールを置きます。
+OpenCode Go のモジュールは `/run/agenix/opencode-api-key` のキーで `https://opencode.ai/zen/go/v1/usage` を5分ごとに読み、5時間・週・月の各枠の使用率と次のリセットを表示します。
+この2つとネットワーク・Bluetooth は、iPhone Duo のステータスアイコンに倣ったフォークの `DuoGlyph` で描きます。下の開いた円弧と、その切れ目の4つの点が2つの値を表し、中央にロゴを置きます。
+使用量は円弧が5時間枠、点が週（4分の1ごとに1つ点灯）です。ネットワークは円弧が Wi-Fi の電波（インターネットに届く有線なら満タン）、点が受信の速さ（10 kB/s から桁ごとに1つ）です。Bluetooth は円弧が接続中の機器の電池、点が接続中の機器の数です。
+バーの右側の並びは、impasto の画面でまだ変えていない間だけ設定の適用時に書き込みます。
 
 OpenAI 互換の文字起こし API を `https://citrus.tail1e65cd.ts.net/stt/v1` で提供します（[stt-server/](hosts/citrus/services/stt-server/)）。
 RE-USE でノイズ除去してから Whisper large-v3 で文字起こしし、接続元は [settings.nix](hosts/citrus/settings.nix) の端末に限ります。
@@ -242,7 +248,7 @@ citrus が応答しないときは起こさずに 503 を返します。
 systemd の資格情報としてサービスに渡します。
 
 日本語入力は fcitx5 と [Meltype](https://github.com/aster-void/nix-meltype) です。
-Discord は nixpkgs のパッケージに Equicord を組み込んで（`withEquicord`）導入し、Equicord 本体は nixpkgs のものが古く今の Discord で起動しないため [Nixcord](https://github.com/4evy/nixcord) のパッケージだけを使います。[system24](https://github.com/refact0r/system24) テーマは Equicord の画面で配布元の URL をオンラインテーマに追加して使い、[discord.nix](hosts/citrus/desktop/discord.nix) が impasto のパレットから作った色の変数を Quick CSS（`~/.config/Equicord/settings/quickCss.css`）に書きます。Equicord の `settings.json` には何も書かず、画面で変えた設定がそのまま残ります。Bitwarden はデスクトップ版に加えて rbw を入れ、impasto の島に [Bitwarden のパネル](hosts/citrus/desktop/impasto/bitwarden/)を足して SUPER+B で開きます。パネルは rbw を呼び、一覧と項目の詳細（ログイン、カード、ID、SSH 鍵、ノート、カスタムフィールド、履歴）を公式クライアントの並びで表示します。アカウントのメールアドレスとサーバーの URL はパネルの中で設定し、リポジトリには書きません。
+Discord は nixpkgs のパッケージに Equicord を組み込んで（`withEquicord`）導入し、Equicord 本体は nixpkgs のものが古く今の Discord で起動しないため [Nixcord](https://github.com/4evy/nixcord) のパッケージだけを使います。[system24](https://github.com/refact0r/system24) テーマは Equicord の画面で配布元の URL をオンラインテーマに追加して使い、[discord.nix](hosts/citrus/desktop/discord.nix) が impasto のパレットから作った色の変数を Quick CSS（`~/.config/Equicord/settings/quickCss.css`）に書きます。Equicord の `settings.json` には何も書かず、画面で変えた設定がそのまま残ります。Bitwarden はデスクトップ版に加えて rbw を入れ、impasto の島に Bitwarden のパネル（フォークのコミット）を足して SUPER+B で開きます。パネルは rbw を呼び、一覧と項目の詳細（ログイン、カード、ID、SSH 鍵、ノート、カスタムフィールド、履歴）を公式クライアントの並びで表示します。アカウントのメールアドレスとサーバーの URL はパネルの中で設定し、リポジトリには書きません。
 ブラウザーは Zen Browser を [zen-browser-flake](https://github.com/0xc000022070/zen-browser-flake) から入れて既定のブラウザーにし、[zen-browser.nix](hosts/citrus/desktop/zen-browser.nix) でポリシーと Sine（mod マネージャー）を設定します。配色は [Pywalfox](https://github.com/Frewacom/pywalfox) 拡張機能をポリシーで入れて付けます。Zen は既定で Firefox のテーマを無視するので `zen.theme.disable-lightweight` を切り、[pywal-zen](https://github.com/selvarn/pywal-zen) の CSS を userChrome.css に入れて、テーマの色を Zen 独自の配色変数とワークスペースの背景に渡します。impasto のパレットが変わるたびに `~/.config/impasto/palette-hooks/zen` が pywal 形式の `~/.config/impasto/pywalfox/wal/colors.json` を書き直して `pywalfox update` を送り、開いたままの Zen が新しい色になります。ネイティブホストは `~/.mozilla/native-messaging-hosts/pywalfox.json` から、この色ファイルを読むように起動します。
 Steam は [Millennium](https://docs.steambrew.app/) 入りで、[steam.nix](hosts/citrus/desktop/steam.nix) がテーマ（[SpaceTheme](https://github.com/SpaceTheme/Steam)）とプラグインを flake 入力から配ります。プラグインは `millennium-plugin-` で始まる入力を足すと導入され、`nix flake update` で更新します。テーマの色（`--st-*` 変数）とフォントは Millennium の Quick CSS（`~/.config/millennium/quick.css`）に書きます。Steam と Discord の Quick CSS は、impasto のパレットが変わるたびに `~/.config/impasto/palette-hooks/` のスクリプトが書き直し、どちらも開いたまま新しい色になります。Proton-CachyOS を互換ツールとして導入し、`ntsync` モジュールと GameMode を有効にします。GameMode を使うゲームには起動オプション `gamemoderun %command%` を設定します。GameMode の間は `gpu-workloads.target` の GPU サービス（Immich の機械学習、PLaMo、STT）を止めて GPU を空け、終了すると起動し直します。Ubisoft Connect や Epic のゲームは [Heroic](https://heroicgameslauncher.com/)（[heroic.nix](hosts/citrus/desktop/heroic.nix)）から Proton で起動します。nixpkgs の Heroic は Electron が受け付けない `--disable-gpu-compositing` を渡すため、[pkgs/heroic](pkgs/heroic/) で外しています。ゲームと Wine プレフィックスは `/mnt/data/Games/Heroic` に置き、UI は日本語にします。どちらも [heroic.nix](hosts/citrus/desktop/heroic.nix) が Home Manager の activation で `config.json` と `store/config.json` に書き込みます。配色は Stylix の配色から `~/.config/heroic/themes/stylix.css` を作り、Heroic 側でそのテーマを選んでおきます。Spotify クライアントの spotifast と kitty も入っています。spotifast の配色は [spotifast.nix](hosts/citrus/desktop/spotifast.nix) が Stylix の配色から `~/.config/spotifast/themes/stylix.json` を作り、`settings.json` でそのテーマを選んでおきます。Spotify が Soloist を見つけられるよう、同じファイルで mDNS（UDP 5353）を開けています。
 

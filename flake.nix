@@ -154,7 +154,7 @@
     };
 
     impasto = {
-      url = "git+https://github.com/andreumassanet/impasto?ref=main";
+      url = "github:keewai704/impasto?ref=main";
       flake = false;
     };
 
