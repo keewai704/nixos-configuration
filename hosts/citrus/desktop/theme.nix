@@ -16,6 +16,15 @@ let
       if value then "True" else "False"
     else
       value;
+
+  fcitx5Image =
+    name: image:
+    pkgs.runCommand "fcitx5-stylix-${name}" { } ''
+      sed -e '0,/width="30"/s//width="31"/' \
+        -e '0,/height="30"/s//height="31"/' \
+        -e 's/viewBox="0 0 60 60"/viewBox="-1 -1 62 62"/' \
+        ${image} > $out
+    '';
 in
 {
   imports = [ inputs.stylix.nixosModules.stylix ];
@@ -67,8 +76,8 @@ in
       "fcitx5/themes/stylix/theme.conf".source = (pkgs.formats.ini { }).generate "fcitx5-stylix-theme" (
         fcitx5Value theme
       );
-      "fcitx5/themes/stylix/panel.svg".source = panelImage;
-      "fcitx5/themes/stylix/highlight.svg".source = highlightImage;
+      "fcitx5/themes/stylix/panel.svg".source = fcitx5Image "panel.svg" panelImage;
+      "fcitx5/themes/stylix/highlight.svg".source = fcitx5Image "highlight.svg" highlightImage;
     };
 
     gtk = {
