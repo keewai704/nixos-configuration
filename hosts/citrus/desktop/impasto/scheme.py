@@ -7,41 +7,18 @@ sys.path.insert(0, scripts)
 import theme_manager
 
 palette = theme_manager.build_palette(image)
-background = palette["background"]
 
 
-def readable(key):
-    return theme_manager.lift(palette[key], theme_manager.MIN_CONTRAST, background)
+def darken(value, amount):
+    red, green, blue = theme_manager.hex_to_rgb(value)
+    return theme_manager.rgb_to_hex(*(channel * (1 - amount) for channel in (red, green, blue)))
 
 
-def bright(key):
-    return theme_manager.brighten(palette[key], background)
-
-
-slots = {
-    "base00": background,
-    "base01": palette["surface"],
-    "base02": palette["surfaceHover"],
-    "base03": palette["border"],
-    "base04": palette["textMuted"],
-    "base05": palette["text"],
-    "base06": palette["text"],
-    "base07": palette["text"],
-    "base08": readable("red"),
-    "base09": readable("accentHover"),
-    "base0A": readable("yellow"),
-    "base0B": readable("green"),
-    "base0C": bright("accent"),
-    "base0D": readable("accent"),
-    "base0E": readable("blue"),
-    "base0F": bright("accentHover"),
+palette |= {
+    "background": "#000000",
+    "surface": darken(palette["surface"], 0.6),
+    "surfaceHover": darken(palette["surfaceHover"], 0.4),
+    "border": darken(palette["border"], 0.25),
 }
 
-json.dump(
-    {
-        "palette": palette,
-        "base16": {"scheme": "impasto", "author": "impasto"}
-        | {slot: value.removeprefix("#") for slot, value in slots.items()},
-    },
-    sys.stdout,
-)
+json.dump(palette, sys.stdout)

@@ -158,11 +158,6 @@
       flake = false;
     };
 
-    stylix = {
-      url = "github:nix-community/stylix/master";
-      inputs.nixpkgs.follows = "nixpkgs";
-    };
-
     plamo-app = {
       url = "git+https://github.com/keewai704/plamo-app?ref=main";
       inputs.nixpkgs.follows = "nixpkgs";

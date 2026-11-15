@@ -6,9 +6,12 @@
 {
   imports = [
     ./discord.nix
+    ./fcitx5-theme.nix
     ./heroic.nix
     ./impasto
+    ./mangohud.nix
     ./modrinth.nix
+    ./pi-theme.nix
     ./spotifast.nix
     ./steam.nix
     ./sunshine
@@ -93,11 +96,6 @@
 
   home-manager.users.keewai = {
     programs.kitty.enable = true;
-
-    programs.mangohud = {
-      enable = true;
-      settings.toggle_hud = "Home";
-    };
 
     home.packages = [
       pkgs.bitwarden-desktop

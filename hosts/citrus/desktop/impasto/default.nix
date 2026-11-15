@@ -6,7 +6,7 @@
   ...
 }:
 let
-  wallpaper = config.stylix.image;
+  wallpaper = ../wallpaper.png;
 
   quickshell = pkgs.quickshell.overrideAttrs (old: {
     buildInputs = old.buildInputs ++ [ pkgs.qt6.qtmultimedia ];
@@ -27,7 +27,7 @@ let
     cp -r ${inputs.impasto}/home/.config/hypr $out
     chmod -R u+w $out
     install -Dm644 -t $out/custom ${./hypr}/*.lua
-    echo 'hl.env("QS_ICON_THEME", "${config.stylix.icons.dark}")' >> $out/custom/env.lua
+    echo 'hl.env("QS_ICON_THEME", "${config.home-manager.users.keewai.gtk.iconTheme.name}")' >> $out/custom/env.lua
   '';
 
   colors =
@@ -42,6 +42,8 @@ let
         HOME=$TMPDIR python3 ${./scheme.py} ${shell}/scripts ${wallpaper} > $out
       '';
 
+  seedPalette = lib.importJSON colors;
+
   greeter = pkgs.runCommand "impasto-sddm-theme" { } ''
     mkdir -p $out/share/sddm/themes
     cp -r ${inputs.impasto}/system/usr/share/sddm/themes/impasto $out/share/sddm/themes/impasto
@@ -53,6 +55,8 @@ let
 
   settings = builtins.toJSON {
     dockEnabled = false;
+    pureBlack = true;
+    terminalGround = "classic";
   };
 
   barRight = builtins.toJSON [
@@ -97,11 +101,13 @@ in
 
   fonts.packages = [ pkgs.inter ];
 
+  _module.args.impastoSeed = seedPalette;
+
   _module.args.impastoPaletteHook =
     name: target: script:
     let
       hook = lib.getExe script;
-      seed = pkgs.writeText "impasto-palette.json" (builtins.toJSON (lib.importJSON colors).palette);
+      seed = pkgs.writeText "impasto-palette.json" (builtins.toJSON seedPalette);
     in
     {
       xdg.configFile."impasto/palette-hooks/${name}".source = hook;
@@ -112,19 +118,10 @@ in
           '';
     };
 
-  stylix.base16Scheme = (lib.importJSON colors).base16;
-
   home-manager.users.keewai = {
     xdg.configFile = {
       quickshell.source = shell;
       hypr.source = hypr;
-    };
-
-    stylix.targets = {
-      kitty.colors.enable = false;
-      btop.colors.enable = false;
-      gtk.colors.enable = false;
-      qt.enable = false;
     };
 
     programs.kitty = {

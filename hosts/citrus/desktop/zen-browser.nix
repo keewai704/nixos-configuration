@@ -61,8 +61,6 @@ in
         (impastoPaletteHook "zen" "${cache}/wal/colors.json" colors)
       ];
 
-      stylix.targets.zen-browser.enable = false;
-
       home.file.".mozilla/native-messaging-hosts/pywalfox.json".text = builtins.toJSON {
         name = "pywalfox";
         description = "Pywalfox native messaging host";
