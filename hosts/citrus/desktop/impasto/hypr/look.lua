@@ -6,6 +6,9 @@ hl.config({
         column_width = 0.333,
         explicit_column_widths = "0.333, 0.5, 0.667",
     },
+    render = {
+        cm_auto_hdr = 1,
+    },
     decoration = {
         inactive_opacity = 0.9,
         blur = {
