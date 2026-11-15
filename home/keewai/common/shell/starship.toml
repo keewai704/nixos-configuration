@@ -1,87 +1,96 @@
 format = """
-[░▒▓](magenta)\
-[ 󰣇 ](bg:magenta fg:black)\
-[](bg:blue fg:magenta)\
+[](fg:cyan)\
+[  ](fg:black bg:cyan)\
 $directory\
-[](fg:blue bg:bright-black)\
+[](fg:cyan bg:black)\
 $git_branch\
 $git_status\
-[](fg:bright-black bg:black)\
-$nodejs\
-$rust\
+$nix_shell\
+$c\
 $golang\
+$nodejs\
 $php\
 $python\
-$c\
-[](fg:black bg:bright-black)\
-$time\
-[](fg:bright-black bg:black)\
-$cmd_duration\
-[ ](fg:black)\
-\n$character"""
+$rust\
+[](fg:black)\
+$cmd_duration
+$character"""
+
+right_format = "$time"
+
+[character]
+success_symbol = "[❯](bold cyan)"
+error_symbol = "[❯](bold red)"
+vimcmd_symbol = "[❮](bold green)"
 
 [directory]
-style = "fg:black bg:blue"
-format = "[ $path ]($style)"
+format = "[$path$read_only ]($style)"
+style = "fg:black bg:cyan bold"
+read_only = " 󰌾"
+read_only_style = "fg:black bg:cyan"
 truncation_length = 3
 truncation_symbol = "…/"
 
 [directory.substitutions]
-"Documents" = "󰈙 "
-"Downloads" = " "
-"Music" = " "
-"Pictures" = " "
+Documents = "󰈙 "
+Downloads = " "
+Music = "󰝚 "
+Pictures = " "
 
 [git_branch]
-symbol = ""
-style = "bg:bright-black"
-format = '[[ $symbol $branch ](fg:blue bg:bright-black)]($style)'
+format = "[ $symbol $branch ]($style)"
+style = "fg:cyan bg:black"
+symbol = ""
 
 [git_status]
-style = "bg:bright-black"
-format = '[[($all_status$ahead_behind )](fg:blue bg:bright-black)]($style)'
+format = "[($all_status$ahead_behind )]($style)"
+style = "fg:yellow bg:black"
 
-[nodejs]
-symbol = "󰎙"
-style = "bg:black"
-format = '[[ $symbol ($version) ](fg:blue bg:black)]($style)'
-
-[rust]
-symbol = ""
-style = "bg:black"
-format = '[[ $symbol ($version) ](fg:blue bg:black)]($style)'
-
-[golang]
-symbol = ""
-style = "bg:black"
-format = '[[ $symbol ($version) ](fg:blue bg:black)]($style)'
-
-[php]
-symbol = ""
-style = "bg:black"
-format = '[[ $symbol ($version) ](fg:blue bg:black)]($style)'
-
-[python]
-symbol = ""
-style = "bg:black"
-format = '[[ $symbol ($version) ](fg:blue bg:black)]($style)'
+[nix_shell]
+format = "[ $symbol $state ]($style)"
+style = "fg:blue bg:black"
+symbol = ""
+impure_msg = "impure"
+pure_msg = "pure"
 
 [c]
-symbol = ""
-style = "bg:black"
-format = '[[ $symbol ($version) ](fg:blue bg:black)]($style)'
+format = "[ $symbol $version ]($style)"
+style = "fg:blue bg:black"
+symbol = ""
 
+[golang]
+format = "[ $symbol $version ]($style)"
+style = "fg:blue bg:black"
+symbol = ""
+
+[nodejs]
+format = "[ $symbol $version ]($style)"
+style = "fg:green bg:black"
+symbol = "󰎙"
+
+[php]
+format = "[ $symbol $version ]($style)"
+style = "fg:blue bg:black"
+symbol = ""
+
+[python]
+format = "[ $symbol $version ]($style)"
+style = "fg:yellow bg:black"
+symbol = ""
+
+[rust]
+format = "[ $symbol $version ]($style)"
+style = "fg:red bg:black"
+symbol = ""
+
+[cmd_duration]
+format = " [󰔟 $duration]($style)"
+style = "fg:yellow"
+min_time = 2000
+show_notifications = true
 
 [time]
 disabled = false
+format = "[$time]($style)"
+style = "fg:white"
 time_format = "%R"
-style = "bg:bright-black"
-format = '[[  $time ](fg:white bg:bright-black)]($style)'
-
-[cmd_duration]
-show_milliseconds = true
-min_time = 0
-format = '[[ ⏱️ $duration ](fg:white bg:black)]($style)'
-style = "bg:black"
-disabled = false
-show_notifications = true
