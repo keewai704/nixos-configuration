@@ -530,11 +530,11 @@
     "impasto": {
       "flake": false,
       "locked": {
-        "lastModified": 1794705696,
-        "narHash": "sha256-nXi0h/Vo9RAxnYsM8rizbQwc4CAEVnva0o/oM57SVNE=",
+        "lastModified": 1794706458,
+        "narHash": "sha256-NrY4MNg/YBL/3grz0KqJk7jFe7++hhU2yagFlwJAUPw=",
         "owner": "keewai704",
         "repo": "impasto",
-        "rev": "bd9a27aca4d7e1418bc279dd6552e3801164508c",
+        "rev": "b6b9fb492a0e7a4e76ac57a7aa2fa30ae7dde25d",
         "type": "github"
       },
       "original": {
@@ -1162,11 +1162,11 @@
         ]
       },
       "locked": {
-        "lastModified": 1794672141,
-        "narHash": "sha256-X9Qi81dg0g7oqvyEr+koPDBiGhIlbAKDAGW7EC7qqGk=",
+        "lastModified": 1794706027,
+        "narHash": "sha256-FGNZdthz4GLcLoxLqQKI32ZExmiHnwcx02s/eXd/Hg0=",
         "ref": "main",
-        "rev": "f46a6e393683880835da677eb033c4d49516bf66",
-        "revCount": 20,
+        "rev": "d6100ba7dddac9e15a1d020fcf12e50f2d86706b",
+        "revCount": 21,
         "type": "git",
         "url": "https://github.com/keewai704/plamo-app"
       },
