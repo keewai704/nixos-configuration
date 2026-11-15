@@ -5,6 +5,7 @@
 }:
 {
   imports = [
+    ./anime-game-launcher.nix
     ./discord.nix
     ./fcitx5-theme.nix
     ./heroic.nix

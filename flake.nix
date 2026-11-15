@@ -5,12 +5,14 @@
     extra-substituters = [
       "https://cache.lantian.pub/lantian"
       "https://cache.nixos-cuda.org"
+      "https://ezkea.cachix.org"
       "https://nix-community.cachix.org"
       "https://nyx-cache.chaotic.cx"
       "https://pi.cachix.org"
     ];
     extra-trusted-public-keys = [
       "cache.nixos-cuda.org:74DUi4Ye579gUqzH4ziL9IyiJBlDpMRn9MBN8oNan9M="
+      "ezkea.cachix.org-1:ioBmUbJTZIKsHmWWXPe1FSFbeVe+afhfgqgTSNd34eI="
       "lantian:WVGO7vsRMSEN+h7Lp7kv6SAmrkEXgUGbbXm7jMDjBuQ="
       "nix-community.cachix.org-1:mB9FSh9qf2dCimDSUo8Zy7bkq5CX+/rkCWyvRCYg3Fs="
       "nyx-cache.chaotic.cx:dJxTrgMC3V3cFfyIiBQDQorG6k1LsqurH/srpMSq7qk="
@@ -160,6 +162,11 @@
 
     plamo-app = {
       url = "git+https://github.com/keewai704/plamo-app?ref=main";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
+
+    aagl = {
+      url = "github:ezKEa/aagl-gtk-on-nix/main";
       inputs.nixpkgs.follows = "nixpkgs";
     };
 
