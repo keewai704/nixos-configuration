@@ -130,7 +130,6 @@ in
       extraProfile = ''
         ${lib.getExe applySettings} || true
       '';
-      extraEnv.DXVK_HDR = "1";
     };
     extraCompatPackages = [ inputs.chaotic.unrestrictedPackages.x86_64-linux.proton-cachyos ];
   };
