@@ -31,6 +31,40 @@ local function restore_from_scratchpad()
     end
 end
 
+local function screen_base(monitor)
+    if not monitor then
+        return 0
+    end
+    local state = os.getenv("XDG_STATE_HOME") or (os.getenv("HOME") .. "/.local/state")
+    local file = io.open(state .. "/quickshell/workspaces")
+    if not file then
+        return 0
+    end
+    local lines = {}
+    for line in file:lines() do
+        if line ~= "" and line:sub(1, 1) ~= "#" then
+            lines[#lines + 1] = line
+        end
+    end
+    file:close()
+    if lines[1] ~= "screen" then
+        return 0
+    end
+    for position = 2, #lines do
+        if lines[position] == monitor.name then
+            return (position - 2) * 10
+        end
+    end
+    return 0
+end
+
+local function move_to_workspace(index)
+    return function()
+        local monitor = hl.get_active_monitor()
+        hl.dispatch(hl.dsp.window.move({ workspace = screen_base(monitor) + index }))
+    end
+end
+
 local function resize_height(fraction)
     return function()
         local monitor = hl.get_active_monitor()
@@ -80,6 +114,12 @@ rebind("SUPER + Space", hl.dsp.workspace.toggle_special("scratchpad"), { descrip
 rebind("SUPER + SHIFT + Space", hl.dsp.window.move({ workspace = scratchpad, follow = false }),
        { description = "Workspaces · Send the window to the scratchpad" })
 rebind("SUPER + CTRL + Space", restore_from_scratchpad, { description = "Workspaces · Bring the window back from the scratchpad" })
+for i = 1, 10 do
+    local key = i % 10
+    hl.unbind("SUPER + ALT + " .. key)
+    rebind("SUPER + SHIFT + " .. key, move_to_workspace(i),
+           { description = "Workspaces · Move the window to workspace " .. i })
+end
 rebind("SUPER + TAB", hl.dsp.window.cycle_next(), { description = "Workspaces · Focus the next window (Tab)" })
 rebind("SUPER + O", hl.dsp.global("quickshell:overview"), { description = "Shell · Open the workspace overview (O)" })
 
