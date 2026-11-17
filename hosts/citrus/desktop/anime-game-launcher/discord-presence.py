@@ -62,28 +62,35 @@ def connect(start):
                 "nonce": str(uuid.uuid4()),
             })
             return connection
-        except OSError as error:
+        except OSError:
             connection.close()
-            last = error
-    print(f"Discord is unavailable: {last}", flush=True)
     return None
 
 
+def alive(connection):
+    try:
+        connection.setblocking(False)
+        return connection.recv(65536) != b""
+    except BlockingIOError:
+        return True
+    except OSError:
+        return False
+    finally:
+        connection.settimeout(5)
+
+
+deadline = time.monotonic() + 300
+seen = False
 connection = None
 while True:
     start = game_start()
-    if start and connection is None:
-        connection = connect(start)
-    elif connection:
-        try:
-            connection.setblocking(False)
-            if not start or connection.recv(65536) == b"":
-                raise OSError
-        except BlockingIOError:
-            pass
-        except OSError:
+    if not start and (seen or time.monotonic() > deadline):
+        break
+    if start:
+        seen = True
+        if connection and not alive(connection):
             connection.close()
             connection = None
-        if connection:
-            connection.settimeout(5)
+        if connection is None:
+            connection = connect(start)
     time.sleep(5)

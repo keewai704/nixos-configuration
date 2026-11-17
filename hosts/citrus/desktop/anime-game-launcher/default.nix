@@ -8,6 +8,8 @@ let
   discordPresence = pkgs.writers.writePython3Bin "genshin-discord-presence" {
     flakeIgnore = [ "E501" ];
   } (builtins.readFile ./discord-presence.py);
+
+  command = "${lib.getExe discordPresence} & %command%";
 in
 {
   imports = [ inputs.aagl.nixosModules.default ];
@@ -21,17 +23,17 @@ in
     {
       xdg.dataFile.anime-game-launcher.source = config.lib.file.mkOutOfStoreSymlink "/mnt/data/Games/anime-game-launcher";
 
-      systemd.user.services.genshin-discord-presence = {
-        Unit = {
-          Description = "Discord Rich Presence for Genshin Impact";
-          After = [ "graphical-session.target" ];
-          PartOf = [ "graphical-session.target" ];
-        };
-        Service = {
-          ExecStart = lib.getExe discordPresence;
-          Restart = "on-failure";
-        };
-        Install.WantedBy = [ "graphical-session.target" ];
-      };
+      home.activation.animeGameLauncherCommand =
+        inputs.home-manager.lib.hm.dag.entryAfter [ "linkGeneration" ]
+          ''
+            config="${config.xdg.dataHome}/anime-game-launcher/config.json"
+            if [ -s "$config" ]; then
+              merged="$(mktemp "$config.XXXXXX")"
+              ${lib.getExe pkgs.jq} --arg command ${lib.escapeShellArg command} \
+                'if .game.command == null or (.game.command | contains("genshin-discord-presence")) then .game.command = $command else . end' \
+                "$config" > "$merged"
+              run mv "$merged" "$config"
+            fi
+          '';
     };
 }
