@@ -9,7 +9,7 @@ let
     flakeIgnore = [ "E501" ];
   } (builtins.readFile ./discord-presence.py);
 
-  command = "${lib.getExe discordPresence} & %command%";
+  command = "${lib.getExe discordPresence} & %command% -screen-width 5120 -screen-height 2160 -screen-fullscreen 1";
 in
 {
   imports = [ inputs.aagl.nixosModules.default ];
