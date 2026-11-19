@@ -58,14 +58,14 @@ let
     );
   pname = "t3code";
   version = lib.replaceStrings [ "_" ] [ "-" ] (sourceValue "pkgver");
-  appImageUrl = lib.last (lib.splitString "::" (sourceValue "source"));
+  appImageUrl = lib.last (lib.splitString "::" (sourceValue "source_x86_64"));
   src =
     assert lib.hasPrefix "https://github.com/pingdotgg/t3code/releases/download/v${version}/"
       appImageUrl;
     assert lib.hasSuffix "-x86_64.AppImage" appImageUrl;
     fetchurl {
       url = appImageUrl;
-      sha256 = sourceValue "sha256sums";
+      sha256 = sourceValue "sha256sums_x86_64";
     };
   contents = appimageTools.extract { inherit pname version src; };
 in
