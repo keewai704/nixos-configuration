@@ -31,7 +31,7 @@ in
               merged="$(mktemp "$config.XXXXXX")"
               ${lib.getExe pkgs.jq} --arg command ${lib.escapeShellArg command} \
                 'if .game.command == null or (.game.command | contains("genshin-discord-presence")) then .game.command = $command else . end
-                  | .game.enhancements.fps_unlocker.config.fps |= ([., 120] | min)' \
+                  | .game.enhancements.fps_unlocker.enabled = false' \
                 "$config" > "$merged"
               run mv "$merged" "$config"
             fi
