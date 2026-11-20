@@ -21,6 +21,8 @@ let
       --replace-fail /usr/share/iso-codes ${pkgs.isocodes}/share/iso-codes
     substituteInPlace $out/scripts/compositor.py \
       --replace-fail /usr/share/X11/xkb ${pkgs.xkeyboard_config}/share/X11/xkb
+    substituteInPlace $out/services/BrightnessService.qml \
+      --replace-fail '"--noverify", "--skip-ddc-checks",' '"--noverify",'
   '';
 
   hypr = pkgs.runCommand "impasto-hypr" { } ''
