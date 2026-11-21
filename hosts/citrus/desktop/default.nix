@@ -78,10 +78,16 @@
 
   boot.kernelModules = [ "ntsync" ];
 
+  powerManagement.cpuFreqGovernor = "powersave";
+
   programs.gamemode = {
     enable = true;
     enableRenice = true;
-    settings.general.renice = 10;
+    settings.general = {
+      renice = 10;
+      defaultgov = "powersave";
+      desiredgov = "performance";
+    };
   };
 
   programs.dconf.enable = true;
