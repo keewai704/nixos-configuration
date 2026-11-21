@@ -46,7 +46,7 @@
     "amatsukaze-artifacts": {
       "flake": false,
       "locked": {
-        "narHash": "sha256-+eumO+P7ylRYoQBAlBvnG8QUQqCfwbnYDn+YJJUcO70=",
+        "narHash": "sha256-O/KjkFSD/OD+0uFG9kmK7u5AlTKCP5RibpUqYLyhpIA=",
         "type": "file",
         "url": "https://api.github.com/repos/rigaya/Amatsukaze/actions/artifacts?per_page=100"
       },
@@ -192,11 +192,11 @@
         "systems": "systems"
       },
       "locked": {
-        "lastModified": 1795129294,
-        "narHash": "sha256-E0QlifhRoHhi4XK2qR+TK9xepw3LWF090sAP2oVNsgs=",
+        "lastModified": 1795215682,
+        "narHash": "sha256-NzqBLAIGMiQesm6Fe0hO9OXjBzeNJ9x6XO9F97pTKaw=",
         "owner": "sadjow",
         "repo": "claude-code-nix",
-        "rev": "3994f6d2eeed6030346815db09c8a47c2de97b89",
+        "rev": "4c9d590f6924cd7bb4437c0a8636abc3ea506ad3",
         "type": "github"
       },
       "original": {
@@ -755,11 +755,11 @@
         "nixpkgs": "nixpkgs_2"
       },
       "locked": {
-        "lastModified": 1795132042,
-        "narHash": "sha256-tYzkUU6InfcOebtWNpBrDbLIVWa+TTz88xMR1+3NC3E=",
+        "lastModified": 1795216822,
+        "narHash": "sha256-u/LuZ26daAbiBtpPN0QfBo6zPWD4iG3YRbf5Xp45mas=",
         "owner": "xddxdd",
         "repo": "nix-cachyos-kernel",
-        "rev": "ffdb35a774334ae2f1aca81817f5f5519edbadd5",
+        "rev": "9809224771ee430621d9747e6fac7fbc7d61618d",
         "type": "github"
       },
       "original": {
@@ -825,11 +825,11 @@
         "treefmt-nix": "treefmt-nix"
       },
       "locked": {
-        "lastModified": 1795207200,
-        "narHash": "sha256-5c/THlrR1fSyst6f0kAxkhOYoLnIcehVLlpB2vNhH40=",
+        "lastModified": 1795215121,
+        "narHash": "sha256-YxcbpHvrOYWNE65gfQjNGX9RtDyjP/AfM5av8MsuWIQ=",
         "owner": "4evy",
         "repo": "nixcord",
-        "rev": "e88bbd70095dafe85b6a8b141e2c4848259dde41",
+        "rev": "0ddb1c558973efc6a5b4be8960bdcffca7269dbb",
         "type": "github"
       },
       "original": {
@@ -942,11 +942,11 @@
     },
     "nixpkgs_2": {
       "locked": {
-        "lastModified": 1795098731,
-        "narHash": "sha256-y1GUzNe5w8Di8Vu3eilszPhRKo0BUODT77Fx0HwYc1M=",
+        "lastModified": 1795188322,
+        "narHash": "sha256-W6Z8qDb/HwL7/LQ0yr2ucQQlJgCJ7yCkoSobwQjEPic=",
         "owner": "NixOS",
         "repo": "nixpkgs",
-        "rev": "b8a59ac94c4c495610130c08e5b4c99c2758b571",
+        "rev": "bd5b7d01ccc48cbc8241bda0c3554a4cbbcbc375",
         "type": "github"
       },
       "original": {
@@ -1015,11 +1015,11 @@
     "pi-blackhole": {
       "flake": false,
       "locked": {
-        "lastModified": 1794856366,
-        "narHash": "sha256-NAzY4cNp+8XJLwJ80dG1r4LGus5c9igM8c8iMMrGx40=",
+        "lastModified": 1795234339,
+        "narHash": "sha256-InFoJ/vnl5oVb00z3z3AFWagLFxlC2pemQC39C/qf68=",
         "ref": "main",
-        "rev": "f3419f279f33d4182062fea4b223e3a1b761ecd0",
-        "revCount": 698,
+        "rev": "db2fcaebbe8a19376ea46f0dbef7aa218edd10ba",
+        "revCount": 726,
         "type": "git",
         "url": "https://github.com/k0valik/pi-blackhole"
       },
@@ -1216,11 +1216,11 @@
     "t3code-nightly": {
       "flake": false,
       "locked": {
-        "lastModified": 1795202528,
-        "narHash": "sha256-i30ivm+Jg5BtS7b7G9sb28Z5boFqWjM8DDtgzMCuAIo=",
+        "lastModified": 1795225804,
+        "narHash": "sha256-z6jXKAYrUa59LDjmwTyLhLpANV0llaltD6updpShkQc=",
         "ref": "master",
-        "rev": "c614a95b3a6d74f9e6b3d197010e331423538a7c",
-        "revCount": 560,
+        "rev": "64b46790f1f91d68ed44cb310189e73c41f27b02",
+        "revCount": 561,
         "type": "git",
         "url": "https://aur.archlinux.org/t3code-nightly-bin.git"
       },
