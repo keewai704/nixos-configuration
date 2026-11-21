@@ -17,7 +17,7 @@
     ./steam.nix
     ./sunshine
     ./theme.nix
-    ./zen-browser.nix
+    ./zen-browser
   ];
 
   nixpkgs.overlays = [ inputs.nix-meltype.overlays.default ];

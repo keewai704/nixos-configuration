@@ -117,7 +117,7 @@ in
               "e122b5d9-d385-4bf8-9971-e137809097d0"
             ];
           };
-          userChrome = builtins.readFile "${inputs.pywal-zen}/chrome/pywal-zen.css";
+          userChrome = builtins.readFile ./pywal-zen/pywal-zen.css;
           settings = {
             "zen.theme.disable-lightweight" = false;
             "sine.allow-unsafe-js" = true;
