@@ -133,3 +133,5 @@ rebind("Print", hl.dsp.global("quickshell:captureScreen"), { description = "Shel
 rebind("ALT + Print", hl.dsp.global("quickshell:captureWindow"), { description = "Shell · Capture a window, from Print" })
 rebind("ALT + Sys_Req", hl.dsp.global("quickshell:captureWindow"), { description = "Shell · Capture a window, from Sys_Req" })
 rebind("SUPER + SHIFT + S", hl.dsp.global("quickshell:captureRegion"), { description = "Shell · Capture a region, from S" })
+
+rebind("SUPER + CTRL + R", hl.dsp.exec_cmd("while qs kill >/dev/null 2>&1; do :; done; qs -d"), { description = "Utilities · Restart the shell" })
