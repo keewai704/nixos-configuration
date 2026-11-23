@@ -6,7 +6,6 @@ in
 {
   local = {
     edcb = final.callPackage ./edcb { upstream = inputs.edcb; };
-    heroic = final.callPackage ./heroic { };
     b25-decoder = final.callPackage ./b25-decoder { upstream = inputs.b25-decoder; };
     tsreplace = final.callPackage ./tsreplace { upstream = inputs.tsreplace; };
     amatsukaze = final.callPackage ./amatsukaze { artifacts = inputs.amatsukaze-artifacts; };
