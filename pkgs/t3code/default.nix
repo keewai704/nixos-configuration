@@ -177,11 +177,11 @@ stdenv.mkDerivation {
     server=$!
     trap 'kill $server' EXIT
     for _ in $(seq 60); do
-      curl -fs http://127.0.0.1:38773/ -o index.html && break
+      curl -fs --max-time 5 http://127.0.0.1:38773/ -o index.html && break
       sleep 1
     done
     grep -F 'href="/t3/manifest.webmanifest"' index.html
-    curl -fs http://127.0.0.1:38773/manifest.webmanifest | grep -F '"scope": "/t3/"'
+    curl -fs --max-time 5 http://127.0.0.1:38773/manifest.webmanifest | grep -F '"scope": "/t3/"'
     runHook postInstallCheck
   '';
 
