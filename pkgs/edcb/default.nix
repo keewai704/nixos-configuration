@@ -19,7 +19,7 @@ stdenv.mkDerivation {
       --replace-fail 'L"/var/local/edcb"' 'L"/var/lib/edcb"' \
       --replace-fail 'L"/usr/local/lib/edcb"' 'L"/var/lib/edcb/lib"'
     substituteInPlace Common/TCPServer.cpp \
-      --replace-fail 'getaddrinfo(NULL, szPort, &hints, &result)' \
+      --replace-fail 'getaddrinfo(nullptr, szPort, &hints, &result)' \
         'getaddrinfo("127.0.0.1", szPort, &hints, &result)'
     substituteInPlace EpgTimerSrv/EpgTimerSrv/Makefile \
       --replace-fail '-llua5.2' '-llua'
