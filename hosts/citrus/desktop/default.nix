@@ -10,6 +10,7 @@
     ./fcitx5-theme.nix
     ./heroic.nix
     ./impasto
+    ./ladybird
     ./mangohud.nix
     ./modrinth.nix
     ./pi-theme.nix
