@@ -1,5 +1,6 @@
 import json
 import sys
+import time
 
 from aiohttp import ClientSession, ClientTimeout, web
 
@@ -59,6 +60,21 @@ def go_headers(headers):
     return result
 
 
+def limit_headers(response):
+    try:
+        wait = int(response.headers.get("retry-after", ""))
+    except ValueError:
+        return {}
+    if response.status != 429 or wait <= 0:
+        return {}
+    prefix = "anthropic-ratelimit-unified-"
+    return {
+        prefix + "status": "rejected",
+        prefix + "reset": str(int(time.time()) + wait),
+        prefix + "representative-claim": "opencode_go",
+    }
+
+
 async def handle(request):
     body = await request.read()
     headers = {k: v for k, v in request.headers.items() if k.lower() not in HOP}
@@ -78,9 +94,12 @@ async def handle(request):
             status=upstream_response.status,
             reason=upstream_response.reason,
             headers={
-                k: v
-                for k, v in upstream_response.headers.items()
-                if k.lower() not in HOP
+                **{
+                    k: v
+                    for k, v in upstream_response.headers.items()
+                    if k.lower() not in HOP
+                },
+                **(limit_headers(upstream_response) if upstream == GO else {}),
             },
         )
         await response.prepare(request)
