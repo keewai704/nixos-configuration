@@ -18,7 +18,7 @@ let
     }) tuners;
     filters.decode-filter.command = "${lib.getExe pkgs.aribb25} - -";
     jobs = {
-      scan-services.schedule = "0 0 3 * * * *";
+      scan-services.schedule = "0 30 6 * * * *";
       sync-clocks.disabled = true;
       update-schedules.disabled = true;
     };
