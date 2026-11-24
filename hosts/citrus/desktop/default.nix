@@ -5,6 +5,7 @@
 }:
 {
   imports = [
+    ./airplay.nix
     ./anime-game-launcher
     ./discord.nix
     ./fcitx5-theme.nix
