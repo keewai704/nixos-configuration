@@ -48,6 +48,11 @@ in
     { config, lib, ... }:
     let
       package = pkgs.shairport-sync-airplay2;
+      waitForNqptp = pkgs.writeShellScript "wait-for-nqptp" ''
+        until ${pkgs.iproute2}/bin/ss -Hlun 'sport = :9000' | ${pkgs.gnugrep}/bin/grep -q .; do
+          sleep 1
+        done
+      '';
       settings = (pkgs.formats.libconfig { }).generate "shairport-sync.conf" {
         general = {
           output_backend = "pipewire";
@@ -74,6 +79,8 @@ in
           ];
         };
         Service = {
+          ExecStartPre = waitForNqptp;
+          TimeoutStartSec = 120;
           ExecStart = "${lib.getExe package} -c ${settings}";
           Restart = "on-failure";
         };
