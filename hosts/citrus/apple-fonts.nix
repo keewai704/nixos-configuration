@@ -4,10 +4,14 @@
 }:
 let
   srcDir = "/mnt/data/fonts/hiragino";
+  fontSrc = builtins.path {
+    path = srcDir;
+    name = "apple-hiragino-src";
+    filter = path: _type: (baseNameOf path != "lost+found");
+  };
   appleHiragino = pkgs.runCommand "apple-hiragino-fonts" { } ''
     mkdir -p $out/share/fonts/hiragino
-    cp ${srcDir}/*.ttc $out/share/fonts/hiragino/
-    chmod 444 $out/share/fonts/hiragino/*.ttc
+    cp ${fontSrc}/*.ttc $out/share/fonts/hiragino/
   '';
 in
 {
