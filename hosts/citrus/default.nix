@@ -4,6 +4,7 @@ in
 {
   imports = [
     ./agent-sim.nix
+    ./apple-fonts.nix
     ./boot.nix
     ./bootvine.nix
     ./desktop
