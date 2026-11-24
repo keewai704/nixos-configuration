@@ -5,7 +5,10 @@
   ...
 }:
 {
-  programs.nix-ld.libraries = [ pkgs.libxml2_13 ];
+  programs.nix-ld.libraries = [
+    pkgs.libxml2_13
+    pkgs.vulkan-loader
+  ];
 
   systemd.tmpfiles.rules = [ "d /opt 0755 root root -" ];
 

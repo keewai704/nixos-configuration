@@ -21,6 +21,7 @@
   openssl,
   procps,
   util-linux,
+  writeShellScript,
   xz,
   upstream,
 }:
@@ -51,6 +52,13 @@ let
     util-linux
     xz
   ];
+  fixShebangs = writeShellScript "agent-sim-fix-x86sim-shebangs" ''
+    for dir in "$@"; do
+      [ -d "$dir" ] || continue
+      ${lib.getExe gnugrep} -rlZE '^#! ?/bin/bash' "$dir" --exclude-dir=darling |
+        ${lib.getExe' findutils "xargs"} -0 -r ${lib.getExe gnused} -i -E '1s|^#! ?/bin/bash|#!/usr/bin/env bash|'
+    done
+  '';
 in
 rustPlatform.buildRustPackage {
   pname = "agent-sim";
@@ -61,7 +69,9 @@ rustPlatform.buildRustPackage {
   postPatch = ''
     substituteInPlace scripts/setup-vm.sh \
       --replace-fail 'sudo loginctl enable-linger "$USER"' ':' \
-      --replace-fail '	sudo -n true 2>/dev/null; then' '	false; then'
+      --replace-fail '	sudo -n true 2>/dev/null; then' '	false; then' \
+      --replace-fail '"$X" version' '${fixShebangs} "$ROOT/x86sim-$X86SIM_VERSION/usr/share/x86sim/payload" "$DATA/app/$X86SIM_VERSION"
+    "$X" version'
     substituteInPlace scripts/setup-vm.sh scripts/patch-x86sim.sh \
       --replace-fail 'sudo DEBIAN_FRONTEND=noninteractive apt-get' ':'
     substituteInPlace scripts/phone.sh \
