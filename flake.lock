@@ -1234,11 +1234,11 @@
     "t3code-nightly": {
       "flake": false,
       "locked": {
-        "lastModified": 1795476342,
-        "narHash": "sha256-EPas0CCCFT1yl0m3MitiszVeV0lFxlgdFFWOlp33Lls=",
+        "lastModified": 1795499380,
+        "narHash": "sha256-D2+K0OL4kVCsao2AA9B5m+hVON98g6AoYHZUS24oRDE=",
         "ref": "master",
-        "rev": "81e7e40513565de98f925a454520fc620c6f58c9",
-        "revCount": 572,
+        "rev": "b0cf2a8867e5e34b8d26d3aa05a83e29e3b8f05c",
+        "revCount": 573,
         "type": "git",
         "url": "https://aur.archlinux.org/t3code-nightly-bin.git"
       },
