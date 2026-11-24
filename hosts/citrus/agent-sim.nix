@@ -5,9 +5,25 @@
   ...
 }:
 {
-  programs.nix-ld.libraries = [
-    pkgs.libxml2_13
-    pkgs.vulkan-loader
+  programs.nix-ld.libraries = with pkgs; [
+    cairo
+    dbus
+    ffmpeg_6
+    fontconfig
+    freetype
+    giflib
+    libglvnd
+    libjpeg8
+    libpng
+    libpulseaudio
+    libtiff
+    libx11
+    libxcursor
+    libxext
+    libxkbfile
+    libxml2_13
+    libxrandr
+    vulkan-loader
   ];
 
   systemd.tmpfiles.rules = [ "d /opt 0755 root root -" ];
