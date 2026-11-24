@@ -127,8 +127,8 @@ in
             "zen.urlbar.single-toolbar-show-copy-url" = false;
             "font.default.ja" = "sans-serif";
             "font.default.x-western" = "sans-serif";
-            "font.name.sans-serif.ja" = "Noto Sans CJK JP";
-            "font.name.sans-serif.x-western" = "Noto Sans CJK JP";
+            "font.name.sans-serif.ja" = "Hiragino Sans";
+            "font.name.sans-serif.x-western" = "Hiragino Sans";
           };
         };
       };

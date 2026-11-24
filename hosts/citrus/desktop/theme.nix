@@ -84,8 +84,7 @@ in
     gtk = {
       enable = true;
       font = {
-        package = pkgs.noto-fonts-cjk-sans;
-        name = "Noto Sans CJK JP";
+        name = "Hiragino Sans";
         size = 12;
       };
       iconTheme = {

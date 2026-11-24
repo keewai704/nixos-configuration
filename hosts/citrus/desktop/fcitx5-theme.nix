@@ -214,9 +214,9 @@ in
     Theme = theme;
     DarkTheme = theme;
     UseDarkTheme = "False";
-    Font = "Noto Sans CJK JP 10";
-    MenuFont = "Noto Sans CJK JP 10";
-    TrayFont = "Noto Sans CJK JP Bold 10";
+    Font = "Hiragino Sans 10";
+    MenuFont = "Hiragino Sans 10";
+    TrayFont = "Hiragino Sans Bold 10";
   };
 
   home-manager.users.keewai.imports = [
