@@ -58,6 +58,11 @@
       flake = false;
     };
 
+    hiragino-fonts = {
+      url = "path:/mnt/data/fonts/hiragino";
+      flake = false;
+    };
+
     tsreplace = {
       url = "git+https://github.com/rigaya/tsreplace?ref=master";
       flake = false;

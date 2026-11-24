@@ -379,6 +379,19 @@
         "type": "github"
       }
     },
+    "hiragino-fonts": {
+      "flake": false,
+      "locked": {
+        "lastModified": 1795504369,
+        "narHash": "sha256-+ZLnzBaIRJp0vgTLDxbOwIOBzKtVUS7w6q6Q+OFPsy8=",
+        "path": "/mnt/data/fonts/hiragino",
+        "type": "path"
+      },
+      "original": {
+        "path": "/mnt/data/fonts/hiragino",
+        "type": "path"
+      }
+    },
     "home-manager": {
       "inputs": {
         "nixpkgs": [
@@ -1146,6 +1159,7 @@
         "claude-code-japanese-guard": "claude-code-japanese-guard",
         "codex": "codex",
         "edcb": "edcb",
+        "hiragino-fonts": "hiragino-fonts",
         "home-manager": "home-manager_2",
         "imozuru": "imozuru",
         "impasto": "impasto",
@@ -1252,11 +1266,11 @@
     "t3code-nightly": {
       "flake": false,
       "locked": {
-        "lastModified": 1795499380,
-        "narHash": "sha256-D2+K0OL4kVCsao2AA9B5m+hVON98g6AoYHZUS24oRDE=",
+        "lastModified": 1795523431,
+        "narHash": "sha256-8k/k+gIs1elmo5LJmyhyeEUjkUgVp7fLBL5NBkuDox8=",
         "ref": "master",
-        "rev": "b0cf2a8867e5e34b8d26d3aa05a83e29e3b8f05c",
-        "revCount": 573,
+        "rev": "1666662d58b9d88f5c1ea89f471d5826df7b705d",
+        "revCount": 574,
         "type": "git",
         "url": "https://aur.archlinux.org/t3code-nightly-bin.git"
       },
@@ -1392,11 +1406,11 @@
     "yomiyasu": {
       "flake": false,
       "locked": {
-        "lastModified": 1795387091,
-        "narHash": "sha256-dKl5PQEXqzaxXtB/h/dGyRwjalnQ+ZLjcaKPT8VX1jU=",
+        "lastModified": 1795520160,
+        "narHash": "sha256-df6sdmB1n+UkpMviEhN5Y4HAFtiJPdm3Mwdx1nNtnVw=",
         "ref": "main",
-        "rev": "ddf365b5d5b36a7aa4ffab798dce1b694dbb1afd",
-        "revCount": 80,
+        "rev": "fbd4e420fb71a6ba90f475898cf611ccb6a08cb2",
+        "revCount": 81,
         "type": "git",
         "url": "https://github.com/nanaism/yomiyasu"
       },
@@ -1416,11 +1430,11 @@
         ]
       },
       "locked": {
-        "lastModified": 1795434855,
-        "narHash": "sha256-R2BZyn0NAM3maHw1GfzEtHFpUPAuJyg4t8I6Dbuzsjg=",
+        "lastModified": 1795509874,
+        "narHash": "sha256-rGtp5IIchBAs1SL6UCWRpSJOGNnSwQwV0beeQcd8emc=",
         "owner": "0xc000022070",
         "repo": "zen-browser-flake",
-        "rev": "e2e4f8220406ce60d64395cfbf91e2189c894769",
+        "rev": "21385ea8b9e0c32b0962029b0836af2b621b7800",
         "type": "github"
       },
       "original": {
