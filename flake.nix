@@ -160,6 +160,11 @@
       flake = false;
     };
 
+    claude-code-japanese-guard = {
+      url = "git+https://github.com/minorun365/claude-code-japanese-guard?ref=main";
+      flake = false;
+    };
+
     impasto = {
       url = "github:keewai704/impasto?ref=main";
       flake = false;

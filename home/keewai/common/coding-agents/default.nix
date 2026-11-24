@@ -112,6 +112,12 @@ let
     }
   );
 
+  japaneseGuard = "${lib.getExe pkgs.python3} ${inputs.claude-code-japanese-guard}/hooks/japanese-guard.py";
+  japaneseGuardHook = {
+    type = "command";
+    command = japaneseGuard;
+  };
+
   syncConfig = pkgs.writers.writePython3 "sync-coding-agent-config" {
     flakeIgnore = [ "E501" ];
   } (builtins.readFile ./sync-config.py);
@@ -185,6 +191,15 @@ in
       settings = {
         autoCompactWindow = 400000;
         env.CLAUDE_CODE_SIMPLE_SYSTEM_PROMPT = "1";
+        hooks = {
+          Stop = [ { hooks = [ japaneseGuardHook ]; } ];
+          PreToolUse = [
+            {
+              matcher = "mcp__.*__wrap_up";
+              hooks = [ japaneseGuardHook ];
+            }
+          ];
+        };
       };
     };
 

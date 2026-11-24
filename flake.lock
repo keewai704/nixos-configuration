@@ -223,6 +223,23 @@
         "type": "github"
       }
     },
+    "claude-code-japanese-guard": {
+      "flake": false,
+      "locked": {
+        "lastModified": 1794482980,
+        "narHash": "sha256-pdHTv2Amp/CWJaVGrdHuIvfDtABH54zt+U0A8b1bvsQ=",
+        "ref": "main",
+        "rev": "2b4965f31b8859ec71dea06395a0aecf15e68da1",
+        "revCount": 14,
+        "type": "git",
+        "url": "https://github.com/minorun365/claude-code-japanese-guard"
+      },
+      "original": {
+        "ref": "main",
+        "type": "git",
+        "url": "https://github.com/minorun365/claude-code-japanese-guard"
+      }
+    },
     "codex": {
       "inputs": {
         "flake-utils": "flake-utils",
@@ -1126,6 +1143,7 @@
         "cachyos-limine-splash": "cachyos-limine-splash",
         "chaotic": "chaotic",
         "claude-code": "claude-code",
+        "claude-code-japanese-guard": "claude-code-japanese-guard",
         "codex": "codex",
         "edcb": "edcb",
         "home-manager": "home-manager_2",
