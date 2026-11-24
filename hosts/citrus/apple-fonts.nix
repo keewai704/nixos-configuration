@@ -11,14 +11,4 @@ let
 in
 {
   fonts.packages = [ appleHiragino ];
-  fonts.fontconfig.defaultFonts = {
-    sansSerif = [
-      "Hiragino Sans"
-      "DejaVu Sans"
-    ];
-    serif = [
-      "Hiragino Mincho ProN"
-      "DejaVu Serif"
-    ];
-  };
 }

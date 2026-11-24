@@ -35,8 +35,14 @@ in
       pkgs.noto-fonts-color-emoji
     ];
     fontconfig.defaultFonts = {
-      sansSerif = [ "Noto Sans CJK JP" ];
-      serif = [ "Noto Serif CJK JP" ];
+      sansSerif = [
+        "Hiragino Sans"
+        "Noto Sans CJK JP"
+      ];
+      serif = [
+        "Hiragino Mincho ProN"
+        "Noto Serif CJK JP"
+      ];
       monospace = [ "UDEV Gothic" ];
       emoji = [ "Noto Color Emoji" ];
     };
