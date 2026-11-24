@@ -145,6 +145,11 @@
       flake = false;
     };
 
+    agent-sim = {
+      url = "git+https://github.com/Developing-Gamer/agent-sim?ref=main";
+      flake = false;
+    };
+
     yomiyasu = {
       url = "git+https://github.com/nanaism/yomiyasu?ref=main";
       flake = false;

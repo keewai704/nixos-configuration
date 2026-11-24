@@ -3,6 +3,7 @@ let
 in
 {
   imports = [
+    ./agent-sim.nix
     ./boot.nix
     ./bootvine.nix
     ./desktop

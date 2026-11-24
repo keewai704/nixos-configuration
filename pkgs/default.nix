@@ -23,6 +23,7 @@ in
     bondriver-linuxmirakc = final.callPackage ./bondriver-linuxmirakc {
       upstream = inputs.bondriver-linuxmirakc;
     };
+    agent-sim = final.callPackage ./agent-sim { upstream = inputs.agent-sim; };
     t3code = final.callPackage ./t3code {
       upstream = inputs.t3code-nightly;
       inherit claude-code;

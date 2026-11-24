@@ -43,6 +43,23 @@
         "type": "github"
       }
     },
+    "agent-sim": {
+      "flake": false,
+      "locked": {
+        "lastModified": 1795478925,
+        "narHash": "sha256-N9I5c/7CRzUPp0/TxeLIPU+mUDt99s8bRYkNr0wAN2U=",
+        "ref": "main",
+        "rev": "009ce33690de03719b954427000643bbc22dc75b",
+        "revCount": 42,
+        "type": "git",
+        "url": "https://github.com/Developing-Gamer/agent-sim"
+      },
+      "original": {
+        "ref": "main",
+        "type": "git",
+        "url": "https://github.com/Developing-Gamer/agent-sim"
+      }
+    },
     "amatsukaze-artifacts": {
       "flake": false,
       "locked": {
@@ -1102,6 +1119,7 @@
       "inputs": {
         "aagl": "aagl",
         "agenix": "agenix",
+        "agent-sim": "agent-sim",
         "amatsukaze-artifacts": "amatsukaze-artifacts",
         "b25-decoder": "b25-decoder",
         "bondriver-linuxmirakc": "bondriver-linuxmirakc",
