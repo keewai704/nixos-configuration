@@ -12,7 +12,11 @@ let
     gh = config.programs.gh.package;
     git = config.programs.git.package;
   };
-  environment = [
+  telemetryEnvironment = {
+    T3CODE_TELEMETRY_ENABLED = "false";
+    T3CODE_OTEL_SDK_DISABLED = "true";
+  };
+  environment = lib.mapAttrsToList (name: value: "${name}=${value}") telemetryEnvironment ++ [
     "PATH=/run/wrappers/bin:/etc/profiles/per-user/${config.home.username}/bin:/run/current-system/sw/bin"
     "SHELL=${lib.getExe pkgs.zsh}"
   ];
@@ -33,6 +37,7 @@ in
 
   config = lib.mkIf cfg.enable {
     home.packages = [ package ];
+    home.sessionVariables = telemetryEnvironment;
 
     systemd.user.services.t3code = {
       Unit = {
