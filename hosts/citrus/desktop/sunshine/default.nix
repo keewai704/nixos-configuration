@@ -15,14 +15,25 @@ let
     text = builtins.readFile ./display.sh;
   };
 
-  app = name: mode: {
+  bigPicture = pkgs.writeShellApplication {
+    name = "sunshine-big-picture";
+    runtimeInputs = [
+      config.programs.steam.package
+      pkgs.procps
+      pkgs.util-linux
+    ];
+    text = builtins.readFile ./big-picture.sh;
+  };
+
+  app = name: mode: extraPrep: {
     inherit name;
     prep-cmd = [
       {
         do = "${lib.getExe display} ${mode}";
         undo = "${lib.getExe display} restore";
       }
-    ];
+    ]
+    ++ extraPrep;
   };
 in
 {
@@ -35,9 +46,14 @@ in
       output_name = "sunshine";
     };
     applications.apps = [
-      (app "拡張ディスプレイ" "extend")
-      (app "このディスプレイのみ" "only")
-      (app "ミラー" "mirror")
+      (app "拡張ディスプレイ" "extend" [ ])
+      (app "このディスプレイのみ" "only" [
+        {
+          do = "${lib.getExe bigPicture} open";
+          undo = "${lib.getExe bigPicture} close";
+        }
+      ])
+      (app "ミラー" "mirror" [ ])
     ];
   };
 
