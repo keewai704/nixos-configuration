@@ -209,6 +209,16 @@
       inputs.nixpkgs.follows = "nixpkgs";
     };
 
+    discord-phoenix = {
+      url = "file+https://dl.redeem.saarland/desktop/2233/linux-x64.AppImage";
+      flake = false;
+    };
+
+    sunbird-loader = {
+      url = "file+https://assets.sunbird.tools/plugins/libphoenix-linux-x86_64.so";
+      flake = false;
+    };
+
     millennium = {
       url = "github:SteamClientHomebrew/Millennium/main?dir=packages/nix";
       inputs.nixpkgs.follows = "nixpkgs";

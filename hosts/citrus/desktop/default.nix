@@ -7,6 +7,7 @@
   imports = [
     ./airplay.nix
     ./anime-game-launcher
+    ./discord-phoenix.nix
     ./discord.nix
     ./fcitx5-theme.nix
     ./heroic.nix

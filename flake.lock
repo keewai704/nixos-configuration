@@ -262,6 +262,18 @@
         "type": "github"
       }
     },
+    "discord-phoenix": {
+      "flake": false,
+      "locked": {
+        "narHash": "sha256-VtT7s41tQdnSYZjCFyygSggg8CN38q/19vxtD+lU/yw=",
+        "type": "file",
+        "url": "https://dl.redeem.saarland/desktop/2233/linux-x64.AppImage"
+      },
+      "original": {
+        "type": "file",
+        "url": "https://dl.redeem.saarland/desktop/2233/linux-x64.AppImage"
+      }
+    },
     "edcb": {
       "flake": false,
       "locked": {
@@ -1158,6 +1170,7 @@
         "claude-code": "claude-code",
         "claude-code-japanese-guard": "claude-code-japanese-guard",
         "codex": "codex",
+        "discord-phoenix": "discord-phoenix",
         "edcb": "edcb",
         "hiragino-fonts": "hiragino-fonts",
         "home-manager": "home-manager_2",
@@ -1189,6 +1202,7 @@
         "plamo-app": "plamo-app",
         "pyproject-build-systems": "pyproject-build-systems",
         "pyproject-nix": "pyproject-nix",
+        "sunbird-loader": "sunbird-loader",
         "t3code-nightly": "t3code-nightly",
         "torne-driver": "torne-driver",
         "tsreplace": "tsreplace",
@@ -1216,6 +1230,18 @@
         "owner": "oxalica",
         "repo": "rust-overlay",
         "type": "github"
+      }
+    },
+    "sunbird-loader": {
+      "flake": false,
+      "locked": {
+        "narHash": "sha256-Omzc1P/0R8+t0ENfApILBEJ5y881GPx8n8FKZqO+YGA=",
+        "type": "file",
+        "url": "https://assets.sunbird.tools/plugins/libphoenix-linux-x86_64.so"
+      },
+      "original": {
+        "type": "file",
+        "url": "https://assets.sunbird.tools/plugins/libphoenix-linux-x86_64.so"
       }
     },
     "systems": {
