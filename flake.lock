@@ -46,7 +46,7 @@
     "amatsukaze-artifacts": {
       "flake": false,
       "locked": {
-        "narHash": "sha256-u8/zlo00QBshrt7eOe0O70oO+F68vs4zN/v6qfTRk3k=",
+        "narHash": "sha256-WAlkIRJPe4DunzLC3luCiEpkEVus0lFVAxSAtT9M5TE=",
         "type": "file",
         "url": "https://api.github.com/repos/rigaya/Amatsukaze/actions/artifacts?per_page=100"
       },
@@ -187,11 +187,11 @@
         "nixpkgs": "nixpkgs"
       },
       "locked": {
-        "lastModified": 1795615879,
-        "narHash": "sha256-oHOHVsCc1XuD5dFxZsjxsPaWGchucLyW/TGGejVZU2A=",
+        "lastModified": 1795687360,
+        "narHash": "sha256-WISN40xYVW/RDFftpKK0K/h4KmVx3xpxod3iID8fNeo=",
         "owner": "chaotic-cx",
         "repo": "nyx",
-        "rev": "9de511ade162ab7d645f8b2bf04cf65531e19c34",
+        "rev": "66cba9612c6367dc98f7da8040f50b84f6765b8d",
         "type": "github"
       },
       "original": {
@@ -412,11 +412,11 @@
         ]
       },
       "locked": {
-        "lastModified": 1795534022,
-        "narHash": "sha256-xkRZ+PcPWaAyf9YrEBszYD5w2S6/Ac2tIfsufzd4dEQ=",
+        "lastModified": 1795618997,
+        "narHash": "sha256-d9Osol//t6hqeo1xlspsYMbhTJK507h6t0EmPyF5Db0=",
         "owner": "nix-community",
         "repo": "home-manager",
-        "rev": "b56bcd042b5e69ad188eca20d9bec1bfbf3dd453",
+        "rev": "6a13737c0ed27c7c285f59e3be423ed972aa605f",
         "type": "github"
       },
       "original": {
@@ -432,11 +432,11 @@
         ]
       },
       "locked": {
-        "lastModified": 1795618997,
-        "narHash": "sha256-d9Osol//t6hqeo1xlspsYMbhTJK507h6t0EmPyF5Db0=",
+        "lastModified": 1795686323,
+        "narHash": "sha256-4iRcuQObXq+6JrmHkCUjevZ4L0Wy97MkUE8BeOaCgRs=",
         "owner": "nix-community",
         "repo": "home-manager",
-        "rev": "6a13737c0ed27c7c285f59e3be423ed972aa605f",
+        "rev": "567216631dfccee23b32288de037b1339918144c",
         "type": "github"
       },
       "original": {
@@ -884,11 +884,11 @@
         "treefmt-nix": "treefmt-nix"
       },
       "locked": {
-        "lastModified": 1795661483,
-        "narHash": "sha256-SktRjXzA67fpW+OJOk6stbBeZPiprSGX8e4Ct+fdoVg=",
+        "lastModified": 1795696915,
+        "narHash": "sha256-+N+KfA7/65XtTTdpIHlhmBOUkpahZ8W8NJfK3V1vqeg=",
         "owner": "4evy",
         "repo": "nixcord",
-        "rev": "7d03a13b368ec35524cd5f4c5111d33d2b1ddac3",
+        "rev": "2c5937299328e6a63e32340c473c79178c5531fb",
         "type": "github"
       },
       "original": {
@@ -1235,7 +1235,7 @@
     "sunbird-loader": {
       "flake": false,
       "locked": {
-        "narHash": "sha256-Omzc1P/0R8+t0ENfApILBEJ5y881GPx8n8FKZqO+YGA=",
+        "narHash": "sha256-T3EBQdM87JhWUMAG6Uc8zx0jwPLOiTaK+v08A5yVBZs=",
         "type": "file",
         "url": "https://assets.sunbird.tools/plugins/libphoenix-linux-x86_64.so"
       },
