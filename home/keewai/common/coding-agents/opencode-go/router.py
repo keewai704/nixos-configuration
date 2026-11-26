@@ -84,12 +84,9 @@ async def handle(request):
             },
         )
         await response.prepare(request)
-        try:
-            async for chunk in upstream_response.content.iter_any():
-                await response.write(chunk)
-            await response.write_eof()
-        except ConnectionResetError:
-            upstream_response.close()
+        async for chunk in upstream_response.content.iter_any():
+            await response.write(chunk)
+        await response.write_eof()
         return response
 
 
