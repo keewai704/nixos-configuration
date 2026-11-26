@@ -60,6 +60,7 @@ let
     dockEnabled = false;
     pureBlack = true;
     terminalGround = "classic";
+    workspaceMode = "screen";
   };
 
   barRight = builtins.toJSON [
