@@ -188,7 +188,6 @@ in
       pkgs.pulseaudio
       quickshell
       pkgs.satty
-      pkgs.songrec
       pkgs.tesseract
       pkgs.wf-recorder
       pkgs.wl-screenrec

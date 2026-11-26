@@ -15,7 +15,6 @@
     ./mangohud.nix
     ./modrinth.nix
     ./pi-theme.nix
-    ./spotifast.nix
     ./steam.nix
     ./sunshine
     ./theme.nix
