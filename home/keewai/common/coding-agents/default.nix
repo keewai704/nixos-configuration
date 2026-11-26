@@ -123,10 +123,7 @@ let
   } (builtins.readFile ./sync-config.py);
 in
 {
-  imports = [
-    inputs.pi.homeModules.default
-    ./opencode-go
-  ];
+  imports = [ inputs.pi.homeModules.default ];
 
   options.codingAgents = {
     skills = lib.mkOption {
