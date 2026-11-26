@@ -166,11 +166,11 @@
     "cc-safety-net": {
       "flake": false,
       "locked": {
-        "lastModified": 1795453521,
-        "narHash": "sha256-jHtWldpqeKA9aW27+G3evFuHgR929sDUE/1fvoiSpBM=",
+        "lastModified": 1795681823,
+        "narHash": "sha256-YeiZiRupRE0gHJY4hMaRcp34G9IM83+d5XO3vulTuho=",
         "ref": "main",
-        "rev": "b50a82816f8e065b0e60da784cb84c843d54a706",
-        "revCount": 2081,
+        "rev": "9b6b40150a5b7a45df704e8ea80e187e8c97fc3b",
+        "revCount": 2082,
         "type": "git",
         "url": "https://github.com/kenryu42/cc-safety-net"
       },
