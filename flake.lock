@@ -43,23 +43,6 @@
         "type": "github"
       }
     },
-    "agent-sim": {
-      "flake": false,
-      "locked": {
-        "lastModified": 1795640103,
-        "narHash": "sha256-CFobt6iISXn905CplrBl8VloARiFQrmvqEND+Utyo68=",
-        "ref": "main",
-        "rev": "f4cdf3de906ee7b47bee61b432b6aa32acafea03",
-        "revCount": 111,
-        "type": "git",
-        "url": "https://github.com/Developing-Gamer/agent-sim"
-      },
-      "original": {
-        "ref": "main",
-        "type": "git",
-        "url": "https://github.com/Developing-Gamer/agent-sim"
-      }
-    },
     "amatsukaze-artifacts": {
       "flake": false,
       "locked": {
@@ -745,11 +728,11 @@
     "mirakc": {
       "flake": false,
       "locked": {
-        "lastModified": 1795584140,
-        "narHash": "sha256-AY70Mx3bG6JCv2CXQQb00aAO8L6A56Kzqra9gGOxDo8=",
+        "lastModified": 1795678048,
+        "narHash": "sha256-DdXa2u8oiIWt5iZ0LqR4P/6IokWYrBp3w/EUuSRr/8w=",
         "ref": "release",
-        "rev": "a80a2bf09e45628bf574a8eca9a6e9f9d82ba47d",
-        "revCount": 3637,
+        "rev": "0c67b5a85adc5f649d84913d5a66e9928c1e062b",
+        "revCount": 3638,
         "type": "git",
         "url": "https://github.com/mirakc/mirakc"
       },
@@ -1161,7 +1144,6 @@
       "inputs": {
         "aagl": "aagl",
         "agenix": "agenix",
-        "agent-sim": "agent-sim",
         "amatsukaze-artifacts": "amatsukaze-artifacts",
         "b25-decoder": "b25-decoder",
         "bondriver-linuxmirakc": "bondriver-linuxmirakc",
