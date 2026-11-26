@@ -135,6 +135,11 @@
       flake = false;
     };
 
+    cc-safety-net = {
+      url = "git+https://github.com/kenryu42/cc-safety-net?ref=main";
+      flake = false;
+    };
+
     t3code-nightly = {
       url = "git+https://aur.archlinux.org/t3code-nightly-bin.git?ref=master";
       flake = false;

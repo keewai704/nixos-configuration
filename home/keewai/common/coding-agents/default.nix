@@ -202,7 +202,10 @@ in
 
     programs.pi.coding-agent = {
       enable = true;
-      extensions = [ "${inputs.pi-blackhole}/index.ts" ];
+      extensions = [
+        "${inputs.pi-blackhole}/index.ts"
+        "${inputs.cc-safety-net}/dist/pi/index.js"
+      ];
       settings = {
         defaultProjectTrust = "always";
         defaultProvider = piProvider;

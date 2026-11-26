@@ -163,6 +163,23 @@
         "url": "https://raw.githubusercontent.com/CachyOS/cachyos-wallpapers/develop/usr/share/wallpapers/cachyos-wallpapers/limine-splash.png"
       }
     },
+    "cc-safety-net": {
+      "flake": false,
+      "locked": {
+        "lastModified": 1795453521,
+        "narHash": "sha256-jHtWldpqeKA9aW27+G3evFuHgR929sDUE/1fvoiSpBM=",
+        "ref": "main",
+        "rev": "b50a82816f8e065b0e60da784cb84c843d54a706",
+        "revCount": 2081,
+        "type": "git",
+        "url": "https://github.com/kenryu42/cc-safety-net"
+      },
+      "original": {
+        "ref": "main",
+        "type": "git",
+        "url": "https://github.com/kenryu42/cc-safety-net"
+      }
+    },
     "chaotic": {
       "inputs": {
         "flake-schemas": "flake-schemas",
@@ -1148,6 +1165,7 @@
         "b25-decoder": "b25-decoder",
         "bondriver-linuxmirakc": "bondriver-linuxmirakc",
         "cachyos-limine-splash": "cachyos-limine-splash",
+        "cc-safety-net": "cc-safety-net",
         "chaotic": "chaotic",
         "claude-code": "claude-code",
         "claude-code-japanese-guard": "claude-code-japanese-guard",

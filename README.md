@@ -148,6 +148,9 @@ Pi は [pi.nix](https://github.com/lukasl-dev/pi.nix) の Home Manager モジュ
   同名の flake 入力のソースから `--extension` で読み込み、`nix flake update` で更新します。
   観察・要約・選別の各ワーカーは `~/.pi/agent/pi-blackhole/pi-blackhole-config.json` の `model`・`observerModel`・`reflectorModel`・`dropperModel` を
   Pi と同じ `opencode-go/deepseek-v4.1-flash`（thinking `low`）に固定します。適用時にこの4つのキーだけを上書きし、他の設定はそのまま残します。
+  [cc-safety-net](https://github.com/kenryu42/cc-safety-net) も同名の flake 入力に含まれるビルド済みの `dist/pi/index.js` を `--extension` で読み込みます。
+  Pi は承認なしでツールを実行するため、`git reset --hard`・`git push --force`・危険な対象への `rm -rf`・`curl … | bash` などの破壊的なコマンドと、
+  SSH 鍵・`.env`・各 CLI の認証情報の読み取りを、codemode のスクリプトからの呼び出しも含めて実行前に止めます。
 - **Claude Code の共通指示**：[共通の UI・開発方針](home/keewai/common/coding-agents/shared-instructions.md)を
   `~/.claude/CLAUDE.md` に置きます。
 - **サブエージェント**：[共通指示](home/keewai/common/coding-agents/shared-instructions.md)で、Claude Code と Codex に
