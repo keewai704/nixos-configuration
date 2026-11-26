@@ -1,4 +1,5 @@
 {
+  config,
   inputs,
   lib,
   pkgs,
@@ -9,6 +10,18 @@ let
 
   loader = pkgs.runCommand "sunbird-loader" { } ''
     install -Dm755 ${inputs.sunbird-loader} $out/lib/libphoenix.so
+  '';
+
+  fontsConf = pkgs.writeText "discord-phoenix-fonts.conf" ''
+    <?xml version="1.0"?>
+    <!DOCTYPE fontconfig SYSTEM "urn:fontconfig:fonts.dtd">
+    <fontconfig>
+      <dir prefix="xdg">fonts</dir>
+    ${
+      lib.concatMapStrings (font: "  <dir>${font}</dir>\n") (
+        lib.filter (font: !lib.hasPrefix "noto-fonts-cjk-" font.name) (lib.unique config.fonts.packages)
+      )
+    }</fontconfig>
   '';
 
   contents = pkgs.appimageTools.extract {
@@ -24,6 +37,7 @@ let
 
     profile = ''
       export SUNBIRD_GATE_ONLY=1
+      export FONTCONFIG_FILE=${fontsConf}
       export LD_PRELOAD="${loader}/lib/libphoenix.so''${LD_PRELOAD:+:$LD_PRELOAD}"
     '';
 
