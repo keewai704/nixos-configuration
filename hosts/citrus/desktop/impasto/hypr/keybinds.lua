@@ -1,3 +1,4 @@
+local columns = require("custom.columns")
 local scratchpad = "special:scratchpad"
 
 local function rebind(combination, action, options)
@@ -14,6 +15,7 @@ local function toggle_floating()
     if not window.floating then
         hl.dispatch(hl.dsp.window.center())
     end
+    columns.refit()
 end
 
 local function switch_floating_focus()
@@ -65,6 +67,13 @@ local function move_to_workspace(index)
     end
 end
 
+local function then_refit(message)
+    return function()
+        hl.dispatch(hl.dsp.layout(message))
+        columns.refit()
+    end
+end
+
 local function resize_height(fraction)
     return function()
         local monitor = hl.get_active_monitor()
@@ -89,8 +98,8 @@ rebind("SUPER + mouse_down", hl.dsp.layout("focus r"), { description = "Windows 
 
 rebind("SUPER + SHIFT + left", hl.dsp.layout("swapcol l"), { description = "Windows · Move the column left" })
 rebind("SUPER + SHIFT + right", hl.dsp.layout("swapcol r"), { description = "Windows · Move the column right" })
-rebind("SUPER + comma", hl.dsp.layout("consume_or_expel prev"), { description = "Windows · Consume into the column left" })
-rebind("SUPER + period", hl.dsp.layout("consume_or_expel next"), { description = "Windows · Consume into the column right" })
+rebind("SUPER + comma", then_refit("consume_or_expel prev"), { description = "Windows · Consume into the column left" })
+rebind("SUPER + period", then_refit("consume_or_expel next"), { description = "Windows · Consume into the column right" })
 
 rebind("SUPER + T", toggle_floating, { description = "Windows · Float or tile the window (T)" })
 rebind("SUPER + SHIFT + T", switch_floating_focus, { description = "Windows · Switch focus between floating and tiled" })
