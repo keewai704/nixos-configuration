@@ -36,7 +36,6 @@ let
     inherit src;
 
     profile = ''
-      export SUNBIRD_GATE_ONLY=1
       export FONTCONFIG_FILE=${fontsConf}
       export LD_PRELOAD="${loader}/lib/libphoenix.so''${LD_PRELOAD:+:$LD_PRELOAD}"
     '';
