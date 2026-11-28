@@ -3,6 +3,6 @@ hl.monitor({
     mode     = "5120x2160@165",
     position = "0x0",
     scale    = 1,
-    vrr      = 2,
+    vrr      = 0,
     bitdepth = 10,
 })
