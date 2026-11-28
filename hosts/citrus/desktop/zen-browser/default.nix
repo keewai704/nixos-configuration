@@ -123,11 +123,6 @@ in
             ];
           };
           userChrome = builtins.readFile ./pywal-zen/pywal-zen.css;
-          userContent = lib.concatMapStringsSep "\n" builtins.readFile [
-            ./user-content/t3.css
-            ./user-content/gamewith.css
-            ./user-content/icloud-mail.css
-          ];
           settings = {
             "zen.theme.disable-lightweight" = false;
             "sine.allow-unsafe-js" = true;
