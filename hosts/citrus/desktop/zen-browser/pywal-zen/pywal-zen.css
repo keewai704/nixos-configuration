@@ -57,3 +57,9 @@
     }
   }
 }
+
+/* better find bar hides by sliding the bar 150px down, which only works at the
+ * bottom; zen draws it at the top, so the empty bar lands over the page */
+findbar[hidden] {
+  visibility: hidden !important;
+}
