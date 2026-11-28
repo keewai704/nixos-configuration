@@ -1287,7 +1287,7 @@
     "sunbird-loader": {
       "flake": false,
       "locked": {
-        "narHash": "sha256-JpNK+24h+O7zpsqf2un503DnbzIDvKwLo6fgGyjWnNg=",
+        "narHash": "sha256-EH2GAthVZczAoGtyWHmyKtDX5ccTvYHCULnmD3sQnqY=",
         "type": "file",
         "url": "https://assets.sunbird.tools/plugins/libphoenix-linux-x86_64.so"
       },
@@ -1344,11 +1344,11 @@
     "t3code-nightly": {
       "flake": false,
       "locked": {
-        "lastModified": 1795814529,
-        "narHash": "sha256-hsdsZFygLINp6S6d7yUWmXF2BUbpNfxytsiENYBscoQ=",
+        "lastModified": 1795837753,
+        "narHash": "sha256-0HTLxUvXd54ZMXo6xDffRBcxQcbyhCpyJpw+oWPQBhk=",
         "ref": "master",
-        "rev": "4b692d4a61d7a7f5dbe1d49175ca017e1ddf7865",
-        "revCount": 585,
+        "rev": "41743527fa622ff524c81cd1e573fbaec8a682c1",
+        "revCount": 586,
         "type": "git",
         "url": "https://aur.archlinux.org/t3code-nightly-bin.git"
       },
