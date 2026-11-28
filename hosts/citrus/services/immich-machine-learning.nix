@@ -1,6 +1,7 @@
 {
   cudaPkgs,
   lib,
+  mkClientAllowlist,
   pkgs,
   ...
 }:
@@ -16,11 +17,7 @@ let
   backendAddress = "127.0.0.1:${toString immichMachineLearningBackendPort}";
   suspendSocket = "/run/citrus-suspend.sock";
 
-  allowOrange = ''
-    if ($immich_machine_learning_allowed = 0) {
-      return 403;
-    }
-  '';
+  orangeOnly = mkClientAllowlist "$immich_machine_learning_allowed" immichMachineLearningClients;
 
   suspend = pkgs.writeShellScript "citrus-suspend" ''
     while IFS= read -r line; do
@@ -89,28 +86,21 @@ in
   };
 
   services.nginx = {
-    appendHttpConfig = ''
-      map $tailscale_client_ip $immich_machine_learning_allowed {
-        default 0;
-        ${lib.concatMapStrings (client: ''
-          "${client}" 1;
-        '') immichMachineLearningClients}
-      }
-    '';
+    appendHttpConfig = orangeOnly.map;
 
     virtualHosts.${tailnetHostname}.locations = {
       "^~ /immich-machine-learning/" = {
         proxyPass = "http://127.0.0.1:${toString immichMachineLearningPort}/";
-        extraConfig = allowOrange;
+        extraConfig = orangeOnly.deny;
       };
 
-      "= /immich-machine-learning-control/alive".extraConfig = allowOrange + ''
+      "= /immich-machine-learning-control/alive".extraConfig = orangeOnly.deny + ''
         return 204;
       '';
 
       "= /immich-machine-learning-control/suspend" = {
         proxyPass = "http://unix:${suspendSocket}:/";
-        extraConfig = allowOrange + ''
+        extraConfig = orangeOnly.deny + ''
           if ($request_method != POST) {
             return 405;
           }

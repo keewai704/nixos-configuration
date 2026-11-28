@@ -1,4 +1,9 @@
-{ lib, pkgs, ... }:
+{
+  lib,
+  mkProxyLocation,
+  pkgs,
+  ...
+}:
 let
   inherit (import ./settings.nix)
     edcbPort
@@ -11,7 +16,6 @@ let
     serviceDefaults
     ;
   inherit (import ../../settings.nix) tailnetHostname tailnetOrigin;
-  mkProxyLocation = import ../../../../modules/tailnet-web/proxy.nix;
   konomitvConfig = (pkgs.formats.yaml { }).generate "konomitv.yaml" {
     general = {
       backend = "EDCB";
@@ -72,19 +76,21 @@ in
 
   services.nginx.virtualHosts.${tailnetHostname}.locations = {
     "= /tv".return = "308 ${tailnetOrigin}/tv/";
-    "= /tv/sw.js" =
-      (mkProxyLocation konomitvPort ''
+    "= /tv/sw.js" = mkProxyLocation {
+      port = konomitvPort;
+      path = "/sw.js";
+      extraConfig = ''
         proxy_set_header If-Modified-Since "";
         proxy_set_header If-None-Match "";
         proxy_hide_header ETag;
         proxy_hide_header Last-Modified;
         add_header Cache-Control "no-cache" always;
-      '')
-      // {
-        proxyPass = "http://127.0.0.1:${toString konomitvPort}/sw.js";
-      };
-    "^~ /tv/" = (mkProxyLocation konomitvPort "proxy_read_timeout 86400s;") // {
-      proxyPass = "http://127.0.0.1:${toString konomitvPort}/";
+      '';
+    };
+    "^~ /tv/" = mkProxyLocation {
+      port = konomitvPort;
+      path = "/";
+      extraConfig = "proxy_read_timeout 86400s;";
     };
   };
 }

@@ -1,4 +1,9 @@
-{ lib, pkgs, ... }:
+{
+  lib,
+  mkProxyLocation,
+  pkgs,
+  ...
+}:
 
 let
   inherit (import ../settings.nix)
@@ -9,7 +14,6 @@ let
     tailnetHostname
     tailnetOrigin
     ;
-  mkProxyLocation = import ../../../modules/tailnet-web/proxy.nix;
   serverDependencies = [
     "media-storage-prepare.service"
     storageMountUnit
@@ -85,9 +89,12 @@ in
     mode = lib.mkForce "0770";
   };
 
-  services.nginx.virtualHosts.${tailnetHostname}.locations."/" = mkProxyLocation immichPort ''
-    proxy_request_buffering off;
-  '';
+  services.nginx.virtualHosts.${tailnetHostname}.locations."/" = mkProxyLocation {
+    port = immichPort;
+    extraConfig = ''
+      proxy_request_buffering off;
+    '';
+  };
 
   systemd.services.immich-server = {
     requires = serverDependencies;

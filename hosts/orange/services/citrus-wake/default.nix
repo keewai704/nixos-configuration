@@ -1,4 +1,10 @@
-{ lib, pkgs, ... }:
+{
+  lib,
+  mkClientAllowlist,
+  mkProxyLocation,
+  pkgs,
+  ...
+}:
 let
   inherit (import ../../settings.nix)
     citrusWakePort
@@ -6,9 +12,8 @@ let
     tailnetHostname
     ;
   citrus = import ../../../citrus/settings.nix;
-  mkProxyLocation = import ../../../../modules/tailnet-web/proxy.nix;
 
-  museAddresses = [
+  museOnly = mkClientAllowlist "$citrus_wake_allowed" [
     "100.99.205.86"
     "fd7a:115c:a1e0::5f2c:cd57"
   ];
@@ -48,23 +53,12 @@ in
   };
 
   services.nginx = {
-    appendHttpConfig = ''
-      map $tailscale_client_ip $citrus_wake_allowed {
-        default 0;
-        ${lib.concatMapStrings (address: ''
-          "${address}" 1;
-        '') museAddresses}
-      }
-    '';
+    appendHttpConfig = museOnly.map;
 
-    virtualHosts.${tailnetHostname}.locations."= /wake/citrus" =
-      mkProxyLocation citrusWakePort ''
-        if ($citrus_wake_allowed = 0) {
-          return 403;
-        }
-      ''
-      // {
-        proxyPass = "http://127.0.0.1:${toString citrusWakePort}/wake";
-      };
+    virtualHosts.${tailnetHostname}.locations."= /wake/citrus" = mkProxyLocation {
+      port = citrusWakePort;
+      path = "/wake";
+      extraConfig = museOnly.deny;
+    };
   };
 }

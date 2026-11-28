@@ -1,5 +1,10 @@
-port: extraConfig: {
-  proxyPass = "http://127.0.0.1:${toString port}";
+{
+  port,
+  path ? "",
+  extraConfig ? "",
+}:
+{
+  proxyPass = "http://127.0.0.1:${toString port}${path}";
   proxyWebsockets = true;
   recommendedProxySettings = false;
   extraConfig = ''

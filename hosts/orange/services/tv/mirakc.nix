@@ -4,6 +4,7 @@ let
   inherit (import ./settings.nix)
     mirakcPort
     receiverUnits
+    serviceDefaults
     tuners
     tvEnvironment
     ;
@@ -50,18 +51,9 @@ in
     postStart = ''
       ${pkgs.python3}/bin/python ${./wait-mirakc.py} ${expectedChannels} http://127.0.0.1:${toString mirakcPort}
     '';
-    serviceConfig = {
-      User = "tv";
-      Group = "tv";
+    serviceConfig = serviceDefaults // {
       StateDirectory = "mirakc";
       StateDirectoryMode = "0750";
-      NoNewPrivileges = true;
-      ProtectSystem = "strict";
-      ProtectHome = true;
-      PrivateTmp = true;
-      UMask = "0007";
-      Restart = "on-failure";
-      RestartSec = "5s";
       ExecStart = "${lib.getExe pkgs.local.mirakc} --config ${configuration}";
       TimeoutStartSec = "6min";
       TimeoutStopSec = "30s";

@@ -131,7 +131,9 @@ in
         ${lib.getExe applySettings} || true
       '';
     };
-    extraCompatPackages = [ inputs.chaotic.unrestrictedPackages.x86_64-linux.proton-cachyos ];
+    extraCompatPackages = [
+      inputs.chaotic.unrestrictedPackages.${pkgs.stdenv.hostPlatform.system}.proton-cachyos
+    ];
   };
 
   home-manager.users.keewai = {

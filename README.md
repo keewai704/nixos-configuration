@@ -119,7 +119,8 @@ Pi は [pi.nix](https://github.com/lukasl-dev/pi.nix) の Home Manager モジュ
 `~/.claude` の設定やログイン情報は基本的に Nix で管理しません。例外として
 [coding-agents/](home/keewai/common/coding-agents/default.nix) が次のものを配ります。
 
-- **スキル**：[skills/](skills/) の全ディレクトリを `~/.claude/skills/` と `~/.agents/skills/` にリンクします。
+- **スキル**：[skills/](skills/) のディレクトリを `~/.claude/skills/` と `~/.agents/skills/` にリンクします。
+  `faster-whisper` だけは citrus の [faster-whisper.nix](hosts/citrus/faster-whisper.nix) が追加します。
   上流のスキル `yomiyasu`（[nanaism/yomiyasu](https://github.com/nanaism/yomiyasu)）と `imozuru`（[MaryCache/imozuru](https://github.com/MaryCache/imozuru)）は
   同名の flake 入力から同じ場所にリンクし、`nix flake update` で更新します。
   Pi は `~/.agents/skills/` を標準で読むため、同じスキルが使えます。
@@ -298,7 +299,8 @@ runner 上でビルドされます。
 - 複数の機能で共有するポート・パス・URL は [settings.nix](hosts/orange/settings.nix) にまとめています。
   テレビ内部の接続先と保存先は [tv/settings.nix](hosts/orange/services/tv/settings.nix) で管理します。
 - サービスの追加は [services/default.nix](hosts/orange/services/default.nix) に明示し、公開ルートは各サービスの設定に置きます。
-  プロキシは [proxy.nix](modules/tailnet-web/proxy.nix) を使い、ホスト・HTTPS・クライアントIPの転送を揃えます。
+  プロキシは [tailnet-web](modules/tailnet-web/default.nix) が渡す `mkProxyLocation`（[proxy.nix](modules/tailnet-web/proxy.nix)）を使い、
+  ホスト・HTTPS・クライアントIPの転送を揃えます。接続元を限るルートは `mkClientAllowlist`（[allowlist.nix](modules/tailnet-web/allowlist.nix)）を使います（citrus も同じ）。
 - Intel GPU と QSV のドライバーは [graphics.nix](hosts/orange/graphics.nix) が管理し、Immich とテレビから利用します。
 - 起動の順番は「HDD のマウント → 共有ディレクトリの準備 → アプリ」です（[storage.nix](hosts/orange/services/storage.nix)）。
 - [local-backup](hosts/orange/services/local-backup/) がバックアップ、[health-monitor](hosts/orange/services/health-monitor/) が

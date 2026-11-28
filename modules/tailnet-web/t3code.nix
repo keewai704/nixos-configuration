@@ -1,9 +1,8 @@
 settings:
-{ lib, ... }:
+{ lib, mkProxyLocation, ... }:
 let
   inherit (settings) tailnetHostname tailnetOrigin t3codePort;
-  mkProxyLocation = import ./proxy.nix;
-  proxy = mkProxyLocation t3codePort "";
+  proxy = mkProxyLocation { port = t3codePort; };
   apiPrefixes = [
     "/.well-known/t3/"
     "/api/orchestration/"
@@ -53,8 +52,9 @@ in
       "= /pair".return = "302 ${tailnetOrigin}/t3/pair$is_args$args";
       "= /connect-agent".return = "302 ${tailnetOrigin}/t3/connect-agent$is_args$args";
       "= /t3".return = "308 ${tailnetOrigin}/t3/";
-      "^~ /t3/" = proxy // {
-        proxyPass = "http://127.0.0.1:${toString t3codePort}/";
+      "^~ /t3/" = mkProxyLocation {
+        port = t3codePort;
+        path = "/";
       };
     };
 }

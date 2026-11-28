@@ -1,12 +1,14 @@
 {
   cudaPkgs,
   lib,
+  mkClientAllowlist,
   reuseDenoise,
   ...
 }:
 let
   inherit (import ../../settings.nix) gpuApiClients sttPort tailnetHostname;
 
+  allowlist = mkClientAllowlist "$stt_server_allowed" gpuApiClients;
   cacheDirectory = "/var/cache/stt-server";
 
   sttServer = cudaPkgs.writers.writePython3Bin "stt-server" {
@@ -44,21 +46,11 @@ in
   };
 
   services.nginx = {
-    appendHttpConfig = ''
-      map $tailscale_client_ip $stt_server_allowed {
-        default 0;
-        ${lib.concatMapStrings (client: ''
-          "${client}" 1;
-        '') gpuApiClients}
-      }
-    '';
+    appendHttpConfig = allowlist.map;
 
     virtualHosts.${tailnetHostname}.locations."^~ /stt/" = {
       proxyPass = "http://127.0.0.1:${toString sttPort}/";
-      extraConfig = ''
-        if ($stt_server_allowed = 0) {
-          return 403;
-        }
+      extraConfig = allowlist.deny + ''
         proxy_read_timeout 3600s;
         proxy_send_timeout 3600s;
       '';

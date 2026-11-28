@@ -1,4 +1,4 @@
-{ lib, ... }:
+{ lib, mkProxyLocation, ... }:
 
 let
   inherit (import ../settings.nix)
@@ -8,7 +8,6 @@ let
     vaultwardenBackupRoot
     vaultwardenPort
     ;
-  mkProxyLocation = import ../../../modules/tailnet-web/proxy.nix;
   backupDependencies = [
     "media-storage-prepare.service"
     storageMountUnit
@@ -35,7 +34,7 @@ in
 
   services.nginx.virtualHosts.${tailnetHostname}.locations = {
     "= /vault".return = "308 ${tailnetOrigin}/vault/";
-    "^~ /vault/" = mkProxyLocation vaultwardenPort "";
+    "^~ /vault/" = mkProxyLocation { port = vaultwardenPort; };
   };
 
   systemd = {

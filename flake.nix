@@ -280,30 +280,22 @@
         inherit system;
         config.allowUnfree = true;
       };
+
+      mkHost =
+        host:
+        nixpkgs.lib.nixosSystem {
+          specialArgs = { inherit inputs; };
+          modules = [
+            ./modules/common
+            host
+          ];
+        };
     in
     {
-      nixosConfigurations.orange = nixpkgs.lib.nixosSystem {
-        specialArgs = { inherit inputs; };
-        modules = [
-          ./modules/common
-          ./hosts/orange
-        ];
-      };
-
-      nixosConfigurations.citrus = nixpkgs.lib.nixosSystem {
-        specialArgs = { inherit inputs; };
-        modules = [
-          ./modules/common
-          ./hosts/citrus
-        ];
-      };
-
-      nixosConfigurations.citrus-installer = nixpkgs.lib.nixosSystem {
-        specialArgs = { inherit inputs; };
-        modules = [
-          ./modules/common
-          ./hosts/citrus/installer
-        ];
+      nixosConfigurations = {
+        orange = mkHost ./hosts/orange;
+        citrus = mkHost ./hosts/citrus;
+        citrus-installer = mkHost ./hosts/citrus/installer;
       };
 
       packages.${system} = (pkgs.extend (import ./pkgs { inherit inputs; })).local;
@@ -322,6 +314,6 @@
         ];
       };
 
-      formatter.${system} = nixpkgs.legacyPackages.${system}.nixfmt-tree;
+      formatter.${system} = pkgs.nixfmt-tree;
     };
 }

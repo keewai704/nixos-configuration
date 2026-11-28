@@ -4,6 +4,11 @@ let
   inherit (settings) nginxPort tailnetHostname;
 in
 {
+  _module.args = {
+    mkProxyLocation = import ./proxy.nix;
+    mkClientAllowlist = import ./allowlist.nix;
+  };
+
   services.nginx = {
     enable = true;
     recommendedOptimisation = true;

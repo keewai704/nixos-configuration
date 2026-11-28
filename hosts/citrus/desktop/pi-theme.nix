@@ -1,8 +1,8 @@
 {
   impastoPaletteHook,
   inputs,
-  lib,
   pkgs,
+  updateJson,
   ...
 }:
 let
@@ -101,9 +101,7 @@ in
       settings="$HOME/.pi/agent/settings.json"
       run mkdir -p "$(dirname "$settings")"
       [ -s "$settings" ] || echo '{}' > "$settings"
-      merged="$(mktemp "$settings.XXXXXX")"
-      ${lib.getExe pkgs.jq} --arg theme "${theme}" '.theme = $theme' "$settings" > "$merged"
-      run mv "$merged" "$settings"
+      run ${updateJson} "$settings" --arg theme "${theme}" '.theme = $theme'
     '';
   };
 }

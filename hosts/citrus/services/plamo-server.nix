@@ -1,6 +1,7 @@
 {
   inputs,
   lib,
+  mkClientAllowlist,
   pkgs,
   ...
 }:
@@ -11,6 +12,7 @@ let
     tailnetHostname
     ;
 
+  allowlist = mkClientAllowlist "$plamo_server_allowed" gpuApiClients;
   cacheDirectory = "/var/cache/plamo-server";
   plamoServer = inputs.plamo-app.packages.${pkgs.stdenv.hostPlatform.system}.vllm;
 in
@@ -36,22 +38,11 @@ in
   };
 
   services.nginx = {
-    appendHttpConfig = ''
-      map $tailscale_client_ip $plamo_server_allowed {
-        default 0;
-        ${lib.concatMapStrings (client: ''
-          "${client}" 1;
-        '') gpuApiClients}
-      }
-    '';
+    appendHttpConfig = allowlist.map;
 
     virtualHosts.${tailnetHostname}.locations."^~ /plamo/" = {
       proxyPass = "http://127.0.0.1:${toString plamoPort}/";
-      extraConfig = ''
-        if ($plamo_server_allowed = 0) {
-          return 403;
-        }
-      '';
+      extraConfig = allowlist.deny;
     };
   };
 }

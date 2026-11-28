@@ -3,6 +3,7 @@
   inputs,
   lib,
   pkgs,
+  updateJson,
   ...
 }:
 let
@@ -173,23 +174,17 @@ in
       run mkdir -p ${directory} ${prefixDirectory} "$themes" "$(dirname "$config")" "$(dirname "$store")"
 
       [ -s "$config" ] || echo '{}' > "$config"
-      merged="$(mktemp "$config.XXXXXX")"
-      ${lib.getExe pkgs.jq} --argjson settings ${lib.escapeShellArg (builtins.toJSON settings)} \
+      run ${updateJson} "$config" --argjson settings ${lib.escapeShellArg (builtins.toJSON settings)} \
         --arg themes "$themes" \
         '.defaultSettings = ((.defaultSettings // {}) + $settings)
           | .defaultSettings.customThemesPath = $themes
-          | .version = (.version // "v0")' \
-        "$config" > "$merged"
-      run mv "$merged" "$config"
+          | .version = (.version // "v0")'
 
       [ -s "$store" ] || echo '{}' > "$store"
-      merged="$(mktemp "$store.XXXXXX")"
-      ${lib.getExe pkgs.jq} --arg language ${lib.escapeShellArg language} --arg theme ${lib.escapeShellArg theme} \
+      run ${updateJson} "$store" --arg language ${lib.escapeShellArg language} --arg theme ${lib.escapeShellArg theme} \
         '.language = $language
           | .theme = $theme
-          | if has("settings") then .settings.language = $language else . end' \
-        "$store" > "$merged"
-      run mv "$merged" "$store"
+          | if has("settings") then .settings.language = $language else . end'
     '';
   };
 }

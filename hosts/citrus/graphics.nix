@@ -1,11 +1,12 @@
 {
   config,
   inputs,
+  pkgs,
   ...
 }:
 {
   _module.args.cudaPkgs = import inputs.nixpkgs {
-    system = "x86_64-linux";
+    inherit (pkgs.stdenv.hostPlatform) system;
     config = {
       allowUnfree = true;
       cudaSupport = true;

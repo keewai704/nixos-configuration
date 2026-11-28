@@ -3,6 +3,7 @@
   inputs,
   lib,
   pkgs,
+  updateJson,
   ...
 }:
 let
@@ -157,9 +158,7 @@ in
         ''
           settings="''${XDG_CONFIG_HOME:-$HOME/.config}/Equicord/settings/settings.json"
           if [ -s "$settings" ]; then
-            merged="$(mktemp "$settings.XXXXXX")"
-            ${lib.getExe pkgs.jq} --arg link ${lib.escapeShellArg system24} '.themeLinks |= ((. // []) - [$link])' "$settings" > "$merged"
-            run mv "$merged" "$settings"
+            run ${updateJson} "$settings" --arg link ${lib.escapeShellArg system24} '.themeLinks |= ((. // []) - [$link])'
           fi
         '';
 

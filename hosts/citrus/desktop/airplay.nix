@@ -1,6 +1,6 @@
 { pkgs, ... }:
 let
-  lan = "eno1";
+  inherit (import ../settings.nix) lanInterface;
 in
 {
   services.avahi.publish = {
@@ -11,7 +11,7 @@ in
   systemd.packages = [ pkgs.nqptp ];
   systemd.services.nqptp.wantedBy = [ "multi-user.target" ];
 
-  networking.firewall.interfaces.${lan} = {
+  networking.firewall.interfaces.${lanInterface} = {
     allowedTCPPorts = [
       5000
       7000

@@ -3,6 +3,7 @@
   inputs,
   lib,
   pkgs,
+  updateJson,
   ...
 }:
 let
@@ -73,8 +74,6 @@ let
     "volume"
     "battery"
   ];
-
-  jq = lib.getExe pkgs.jq;
 in
 {
   imports = [ ./bitwarden ];
@@ -159,19 +158,10 @@ in
       [ -s "$state/settings.json" ] || echo '${initialSettings}' > "$state/settings.json"
       [ -s "$state/state.json" ] || echo '{}' > "$state/state.json"
 
-      merged="$(mktemp "$state/settings.json.XXXXXX")"
-      ${jq} '. * ${settings} | if .themeTargets == [] then del(.themeTargets) else . end' \
-        "$state/settings.json" > "$merged"
-      run mv "$merged" "$state/settings.json"
-
-      merged="$(mktemp "$state/settings.json.XXXXXX")"
-      ${jq} '.barRight //= ${barRight}' "$state/settings.json" > "$merged"
-      run mv "$merged" "$state/settings.json"
-
-      merged="$(mktemp "$state/state.json.XXXXXX")"
-      ${jq} --arg wallpaper "$current" '.activeTheme //= "adaptive" | .currentWallpaper //= $wallpaper' \
-        "$state/state.json" > "$merged"
-      run mv "$merged" "$state/state.json"
+      run ${updateJson} "$state/settings.json" \
+        '. * ${settings} | if .themeTargets == [] then del(.themeTargets) else . end | .barRight //= ${barRight}'
+      run ${updateJson} "$state/state.json" --arg wallpaper "$current" \
+        '.activeTheme //= "adaptive" | .currentWallpaper //= $wallpaper'
     '';
 
     home.packages = [

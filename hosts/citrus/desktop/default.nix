@@ -1,5 +1,6 @@
 {
   inputs,
+  lib,
   pkgs,
   ...
 }:
@@ -22,6 +23,24 @@
   ];
 
   nixpkgs.overlays = [ inputs.nix-meltype.overlays.default ];
+
+  _module.args.updateJson = lib.getExe (
+    pkgs.writeShellApplication {
+      name = "update-json";
+      runtimeInputs = [
+        pkgs.coreutils
+        pkgs.jq
+      ];
+      text = ''
+        file=$1
+        shift
+        merged=$(mktemp "$file.XXXXXX")
+        trap 'rm -f "$merged"' EXIT
+        jq "$@" "$file" >"$merged"
+        mv "$merged" "$file"
+      '';
+    }
+  );
 
   hardware.i2c.enable = true;
   users.users.keewai.extraGroups = [
@@ -60,13 +79,6 @@
     __GL_SHADER_DISK_CACHE_SKIP_CLEANUP = "1";
   };
 
-  fonts.packages = [
-    pkgs.nerd-fonts.jetbrains-mono
-    pkgs.noto-fonts-cjk-sans
-    pkgs.noto-fonts-cjk-serif
-    pkgs.udev-gothic
-  ];
-
   security.rtkit.enable = true;
   services.pipewire = {
     enable = true;
@@ -90,8 +102,6 @@
       desiredgov = "performance";
     };
   };
-
-  programs.dconf.enable = true;
 
   services.gnome.gnome-keyring.enable = true;
   security.pam.services.sddm.enableGnomeKeyring = true;

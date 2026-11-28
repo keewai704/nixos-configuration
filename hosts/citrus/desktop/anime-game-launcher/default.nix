@@ -2,6 +2,7 @@
   inputs,
   lib,
   pkgs,
+  updateJson,
   ...
 }:
 let
@@ -28,12 +29,9 @@ in
           ''
             config="${config.xdg.dataHome}/anime-game-launcher/config.json"
             if [ -s "$config" ]; then
-              merged="$(mktemp "$config.XXXXXX")"
-              ${lib.getExe pkgs.jq} --arg command ${lib.escapeShellArg command} \
+              run ${updateJson} "$config" --arg command ${lib.escapeShellArg command} \
                 'if .game.command == null or (.game.command | contains("genshin-discord-presence")) then .game.command = $command else . end
-                  | .game.enhancements.fps_unlocker.enabled = false' \
-                "$config" > "$merged"
-              run mv "$merged" "$config"
+                  | .game.enhancements.fps_unlocker.enabled = false'
             fi
           '';
     };

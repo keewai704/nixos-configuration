@@ -1,6 +1,6 @@
 { lib, pkgs, ... }:
 let
-  inherit (import ./settings.nix) tuners receiverUnits;
+  inherit (import ./settings.nix) receiverUnits serviceDefaults tuners;
 in
 {
   orange.healthMonitor.units = [ "pcscd.socket" ] ++ receiverUnits;
@@ -40,18 +40,9 @@ in
           done
           exit 1
         '';
-        serviceConfig = {
-          User = "tv";
-          Group = "tv";
+        serviceConfig = serviceDefaults // {
           RuntimeDirectory = "torne-${tuner.id}";
           RuntimeDirectoryMode = "0750";
-          NoNewPrivileges = true;
-          ProtectSystem = "strict";
-          ProtectHome = true;
-          PrivateTmp = true;
-          UMask = "0007";
-          Restart = "on-failure";
-          RestartSec = "5s";
           ExecStart = "${lib.getExe pkgs.local.torne-receiver} daemon --device ${tuner.usbPort} --socket-dir /run/torne-${tuner.id}";
           TimeoutStartSec = "65s";
           TimeoutStopSec = "10s";

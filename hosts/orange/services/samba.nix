@@ -1,6 +1,5 @@
 let
   inherit (import ../settings.nix) lanInterface storageMountUnit storageRoot;
-  storageDependencies = [ storageMountUnit ];
 in
 {
   orange.healthMonitor.units = [ "samba-smbd.service" ];
@@ -42,10 +41,8 @@ in
     };
   };
 
-  systemd.services = {
-    samba-smbd = {
-      requires = storageDependencies;
-      after = storageDependencies;
-    };
+  systemd.services.samba-smbd = {
+    requires = [ storageMountUnit ];
+    after = [ storageMountUnit ];
   };
 }

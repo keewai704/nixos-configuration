@@ -6,7 +6,6 @@ let
     storageRoot
     vaultwardenBackupRoot
     ;
-  storageDependencies = [ storageMountUnit ];
 in
 {
   fileSystems.${storageRoot} = {
@@ -24,8 +23,8 @@ in
 
     services.media-storage-prepare = {
       description = "Prepare mounted HDD directories for media services";
-      requires = storageDependencies;
-      after = storageDependencies;
+      requires = [ storageMountUnit ];
+      after = [ storageMountUnit ];
       wantedBy = [ "multi-user.target" ];
       serviceConfig = {
         Type = "oneshot";
