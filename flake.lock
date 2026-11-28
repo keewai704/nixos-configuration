@@ -91,6 +91,22 @@
         "url": "https://github.com/matching/BonDriver_LinuxMirakc"
       }
     },
+    "browser-control-mcp": {
+      "flake": false,
+      "locked": {
+        "lastModified": 1787510676,
+        "narHash": "sha256-7N2j3BTTBT2LO22iGGvzrqcDG9H9Kz5QFKACVSvGJRQ=",
+        "owner": "eyalzh",
+        "repo": "browser-control-mcp",
+        "rev": "e53f0e50e2778543d2c2b5dadbe565be82920fbf",
+        "type": "github"
+      },
+      "original": {
+        "owner": "eyalzh",
+        "repo": "browser-control-mcp",
+        "type": "github"
+      }
+    },
     "bun2nix": {
       "inputs": {
         "flake-parts": [
@@ -1164,6 +1180,7 @@
         "amatsukaze-artifacts": "amatsukaze-artifacts",
         "b25-decoder": "b25-decoder",
         "bondriver-linuxmirakc": "bondriver-linuxmirakc",
+        "browser-control-mcp": "browser-control-mcp",
         "cachyos-limine-splash": "cachyos-limine-splash",
         "cc-safety-net": "cc-safety-net",
         "chaotic": "chaotic",

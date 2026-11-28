@@ -3,6 +3,7 @@ let
   citrus = "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAII65ZLvXUd+eN82MkMTY2waQL+hFjITwKt010l4fYHbc root@citrus";
 in
 {
+  "browser-control-mcp-secret.age".publicKeys = [ citrus ];
   "discord-webhook.age".publicKeys = [ orange ];
   "immich-api-key.age".publicKeys = [ orange ];
   "opencode-api-key.age".publicKeys = [

@@ -23,6 +23,9 @@ in
     bondriver-linuxmirakc = final.callPackage ./bondriver-linuxmirakc {
       upstream = inputs.bondriver-linuxmirakc;
     };
+    browser-control-mcp = final.callPackage ./browser-control-mcp {
+      upstream = inputs.browser-control-mcp;
+    };
     t3code = final.callPackage ./t3code {
       upstream = inputs.t3code-nightly;
       inherit claude-code;

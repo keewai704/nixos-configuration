@@ -38,6 +38,11 @@
       flake = false;
     };
 
+    browser-control-mcp = {
+      url = "github:eyalzh/browser-control-mcp";
+      flake = false;
+    };
+
     mirakc-swagger-ui = {
       url = "file+https://github.com/swagger-api/swagger-ui/archive/refs/heads/master.zip";
       flake = false;

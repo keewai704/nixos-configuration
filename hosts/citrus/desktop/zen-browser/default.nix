@@ -47,6 +47,8 @@ let
   '';
 in
 {
+  imports = [ ./browser-control-mcp.nix ];
+
   xdg.mime.defaultApplications = {
     "text/html" = "zen-beta.desktop";
     "x-scheme-handler/http" = "zen-beta.desktop";
