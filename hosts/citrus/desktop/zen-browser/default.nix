@@ -47,7 +47,10 @@ let
   '';
 in
 {
-  imports = [ ./browser-control-mcp.nix ];
+  imports = [
+    ./browser-control-mcp.nix
+    ./foxmcp.nix
+  ];
 
   xdg.mime.defaultApplications = {
     "text/html" = "zen-beta.desktop";

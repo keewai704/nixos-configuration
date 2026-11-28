@@ -26,6 +26,10 @@ in
     browser-control-mcp = final.callPackage ./browser-control-mcp {
       upstream = inputs.browser-control-mcp;
     };
+    foxmcp = final.callPackage ./foxmcp {
+      upstream = inputs.foxmcp;
+      mcpV1 = inputs.mcp-python-sdk-v1;
+    };
     t3code = final.callPackage ./t3code {
       upstream = inputs.t3code-nightly;
       inherit claude-code;

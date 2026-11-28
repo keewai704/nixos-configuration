@@ -43,6 +43,16 @@
       flake = false;
     };
 
+    foxmcp = {
+      url = "github:ThinkerYzu/foxmcp";
+      flake = false;
+    };
+
+    mcp-python-sdk-v1 = {
+      url = "github:modelcontextprotocol/python-sdk/v1.x";
+      flake = false;
+    };
+
     mirakc-swagger-ui = {
       url = "file+https://github.com/swagger-api/swagger-ui/archive/refs/heads/master.zip";
       flake = false;

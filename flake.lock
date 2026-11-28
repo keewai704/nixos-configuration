@@ -407,6 +407,22 @@
         "type": "github"
       }
     },
+    "foxmcp": {
+      "flake": false,
+      "locked": {
+        "lastModified": 1794467936,
+        "narHash": "sha256-mjo3pvAx/OvJ5XqHPZG4roGodGO/dq1sT2HRjJCMZH8=",
+        "owner": "ThinkerYzu",
+        "repo": "foxmcp",
+        "rev": "cc97d6ae90a9cd2a7bdeb9e38feaf9d29c395921",
+        "type": "github"
+      },
+      "original": {
+        "owner": "ThinkerYzu",
+        "repo": "foxmcp",
+        "type": "github"
+      }
+    },
     "hiragino-fonts": {
       "flake": false,
       "locked": {
@@ -577,6 +593,23 @@
         "ref": "main",
         "type": "git",
         "url": "https://github.com/state-spaces/mamba"
+      }
+    },
+    "mcp-python-sdk-v1": {
+      "flake": false,
+      "locked": {
+        "lastModified": 1790802391,
+        "narHash": "sha256-Tui4uRlh564Bg/e+HyMKbBHn6eFysLU5RMhM3oOEVnM=",
+        "owner": "modelcontextprotocol",
+        "repo": "python-sdk",
+        "rev": "52e64ddb9f8f897bcb74de0bc9417f820af35a59",
+        "type": "github"
+      },
+      "original": {
+        "owner": "modelcontextprotocol",
+        "ref": "v1.x",
+        "repo": "python-sdk",
+        "type": "github"
       }
     },
     "meltype-src": {
@@ -1189,6 +1222,7 @@
         "codex": "codex",
         "discord-phoenix": "discord-phoenix",
         "edcb": "edcb",
+        "foxmcp": "foxmcp",
         "hiragino-fonts": "hiragino-fonts",
         "home-manager": "home-manager_2",
         "imozuru": "imozuru",
@@ -1196,6 +1230,7 @@
         "konomitv": "konomitv",
         "konomitv-thirdparty": "konomitv-thirdparty",
         "mamba-ssm": "mamba-ssm",
+        "mcp-python-sdk-v1": "mcp-python-sdk-v1",
         "millennium": "millennium",
         "millennium-plugin-achievement-groups": "millennium-plugin-achievement-groups",
         "millennium-plugin-browser-history": "millennium-plugin-browser-history",
